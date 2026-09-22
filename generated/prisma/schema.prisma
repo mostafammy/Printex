@@ -1,3 +1,185 @@
+// Core domain models — the Order → WorkItem canonical model (constitution I).
+// Source of truth: specs/002-core-domain-shell/data-model.md
+// Relations to `User` (identity.prisma) work directly across schema files —
+// Prisma's multi-file schema (prismaSchemaFolder) requires no import.
+
+// --- Enums -----------------------------------------------------------------
+
+enum WorkItemState {
+  NEW
+  ASSIGNED
+  IN_DESIGN
+  DESIGN_COMPLETED
+  WAITING_REVIEW
+  REWORK_REQUIRED
+  APPROVED
+  WAITING_PRICING
+  READY_FOR_PRODUCTION
+  IN_PRODUCTION
+  PRODUCTION_COMPLETED
+  READY_FOR_COLLECTION
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderChannel {
+  WALK_IN
+  WHATSAPP
+  PHONE
+  RETURNING
+  DIRECT_TO_DESIGNER
+}
+
+enum OrderPriority {
+  NORMAL
+  URGENT
+}
+
+enum OrderMode {
+  GROUPED
+  SEPARATE
+}
+
+enum PhaseTimingKind {
+  QUEUE
+  ACTIVE
+}
+
+enum RejectionCategory {
+  DESIGN_ISSUE
+  DIMENSION_ISSUE
+  CUSTOMER_CHANGE
+  PRICING_ISSUE
+  ACCOUNTING_ISSUE
+  PRODUCTION_ISSUE
+  MISSING_INFORMATION
+  OTHER
+}
+
+// --- Models ------------------------------------------------------------
+
+/// Admin-configured production department (constitution VI: data, not an enum).
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  workItems WorkItem[]
+}
+
+model Customer {
+  id             String   @id @default(cuid())
+  name           String
+  /// Exactly one row has this true (seeded, not user-creatable).
+  isCashCustomer Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  orders Order[]
+}
+
+model Order {
+  id          String        @id @default(cuid())
+  /// DB sequence, ever-increasing, no reset, no prefix (FR-008a).
+  number      Int           @unique
+  customerId  String
+  customer    Customer      @relation(fields: [customerId], references: [id])
+  channel     OrderChannel
+  priority    OrderPriority
+  mode        OrderMode
+  createdById String
+  createdBy   User          @relation(fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+
+  workItems WorkItem[]
+
+  // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
+}
+
+model WorkItem {
+  id             String        @id @default(cuid())
+  orderId        String
+  order          Order         @relation(fields: [orderId], references: [id])
+  /// Catalog owned by 011 — FK reference only, no relation declared here.
+  productTypeId  String?
+  departmentId   String?
+  department     Department?   @relation(fields: [departmentId], references: [id])
+  /// Written only by transitionWorkItem().
+  state          WorkItemState
+  requiresDesign Boolean       @default(true)
+  requiresReview Boolean       @default(true)
+  assigneeId     String?
+  assignee       User?         @relation("WorkItemAssignee", fields: [assigneeId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  transitions  WorkItemTransition[]
+  phaseTimings PhaseTiming[]
+
+  @@index([orderId, state])
+}
+
+/// Immutable — application code never updates or deletes a row here (constitution III).
+model WorkItemTransition {
+  id                String             @id @default(cuid())
+  workItemId        String
+  workItem          WorkItem           @relation(fields: [workItemId], references: [id])
+  from              WorkItemState
+  to                WorkItemState
+  actorId           String
+  actor             User               @relation("WorkItemTransitionActor", fields: [actorId], references: [id])
+  at                DateTime           @default(now())
+  /// Required by the caller for REWORK_REQUIRED and CANCELLED edges
+  /// (enforced in transitionWorkItem, not the schema).
+  reason            String?
+  /// Set only on edges landing in REWORK_REQUIRED; drives the landing-state
+  /// choice (FR-003b).
+  rejectionCategory RejectionCategory?
+  meta              Json?
+
+  @@index([workItemId, at])
+}
+
+/// Timestamped segments, not a stopwatch (constitution III, FR-009).
+model PhaseTiming {
+  id         String          @id @default(cuid())
+  workItemId String
+  workItem   WorkItem        @relation(fields: [workItemId], references: [id])
+  /// Which state this timing segment belongs to.
+  phase      WorkItemState
+  /// Null for QUEUE segments (nobody "actively" queues).
+  userId     String?
+  user       User?           @relation("PhaseTimingUser", fields: [userId], references: [id])
+  kind       PhaseTimingKind
+  startedAt  DateTime
+  /// Null while the segment is open; pausing sets this, resuming starts a
+  /// new segment (spec FR-009).
+  endedAt    DateTime?
+
+  @@index([workItemId, phase, kind])
+}
+
+/// Outbox — polymorphic via entityType/entityId, not a Prisma relation.
+model NotificationEvent {
+  id                     String    @id @default(cuid())
+  /// Event type discriminator, e.g. "work_item.rejected".
+  type                   String
+  entityType             String
+  entityId               String
+  recipientUserIds       String[]
+  recipientRoles         String[]
+  recipientDepartmentIds String[]
+  payload                Json?
+  createdAt              DateTime  @default(now())
+  /// Left null; written by 053.
+  deliveredAt            DateTime?
+  /// Left null; written by 053.
+  deliveryStatus         String?
+
+  @@index([entityType, entityId])
+}
+
 // Better Auth models — moved as-is from the original single-file schema.
 // Owned in practice by feature 001 going forward.
 // learn more: https://better-auth.com/docs/concepts/database
@@ -16,6 +198,13 @@ model User {
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+
+  // Reverse relations to core.prisma domain models (multi-file schema —
+  // no import needed; owned in practice by 002-core-domain-shell).
+  createdOrders       Order[]              @relation
+  assignedWorkItems   WorkItem[]           @relation("WorkItemAssignee")
+  workItemTransitions WorkItemTransition[] @relation("WorkItemTransitionActor")
+  phaseTimings        PhaseTiming[]        @relation("PhaseTimingUser")
 
   @@unique([email])
   @@map("user")

@@ -17,6 +17,13 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  // Reverse relations to core.prisma domain models (multi-file schema —
+  // no import needed; owned in practice by 002-core-domain-shell).
+  createdOrders       Order[]              @relation
+  assignedWorkItems   WorkItem[]           @relation("WorkItemAssignee")
+  workItemTransitions WorkItemTransition[] @relation("WorkItemTransitionActor")
+  phaseTimings        PhaseTiming[]        @relation("PhaseTimingUser")
+
   @@unique([email])
   @@map("user")
 }

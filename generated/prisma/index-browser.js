@@ -121,6 +121,80 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.DepartmentScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CustomerScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isCashCustomer: 'isCashCustomer',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.OrderScalarFieldEnum = {
+  id: 'id',
+  number: 'number',
+  customerId: 'customerId',
+  channel: 'channel',
+  priority: 'priority',
+  mode: 'mode',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WorkItemScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  productTypeId: 'productTypeId',
+  departmentId: 'departmentId',
+  state: 'state',
+  requiresDesign: 'requiresDesign',
+  requiresReview: 'requiresReview',
+  assigneeId: 'assigneeId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WorkItemTransitionScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  from: 'from',
+  to: 'to',
+  actorId: 'actorId',
+  at: 'at',
+  reason: 'reason',
+  rejectionCategory: 'rejectionCategory',
+  meta: 'meta'
+};
+
+exports.Prisma.PhaseTimingScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  phase: 'phase',
+  userId: 'userId',
+  kind: 'kind',
+  startedAt: 'startedAt',
+  endedAt: 'endedAt'
+};
+
+exports.Prisma.NotificationEventScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  recipientUserIds: 'recipientUserIds',
+  recipientRoles: 'recipientRoles',
+  recipientDepartmentIds: 'recipientDepartmentIds',
+  payload: 'payload',
+  createdAt: 'createdAt',
+  deliveredAt: 'deliveredAt',
+  deliveryStatus: 'deliveryStatus'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -172,6 +246,11 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -182,8 +261,71 @@ exports.Prisma.NullsOrder = {
   last: 'last'
 };
 
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
+exports.OrderChannel = exports.$Enums.OrderChannel = {
+  WALK_IN: 'WALK_IN',
+  WHATSAPP: 'WHATSAPP',
+  PHONE: 'PHONE',
+  RETURNING: 'RETURNING',
+  DIRECT_TO_DESIGNER: 'DIRECT_TO_DESIGNER'
+};
+
+exports.OrderPriority = exports.$Enums.OrderPriority = {
+  NORMAL: 'NORMAL',
+  URGENT: 'URGENT'
+};
+
+exports.OrderMode = exports.$Enums.OrderMode = {
+  GROUPED: 'GROUPED',
+  SEPARATE: 'SEPARATE'
+};
+
+exports.WorkItemState = exports.$Enums.WorkItemState = {
+  NEW: 'NEW',
+  ASSIGNED: 'ASSIGNED',
+  IN_DESIGN: 'IN_DESIGN',
+  DESIGN_COMPLETED: 'DESIGN_COMPLETED',
+  WAITING_REVIEW: 'WAITING_REVIEW',
+  REWORK_REQUIRED: 'REWORK_REQUIRED',
+  APPROVED: 'APPROVED',
+  WAITING_PRICING: 'WAITING_PRICING',
+  READY_FOR_PRODUCTION: 'READY_FOR_PRODUCTION',
+  IN_PRODUCTION: 'IN_PRODUCTION',
+  PRODUCTION_COMPLETED: 'PRODUCTION_COMPLETED',
+  READY_FOR_COLLECTION: 'READY_FOR_COLLECTION',
+  DELIVERED: 'DELIVERED',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED'
+};
+
+exports.RejectionCategory = exports.$Enums.RejectionCategory = {
+  DESIGN_ISSUE: 'DESIGN_ISSUE',
+  DIMENSION_ISSUE: 'DIMENSION_ISSUE',
+  CUSTOMER_CHANGE: 'CUSTOMER_CHANGE',
+  PRICING_ISSUE: 'PRICING_ISSUE',
+  ACCOUNTING_ISSUE: 'ACCOUNTING_ISSUE',
+  PRODUCTION_ISSUE: 'PRODUCTION_ISSUE',
+  MISSING_INFORMATION: 'MISSING_INFORMATION',
+  OTHER: 'OTHER'
+};
+
+exports.PhaseTimingKind = exports.$Enums.PhaseTimingKind = {
+  QUEUE: 'QUEUE',
+  ACTIVE: 'ACTIVE'
+};
 
 exports.Prisma.ModelName = {
+  Department: 'Department',
+  Customer: 'Customer',
+  Order: 'Order',
+  WorkItem: 'WorkItem',
+  WorkItemTransition: 'WorkItemTransition',
+  PhaseTiming: 'PhaseTiming',
+  NotificationEvent: 'NotificationEvent',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
