@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-and-test:
+    name: Check & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: printex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Two separate databases in the same service container: one for the app
+      # (schema push / generate), one dedicated to the Vitest suite — never
+      # the same database, per research.md §9.
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/printex"
+      DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/printex_test"
+      STORAGE_ROOT: "/tmp/printex-storage"
+      BETTER_AUTH_SECRET: "ci-only-not-a-real-secret"
+      BETTER_AUTH_GITHUB_CLIENT_ID: "ci-placeholder"
+      BETTER_AUTH_GITHUB_CLIENT_SECRET: "ci-placeholder"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create test database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE printex_test;"
+
+      - name: Push app database schema
+        run: pnpm exec prisma db push --skip-generate
+
+      - name: Push test database schema
+        run: pnpm exec prisma db push --skip-generate
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+
+      - name: Check (lint + typecheck)
+        run: pnpm check
+
+      - name: Test
+        run: pnpm test

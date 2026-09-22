@@ -313,6 +313,22 @@ catch-and-convert-to-`Result` step happens where `core` *calls* the adapter (e.g
 itself — so the lint rule's scope excludes adapter implementation files, and everything else in
 `core` stays exception-free.
 
+**Second carve-out, found during implementation, not anticipated here originally**:
+`transitionWorkItem` cannot be unconditionally reject-free and still guarantee atomicity. Prisma's
+interactive `$transaction(async (tx) => ...)` has exactly one rollback trigger — the callback's
+promise rejecting — so once `transitionWorkItem` has made its first write (the optimistic-
+concurrency state update), any failure in the writes that follow (phase-timing segments, the
+`WorkItemTransition` insert, `notify()`) is deliberately left to propagate as a rejection rather
+than being caught and turned into a resolved `err(...)`. Catching it would let the surrounding
+`tx` commit the already-applied state change while silently dropping its audit trail — exactly the
+failure mode the rollback test (`tests/integration/transition-rollback.test.ts`) exists to catch.
+Every failure detected *before* the first write (not-found, invalid edge, guard failure,
+validation) still resolves to `err(...)` as normal — this exception applies only past that point.
+Contract implication: a Server Action calling `transitionWorkItem` must wrap it in `try/catch`
+(not just check `.ok`) to convert this rare post-write infrastructure failure into an
+`ActionResult`, same as it already must for any other unexpected exception at the adapter
+boundary.
+
 ### 5.4 Type safety
 
 - **`strict: true` + `noUncheckedIndexedAccess: true`** (already in `tsconfig.json`) means
