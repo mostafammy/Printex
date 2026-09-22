@@ -118,4 +118,40 @@ export default tseslint.config(
       ],
     },
   },
+  // --- RTL logical-properties rule (research.md §10, SC-007) -----------------
+  // Tailwind 4 ships CSS-based config (no `tailwind.config.js`), which most
+  // published versions of `eslint-plugin-tailwindcss` still assume — it does
+  // not have a clean v4 story, so this hand-rolls a rule the same way the
+  // module-boundary rules above do: `no-restricted-syntax` selectors,
+  // scoped to files that actually contain JSX/Tailwind classes
+  // (`src/**/*.tsx`, `src/**/*.jsx` — covers src/app/** today and any future
+  // UI code under src/components/** etc.), not the whole repo.
+  //
+  // Physical-direction utilities (`ml-`, `mr-`, `pl-`, `pr-`, `left-`,
+  // `right-`) break in RTL (constitution IX, FR-013) — logical-property
+  // equivalents (`ms-`, `me-`, `ps-`, `pe-`, `start-`, `end-`) must be used
+  // instead. Matches both plain string class values
+  // (`className="ml-2"`) and template-literal class values
+  // (`className={`ml-2 ${x}`}`), including Tailwind variants
+  // (`hover:ml-2`, `sm:-mr-4`).
+  {
+    files: ["src/**/*.tsx", "src/**/*.jsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "JSXAttribute[name.name=/^(className|class)$/] Literal[value=/(^|[\\s\"'])-?(ml|mr|pl|pr)-|(^|[\\s\"'])-?(left|right)-/]",
+          message:
+            "Physical-direction Tailwind class (ml-/mr-/pl-/pr-/left-/right-) breaks RTL layouts — use the logical-property equivalent instead (ms-/me-/ps-/pe-/start-/end-, research.md §10, SC-007).",
+        },
+        {
+          selector:
+            "JSXAttribute[name.name=/^(className|class)$/] TemplateElement[value.raw=/(^|[\\s\"'])-?(ml|mr|pl|pr)-|(^|[\\s\"'])-?(left|right)-/]",
+          message:
+            "Physical-direction Tailwind class (ml-/mr-/pl-/pr-/left-/right-) breaks RTL layouts — use the logical-property equivalent instead (ms-/me-/ps-/pe-/start-/end-, research.md §10, SC-007).",
+        },
+      ],
+    },
+  },
 );
