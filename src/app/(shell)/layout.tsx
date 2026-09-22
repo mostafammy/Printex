@@ -1,4 +1,5 @@
 import { getActor, type Actor } from "~/server/auth";
+// eslint-disable-next-line no-restricted-imports -- the src/server/core public barrel (index.ts) is not created until T038 (Phase 6); this deep import of asUserId is the sanctioned exception until then (same pattern as src/server/auth/index.ts).
 import { asUserId } from "~/server/core/ids";
 
 import { SidebarNav } from "./_components/sidebar-nav";
