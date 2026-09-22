@@ -16,6 +16,6 @@ export default defineConfig({
   // (e.g. src/app/layout.tsx, src/app/(shell)/**) directly, since nothing
   // else in the Vitest pipeline runs Next's compiler.
   oxc: {
-    jsx: "automatic",
+    jsx: { runtime: "automatic" },
   },
 });
