@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "myQueue": "طابور أعمالي",
+    "reception": "الاستقبال",
+    "design": "التصميم",
+    "production": "الإنتاج",
+    "delivery": "التسليم",
+    "admin": "الإدارة"
+  },
+  "roles": {
+    "reception": "موظف استقبال",
+    "design": "مصمم",
+    "production": "عامل إنتاج",
+    "delivery": "مندوب توصيل",
+    "admin": "مدير النظام"
+  },
+  "ui": {
+    "appName": "برينتكس",
+    "logout": "تسجيل الخروج",
+    "myQueuePageTitle": "طابور أعمالي",
+    "myQueuePagePlaceholder": "لا يوجد محتوى فعلي بعد — هذه صفحة مؤقتة."
+  }
+}
