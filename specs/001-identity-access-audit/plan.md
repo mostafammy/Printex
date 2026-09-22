@@ -8,7 +8,7 @@
 
 Build the security and traceability spine every other Printex feature depends on: username/password
 login (Better Auth's username plugin, no email/self-signup), server-enforced fine-grained
-permissions (21 fixed keys, 7 seeded roles matching PRD §48 exactly, per-user extra grants),
+permissions (22 fixed keys, 7 seeded roles matching PRD §48 exactly, per-user extra grants),
 Department lifecycle ownership, Admin screens (users/roles/departments), and a database-level
 append-only `AuditEvent` log with an Admin viewer. Technical approach: extend the Better Auth
 `User`/`Session` models 002 already scaffolded with lockout/deactivation columns, add `Role`/
@@ -95,7 +95,7 @@ src/server/
 ├── auth/
 │   ├── index.ts           # REPLACES 002's ambient getActor() stub — real getActor, authorize,
 │   │                       # audit.record (barrel export, same pattern as core/index.ts)
-│   ├── permissions.ts      # Permission union (21 keys), RoleKey union (7 keys)
+│   ├── permissions.ts      # Permission union (22 keys), RoleKey union (7 keys)
 │   ├── getActor.ts         # Session/user/role/permission resolution
 │   ├── authorize.ts        # Permission + department scope check
 │   ├── audit.ts             # audit.record(tx, event)

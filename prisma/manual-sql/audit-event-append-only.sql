@@ -1,0 +1,32 @@
+-- Enforces constitution III / spec FR-021: no application code path or direct
+-- SQL client may ever UPDATE or DELETE an AuditEvent row.
+-- audit.record() only ever INSERTs (see src/server/auth/audit.ts and
+-- contracts/audit.md). This revocation also holds against direct psql/pgAdmin
+-- clients connecting as the same role the application uses.
+--
+-- DEPLOYMENT PREREQUISITE (research.md §"Database-level append-only enforcement"):
+-- This REVOKE only binds if the Postgres role that runs migrations (and that the
+-- application connects as at runtime) is a NON-SUPERUSER role. A superuser
+-- bypasses all GRANT/REVOKE controls. If your DATABASE_URL connects as a
+-- superuser, this statement will appear to succeed but will have no effect —
+-- verify by attempting an UPDATE against audit_event after applying and
+-- confirming Postgres rejects it with "permission denied".
+--
+-- Apply manually (since this project uses prisma db push, not prisma migrate):
+--   pnpm exec prisma db execute \
+--     --file prisma/manual-sql/audit-event-append-only.sql \
+--     --schema prisma/schema
+--
+-- CURRENT_USER inside a migration/db-execute context resolves to whichever
+-- role Postgres is running the statement as — i.e. the role embedded in
+-- DATABASE_URL. This is the correct target for the REVOKE: the same role the
+-- application uses at runtime is the one that must lose UPDATE/DELETE.
+--
+-- After applying, verify empirically:
+--   pnpm exec prisma db execute --stdin --schema prisma/schema <<'SQL'
+--   UPDATE audit_event SET reason = 'tampered-test' WHERE false;
+--   SQL
+-- Postgres should respond: ERROR: permission denied for table audit_event
+-- If it does not, your DATABASE_URL role is a superuser — see research.md.
+
+REVOKE UPDATE, DELETE ON audit_event FROM CURRENT_USER;

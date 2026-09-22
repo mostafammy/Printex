@@ -122,7 +122,7 @@ An Admin reviewing a dispute ("who changed this order's price?") opens the Audit
 - **Session**: A logged-in browser's active login — belongs to one User, has an expiry (~12h from creation), can be revoked (force-logout, deactivation, explicit logout). Better Auth's `Session` model.
 - **Role**: A named, seeded bundle of permission keys (Reception, Designer, Head Designer, Production Operator, Print Reception/Delivery, Accounting, Admin/Owner). Data, not an enum baked into business logic.
 - **UserRole**: Join between User and Role — a user may hold several roles at once.
-- **Permission**: One of the 21 fixed keys in FR-010 (a closed set for this feature, not a user-editable table — adding a new key is a code change, not an admin action).
+- **Permission**: One of the 22 fixed keys in FR-010 (a closed set for this feature, not a user-editable table — adding a new key is a code change, not an admin action).
 - **UserPermission**: A per-user grant of one extra Permission beyond what their Role(s) already include (FR-014); supports the "pricing users must be explicitly configurable" requirement.
 - **Department**: A named organizational scope (Digital, Banner, Outdoor, Laser, External, ...) — data, not an enum; already modeled by 002, whose model definition this feature now owns.
 - **UserDepartment**: Join between User and Department — scopes department-sensitive permission checks (e.g. Production Operator work).
@@ -132,7 +132,7 @@ An Admin reviewing a dispute ("who changed this order's price?") opens the Audit
 
 ### Measurable Outcomes
 
-- **SC-001**: A user attempting any server action outside their role's permissions is rejected 100% of the time, verified by an automated test matrix covering every seeded role against every one of the 21 permission keys (the seeded role×permission matrix exactly equals PRD §48's table, verified by a snapshot test).
+- **SC-001**: A user attempting any server action outside their role's permissions is rejected 100% of the time, verified by an automated test matrix covering every seeded role against every one of the 22 permission keys (the seeded role×permission matrix exactly equals PRD §48's table, verified by a snapshot test).
 - **SC-002**: A deactivated or force-logged-out user's very next request after that action is rejected as `UNAUTHENTICATED` — verified with zero tolerance for delay (not "eventually," not "after cache expiry").
 - **SC-003**: Zero audit events are ever modifiable or deletable after being written — verified by an automated test that attempts direct SQL `UPDATE`/`DELETE` against the audit table and asserts the database itself rejects it.
 - **SC-004**: An Admin can create a new fully-working staff account (login + correct role/department access) in under 1 minute using only the in-app Users screen, with no database access required.

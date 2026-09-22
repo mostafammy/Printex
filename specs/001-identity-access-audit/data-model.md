@@ -40,7 +40,7 @@ Seeded exactly once with the 7 roles and their permission bundles (data, not enu
 |---|---|---|
 | `id` | `String @id @default(cuid())` | |
 | `roleId` | `String` | FK → `Role`. |
-| `permission` | `String` | One of the 21 fixed `Permission` union values (FR-010); validated by the app's Zod schema, not a DB enum, so adding a permission key never requires a migration to *this* table's constraint. |
+| `permission` | `String` | One of the 22 fixed `Permission` union values (FR-010); validated by the app's Zod schema, not a DB enum, so adding a permission key never requires a migration to *this* table's constraint. |
 
 `@@unique([roleId, permission])`.
 
@@ -65,7 +65,7 @@ requirement from PRD §26).
 |---|---|---|
 | `id` | `String @id @default(cuid())` | |
 | `userId` | `String` | FK → `User`. |
-| `permission` | `String` | One of the 21 fixed keys. |
+| `permission` | `String` | One of the 22 fixed keys. |
 | `grantedById` | `String` | FK → `User` (the Admin who granted it) — itself audited via `audit.record()` at grant time. |
 | `createdAt` | `DateTime @default(now())` | |
 
@@ -115,7 +115,7 @@ Indexes: `@@index([entityType, entityId])` (entity history lookups), `@@index([a
 
 ## Fixed code-level union (not a table): `Permission`
 
-The 21 keys from FR-010, defined once in `src/server/core` alongside `WorkItemState`'s pattern
+The 22 keys from FR-010, defined once in `src/server/core` alongside `WorkItemState`'s pattern
 (frozen, imported everywhere, typo-proof at compile time) — see contracts/auth.md.
 
 ## Fixed code-level union (not a table): `RoleKey`
@@ -127,7 +127,7 @@ the seed matrix; runtime role checks always go through `authorize()`'s permissio
 
 ## Seeded role × permission matrix (authoritative — the snapshot test in SC-001 asserts this exactly)
 
-Derived directly from PRD §48's Can/Cannot lists per role, mapped onto the 21 fixed permission keys.
+Derived directly from PRD §48's Can/Cannot lists per role, mapped onto the 22 fixed permission keys.
 Where PRD §48 explicitly says a role "Cannot" do something, the corresponding permission is
 deliberately omitted. `ADMIN_OWNER` receives every key ("view all operations... manage system
 settings"). Per PRD §26 / spec FR-014, `pricing.set_variable`/`pricing.override` are **not** seeded

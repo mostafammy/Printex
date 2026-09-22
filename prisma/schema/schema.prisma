@@ -10,6 +10,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase's pooled connection (DATABASE_URL, port 6543) is PgBouncer in
+  // transaction mode, which cannot grant the advisory locks/prepared
+  // statements `prisma db push`/`migrate` need — without directUrl those
+  // commands hang indefinitely waiting on a lock the pooler can never grant.
+  // DIRECT_URL (port 5432) bypasses the pooler for migration-time only.
+  directUrl = env("DIRECT_URL")
 }

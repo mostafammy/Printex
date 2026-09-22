@@ -34,7 +34,7 @@
 
 ## Decision: Permission set representation & role storage
 
-**Decision**: `Role` and `RolePermission` are real tables (roles are data — constitution VI), seeded once from the fixed PRD §48 matrix via a Prisma seed script extension, not a runtime-editable UI in this feature (per spec Assumptions: matrix editing is out of scope). `Permission` itself stays a fixed TypeScript union of the 21 keys (FR-010) rather than a DB table, since the *set* of possible permission keys is a code-level contract every feature imports, not admin-configurable data — this mirrors 002's `WorkItemState`/`ALLOWED_EDGES` pattern (fixed code-level enums, but role↔permission *assignment* is DB data).
+**Decision**: `Role` and `RolePermission` are real tables (roles are data — constitution VI), seeded once from the fixed PRD §48 matrix via a Prisma seed script extension, not a runtime-editable UI in this feature (per spec Assumptions: matrix editing is out of scope). `Permission` itself stays a fixed TypeScript union of the 22 keys (FR-010) rather than a DB table, since the *set* of possible permission keys is a code-level contract every feature imports, not admin-configurable data — this mirrors 002's `WorkItemState`/`ALLOWED_EDGES` pattern (fixed code-level enums, but role↔permission *assignment* is DB data).
 
 **Rationale**: Matches constitution VI ("Roles MUST be modeled as permission scopes... not enums or code branches") for the *role→permission mapping*, while keeping the permission *vocabulary* itself a compile-time-checked union so every feature's `authorize(actor, "pricing.override")` call is typo-proof (matches how 002 froze `WorkItemState` for the same typo-safety reason).
 
