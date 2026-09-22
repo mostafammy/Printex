@@ -14,6 +14,8 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_ID: z.string(),
     BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string(),
     DATABASE_URL: z.string().url(),
+    DATABASE_URL_TEST: z.string().url(),
+    STORAGE_ROOT: z.string(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -38,6 +40,8 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_SECRET:
       process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL_TEST: process.env.DATABASE_URL_TEST,
+    STORAGE_ROOT: process.env.STORAGE_ROOT,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**

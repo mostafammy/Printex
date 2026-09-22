@@ -1,0 +1,15 @@
+// Prisma schema root — multi-file schema (prismaSchemaFolder preview feature).
+// This file holds only the generator and datasource blocks. Domain models live
+// in sibling files under prisma/schema/ (identity.prisma, core.prisma, ...).
+// learn more: https://www.prisma.io/docs/orm/prisma-schema/overview/location#multi-file-prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../generated/prisma"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
