@@ -12,6 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+// eslint-disable-next-line no-restricted-imports -- the src/server/core public barrel (index.ts) is not created until T038 (Phase 6); this deep import of asUserId is the sanctioned exception until then (same pattern as src/server/auth/index.ts).
 import { asUserId } from "~/server/core/ids";
 
 // next/font/google's exports only work under the Next.js compiler (webpack/
@@ -30,9 +31,7 @@ describe("root layout — RTL document configuration", () => {
   it("sets dir=\"rtl\" and lang=\"ar\" on <html>", async () => {
     const { default: RootLayout } = await import("~/app/layout");
 
-    const html = renderToStaticMarkup(
-      RootLayout({ children: "content" as unknown as React.ReactNode }),
-    );
+    const html = renderToStaticMarkup(RootLayout({ children: "content" }));
 
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('lang="ar"');
