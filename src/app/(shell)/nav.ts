@@ -9,6 +9,7 @@
 // allow" acceptance scenario for the Phase 5 shell; 001 may replace the
 // matching rule (e.g. permission strings instead of role names) without
 // touching `src/server/core/**`.
+// eslint-disable-next-line no-restricted-imports -- the src/server/core public barrel (index.ts) is not created until T038 (Phase 6); this deep import of the Actor type is the sanctioned exception until then (same pattern as src/server/auth/index.ts).
 import type { Actor } from "~/server/core/actor";
 
 import ar from "../../../messages/ar.json";
