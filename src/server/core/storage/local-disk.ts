@@ -22,7 +22,7 @@
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { access, mkdir } from "node:fs/promises";
+import { access, mkdir, unlink } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -86,6 +86,23 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
           `LocalDiskStorageAdapter: refusing to overwrite existing key "${key}".`,
         );
       }
+
+      // Any other pipeline failure (the source stream erroring mid-transfer,
+      // a disk write error, etc.) can leave a partial/corrupted file behind
+      // on disk — the "wx" flag only protects against a pre-existing file,
+      // not a failure after bytes have already been flushed. Left in place,
+      // that partial file would make every future `put()` for this key fail
+      // with "refusing to overwrite existing key" (since `exists()` now sees
+      // it) and would make `get()` silently return truncated content. Clean
+      // it up so a retry with the same key can succeed.
+      try {
+        await unlink(target);
+      } catch {
+        // The file may not exist yet (e.g. the failure happened before any
+        // bytes were written) — that's fine. Never let a failed cleanup
+        // attempt mask the original error below.
+      }
+
       throw caught;
     }
 

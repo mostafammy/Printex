@@ -26,10 +26,26 @@ const PRE_PRODUCTION: readonly WorkItemState[] = ["NEW", "ASSIGNED"];
  * exists (constitution I: an Order without Work Items shouldn't be
  * displayed as "in progress" of anything). This function does not throw
  * (core functions never throw — plan.md §5.3), so it does not guard against
- * an empty array with a runtime error; with zero Work Items every `every()`
- * check below is vacuously true, which falls through to `COMPLETED` (the
- * first `every`-based branch). That result is meaningless and callers are
- * responsible for never producing it in practice.
+ * an empty array with a runtime error. EVERY `every()`-based branch below
+ * (COMPLETED, DELIVERED, NOT_STARTED, and CANCELLED's own `.every()`) is
+ * vacuously true for an empty `states` array, so with zero Work Items this
+ * falls through to `COMPLETED` (the first `every`-based branch reached).
+ * That result is meaningless and callers are responsible for never
+ * producing it in practice.
+ *
+ * The CANCELLED branch additionally guards with `.some((s) => s ===
+ * "CANCELLED")` before its `.every()` — this is NOT an empty-array guard
+ * (an empty array would already vacuously satisfy the `.some()` check to
+ * be false, so it doesn't change the empty-array outcome described above).
+ * It exists for a *non-empty* array: CANCELLED must mean "every Work Item
+ * is CANCELLED", and a plain `.every((s) => s === "CANCELLED")` alone
+ * would already correctly reject any non-empty array containing a
+ * non-CANCELLED state. The `.some()` check is there so this branch reads
+ * as "at least one CANCELLED item exists AND all items are CANCELLED"
+ * rather than relying on the reader to notice `.every()` alone already
+ * encodes that for non-empty input — it's a clarity/defensive-redundancy
+ * addition for the non-empty case, not a fix for the shared empty-array
+ * vacuous-truth issue every other `every()`-based branch here has too.
  */
 export function deriveOrderStatus(
   workItems: readonly { state: WorkItemState }[],

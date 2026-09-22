@@ -51,6 +51,7 @@ import type { Result } from "../result";
 import { err, ok } from "../result";
 import type { Actor } from "../actor";
 import type { WorkItemId } from "../ids";
+import { asOrderId, asUserId, asWorkItemId } from "../ids";
 import { ALLOWED_EDGES } from "./edges";
 import type { WorkItemState } from "./states";
 import type { RejectionCategory } from "./rejectionCategory";
@@ -85,14 +86,14 @@ function toSnapshot(row: {
   updatedAt: Date;
 }): WorkItemSnapshot {
   return {
-    id: row.id as WorkItemSnapshot["id"],
-    orderId: row.orderId as WorkItemSnapshot["orderId"],
+    id: asWorkItemId(row.id),
+    orderId: asOrderId(row.orderId),
     productTypeId: row.productTypeId,
     departmentId: row.departmentId,
     state: row.state as WorkItemState,
     requiresDesign: row.requiresDesign,
     requiresReview: row.requiresReview,
-    assigneeId: row.assigneeId as WorkItemSnapshot["assigneeId"],
+    assigneeId: row.assigneeId === null ? null : asUserId(row.assigneeId),
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

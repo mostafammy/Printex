@@ -3,7 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 
-import ar from "../../messages/ar.json";
+import ar from "~/messages/ar.json";
 
 export const metadata: Metadata = {
   title: ar.ui.appName,

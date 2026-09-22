@@ -11,7 +11,7 @@
 // touching `src/server/core/**`.
 import type { Actor } from "~/server/core";
 
-import ar from "../../../messages/ar.json";
+import ar from "~/messages/ar.json";
 
 export interface NavItem {
   readonly id: string;

@@ -82,6 +82,29 @@ describe("LocalDiskStorageAdapter (StorageAdapter contract)", () => {
     expect(original).toBe("first");
   });
 
+  it("cleans up a partial file after a mid-stream failure so a retry succeeds", async () => {
+    const failingStream = new Readable({
+      read() {
+        this.push(Buffer.from("partial-bytes"));
+        process.nextTick(() => {
+          this.destroy(new Error("simulated mid-stream failure"));
+        });
+      },
+    });
+
+    await expect(
+      adapter.put("retry.bin", failingStream as unknown as NodeJS.ReadableStream),
+    ).rejects.toThrow("simulated mid-stream failure");
+
+    // The partial file must not be left behind...
+    expect(existsSync(join(root, "retry.bin"))).toBe(false);
+
+    // ...so a retry with the same key succeeds.
+    const payload = Buffer.from("full contents on retry");
+    const { size } = await adapter.put("retry.bin", toStream(payload));
+    expect(size).toBe(payload.length);
+  });
+
   it("get() on a missing key rejects", async () => {
     await expect(adapter.get("does-not-exist.bin")).rejects.toThrow();
   });

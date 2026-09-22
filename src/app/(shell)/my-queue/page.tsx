@@ -1,4 +1,4 @@
-import ar from "../../../../messages/ar.json";
+import ar from "~/messages/ar.json";
 
 // Placeholder "My queue" landing page — spec.md FR-014, tasks.md T033.
 // No real business content yet; this only proves the shell/nav wiring.
