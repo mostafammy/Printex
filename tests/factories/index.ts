@@ -12,8 +12,8 @@ import {
   type OrderId,
   type WorkItemId,
   type UserId,
-} from "~/server/core/ids";
-import type { WorkItemState } from "~/server/core/workflow/states";
+  type WorkItemState,
+} from "~/server/core";
 
 let counter = 0;
 function nextId(prefix: string): string {

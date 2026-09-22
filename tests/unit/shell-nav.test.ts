@@ -12,8 +12,7 @@ import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-// eslint-disable-next-line no-restricted-imports -- the src/server/core public barrel (index.ts) is not created until T038 (Phase 6); this deep import of asUserId is the sanctioned exception until then (same pattern as src/server/auth/index.ts).
-import { asUserId } from "~/server/core/ids";
+import { asUserId } from "~/server/core";
 
 // next/font/google's exports only work under the Next.js compiler (webpack/
 // turbopack loader magic); imported directly under Vitest they throw. Stub

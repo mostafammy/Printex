@@ -37,7 +37,7 @@ back the `WorkItem.state` write (User Story 2, spec Acceptance Scenario 3).
 
 ```ts
 // tests/integration/transition-smoke.ts (or a REPL via `pnpm tsx`)
-import { transitionWorkItem } from "~/server/core/workflow/transition";
+import { transitionWorkItem } from "~/server/core";
 
 await db.$transaction(async (tx) => {
   const wi = await transitionWorkItem(tx, {
@@ -56,7 +56,7 @@ returns/throws `INVALID_TRANSITION` and leaves the row untouched.
 ## 4. Check `deriveOrderStatus`
 
 ```ts
-import { deriveOrderStatus } from "~/server/core/orders/deriveOrderStatus";
+import { deriveOrderStatus } from "~/server/core";
 
 deriveOrderStatus([{ state: "DELIVERED" }, { state: "IN_PRODUCTION" }]);
 // → "PARTIALLY_READY"

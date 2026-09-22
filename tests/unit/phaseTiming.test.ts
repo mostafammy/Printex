@@ -6,6 +6,13 @@
 // server had just restarted) from the same rows must give the same answer.
 
 import { describe, expect, it } from "vitest";
+// `workflow/timing` is an internal implementation detail of
+// `transitionWorkItem` (contracts/workflow.md step 5), not part of the
+// frozen public contract — it is deliberately excluded from the
+// `src/server/core/index.ts` barrel (tasks.md T038), so this test
+// necessarily deep-imports it to exercise `calculatePhaseDurationMs`
+// directly.
+// eslint-disable-next-line no-restricted-imports -- internal, not part of the public contract; see comment above.
 import {
   calculatePhaseDurationMs,
   type PhaseTimingSegment,

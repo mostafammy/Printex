@@ -6,7 +6,7 @@ import {
   assertNever,
   WORK_ITEM_STATES,
   type WorkItemState,
-} from "~/server/core/workflow/states";
+} from "~/server/core";
 
 // Compile-time exhaustiveness check: a `switch` over every `WorkItemState`
 // with `default: assertNever(state)` must compile. If a state is ever added

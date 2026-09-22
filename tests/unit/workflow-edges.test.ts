@@ -17,12 +17,15 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testDb } from "../helpers/testDb";
 import { seedCustomer, seedOrder, seedUser } from "../helpers/seed";
-import { transitionWorkItem } from "~/server/core/workflow/transition";
-import { ALLOWED_EDGES } from "~/server/core/workflow/edges";
-import { WORK_ITEM_STATES, type WorkItemState } from "~/server/core/workflow/states";
-import { asWorkItemId } from "~/server/core/ids";
-import type { OrderId } from "~/server/core/ids";
-import type { Actor } from "~/server/core/actor";
+import {
+  transitionWorkItem,
+  ALLOWED_EDGES,
+  WORK_ITEM_STATES,
+  type WorkItemState,
+  asWorkItemId,
+  type OrderId,
+  type Actor,
+} from "~/server/core";
 
 afterAll(async () => {
   await testDb.$disconnect();

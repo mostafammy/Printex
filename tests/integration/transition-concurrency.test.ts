@@ -15,8 +15,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { testDb } from "../helpers/testDb";
 import { seedCustomer, seedOrder, seedUser, seedWorkItem } from "../helpers/seed";
-import { transitionWorkItem } from "~/server/core/workflow/transition";
-import type { Actor } from "~/server/core/actor";
+import { transitionWorkItem } from "~/server/core";
+import type { Actor } from "~/server/core";
 
 afterAll(async () => {
   await testDb.$disconnect();

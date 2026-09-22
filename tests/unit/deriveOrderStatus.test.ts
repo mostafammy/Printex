@@ -3,8 +3,8 @@
 // must fail until src/server/core/orders/deriveOrderStatus.ts (T017) exists.
 
 import { describe, expect, it } from "vitest";
-import { deriveOrderStatus } from "~/server/core/orders/deriveOrderStatus";
-import type { WorkItemState } from "~/server/core/workflow/states";
+import { deriveOrderStatus } from "~/server/core";
+import type { WorkItemState } from "~/server/core";
 
 function items(...states: WorkItemState[]): { state: WorkItemState }[] {
   return states.map((state) => ({ state }));

@@ -4,9 +4,8 @@
 // (tests/helpers/testDb.ts).
 
 import { testDb } from "./testDb";
-import { asCustomerId, asOrderId, asUserId, asWorkItemId } from "~/server/core/ids";
-import type { CustomerId, OrderId, UserId, WorkItemId } from "~/server/core/ids";
-import type { WorkItemState } from "~/server/core/workflow/states";
+import { asCustomerId, asOrderId, asUserId, asWorkItemId } from "~/server/core";
+import type { CustomerId, OrderId, UserId, WorkItemId, WorkItemState } from "~/server/core";
 
 let counter = 0;
 function unique(prefix: string): string {
