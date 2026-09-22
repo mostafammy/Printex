@@ -1,17 +1,24 @@
-// Auth actor shape stub — pending 001-identity-access-audit (PRI-5).
+// Auth barrel export — 001-identity-access-audit (Phase 3).
 //
-// This feature (002) only defines the call shape so `src/server/core/**` and
-// downstream features can type against it; the real implementation of
-// `getActor()` (session lookup, role/department resolution) belongs to 001.
+// Exports exactly 6 items (T015):
+//   - Actor (type)
+//   - getActor, getActorForSession, UnauthenticatedError (from getActor.ts)
+//   - authorize, ForbiddenError (from authorize.ts)
+//   - Permission, RoleKey (types from permissions.ts)
+//   - ALL_PERMISSIONS, ALL_ROLE_KEYS (runtime arrays from permissions.ts)
+//
+// NOTE: `audit` (audit.record) is intentionally NOT exported here — it does
+// not exist until Phase 5 (T031) and will be added to this barrel then.
+//
+// Compatibility note: `Actor.userId` here is a plain `string`.
+// `src/server/core/actor.ts` defines its own structural `Actor` with
+// `userId: UserId` (a branded string).  These types are separate by design
+// (core must not import from auth — module boundary rule).  Callers that need
+// to pass a real Actor to core APIs construct the branded UserId via
+// `asUserId(actor.userId)` at the call site; they do NOT cast here.
 
-import type { UserId } from "~/server/core";
-
-export interface Actor {
-  readonly userId: UserId;
-  readonly roles: readonly string[];
-  readonly departmentIds: readonly string[];
-}
-
-// Ambient declaration only — no body. There is genuinely no implementation
-// yet; this must not fabricate one that silently "works".
-export declare function getActor(): Promise<Actor>;
+export type { Actor } from "./getActor";
+export { getActor, getActorForSession, UnauthenticatedError } from "./getActor";
+export { authorize, ForbiddenError } from "./authorize";
+export type { Permission, RoleKey } from "./permissions";
+export { ALL_PERMISSIONS, ALL_ROLE_KEYS } from "./permissions";

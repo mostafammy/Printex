@@ -18,6 +18,12 @@
     "appName": "برينتكس",
     "logout": "تسجيل الخروج",
     "myQueuePageTitle": "طابور أعمالي",
-    "myQueuePagePlaceholder": "لا يوجد محتوى فعلي بعد — هذه صفحة مؤقتة."
+    "myQueuePagePlaceholder": "لا يوجد محتوى فعلي بعد — هذه صفحة مؤقتة.",
+    "loginTitle": "تسجيل الدخول",
+    "usernameLabel": "اسم المستخدم",
+    "passwordLabel": "كلمة المرور",
+    "loginButton": "دخول",
+    "loginError": "اسم المستخدم أو كلمة المرور غير صحيحة",
+    "loginLocked": "الحساب مقفل مؤقتاً بسبب محاولات تسجيل دخول متكررة. يرجى المحاولة بعد 15 دقيقة."
   }
 }
