@@ -39,7 +39,7 @@ describe("transitionWorkItem — full 15x15 allowed-edges matrix (integration)",
     const userId = await seedUser();
     const customerId = await seedCustomer();
     orderId = await seedOrder({ customerId, createdById: userId });
-    actor = { id: userId, roles: ["head_designer", "reception"], departmentIds: [] };
+    actor = { userId, roles: ["head_designer", "reception"], departmentIds: [] };
   });
 
   async function makeWorkItem(state: WorkItemState) {

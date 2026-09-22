@@ -22,7 +22,7 @@ describe("transitionWorkItem (integration)", () => {
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
-    const actor: Actor = { id: userId, roles: ["reception"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["reception"], departmentIds: [] };
 
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, { workItemId, to: "ASSIGNED", actor }),
@@ -58,7 +58,7 @@ describe("transitionWorkItem (integration)", () => {
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
-    const actor: Actor = { id: userId, roles: ["reception"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["reception"], departmentIds: [] };
 
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, { workItemId, to: "DELIVERED", actor }),
@@ -80,7 +80,7 @@ describe("transitionWorkItem (integration)", () => {
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
-    const actor: Actor = { id: userId, roles: ["reception"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["reception"], departmentIds: [] };
 
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, { workItemId, to: "CANCELLED", actor }),
@@ -96,7 +96,7 @@ describe("transitionWorkItem (integration)", () => {
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
     const workItemId = await seedWorkItem({ orderId, state: "WAITING_REVIEW" });
-    const actor: Actor = { id: userId, roles: ["head_designer"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["head_designer"], departmentIds: [] };
 
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, {

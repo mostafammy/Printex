@@ -35,7 +35,7 @@ describe("transitionWorkItem rollback (integration)", () => {
     // after the state update (step 4) and phase-timing writes (step 5)
     // have already been issued inside the same `tx`.
     const nonExistentActor: Actor = {
-      id: asUserId("nonexistent_user_does_not_exist"),
+      userId: asUserId("nonexistent_user_does_not_exist"),
       roles: ["reception"],
       departmentIds: [],
     };
@@ -69,7 +69,7 @@ describe("transitionWorkItem rollback (integration)", () => {
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
 
     const nonExistentActor: Actor = {
-      id: asUserId("still_not_a_real_user"),
+      userId: asUserId("still_not_a_real_user"),
       roles: [],
       departmentIds: [],
     };
@@ -80,7 +80,7 @@ describe("transitionWorkItem rollback (integration)", () => {
       ),
     ).rejects.toBeTruthy();
 
-    const realActor: Actor = { id: realUserId, roles: ["reception"], departmentIds: [] };
+    const realActor: Actor = { userId: realUserId, roles: ["reception"], departmentIds: [] };
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, { workItemId, to: "ASSIGNED", actor: realActor }),
     );

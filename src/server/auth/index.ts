@@ -7,7 +7,7 @@
 import type { UserId } from "~/server/core";
 
 export interface Actor {
-  readonly id: UserId;
+  readonly userId: UserId;
   readonly roles: readonly string[];
   readonly departmentIds: readonly string[];
 }

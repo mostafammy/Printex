@@ -45,7 +45,7 @@ describe("registerGuard (external contract extension)", () => {
     // NEW -> READY_FOR_PRODUCTION is a legal edge per ALLOWED_EDGES, so the
     // guard (not the edge table) is what must block this transition.
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
-    const actor: Actor = { id: userId, roles: ["reception"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["reception"], departmentIds: [] };
 
     const result = await testDb.$transaction((tx) =>
       transitionWorkItem(tx, { workItemId, to: "READY_FOR_PRODUCTION", actor }),

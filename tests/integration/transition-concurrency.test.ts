@@ -28,7 +28,7 @@ describe("transitionWorkItem concurrency (integration)", () => {
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
     const workItemId = await seedWorkItem({ orderId, state: "NEW" });
-    const actor: Actor = { id: userId, roles: ["reception"], departmentIds: [] };
+    const actor: Actor = { userId, roles: ["reception"], departmentIds: [] };
 
     const [settledA, settledB] = await Promise.allSettled([
       testDb.$transaction((tx) =>

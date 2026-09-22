@@ -29,10 +29,12 @@ interface Actor {
 }
 ```
 
-This is the same shape 002 already imports as `Actor` from `~/server/auth`; this feature replaces
-002's ambient `declare function getActor(): Promise<Actor>` with a real implementation, same call
-shape, so 002's `transitionWorkItem` callers and `resolveActor()` in the shell layout keep compiling
-unchanged.
+This is the shape 002's `Actor` (`src/server/auth/index.ts`, `src/server/core/actor.ts`) is aligned
+to — note: 002's original stub used `id` instead of `userId`; that drift was corrected (both files,
+plus `transitionWorkItem` and the shell layout's fallback actor) to match this frozen contract before
+001's implementation landed, so field names are consistent project-wide. This feature replaces 002's
+ambient `declare function getActor(): Promise<Actor>` with a real implementation, same call shape, so
+002's `transitionWorkItem` callers and `resolveActor()` in the shell layout keep compiling unchanged.
 
 ## `getActor`
 

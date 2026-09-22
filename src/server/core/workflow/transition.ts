@@ -231,7 +231,7 @@ export async function transitionWorkItem(
       workItemId: input.workItemId,
       from,
       to: input.to,
-      actorId: input.actor.id,
+      actorId: input.actor.userId,
       reason: input.reason,
       rejectionCategory: input.rejectionCategory,
       meta: input.meta ?? undefined,
@@ -246,7 +246,7 @@ export async function transitionWorkItem(
     payload: {
       from,
       to: input.to,
-      actorId: input.actor.id,
+      actorId: input.actor.userId,
       reason: input.reason ?? null,
       rejectionCategory: input.rejectionCategory ?? null,
     },

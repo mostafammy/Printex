@@ -19,7 +19,7 @@ import { SidebarNav } from "./_components/sidebar-nav";
 // typeof-guarded block can be removed.
 async function resolveActor(): Promise<Actor> {
   if (typeof getActor !== "function") {
-    return { id: asUserId("dev-fallback"), roles: [], departmentIds: [] };
+    return { userId: asUserId("dev-fallback"), roles: [], departmentIds: [] };
   }
 
   // `getActor` is a real implementation here, so let any error it throws
