@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+// eslint-disable-next-line no-restricted-imports -- the src/server/core public barrel (index.ts) is not created until T038 (Phase 6); this deep import of the Actor type is the sanctioned exception until then (same pattern as src/server/auth/index.ts).
 import type { Actor } from "~/server/core/actor";
 
 import { filterNavByPermissions, navItems } from "../nav";
