@@ -265,6 +265,38 @@ async function seedCashCustomer() {
   return cashCustomer;
 }
 
+// 011-orders-reception starter catalog — spec.md Assumptions "Product type
+// starter list". Not a business requirement to validate, just a reasonable
+// starting point; an Admin can add more at any time.
+const PRODUCT_TYPE_SEED_DATA = [
+  { name: "Roll-up Banner", department: "Banner", requiresReview: true },
+  { name: "Business Cards", department: "Digital", requiresReview: false },
+  { name: "Flyer/Poster", department: "Digital", requiresReview: true },
+  { name: "Vinyl Sticker", department: "Digital", requiresReview: true },
+  { name: "Outdoor Sign", department: "Outdoor", requiresReview: true },
+  { name: "Laser-cut Sign", department: "Laser", requiresReview: true },
+] as const;
+
+async function seedProductTypes(departments: { readonly id: string; readonly name: string }[]) {
+  for (const productType of PRODUCT_TYPE_SEED_DATA) {
+    const defaultDepartment = departments.find((d) => d.name === productType.department);
+    const seeded = await db.productType.upsert({
+      where: { name: productType.name },
+      update: {
+        defaultDepartmentId: defaultDepartment?.id ?? null,
+        defaultRequiresReview: productType.requiresReview,
+      },
+      create: {
+        name: productType.name,
+        defaultDepartmentId: defaultDepartment?.id ?? null,
+        defaultRequiresDesign: true,
+        defaultRequiresReview: productType.requiresReview,
+      },
+    });
+    console.log(`  product type: ${seeded.name} (${seeded.id})`);
+  }
+}
+
 async function seedSampleCustomer() {
   const customer = await db.customer.upsert({
     where: { id: SAMPLE_CUSTOMER_ID },
@@ -281,18 +313,13 @@ async function seedSampleCustomer() {
 }
 
 // Sample Order/WorkItem graph — Order.number is a real DB sequence
-// (FR-008a), so re-running the seed must not try to re-insert an Order with
-// the same number. Each sample order is looked up by a stable marker
-// (encoded in nothing but the fact that we only ever create the first N we
-// find missing) — simplest safe approach: key on whether an order created
-// by the admin seed user with this exact index already exists, tracked via
-// a deterministic `id`, which — like every other model here — is a `cuid()`
-// default. Since `id` can't be pinned via `create` the way `User`/
-// `Department`/`Customer` ids can (Order.id has no natural business key to
-// upsert on other than the DB-generated `number`), the script instead
-// checks "have we already seeded any sample orders for this customer?" and
-// skips the whole block if so — safe to re-run, if less granular than a
-// per-row upsert.
+// (FR-008a, 011 research.md §1: `@default(autoincrement())`), so this never
+// assigns `number` itself — Postgres does. Re-running the seed must not
+// re-insert the same sample orders; the script checks "have we already
+// seeded any sample orders for this customer?" and skips the whole block if
+// so — safe to re-run, if less granular than a per-row upsert (Order.id has
+// no natural business key to upsert on other than the DB-generated
+// `number`).
 async function seedSampleOrdersAndWorkItems(params: {
   readonly customerId: string;
   readonly createdById: string;
@@ -308,19 +335,9 @@ async function seedSampleOrdersAndWorkItems(params: {
     return;
   }
 
-  // `Order.number` (FR-008a) has no DB-level `@default(autoincrement())` in
-  // core.prisma today — it's a plain unique `Int` the application layer is
-  // expected to assign (see contracts/orders.md for the real sequence
-  // logic, owned outside this feature). This dev seed picks large,
-  // effectively-unique numbers derived from the current time, the same
-  // approach tests/helpers/seed.ts uses, so re-running the seed after the
-  // "already seeded" guard above short-circuits never collides either way.
-  const baseNumber = Number(process.hrtime.bigint() % 1_000_000_000n);
-
   // Order 1 — fully delivered, single work item.
   const order1 = await db.order.create({
     data: {
-      number: baseNumber,
       customerId: params.customerId,
       channel: "WALK_IN",
       priority: "NORMAL",
@@ -338,7 +355,6 @@ async function seedSampleOrdersAndWorkItems(params: {
   // bucket (quickstart.md §4): one DELIVERED, one still IN_PRODUCTION.
   const order2 = await db.order.create({
     data: {
-      number: baseNumber + 1,
       customerId: params.customerId,
       channel: "WHATSAPP",
       priority: "URGENT",
@@ -361,7 +377,6 @@ async function seedSampleOrdersAndWorkItems(params: {
   // manually exercising transitionWorkItem from the quickstart.
   const order3 = await db.order.create({
     data: {
-      number: baseNumber + 2,
       customerId: params.customerId,
       channel: "PHONE",
       priority: "NORMAL",
@@ -389,6 +404,7 @@ async function main() {
   await seedRoles();
   const adminUser = await seedAdminUser();
   const departments = await seedDepartments();
+  await seedProductTypes(departments);
   await seedClassifications();
   await seedCashCustomer();
   const sampleCustomer = await seedSampleCustomer();

@@ -148,6 +148,7 @@ exports.Prisma.OrderScalarFieldEnum = {
   channel: 'channel',
   priority: 'priority',
   mode: 'mode',
+  dueDate: 'dueDate',
   createdById: 'createdById',
   createdAt: 'createdAt'
 };
@@ -161,8 +162,27 @@ exports.Prisma.WorkItemScalarFieldEnum = {
   requiresDesign: 'requiresDesign',
   requiresReview: 'requiresReview',
   assigneeId: 'assigneeId',
+  description: 'description',
+  quantity: 'quantity',
+  widthValue: 'widthValue',
+  heightValue: 'heightValue',
+  dimensionUnit: 'dimensionUnit',
+  material: 'material',
+  finishNotes: 'finishNotes',
+  dueDate: 'dueDate',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ProductTypeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  defaultDepartmentId: 'defaultDepartmentId',
+  defaultRequiresDesign: 'defaultRequiresDesign',
+  defaultRequiresReview: 'defaultRequiresReview',
+  pricingModeHint: 'pricingModeHint',
+  isActive: 'isActive',
+  createdAt: 'createdAt'
 };
 
 exports.Prisma.WorkItemTransitionScalarFieldEnum = {
@@ -404,6 +424,13 @@ exports.WorkItemState = exports.$Enums.WorkItemState = {
   CANCELLED: 'CANCELLED'
 };
 
+exports.WorkItemDimensionUnit = exports.$Enums.WorkItemDimensionUnit = {
+  MM: 'MM',
+  CM: 'CM',
+  M: 'M',
+  IN: 'IN'
+};
+
 exports.RejectionCategory = exports.$Enums.RejectionCategory = {
   DESIGN_ISSUE: 'DESIGN_ISSUE',
   DIMENSION_ISSUE: 'DIMENSION_ISSUE',
@@ -425,6 +452,7 @@ exports.Prisma.ModelName = {
   Customer: 'Customer',
   Order: 'Order',
   WorkItem: 'WorkItem',
+  ProductType: 'ProductType',
   WorkItemTransition: 'WorkItemTransition',
   PhaseTiming: 'PhaseTiming',
   NotificationEvent: 'NotificationEvent',

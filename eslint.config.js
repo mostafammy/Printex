@@ -123,6 +123,29 @@ export default tseslint.config(
     },
   },
   {
+    // Nothing outside `src/server/orders/**` (and tests/**, same exemption as
+    // auth above) may deep-import its internals — the only legal public
+    // surface for application code is the barrel export at
+    // `src/server/orders/index.ts` (specs/011-orders-reception/data-model.md
+    // "Module boundary").
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/orders/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/orders/**", "!~/server/orders", "!~/server/orders/index"],
+              message:
+                "Import from the public barrel `~/server/orders` (src/server/orders/index.ts) instead of reaching into its internals (specs/011-orders-reception/data-model.md).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
     // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
     // `src/server/core/storage/**`, which are Ports per contracts/storage.md
