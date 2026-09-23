@@ -60,6 +60,13 @@ async function createActor(permissions: Permission[]): Promise<Actor> {
       failedLoginAttempts: 0,
     },
   });
+  // getEligibleDesigners/getDesignerWorkload resolve design.work holders from
+  // the DB, not from the in-memory Actor — persist the grants too.
+  if (permissions.length > 0) {
+    await testDb.userPermission.createMany({
+      data: permissions.map((permission) => ({ userId: actor.userId, permission, grantedById: actor.userId })),
+    });
+  }
   return actor;
 }
 
