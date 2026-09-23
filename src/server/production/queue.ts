@@ -9,6 +9,7 @@ import { db } from "~/server/db";
 import { authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { DomainProductionError } from "./errors";
+import { effectiveDepartmentId } from "./department";
 
 export interface ProductionQueueRow {
   workItemId: string;
@@ -20,19 +21,6 @@ export interface ProductionQueueRow {
   priority: "NORMAL" | "URGENT";
   enteredQueueAt: Date;
   hasPendingFileRevision: boolean;
-}
-
-/**
- * The effective department for a Work Item (research.md §8, FR-001):
- * `workItem.departmentId ?? productType.defaultDepartmentId`. Only
- * `WorkItem.departmentId` is ever written (by `routeToDepartment`); the
- * default is derived at read time, never stored eagerly.
- */
-function effectiveDepartmentId(wi: {
-  departmentId: string | null;
-  productType: { defaultDepartmentId: string | null } | null;
-}): string | null {
-  return wi.departmentId ?? wi.productType?.defaultDepartmentId ?? null;
 }
 
 export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]> {
