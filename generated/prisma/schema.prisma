@@ -57,6 +57,13 @@ enum RejectionCategory {
   OTHER
 }
 
+enum WorkItemDimensionUnit {
+  MM
+  CM
+  M
+  IN
+}
+
 // --- Models ------------------------------------------------------------
 
 /// Admin-configured production department (constitution VI: data, not an enum).
@@ -71,6 +78,8 @@ model Department {
   // (identity.prisma). Cross-file relations work transparently with
   // prismaSchemaFolder — no import needed.
   userDepartments UserDepartment[]
+  // Back-relation for 011-orders-reception's ProductType.defaultDepartmentId.
+  productTypes    ProductType[]
 }
 
 model Customer {
@@ -86,12 +95,15 @@ model Customer {
 model Order {
   id          String        @id @default(cuid())
   /// DB sequence, ever-increasing, no reset, no prefix (FR-008a).
-  number      Int           @unique
+  number      Int           @unique @default(autoincrement())
   customerId  String
   customer    Customer      @relation(fields: [customerId], references: [id])
   channel     OrderChannel
   priority    OrderPriority
   mode        OrderMode
+  /// Optional default due date for any Work Item on this order that has no
+  /// due date of its own set (011 spec FR-003a).
+  dueDate     DateTime?
   createdById String
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
@@ -105,8 +117,9 @@ model WorkItem {
   id             String        @id @default(cuid())
   orderId        String
   order          Order         @relation(fields: [orderId], references: [id])
-  /// Catalog owned by 011 — FK reference only, no relation declared here.
+  /// Catalog owned by 011.
   productTypeId  String?
+  productType    ProductType?  @relation(fields: [productTypeId], references: [id])
   departmentId   String?
   department     Department?   @relation(fields: [departmentId], references: [id])
   /// Written only by transitionWorkItem().
@@ -115,13 +128,44 @@ model WorkItem {
   requiresReview Boolean       @default(true)
   assigneeId     String?
   assignee       User?         @relation("WorkItemAssignee", fields: [assigneeId], references: [id])
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+
+  /// --- 011-orders-reception descriptive fields --------------------------
+  description   String?
+  quantity      Int?
+  widthValue    Decimal?               @db.Decimal(10, 2)
+  heightValue   Decimal?               @db.Decimal(10, 2)
+  dimensionUnit WorkItemDimensionUnit?
+  material      String?
+  finishNotes   String?
+  /// Per-item due date override — null means "use Order.dueDate" (FR-003a).
+  dueDate       DateTime?
+  /// --- end 011-orders-reception fields -----------------------------------
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   transitions  WorkItemTransition[]
   phaseTimings PhaseTiming[]
 
   @@index([orderId, state])
+}
+
+/// Admin-configured product catalog (constitution VI: data, not an enum).
+/// Owned by 011. Referenced by WorkItem.productTypeId.
+model ProductType {
+  id                    String      @id @default(cuid())
+  name                  String      @unique
+  defaultDepartmentId   String?
+  defaultDepartment     Department? @relation(fields: [defaultDepartmentId], references: [id])
+  defaultRequiresDesign Boolean     @default(true)
+  defaultRequiresReview Boolean     @default(true)
+  /// Free-form hint string for 051 to interpret (e.g. "FIXED" | "VARIABLE"
+  /// | "QUOTE") — stored opaquely, not validated against 051's vocabulary.
+  pricingModeHint       String?
+  isActive              Boolean     @default(true)
+  createdAt             DateTime    @default(now())
+
+  workItems WorkItem[]
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).

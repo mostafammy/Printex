@@ -15,8 +15,8 @@ export function isOrderComplete(order: {
   workItems: ReadonlyArray<{
     productTypeId: string | null;
     quantity: number | null;
-    widthValue: unknown | null;
-    heightValue: unknown | null;
+    widthValue: unknown;
+    heightValue: unknown;
     dimensionUnit: WorkItemDimensionUnit | null;
     departmentId: string | null;
   }>;
