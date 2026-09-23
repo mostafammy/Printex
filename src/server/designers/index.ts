@@ -5,3 +5,5 @@
 export { DomainDesignerError } from "./errors";
 export { suggestDesigner } from "./suggestion";
 export type { DesignerLoadCandidate } from "./suggestion";
+export { getEligibleDesigners, assignDesigner, WorkItemTransitionError } from "./assignment";
+export type { EligibleDesigner } from "./assignment";
