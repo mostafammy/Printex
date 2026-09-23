@@ -79,6 +79,10 @@ model Department {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
+  /// Configured flag (constitution VI), not a hardcoded department-name
+  /// check (014 research.md §5, US6).
+  isExternalProduction Boolean @default(false)
+
   workItems       WorkItem[]
   returns         Return[]
   // Back-relation for 001-identity-access-audit's UserDepartment join
@@ -161,13 +165,27 @@ model WorkItem {
   dueDate       DateTime?
   /// --- end 011-orders-reception fields -----------------------------------
 
+  /// --- 014-production fields ---------------------------------------------
+  /// Set on completion (US4, FR-006/FR-007). Required by completeProduction();
+  /// validated non-null and > 0 before the completion transition runs.
+  producedQuantity      Int?
+  /// Optional free-text notes recorded at completion.
+  productionNotes       String?
+  /// Non-null while a newer DesignVersion was approved during IN_PRODUCTION
+  /// and the operator has not yet acknowledged it (US7, FR-013). Set by the
+  /// approval path (013's approveDesign), cleared by acknowledgeFileRevision().
+  /// research.md §4 — a plain field, not a guard.
+  pendingFileRevisionAt DateTime?
+  /// --- end 014-production fields -------------------------------------------
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  transitions    WorkItemTransition[]
-  phaseTimings   PhaseTiming[]
-  designVersions DesignVersion[]
-  returns        Return[]
+  transitions             WorkItemTransition[]
+  phaseTimings            PhaseTiming[]
+  designVersions          DesignVersion[]
+  returns                 Return[]
+  vendorProductionRecords VendorProductionRecord[]
 
   @@index([orderId, state])
 }
@@ -306,6 +324,25 @@ model ReturnAttachment {
   @@index([returnId])
 }
 
+/// One row per external-production cycle, not two separate sent/received
+/// event rows (014 research.md §5) — completion's gate check needs a single
+/// queryable row testing `receivedAt IS NOT NULL`.
+model VendorProductionRecord {
+  id          String    @id @default(cuid())
+  workItemId  String
+  workItem    WorkItem  @relation(fields: [workItemId], references: [id])
+  vendorName  String
+  sentAt      DateTime  @default(now())
+  /// Null until recordReceivedFromVendor() runs; completeProduction() MUST
+  /// refuse completion while this is null for a Work Item routed to an
+  /// external-production department (FR-012).
+  receivedAt  DateTime?
+  createdById String
+  createdBy   User      @relation("VendorProductionRecordCreatedBy", fields: [createdById], references: [id])
+
+  @@index([workItemId])
+}
+
 /// Outbox — polymorphic via entityType/entityId, not a Prisma relation.
 model NotificationEvent {
   id                     String    @id @default(cuid())
@@ -431,14 +468,15 @@ model User {
 
   // --- Reverse relations to core.prisma domain models (multi-file schema —
   // no import needed; owned in practice by 002-core-domain-shell). ---
-  createdOrders          Order[]              @relation
-  assignedWorkItems      WorkItem[]           @relation("WorkItemAssignee")
-  workItemTransitions    WorkItemTransition[] @relation("WorkItemTransitionActor")
-  phaseTimings           PhaseTiming[]        @relation("PhaseTimingUser")
-  designVersionsUploaded DesignVersion[]      @relation("DesignVersionUploadedBy")
-  designVersionsApproved DesignVersion[]      @relation("DesignVersionApprovedBy")
-  returnsRaised          Return[]             @relation("ReturnRaisedBy")
-  returnsAssignedToMe    Return[]             @relation("ReturnAssignedTo")
+  createdOrders                  Order[]                  @relation
+  assignedWorkItems              WorkItem[]               @relation("WorkItemAssignee")
+  workItemTransitions            WorkItemTransition[]     @relation("WorkItemTransitionActor")
+  phaseTimings                   PhaseTiming[]            @relation("PhaseTimingUser")
+  designVersionsUploaded         DesignVersion[]          @relation("DesignVersionUploadedBy")
+  designVersionsApproved         DesignVersion[]          @relation("DesignVersionApprovedBy")
+  returnsRaised                  Return[]                 @relation("ReturnRaisedBy")
+  returnsAssignedToMe            Return[]                 @relation("ReturnAssignedTo")
+  vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
 
   @@unique([email])
   @@map("user")

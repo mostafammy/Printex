@@ -18,6 +18,7 @@ import type { RejectionCategory } from "~/server/core";
 import { DomainReviewError } from "./errors";
 import { createReturnInTx, uploadReturnAttachments } from "./returns";
 import type { ReturnAttachmentFile } from "./returns";
+import { isSelfReview } from "./selfReview";
 
 function toCoreActor(actor: Actor): CoreActor {
   return { userId: asUserId(actor.userId), roles: actor.roles, departmentIds: actor.departmentIds };
@@ -180,6 +181,55 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
   authorize(actor, "design.review");
 
   await db.$transaction(async (tx: Prisma.TransactionClient) => {
+    // 014 US7 (research.md §4, FR-013): a revised DesignVersion approved
+    // while the Work Item is IN_PRODUCTION does not re-enter the review
+    // state machine (no WAITING_REVIEW/APPROVED transition — there is no
+    // edge back from IN_PRODUCTION into review). It stays IN_PRODUCTION and
+    // flags pendingFileRevisionAt for the operator to acknowledge before
+    // resuming (src/server/production/timer.ts's resumeProduction refusal).
+    const inProductionWorkItem = await tx.workItem.findUnique({
+      where: { id: workItemId },
+      select: { id: true, state: true },
+    });
+    if (inProductionWorkItem?.state === "IN_PRODUCTION") {
+      const currentVersion = await tx.designVersion.findFirst({
+        where: { workItemId },
+        orderBy: { version: "desc" },
+        select: { id: true, uploadedById: true },
+      });
+      if (!currentVersion) {
+        throw new DomainReviewError("NO_DESIGN_VERSION", "Work item has no design version to review");
+      }
+      // SC-005: the no-self-review rule is unconditional — this path bypasses
+      // transitionWorkItem (no WAITING_REVIEW->APPROVED edge exists here), so
+      // it must not also bypass guards.ts's check. Same DomainError shape as
+      // the guard failure below (`GUARD_FAILED`) so callers handle both paths
+      // identically.
+      if (isSelfReview(currentVersion.uploadedById, actor.userId)) {
+        throw new WorkItemTransitionError({
+          code: "GUARD_FAILED",
+          message: "A reviewer cannot approve a design version they uploaded themselves.",
+        });
+      }
+
+      await tx.designVersion.update({
+        where: { id: currentVersion.id },
+        data: { approvedAt: new Date(), approvedById: actor.userId },
+      });
+      await tx.workItem.update({
+        where: { id: workItemId },
+        data: { pendingFileRevisionAt: new Date() },
+      });
+      await audit.record(tx, {
+        action: "workitem.design_approved",
+        entityType: "WorkItem",
+        entityId: workItemId,
+        actorId: actor.userId,
+        after: { designVersionId: currentVersion.id, pendingFileRevisionAt: true },
+      });
+      return;
+    }
+
     const { currentVersion } = await loadReviewableCurrentVersion(tx, workItemId);
 
     // The pre-registered no-self-review guard (src/server/review/guards.ts,

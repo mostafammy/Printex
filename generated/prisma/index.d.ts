@@ -70,6 +70,13 @@ export type Return = $Result.DefaultSelection<Prisma.$ReturnPayload>
  */
 export type ReturnAttachment = $Result.DefaultSelection<Prisma.$ReturnAttachmentPayload>
 /**
+ * Model VendorProductionRecord
+ * One row per external-production cycle, not two separate sent/received
+ * event rows (014 research.md §5) — completion's gate check needs a single
+ * queryable row testing `receivedAt IS NOT NULL`.
+ */
+export type VendorProductionRecord = $Result.DefaultSelection<Prisma.$VendorProductionRecordPayload>
+/**
  * Model NotificationEvent
  * Outbox — polymorphic via entityType/entityId, not a Prisma relation.
  */
@@ -505,6 +512,16 @@ export class PrismaClient<
     * ```
     */
   get returnAttachment(): Prisma.ReturnAttachmentDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.vendorProductionRecord`: Exposes CRUD operations for the **VendorProductionRecord** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more VendorProductionRecords
+    * const vendorProductionRecords = await prisma.vendorProductionRecord.findMany()
+    * ```
+    */
+  get vendorProductionRecord(): Prisma.VendorProductionRecordDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.notificationEvent`: Exposes CRUD operations for the **NotificationEvent** model.
@@ -1106,6 +1123,7 @@ export namespace Prisma {
     DesignVersion: 'DesignVersion',
     Return: 'Return',
     ReturnAttachment: 'ReturnAttachment',
+    VendorProductionRecord: 'VendorProductionRecord',
     NotificationEvent: 'NotificationEvent',
     CustomerPhone: 'CustomerPhone',
     CustomerAddress: 'CustomerAddress',
@@ -1139,7 +1157,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
+      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1880,6 +1898,80 @@ export namespace Prisma {
           count: {
             args: Prisma.ReturnAttachmentCountArgs<ExtArgs>
             result: $Utils.Optional<ReturnAttachmentCountAggregateOutputType> | number
+          }
+        }
+      }
+      VendorProductionRecord: {
+        payload: Prisma.$VendorProductionRecordPayload<ExtArgs>
+        fields: Prisma.VendorProductionRecordFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.VendorProductionRecordFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.VendorProductionRecordFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          findFirst: {
+            args: Prisma.VendorProductionRecordFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.VendorProductionRecordFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          findMany: {
+            args: Prisma.VendorProductionRecordFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>[]
+          }
+          create: {
+            args: Prisma.VendorProductionRecordCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          createMany: {
+            args: Prisma.VendorProductionRecordCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.VendorProductionRecordCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>[]
+          }
+          delete: {
+            args: Prisma.VendorProductionRecordDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          update: {
+            args: Prisma.VendorProductionRecordUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          deleteMany: {
+            args: Prisma.VendorProductionRecordDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.VendorProductionRecordUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.VendorProductionRecordUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>[]
+          }
+          upsert: {
+            args: Prisma.VendorProductionRecordUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$VendorProductionRecordPayload>
+          }
+          aggregate: {
+            args: Prisma.VendorProductionRecordAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateVendorProductionRecord>
+          }
+          groupBy: {
+            args: Prisma.VendorProductionRecordGroupByArgs<ExtArgs>
+            result: $Utils.Optional<VendorProductionRecordGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.VendorProductionRecordCountArgs<ExtArgs>
+            result: $Utils.Optional<VendorProductionRecordCountAggregateOutputType> | number
           }
         }
       }
@@ -3099,6 +3191,7 @@ export namespace Prisma {
     designVersion?: DesignVersionOmit
     return?: ReturnOmit
     returnAttachment?: ReturnAttachmentOmit
+    vendorProductionRecord?: VendorProductionRecordOmit
     notificationEvent?: NotificationEventOmit
     customerPhone?: CustomerPhoneOmit
     customerAddress?: CustomerAddressOmit
@@ -3354,6 +3447,7 @@ export namespace Prisma {
     phaseTimings: number
     designVersions: number
     returns: number
+    vendorProductionRecords: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3361,6 +3455,7 @@ export namespace Prisma {
     phaseTimings?: boolean | WorkItemCountOutputTypeCountPhaseTimingsArgs
     designVersions?: boolean | WorkItemCountOutputTypeCountDesignVersionsArgs
     returns?: boolean | WorkItemCountOutputTypeCountReturnsArgs
+    vendorProductionRecords?: boolean | WorkItemCountOutputTypeCountVendorProductionRecordsArgs
   }
 
   // Custom InputTypes
@@ -3400,6 +3495,13 @@ export namespace Prisma {
    */
   export type WorkItemCountOutputTypeCountReturnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ReturnWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountVendorProductionRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VendorProductionRecordWhereInput
   }
 
 
@@ -3547,6 +3649,7 @@ export namespace Prisma {
     designVersionsApproved: number
     returnsRaised: number
     returnsAssignedToMe: number
+    vendorProductionRecordsCreated: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3565,6 +3668,7 @@ export namespace Prisma {
     designVersionsApproved?: boolean | UserCountOutputTypeCountDesignVersionsApprovedArgs
     returnsRaised?: boolean | UserCountOutputTypeCountReturnsRaisedArgs
     returnsAssignedToMe?: boolean | UserCountOutputTypeCountReturnsAssignedToMeArgs
+    vendorProductionRecordsCreated?: boolean | UserCountOutputTypeCountVendorProductionRecordsCreatedArgs
   }
 
   // Custom InputTypes
@@ -3683,6 +3787,13 @@ export namespace Prisma {
     where?: ReturnWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountVendorProductionRecordsCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VendorProductionRecordWhereInput
+  }
+
 
   /**
    * Count Type RoleCountOutputType
@@ -3743,6 +3854,7 @@ export namespace Prisma {
     name: string | null
     isActive: boolean | null
     createdAt: Date | null
+    isExternalProduction: boolean | null
   }
 
   export type DepartmentMaxAggregateOutputType = {
@@ -3750,6 +3862,7 @@ export namespace Prisma {
     name: string | null
     isActive: boolean | null
     createdAt: Date | null
+    isExternalProduction: boolean | null
   }
 
   export type DepartmentCountAggregateOutputType = {
@@ -3757,6 +3870,7 @@ export namespace Prisma {
     name: number
     isActive: number
     createdAt: number
+    isExternalProduction: number
     _all: number
   }
 
@@ -3766,6 +3880,7 @@ export namespace Prisma {
     name?: true
     isActive?: true
     createdAt?: true
+    isExternalProduction?: true
   }
 
   export type DepartmentMaxAggregateInputType = {
@@ -3773,6 +3888,7 @@ export namespace Prisma {
     name?: true
     isActive?: true
     createdAt?: true
+    isExternalProduction?: true
   }
 
   export type DepartmentCountAggregateInputType = {
@@ -3780,6 +3896,7 @@ export namespace Prisma {
     name?: true
     isActive?: true
     createdAt?: true
+    isExternalProduction?: true
     _all?: true
   }
 
@@ -3860,6 +3977,7 @@ export namespace Prisma {
     name: string
     isActive: boolean
     createdAt: Date
+    isExternalProduction: boolean
     _count: DepartmentCountAggregateOutputType | null
     _min: DepartmentMinAggregateOutputType | null
     _max: DepartmentMaxAggregateOutputType | null
@@ -3884,6 +4002,7 @@ export namespace Prisma {
     name?: boolean
     isActive?: boolean
     createdAt?: boolean
+    isExternalProduction?: boolean
     workItems?: boolean | Department$workItemsArgs<ExtArgs>
     returns?: boolean | Department$returnsArgs<ExtArgs>
     userDepartments?: boolean | Department$userDepartmentsArgs<ExtArgs>
@@ -3896,6 +4015,7 @@ export namespace Prisma {
     name?: boolean
     isActive?: boolean
     createdAt?: boolean
+    isExternalProduction?: boolean
   }, ExtArgs["result"]["department"]>
 
   export type DepartmentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -3903,6 +4023,7 @@ export namespace Prisma {
     name?: boolean
     isActive?: boolean
     createdAt?: boolean
+    isExternalProduction?: boolean
   }, ExtArgs["result"]["department"]>
 
   export type DepartmentSelectScalar = {
@@ -3910,9 +4031,10 @@ export namespace Prisma {
     name?: boolean
     isActive?: boolean
     createdAt?: boolean
+    isExternalProduction?: boolean
   }
 
-  export type DepartmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt", ExtArgs["result"]["department"]>
+  export type DepartmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt" | "isExternalProduction", ExtArgs["result"]["department"]>
   export type DepartmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItems?: boolean | Department$workItemsArgs<ExtArgs>
     returns?: boolean | Department$returnsArgs<ExtArgs>
@@ -3936,6 +4058,11 @@ export namespace Prisma {
       name: string
       isActive: boolean
       createdAt: Date
+      /**
+       * Configured flag (constitution VI), not a hardcoded department-name
+       * check (014 research.md §5, US6).
+       */
+      isExternalProduction: boolean
     }, ExtArgs["result"]["department"]>
     composites: {}
   }
@@ -4367,6 +4494,7 @@ export namespace Prisma {
     readonly name: FieldRef<"Department", 'String'>
     readonly isActive: FieldRef<"Department", 'Boolean'>
     readonly createdAt: FieldRef<"Department", 'DateTime'>
+    readonly isExternalProduction: FieldRef<"Department", 'Boolean'>
   }
     
 
@@ -7358,12 +7486,14 @@ export namespace Prisma {
     quantity: number | null
     widthValue: Decimal | null
     heightValue: Decimal | null
+    producedQuantity: number | null
   }
 
   export type WorkItemSumAggregateOutputType = {
     quantity: number | null
     widthValue: Decimal | null
     heightValue: Decimal | null
+    producedQuantity: number | null
   }
 
   export type WorkItemMinAggregateOutputType = {
@@ -7383,6 +7513,9 @@ export namespace Prisma {
     material: string | null
     finishNotes: string | null
     dueDate: Date | null
+    producedQuantity: number | null
+    productionNotes: string | null
+    pendingFileRevisionAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -7404,6 +7537,9 @@ export namespace Prisma {
     material: string | null
     finishNotes: string | null
     dueDate: Date | null
+    producedQuantity: number | null
+    productionNotes: string | null
+    pendingFileRevisionAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -7425,6 +7561,9 @@ export namespace Prisma {
     material: number
     finishNotes: number
     dueDate: number
+    producedQuantity: number
+    productionNotes: number
+    pendingFileRevisionAt: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -7435,12 +7574,14 @@ export namespace Prisma {
     quantity?: true
     widthValue?: true
     heightValue?: true
+    producedQuantity?: true
   }
 
   export type WorkItemSumAggregateInputType = {
     quantity?: true
     widthValue?: true
     heightValue?: true
+    producedQuantity?: true
   }
 
   export type WorkItemMinAggregateInputType = {
@@ -7460,6 +7601,9 @@ export namespace Prisma {
     material?: true
     finishNotes?: true
     dueDate?: true
+    producedQuantity?: true
+    productionNotes?: true
+    pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -7481,6 +7625,9 @@ export namespace Prisma {
     material?: true
     finishNotes?: true
     dueDate?: true
+    producedQuantity?: true
+    productionNotes?: true
+    pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -7502,6 +7649,9 @@ export namespace Prisma {
     material?: true
     finishNotes?: true
     dueDate?: true
+    producedQuantity?: true
+    productionNotes?: true
+    pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -7610,6 +7760,9 @@ export namespace Prisma {
     material: string | null
     finishNotes: string | null
     dueDate: Date | null
+    producedQuantity: number | null
+    productionNotes: string | null
+    pendingFileRevisionAt: Date | null
     createdAt: Date
     updatedAt: Date
     _count: WorkItemCountAggregateOutputType | null
@@ -7650,6 +7803,9 @@ export namespace Prisma {
     material?: boolean
     finishNotes?: boolean
     dueDate?: boolean
+    producedQuantity?: boolean
+    productionNotes?: boolean
+    pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
@@ -7660,6 +7816,7 @@ export namespace Prisma {
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     returns?: boolean | WorkItem$returnsArgs<ExtArgs>
+    vendorProductionRecords?: boolean | WorkItem$vendorProductionRecordsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -7680,6 +7837,9 @@ export namespace Prisma {
     material?: boolean
     finishNotes?: boolean
     dueDate?: boolean
+    producedQuantity?: boolean
+    productionNotes?: boolean
+    pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
@@ -7705,6 +7865,9 @@ export namespace Prisma {
     material?: boolean
     finishNotes?: boolean
     dueDate?: boolean
+    producedQuantity?: boolean
+    productionNotes?: boolean
+    pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
@@ -7730,11 +7893,14 @@ export namespace Prisma {
     material?: boolean
     finishNotes?: boolean
     dueDate?: boolean
+    producedQuantity?: boolean
+    productionNotes?: boolean
+    pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "createdAt" | "updatedAt", ExtArgs["result"]["workItem"]>
+  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "producedQuantity" | "productionNotes" | "pendingFileRevisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["workItem"]>
   export type WorkItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
@@ -7744,6 +7910,7 @@ export namespace Prisma {
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     returns?: boolean | WorkItem$returnsArgs<ExtArgs>
+    vendorProductionRecords?: boolean | WorkItem$vendorProductionRecordsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7770,6 +7937,7 @@ export namespace Prisma {
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
       designVersions: Prisma.$DesignVersionPayload<ExtArgs>[]
       returns: Prisma.$ReturnPayload<ExtArgs>[]
+      vendorProductionRecords: Prisma.$VendorProductionRecordPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7801,7 +7969,24 @@ export namespace Prisma {
        */
       dueDate: Date | null
       /**
-       * --- end 011-orders-reception fields -----------------------------------
+       * --- 014-production fields ---------------------------------------------
+       * Set on completion (US4, FR-006/FR-007). Required by completeProduction();
+       * validated non-null and > 0 before the completion transition runs.
+       */
+      producedQuantity: number | null
+      /**
+       * Optional free-text notes recorded at completion.
+       */
+      productionNotes: string | null
+      /**
+       * Non-null while a newer DesignVersion was approved during IN_PRODUCTION
+       * and the operator has not yet acknowledged it (US7, FR-013). Set by the
+       * approval path (013's approveDesign), cleared by acknowledgeFileRevision().
+       * research.md §4 — a plain field, not a guard.
+       */
+      pendingFileRevisionAt: Date | null
+      /**
+       * --- end 014-production fields -------------------------------------------
        */
       createdAt: Date
       updatedAt: Date
@@ -8207,6 +8392,7 @@ export namespace Prisma {
     phaseTimings<T extends WorkItem$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     designVersions<T extends WorkItem$designVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$designVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     returns<T extends WorkItem$returnsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    vendorProductionRecords<T extends WorkItem$vendorProductionRecordsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$vendorProductionRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8252,6 +8438,9 @@ export namespace Prisma {
     readonly material: FieldRef<"WorkItem", 'String'>
     readonly finishNotes: FieldRef<"WorkItem", 'String'>
     readonly dueDate: FieldRef<"WorkItem", 'DateTime'>
+    readonly producedQuantity: FieldRef<"WorkItem", 'Int'>
+    readonly productionNotes: FieldRef<"WorkItem", 'String'>
+    readonly pendingFileRevisionAt: FieldRef<"WorkItem", 'DateTime'>
     readonly createdAt: FieldRef<"WorkItem", 'DateTime'>
     readonly updatedAt: FieldRef<"WorkItem", 'DateTime'>
   }
@@ -8800,6 +8989,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.vendorProductionRecords
+   */
+  export type WorkItem$vendorProductionRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    where?: VendorProductionRecordWhereInput
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    cursor?: VendorProductionRecordWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
   }
 
   /**
@@ -15835,6 +16048,1090 @@ export namespace Prisma {
 
 
   /**
+   * Model VendorProductionRecord
+   */
+
+  export type AggregateVendorProductionRecord = {
+    _count: VendorProductionRecordCountAggregateOutputType | null
+    _min: VendorProductionRecordMinAggregateOutputType | null
+    _max: VendorProductionRecordMaxAggregateOutputType | null
+  }
+
+  export type VendorProductionRecordMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    vendorName: string | null
+    sentAt: Date | null
+    receivedAt: Date | null
+    createdById: string | null
+  }
+
+  export type VendorProductionRecordMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    vendorName: string | null
+    sentAt: Date | null
+    receivedAt: Date | null
+    createdById: string | null
+  }
+
+  export type VendorProductionRecordCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    vendorName: number
+    sentAt: number
+    receivedAt: number
+    createdById: number
+    _all: number
+  }
+
+
+  export type VendorProductionRecordMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    vendorName?: true
+    sentAt?: true
+    receivedAt?: true
+    createdById?: true
+  }
+
+  export type VendorProductionRecordMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    vendorName?: true
+    sentAt?: true
+    receivedAt?: true
+    createdById?: true
+  }
+
+  export type VendorProductionRecordCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    vendorName?: true
+    sentAt?: true
+    receivedAt?: true
+    createdById?: true
+    _all?: true
+  }
+
+  export type VendorProductionRecordAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VendorProductionRecord to aggregate.
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VendorProductionRecords to fetch.
+     */
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: VendorProductionRecordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VendorProductionRecords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VendorProductionRecords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned VendorProductionRecords
+    **/
+    _count?: true | VendorProductionRecordCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: VendorProductionRecordMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: VendorProductionRecordMaxAggregateInputType
+  }
+
+  export type GetVendorProductionRecordAggregateType<T extends VendorProductionRecordAggregateArgs> = {
+        [P in keyof T & keyof AggregateVendorProductionRecord]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateVendorProductionRecord[P]>
+      : GetScalarType<T[P], AggregateVendorProductionRecord[P]>
+  }
+
+
+
+
+  export type VendorProductionRecordGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: VendorProductionRecordWhereInput
+    orderBy?: VendorProductionRecordOrderByWithAggregationInput | VendorProductionRecordOrderByWithAggregationInput[]
+    by: VendorProductionRecordScalarFieldEnum[] | VendorProductionRecordScalarFieldEnum
+    having?: VendorProductionRecordScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: VendorProductionRecordCountAggregateInputType | true
+    _min?: VendorProductionRecordMinAggregateInputType
+    _max?: VendorProductionRecordMaxAggregateInputType
+  }
+
+  export type VendorProductionRecordGroupByOutputType = {
+    id: string
+    workItemId: string
+    vendorName: string
+    sentAt: Date
+    receivedAt: Date | null
+    createdById: string
+    _count: VendorProductionRecordCountAggregateOutputType | null
+    _min: VendorProductionRecordMinAggregateOutputType | null
+    _max: VendorProductionRecordMaxAggregateOutputType | null
+  }
+
+  type GetVendorProductionRecordGroupByPayload<T extends VendorProductionRecordGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<VendorProductionRecordGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof VendorProductionRecordGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], VendorProductionRecordGroupByOutputType[P]>
+            : GetScalarType<T[P], VendorProductionRecordGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type VendorProductionRecordSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    vendorName?: boolean
+    sentAt?: boolean
+    receivedAt?: boolean
+    createdById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["vendorProductionRecord"]>
+
+  export type VendorProductionRecordSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    vendorName?: boolean
+    sentAt?: boolean
+    receivedAt?: boolean
+    createdById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["vendorProductionRecord"]>
+
+  export type VendorProductionRecordSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    vendorName?: boolean
+    sentAt?: boolean
+    receivedAt?: boolean
+    createdById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["vendorProductionRecord"]>
+
+  export type VendorProductionRecordSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    vendorName?: boolean
+    sentAt?: boolean
+    receivedAt?: boolean
+    createdById?: boolean
+  }
+
+  export type VendorProductionRecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "vendorName" | "sentAt" | "receivedAt" | "createdById", ExtArgs["result"]["vendorProductionRecord"]>
+  export type VendorProductionRecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type VendorProductionRecordIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type VendorProductionRecordIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $VendorProductionRecordPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "VendorProductionRecord"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      createdBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      vendorName: string
+      sentAt: Date
+      /**
+       * Null until recordReceivedFromVendor() runs; completeProduction() MUST
+       * refuse completion while this is null for a Work Item routed to an
+       * external-production department (FR-012).
+       */
+      receivedAt: Date | null
+      createdById: string
+    }, ExtArgs["result"]["vendorProductionRecord"]>
+    composites: {}
+  }
+
+  type VendorProductionRecordGetPayload<S extends boolean | null | undefined | VendorProductionRecordDefaultArgs> = $Result.GetResult<Prisma.$VendorProductionRecordPayload, S>
+
+  type VendorProductionRecordCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<VendorProductionRecordFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: VendorProductionRecordCountAggregateInputType | true
+    }
+
+  export interface VendorProductionRecordDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['VendorProductionRecord'], meta: { name: 'VendorProductionRecord' } }
+    /**
+     * Find zero or one VendorProductionRecord that matches the filter.
+     * @param {VendorProductionRecordFindUniqueArgs} args - Arguments to find a VendorProductionRecord
+     * @example
+     * // Get one VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends VendorProductionRecordFindUniqueArgs>(args: SelectSubset<T, VendorProductionRecordFindUniqueArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one VendorProductionRecord that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {VendorProductionRecordFindUniqueOrThrowArgs} args - Arguments to find a VendorProductionRecord
+     * @example
+     * // Get one VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends VendorProductionRecordFindUniqueOrThrowArgs>(args: SelectSubset<T, VendorProductionRecordFindUniqueOrThrowArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first VendorProductionRecord that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordFindFirstArgs} args - Arguments to find a VendorProductionRecord
+     * @example
+     * // Get one VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends VendorProductionRecordFindFirstArgs>(args?: SelectSubset<T, VendorProductionRecordFindFirstArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first VendorProductionRecord that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordFindFirstOrThrowArgs} args - Arguments to find a VendorProductionRecord
+     * @example
+     * // Get one VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends VendorProductionRecordFindFirstOrThrowArgs>(args?: SelectSubset<T, VendorProductionRecordFindFirstOrThrowArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more VendorProductionRecords that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all VendorProductionRecords
+     * const vendorProductionRecords = await prisma.vendorProductionRecord.findMany()
+     * 
+     * // Get first 10 VendorProductionRecords
+     * const vendorProductionRecords = await prisma.vendorProductionRecord.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const vendorProductionRecordWithIdOnly = await prisma.vendorProductionRecord.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends VendorProductionRecordFindManyArgs>(args?: SelectSubset<T, VendorProductionRecordFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a VendorProductionRecord.
+     * @param {VendorProductionRecordCreateArgs} args - Arguments to create a VendorProductionRecord.
+     * @example
+     * // Create one VendorProductionRecord
+     * const VendorProductionRecord = await prisma.vendorProductionRecord.create({
+     *   data: {
+     *     // ... data to create a VendorProductionRecord
+     *   }
+     * })
+     * 
+     */
+    create<T extends VendorProductionRecordCreateArgs>(args: SelectSubset<T, VendorProductionRecordCreateArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many VendorProductionRecords.
+     * @param {VendorProductionRecordCreateManyArgs} args - Arguments to create many VendorProductionRecords.
+     * @example
+     * // Create many VendorProductionRecords
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends VendorProductionRecordCreateManyArgs>(args?: SelectSubset<T, VendorProductionRecordCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many VendorProductionRecords and returns the data saved in the database.
+     * @param {VendorProductionRecordCreateManyAndReturnArgs} args - Arguments to create many VendorProductionRecords.
+     * @example
+     * // Create many VendorProductionRecords
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many VendorProductionRecords and only return the `id`
+     * const vendorProductionRecordWithIdOnly = await prisma.vendorProductionRecord.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends VendorProductionRecordCreateManyAndReturnArgs>(args?: SelectSubset<T, VendorProductionRecordCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a VendorProductionRecord.
+     * @param {VendorProductionRecordDeleteArgs} args - Arguments to delete one VendorProductionRecord.
+     * @example
+     * // Delete one VendorProductionRecord
+     * const VendorProductionRecord = await prisma.vendorProductionRecord.delete({
+     *   where: {
+     *     // ... filter to delete one VendorProductionRecord
+     *   }
+     * })
+     * 
+     */
+    delete<T extends VendorProductionRecordDeleteArgs>(args: SelectSubset<T, VendorProductionRecordDeleteArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one VendorProductionRecord.
+     * @param {VendorProductionRecordUpdateArgs} args - Arguments to update one VendorProductionRecord.
+     * @example
+     * // Update one VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends VendorProductionRecordUpdateArgs>(args: SelectSubset<T, VendorProductionRecordUpdateArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more VendorProductionRecords.
+     * @param {VendorProductionRecordDeleteManyArgs} args - Arguments to filter VendorProductionRecords to delete.
+     * @example
+     * // Delete a few VendorProductionRecords
+     * const { count } = await prisma.vendorProductionRecord.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends VendorProductionRecordDeleteManyArgs>(args?: SelectSubset<T, VendorProductionRecordDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more VendorProductionRecords.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many VendorProductionRecords
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends VendorProductionRecordUpdateManyArgs>(args: SelectSubset<T, VendorProductionRecordUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more VendorProductionRecords and returns the data updated in the database.
+     * @param {VendorProductionRecordUpdateManyAndReturnArgs} args - Arguments to update many VendorProductionRecords.
+     * @example
+     * // Update many VendorProductionRecords
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more VendorProductionRecords and only return the `id`
+     * const vendorProductionRecordWithIdOnly = await prisma.vendorProductionRecord.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends VendorProductionRecordUpdateManyAndReturnArgs>(args: SelectSubset<T, VendorProductionRecordUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one VendorProductionRecord.
+     * @param {VendorProductionRecordUpsertArgs} args - Arguments to update or create a VendorProductionRecord.
+     * @example
+     * // Update or create a VendorProductionRecord
+     * const vendorProductionRecord = await prisma.vendorProductionRecord.upsert({
+     *   create: {
+     *     // ... data to create a VendorProductionRecord
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the VendorProductionRecord we want to update
+     *   }
+     * })
+     */
+    upsert<T extends VendorProductionRecordUpsertArgs>(args: SelectSubset<T, VendorProductionRecordUpsertArgs<ExtArgs>>): Prisma__VendorProductionRecordClient<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of VendorProductionRecords.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordCountArgs} args - Arguments to filter VendorProductionRecords to count.
+     * @example
+     * // Count the number of VendorProductionRecords
+     * const count = await prisma.vendorProductionRecord.count({
+     *   where: {
+     *     // ... the filter for the VendorProductionRecords we want to count
+     *   }
+     * })
+    **/
+    count<T extends VendorProductionRecordCountArgs>(
+      args?: Subset<T, VendorProductionRecordCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], VendorProductionRecordCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a VendorProductionRecord.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends VendorProductionRecordAggregateArgs>(args: Subset<T, VendorProductionRecordAggregateArgs>): Prisma.PrismaPromise<GetVendorProductionRecordAggregateType<T>>
+
+    /**
+     * Group by VendorProductionRecord.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {VendorProductionRecordGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends VendorProductionRecordGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: VendorProductionRecordGroupByArgs['orderBy'] }
+        : { orderBy?: VendorProductionRecordGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, VendorProductionRecordGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetVendorProductionRecordGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the VendorProductionRecord model
+   */
+  readonly fields: VendorProductionRecordFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for VendorProductionRecord.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__VendorProductionRecordClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the VendorProductionRecord model
+   */
+  interface VendorProductionRecordFieldRefs {
+    readonly id: FieldRef<"VendorProductionRecord", 'String'>
+    readonly workItemId: FieldRef<"VendorProductionRecord", 'String'>
+    readonly vendorName: FieldRef<"VendorProductionRecord", 'String'>
+    readonly sentAt: FieldRef<"VendorProductionRecord", 'DateTime'>
+    readonly receivedAt: FieldRef<"VendorProductionRecord", 'DateTime'>
+    readonly createdById: FieldRef<"VendorProductionRecord", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * VendorProductionRecord findUnique
+   */
+  export type VendorProductionRecordFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter, which VendorProductionRecord to fetch.
+     */
+    where: VendorProductionRecordWhereUniqueInput
+  }
+
+  /**
+   * VendorProductionRecord findUniqueOrThrow
+   */
+  export type VendorProductionRecordFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter, which VendorProductionRecord to fetch.
+     */
+    where: VendorProductionRecordWhereUniqueInput
+  }
+
+  /**
+   * VendorProductionRecord findFirst
+   */
+  export type VendorProductionRecordFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter, which VendorProductionRecord to fetch.
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VendorProductionRecords to fetch.
+     */
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VendorProductionRecords.
+     */
+    cursor?: VendorProductionRecordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VendorProductionRecords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VendorProductionRecords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VendorProductionRecords.
+     */
+    distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
+  }
+
+  /**
+   * VendorProductionRecord findFirstOrThrow
+   */
+  export type VendorProductionRecordFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter, which VendorProductionRecord to fetch.
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VendorProductionRecords to fetch.
+     */
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for VendorProductionRecords.
+     */
+    cursor?: VendorProductionRecordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VendorProductionRecords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VendorProductionRecords.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of VendorProductionRecords.
+     */
+    distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
+  }
+
+  /**
+   * VendorProductionRecord findMany
+   */
+  export type VendorProductionRecordFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter, which VendorProductionRecords to fetch.
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of VendorProductionRecords to fetch.
+     */
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing VendorProductionRecords.
+     */
+    cursor?: VendorProductionRecordWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` VendorProductionRecords from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` VendorProductionRecords.
+     */
+    skip?: number
+    distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
+  }
+
+  /**
+   * VendorProductionRecord create
+   */
+  export type VendorProductionRecordCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * The data needed to create a VendorProductionRecord.
+     */
+    data: XOR<VendorProductionRecordCreateInput, VendorProductionRecordUncheckedCreateInput>
+  }
+
+  /**
+   * VendorProductionRecord createMany
+   */
+  export type VendorProductionRecordCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many VendorProductionRecords.
+     */
+    data: VendorProductionRecordCreateManyInput | VendorProductionRecordCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * VendorProductionRecord createManyAndReturn
+   */
+  export type VendorProductionRecordCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * The data used to create many VendorProductionRecords.
+     */
+    data: VendorProductionRecordCreateManyInput | VendorProductionRecordCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * VendorProductionRecord update
+   */
+  export type VendorProductionRecordUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * The data needed to update a VendorProductionRecord.
+     */
+    data: XOR<VendorProductionRecordUpdateInput, VendorProductionRecordUncheckedUpdateInput>
+    /**
+     * Choose, which VendorProductionRecord to update.
+     */
+    where: VendorProductionRecordWhereUniqueInput
+  }
+
+  /**
+   * VendorProductionRecord updateMany
+   */
+  export type VendorProductionRecordUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update VendorProductionRecords.
+     */
+    data: XOR<VendorProductionRecordUpdateManyMutationInput, VendorProductionRecordUncheckedUpdateManyInput>
+    /**
+     * Filter which VendorProductionRecords to update
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * Limit how many VendorProductionRecords to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * VendorProductionRecord updateManyAndReturn
+   */
+  export type VendorProductionRecordUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * The data used to update VendorProductionRecords.
+     */
+    data: XOR<VendorProductionRecordUpdateManyMutationInput, VendorProductionRecordUncheckedUpdateManyInput>
+    /**
+     * Filter which VendorProductionRecords to update
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * Limit how many VendorProductionRecords to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * VendorProductionRecord upsert
+   */
+  export type VendorProductionRecordUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * The filter to search for the VendorProductionRecord to update in case it exists.
+     */
+    where: VendorProductionRecordWhereUniqueInput
+    /**
+     * In case the VendorProductionRecord found by the `where` argument doesn't exist, create a new VendorProductionRecord with this data.
+     */
+    create: XOR<VendorProductionRecordCreateInput, VendorProductionRecordUncheckedCreateInput>
+    /**
+     * In case the VendorProductionRecord was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<VendorProductionRecordUpdateInput, VendorProductionRecordUncheckedUpdateInput>
+  }
+
+  /**
+   * VendorProductionRecord delete
+   */
+  export type VendorProductionRecordDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    /**
+     * Filter which VendorProductionRecord to delete.
+     */
+    where: VendorProductionRecordWhereUniqueInput
+  }
+
+  /**
+   * VendorProductionRecord deleteMany
+   */
+  export type VendorProductionRecordDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which VendorProductionRecords to delete
+     */
+    where?: VendorProductionRecordWhereInput
+    /**
+     * Limit how many VendorProductionRecords to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * VendorProductionRecord without action
+   */
+  export type VendorProductionRecordDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model NotificationEvent
    */
 
@@ -21508,6 +22805,7 @@ export namespace Prisma {
     designVersionsApproved?: boolean | User$designVersionsApprovedArgs<ExtArgs>
     returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
     returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
+    vendorProductionRecordsCreated?: boolean | User$vendorProductionRecordsCreatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -21573,6 +22871,7 @@ export namespace Prisma {
     designVersionsApproved?: boolean | User$designVersionsApprovedArgs<ExtArgs>
     returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
     returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
+    vendorProductionRecordsCreated?: boolean | User$vendorProductionRecordsCreatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -21596,6 +22895,7 @@ export namespace Prisma {
       designVersionsApproved: Prisma.$DesignVersionPayload<ExtArgs>[]
       returnsRaised: Prisma.$ReturnPayload<ExtArgs>[]
       returnsAssignedToMe: Prisma.$ReturnPayload<ExtArgs>[]
+      vendorProductionRecordsCreated: Prisma.$VendorProductionRecordPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -22019,6 +23319,7 @@ export namespace Prisma {
     designVersionsApproved<T extends User$designVersionsApprovedArgs<ExtArgs> = {}>(args?: Subset<T, User$designVersionsApprovedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     returnsRaised<T extends User$returnsRaisedArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsRaisedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     returnsAssignedToMe<T extends User$returnsAssignedToMeArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsAssignedToMeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    vendorProductionRecordsCreated<T extends User$vendorProductionRecordsCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$vendorProductionRecordsCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -22805,6 +24106,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * User.vendorProductionRecordsCreated
+   */
+  export type User$vendorProductionRecordsCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the VendorProductionRecord
+     */
+    select?: VendorProductionRecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the VendorProductionRecord
+     */
+    omit?: VendorProductionRecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: VendorProductionRecordInclude<ExtArgs> | null
+    where?: VendorProductionRecordWhereInput
+    orderBy?: VendorProductionRecordOrderByWithRelationInput | VendorProductionRecordOrderByWithRelationInput[]
+    cursor?: VendorProductionRecordWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
   }
 
   /**
@@ -32574,7 +33899,8 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     isActive: 'isActive',
-    createdAt: 'createdAt'
+    createdAt: 'createdAt',
+    isExternalProduction: 'isExternalProduction'
   };
 
   export type DepartmentScalarFieldEnum = (typeof DepartmentScalarFieldEnum)[keyof typeof DepartmentScalarFieldEnum]
@@ -32628,6 +33954,9 @@ export namespace Prisma {
     material: 'material',
     finishNotes: 'finishNotes',
     dueDate: 'dueDate',
+    producedQuantity: 'producedQuantity',
+    productionNotes: 'productionNotes',
+    pendingFileRevisionAt: 'pendingFileRevisionAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -32724,6 +34053,18 @@ export namespace Prisma {
   };
 
   export type ReturnAttachmentScalarFieldEnum = (typeof ReturnAttachmentScalarFieldEnum)[keyof typeof ReturnAttachmentScalarFieldEnum]
+
+
+  export const VendorProductionRecordScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    vendorName: 'vendorName',
+    sentAt: 'sentAt',
+    receivedAt: 'receivedAt',
+    createdById: 'createdById'
+  };
+
+  export type VendorProductionRecordScalarFieldEnum = (typeof VendorProductionRecordScalarFieldEnum)[keyof typeof VendorProductionRecordScalarFieldEnum]
 
 
   export const NotificationEventScalarFieldEnum: {
@@ -33190,6 +34531,7 @@ export namespace Prisma {
     name?: StringFilter<"Department"> | string
     isActive?: BoolFilter<"Department"> | boolean
     createdAt?: DateTimeFilter<"Department"> | Date | string
+    isExternalProduction?: BoolFilter<"Department"> | boolean
     workItems?: WorkItemListRelationFilter
     returns?: ReturnListRelationFilter
     userDepartments?: UserDepartmentListRelationFilter
@@ -33201,6 +34543,7 @@ export namespace Prisma {
     name?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+    isExternalProduction?: SortOrder
     workItems?: WorkItemOrderByRelationAggregateInput
     returns?: ReturnOrderByRelationAggregateInput
     userDepartments?: UserDepartmentOrderByRelationAggregateInput
@@ -33215,6 +34558,7 @@ export namespace Prisma {
     NOT?: DepartmentWhereInput | DepartmentWhereInput[]
     isActive?: BoolFilter<"Department"> | boolean
     createdAt?: DateTimeFilter<"Department"> | Date | string
+    isExternalProduction?: BoolFilter<"Department"> | boolean
     workItems?: WorkItemListRelationFilter
     returns?: ReturnListRelationFilter
     userDepartments?: UserDepartmentListRelationFilter
@@ -33226,6 +34570,7 @@ export namespace Prisma {
     name?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+    isExternalProduction?: SortOrder
     _count?: DepartmentCountOrderByAggregateInput
     _max?: DepartmentMaxOrderByAggregateInput
     _min?: DepartmentMinOrderByAggregateInput
@@ -33239,6 +34584,7 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"Department"> | string
     isActive?: BoolWithAggregatesFilter<"Department"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Department"> | Date | string
+    isExternalProduction?: BoolWithAggregatesFilter<"Department"> | boolean
   }
 
   export type CustomerWhereInput = {
@@ -33439,6 +34785,9 @@ export namespace Prisma {
     material?: StringNullableFilter<"WorkItem"> | string | null
     finishNotes?: StringNullableFilter<"WorkItem"> | string | null
     dueDate?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
+    productionNotes?: StringNullableFilter<"WorkItem"> | string | null
+    pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
@@ -33449,6 +34798,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
     returns?: ReturnListRelationFilter
+    vendorProductionRecords?: VendorProductionRecordListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -33468,6 +34818,9 @@ export namespace Prisma {
     material?: SortOrderInput | SortOrder
     finishNotes?: SortOrderInput | SortOrder
     dueDate?: SortOrderInput | SortOrder
+    producedQuantity?: SortOrderInput | SortOrder
+    productionNotes?: SortOrderInput | SortOrder
+    pendingFileRevisionAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     order?: OrderOrderByWithRelationInput
@@ -33478,6 +34831,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
     designVersions?: DesignVersionOrderByRelationAggregateInput
     returns?: ReturnOrderByRelationAggregateInput
+    vendorProductionRecords?: VendorProductionRecordOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -33500,6 +34854,9 @@ export namespace Prisma {
     material?: StringNullableFilter<"WorkItem"> | string | null
     finishNotes?: StringNullableFilter<"WorkItem"> | string | null
     dueDate?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
+    productionNotes?: StringNullableFilter<"WorkItem"> | string | null
+    pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
@@ -33510,6 +34867,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
     returns?: ReturnListRelationFilter
+    vendorProductionRecords?: VendorProductionRecordListRelationFilter
   }, "id">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -33529,6 +34887,9 @@ export namespace Prisma {
     material?: SortOrderInput | SortOrder
     finishNotes?: SortOrderInput | SortOrder
     dueDate?: SortOrderInput | SortOrder
+    producedQuantity?: SortOrderInput | SortOrder
+    productionNotes?: SortOrderInput | SortOrder
+    pendingFileRevisionAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: WorkItemCountOrderByAggregateInput
@@ -33558,6 +34919,9 @@ export namespace Prisma {
     material?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
     finishNotes?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
     dueDate?: DateTimeNullableWithAggregatesFilter<"WorkItem"> | Date | string | null
+    producedQuantity?: IntNullableWithAggregatesFilter<"WorkItem"> | number | null
+    productionNotes?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
+    pendingFileRevisionAt?: DateTimeNullableWithAggregatesFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
   }
@@ -34055,6 +35419,69 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"ReturnAttachment"> | Date | string
   }
 
+  export type VendorProductionRecordWhereInput = {
+    AND?: VendorProductionRecordWhereInput | VendorProductionRecordWhereInput[]
+    OR?: VendorProductionRecordWhereInput[]
+    NOT?: VendorProductionRecordWhereInput | VendorProductionRecordWhereInput[]
+    id?: StringFilter<"VendorProductionRecord"> | string
+    workItemId?: StringFilter<"VendorProductionRecord"> | string
+    vendorName?: StringFilter<"VendorProductionRecord"> | string
+    sentAt?: DateTimeFilter<"VendorProductionRecord"> | Date | string
+    receivedAt?: DateTimeNullableFilter<"VendorProductionRecord"> | Date | string | null
+    createdById?: StringFilter<"VendorProductionRecord"> | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type VendorProductionRecordOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    vendorName?: SortOrder
+    sentAt?: SortOrder
+    receivedAt?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+  }
+
+  export type VendorProductionRecordWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: VendorProductionRecordWhereInput | VendorProductionRecordWhereInput[]
+    OR?: VendorProductionRecordWhereInput[]
+    NOT?: VendorProductionRecordWhereInput | VendorProductionRecordWhereInput[]
+    workItemId?: StringFilter<"VendorProductionRecord"> | string
+    vendorName?: StringFilter<"VendorProductionRecord"> | string
+    sentAt?: DateTimeFilter<"VendorProductionRecord"> | Date | string
+    receivedAt?: DateTimeNullableFilter<"VendorProductionRecord"> | Date | string | null
+    createdById?: StringFilter<"VendorProductionRecord"> | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type VendorProductionRecordOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    vendorName?: SortOrder
+    sentAt?: SortOrder
+    receivedAt?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    _count?: VendorProductionRecordCountOrderByAggregateInput
+    _max?: VendorProductionRecordMaxOrderByAggregateInput
+    _min?: VendorProductionRecordMinOrderByAggregateInput
+  }
+
+  export type VendorProductionRecordScalarWhereWithAggregatesInput = {
+    AND?: VendorProductionRecordScalarWhereWithAggregatesInput | VendorProductionRecordScalarWhereWithAggregatesInput[]
+    OR?: VendorProductionRecordScalarWhereWithAggregatesInput[]
+    NOT?: VendorProductionRecordScalarWhereWithAggregatesInput | VendorProductionRecordScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"VendorProductionRecord"> | string
+    workItemId?: StringWithAggregatesFilter<"VendorProductionRecord"> | string
+    vendorName?: StringWithAggregatesFilter<"VendorProductionRecord"> | string
+    sentAt?: DateTimeWithAggregatesFilter<"VendorProductionRecord"> | Date | string
+    receivedAt?: DateTimeNullableWithAggregatesFilter<"VendorProductionRecord"> | Date | string | null
+    createdById?: StringWithAggregatesFilter<"VendorProductionRecord"> | string
+  }
+
   export type NotificationEventWhereInput = {
     AND?: NotificationEventWhereInput | NotificationEventWhereInput[]
     OR?: NotificationEventWhereInput[]
@@ -34426,6 +35853,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionListRelationFilter
     returnsRaised?: ReturnListRelationFilter
     returnsAssignedToMe?: ReturnListRelationFilter
+    vendorProductionRecordsCreated?: VendorProductionRecordListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -34456,6 +35884,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionOrderByRelationAggregateInput
     returnsRaised?: ReturnOrderByRelationAggregateInput
     returnsAssignedToMe?: ReturnOrderByRelationAggregateInput
+    vendorProductionRecordsCreated?: VendorProductionRecordOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -34489,6 +35918,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionListRelationFilter
     returnsRaised?: ReturnListRelationFilter
     returnsAssignedToMe?: ReturnListRelationFilter
+    vendorProductionRecordsCreated?: VendorProductionRecordListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -35102,6 +36532,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
     returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
@@ -35113,6 +36544,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
     returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
@@ -35124,6 +36556,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
@@ -35135,6 +36568,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
@@ -35146,6 +36580,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
   }
 
   export type DepartmentUpdateManyMutationInput = {
@@ -35153,6 +36588,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type DepartmentUncheckedUpdateManyInput = {
@@ -35160,6 +36596,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
   }
 
   export type CustomerCreateInput = {
@@ -35369,6 +36806,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -35379,6 +36819,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -35398,12 +36839,16 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -35419,6 +36864,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -35429,6 +36877,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -35448,12 +36897,16 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -35473,6 +36926,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -35490,6 +36946,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -35511,6 +36970,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -36024,6 +37486,67 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type VendorProductionRecordCreateInput = {
+    id?: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutVendorProductionRecordsInput
+    createdBy: UserCreateNestedOneWithoutVendorProductionRecordsCreatedInput
+  }
+
+  export type VendorProductionRecordUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    createdById: string
+  }
+
+  export type VendorProductionRecordUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutVendorProductionRecordsNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutVendorProductionRecordsCreatedNestedInput
+  }
+
+  export type VendorProductionRecordUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type VendorProductionRecordCreateManyInput = {
+    id?: string
+    workItemId: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    createdById: string
+  }
+
+  export type VendorProductionRecordUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VendorProductionRecordUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+  }
+
   export type NotificationEventCreateInput = {
     id?: string
     type: string
@@ -36423,6 +37946,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -36453,6 +37977,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUpdateInput = {
@@ -36483,6 +38008,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -36513,6 +38039,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -37222,6 +38749,7 @@ export namespace Prisma {
     name?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+    isExternalProduction?: SortOrder
   }
 
   export type DepartmentMaxOrderByAggregateInput = {
@@ -37229,6 +38757,7 @@ export namespace Prisma {
     name?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+    isExternalProduction?: SortOrder
   }
 
   export type DepartmentMinOrderByAggregateInput = {
@@ -37236,6 +38765,7 @@ export namespace Prisma {
     name?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+    isExternalProduction?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -37631,6 +39161,12 @@ export namespace Prisma {
     none?: DesignVersionWhereInput
   }
 
+  export type VendorProductionRecordListRelationFilter = {
+    every?: VendorProductionRecordWhereInput
+    some?: VendorProductionRecordWhereInput
+    none?: VendorProductionRecordWhereInput
+  }
+
   export type WorkItemTransitionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -37640,6 +39176,10 @@ export namespace Prisma {
   }
 
   export type DesignVersionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type VendorProductionRecordOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -37660,6 +39200,9 @@ export namespace Prisma {
     material?: SortOrder
     finishNotes?: SortOrder
     dueDate?: SortOrder
+    producedQuantity?: SortOrder
+    productionNotes?: SortOrder
+    pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -37668,6 +39211,7 @@ export namespace Prisma {
     quantity?: SortOrder
     widthValue?: SortOrder
     heightValue?: SortOrder
+    producedQuantity?: SortOrder
   }
 
   export type WorkItemMaxOrderByAggregateInput = {
@@ -37687,6 +39231,9 @@ export namespace Prisma {
     material?: SortOrder
     finishNotes?: SortOrder
     dueDate?: SortOrder
+    producedQuantity?: SortOrder
+    productionNotes?: SortOrder
+    pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -37708,6 +39255,9 @@ export namespace Prisma {
     material?: SortOrder
     finishNotes?: SortOrder
     dueDate?: SortOrder
+    producedQuantity?: SortOrder
+    productionNotes?: SortOrder
+    pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -37716,6 +39266,7 @@ export namespace Prisma {
     quantity?: SortOrder
     widthValue?: SortOrder
     heightValue?: SortOrder
+    producedQuantity?: SortOrder
   }
 
   export type EnumWorkItemStateWithAggregatesFilter<$PrismaModel = never> = {
@@ -38155,6 +39706,33 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
     _max?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
+  }
+
+  export type VendorProductionRecordCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    vendorName?: SortOrder
+    sentAt?: SortOrder
+    receivedAt?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type VendorProductionRecordMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    vendorName?: SortOrder
+    sentAt?: SortOrder
+    receivedAt?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type VendorProductionRecordMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    vendorName?: SortOrder
+    sentAt?: SortOrder
+    receivedAt?: SortOrder
+    createdById?: SortOrder
   }
 
   export type StringNullableListFilter<$PrismaModel = never> = {
@@ -39313,6 +40891,13 @@ export namespace Prisma {
     connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
   }
 
+  export type VendorProductionRecordCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput> | VendorProductionRecordCreateWithoutWorkItemInput[] | VendorProductionRecordUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutWorkItemInput | VendorProductionRecordCreateOrConnectWithoutWorkItemInput[]
+    createMany?: VendorProductionRecordCreateManyWorkItemInputEnvelope
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+  }
+
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -39339,6 +40924,13 @@ export namespace Prisma {
     connectOrCreate?: ReturnCreateOrConnectWithoutWorkItemInput | ReturnCreateOrConnectWithoutWorkItemInput[]
     createMany?: ReturnCreateManyWorkItemInputEnvelope
     connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
+  export type VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput> | VendorProductionRecordCreateWithoutWorkItemInput[] | VendorProductionRecordUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutWorkItemInput | VendorProductionRecordCreateOrConnectWithoutWorkItemInput[]
+    createMany?: VendorProductionRecordCreateManyWorkItemInputEnvelope
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
   }
 
   export type EnumWorkItemStateFieldUpdateOperationsInput = {
@@ -39459,6 +41051,20 @@ export namespace Prisma {
     deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
   }
 
+  export type VendorProductionRecordUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput> | VendorProductionRecordCreateWithoutWorkItemInput[] | VendorProductionRecordUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutWorkItemInput | VendorProductionRecordCreateOrConnectWithoutWorkItemInput[]
+    upsert?: VendorProductionRecordUpsertWithWhereUniqueWithoutWorkItemInput | VendorProductionRecordUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: VendorProductionRecordCreateManyWorkItemInputEnvelope
+    set?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    disconnect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    delete?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    update?: VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput | VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput | VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+  }
+
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -39513,6 +41119,20 @@ export namespace Prisma {
     update?: ReturnUpdateWithWhereUniqueWithoutWorkItemInput | ReturnUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: ReturnUpdateManyWithWhereWithoutWorkItemInput | ReturnUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput> | VendorProductionRecordCreateWithoutWorkItemInput[] | VendorProductionRecordUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutWorkItemInput | VendorProductionRecordCreateOrConnectWithoutWorkItemInput[]
+    upsert?: VendorProductionRecordUpsertWithWhereUniqueWithoutWorkItemInput | VendorProductionRecordUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: VendorProductionRecordCreateManyWorkItemInputEnvelope
+    set?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    disconnect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    delete?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    update?: VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput | VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput | VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
   }
 
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
@@ -39861,6 +41481,34 @@ export namespace Prisma {
     update?: XOR<XOR<ReturnUpdateToOneWithWhereWithoutAttachmentsInput, ReturnUpdateWithoutAttachmentsInput>, ReturnUncheckedUpdateWithoutAttachmentsInput>
   }
 
+  export type WorkItemCreateNestedOneWithoutVendorProductionRecordsInput = {
+    create?: XOR<WorkItemCreateWithoutVendorProductionRecordsInput, WorkItemUncheckedCreateWithoutVendorProductionRecordsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutVendorProductionRecordsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutVendorProductionRecordsCreatedInput = {
+    create?: XOR<UserCreateWithoutVendorProductionRecordsCreatedInput, UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutVendorProductionRecordsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutVendorProductionRecordsInput, WorkItemUncheckedCreateWithoutVendorProductionRecordsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutVendorProductionRecordsInput
+    upsert?: WorkItemUpsertWithoutVendorProductionRecordsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutVendorProductionRecordsInput, WorkItemUpdateWithoutVendorProductionRecordsInput>, WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutVendorProductionRecordsCreatedNestedInput = {
+    create?: XOR<UserCreateWithoutVendorProductionRecordsCreatedInput, UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput
+    upsert?: UserUpsertWithoutVendorProductionRecordsCreatedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutVendorProductionRecordsCreatedInput, UserUpdateWithoutVendorProductionRecordsCreatedInput>, UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput>
+  }
+
   export type NotificationEventCreaterecipientUserIdsInput = {
     set: string[]
   }
@@ -40091,6 +41739,13 @@ export namespace Prisma {
     connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
   }
 
+  export type VendorProductionRecordCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput> | VendorProductionRecordCreateWithoutCreatedByInput[] | VendorProductionRecordUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutCreatedByInput | VendorProductionRecordCreateOrConnectWithoutCreatedByInput[]
+    createMany?: VendorProductionRecordCreateManyCreatedByInputEnvelope
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -40194,6 +41849,13 @@ export namespace Prisma {
     connectOrCreate?: ReturnCreateOrConnectWithoutAssignedToInput | ReturnCreateOrConnectWithoutAssignedToInput[]
     createMany?: ReturnCreateManyAssignedToInputEnvelope
     connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
+  export type VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput> | VendorProductionRecordCreateWithoutCreatedByInput[] | VendorProductionRecordUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutCreatedByInput | VendorProductionRecordCreateOrConnectWithoutCreatedByInput[]
+    createMany?: VendorProductionRecordCreateManyCreatedByInputEnvelope
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -40406,6 +42068,20 @@ export namespace Prisma {
     deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
   }
 
+  export type VendorProductionRecordUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput> | VendorProductionRecordCreateWithoutCreatedByInput[] | VendorProductionRecordUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutCreatedByInput | VendorProductionRecordCreateOrConnectWithoutCreatedByInput[]
+    upsert?: VendorProductionRecordUpsertWithWhereUniqueWithoutCreatedByInput | VendorProductionRecordUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: VendorProductionRecordCreateManyCreatedByInputEnvelope
+    set?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    disconnect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    delete?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    update?: VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput | VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput | VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -40614,6 +42290,20 @@ export namespace Prisma {
     update?: ReturnUpdateWithWhereUniqueWithoutAssignedToInput | ReturnUpdateWithWhereUniqueWithoutAssignedToInput[]
     updateMany?: ReturnUpdateManyWithWhereWithoutAssignedToInput | ReturnUpdateManyWithWhereWithoutAssignedToInput[]
     deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput> | VendorProductionRecordCreateWithoutCreatedByInput[] | VendorProductionRecordUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutCreatedByInput | VendorProductionRecordCreateOrConnectWithoutCreatedByInput[]
+    upsert?: VendorProductionRecordUpsertWithWhereUniqueWithoutCreatedByInput | VendorProductionRecordUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: VendorProductionRecordCreateManyCreatedByInputEnvelope
+    set?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    disconnect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    delete?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+    update?: VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput | VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput | VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -41291,6 +42981,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -41300,6 +42993,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -41318,12 +43012,16 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -41460,6 +43158,9 @@ export namespace Prisma {
     material?: StringNullableFilter<"WorkItem"> | string | null
     finishNotes?: StringNullableFilter<"WorkItem"> | string | null
     dueDate?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
+    productionNotes?: StringNullableFilter<"WorkItem"> | string | null
+    pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
   }
@@ -41952,6 +43653,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -41981,6 +43683,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -42001,6 +43704,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
@@ -42010,6 +43716,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -42028,12 +43735,16 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -42129,6 +43840,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -42158,6 +43870,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -42237,6 +43950,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
@@ -42247,6 +43961,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
@@ -42284,6 +43999,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -42313,6 +44029,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -42458,6 +44175,32 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type VendorProductionRecordCreateWithoutWorkItemInput = {
+    id?: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    createdBy: UserCreateNestedOneWithoutVendorProductionRecordsCreatedInput
+  }
+
+  export type VendorProductionRecordUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    createdById: string
+  }
+
+  export type VendorProductionRecordCreateOrConnectWithoutWorkItemInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    create: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type VendorProductionRecordCreateManyWorkItemInputEnvelope = {
+    data: VendorProductionRecordCreateManyWorkItemInput | VendorProductionRecordCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
   export type OrderUpsertWithoutWorkItemsInput = {
     update: XOR<OrderUpdateWithoutWorkItemsInput, OrderUncheckedUpdateWithoutWorkItemsInput>
     create: XOR<OrderCreateWithoutWorkItemsInput, OrderUncheckedCreateWithoutWorkItemsInput>
@@ -42541,6 +44284,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
@@ -42551,6 +44295,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
@@ -42594,6 +44339,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -42623,6 +44369,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -42736,11 +44483,40 @@ export namespace Prisma {
     data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutWorkItemInput>
   }
 
+  export type VendorProductionRecordUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    update: XOR<VendorProductionRecordUpdateWithoutWorkItemInput, VendorProductionRecordUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<VendorProductionRecordCreateWithoutWorkItemInput, VendorProductionRecordUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    data: XOR<VendorProductionRecordUpdateWithoutWorkItemInput, VendorProductionRecordUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput = {
+    where: VendorProductionRecordScalarWhereInput
+    data: XOR<VendorProductionRecordUpdateManyMutationInput, VendorProductionRecordUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type VendorProductionRecordScalarWhereInput = {
+    AND?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+    OR?: VendorProductionRecordScalarWhereInput[]
+    NOT?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+    id?: StringFilter<"VendorProductionRecord"> | string
+    workItemId?: StringFilter<"VendorProductionRecord"> | string
+    vendorName?: StringFilter<"VendorProductionRecord"> | string
+    sentAt?: DateTimeFilter<"VendorProductionRecord"> | Date | string
+    receivedAt?: DateTimeNullableFilter<"VendorProductionRecord"> | Date | string | null
+    createdById?: StringFilter<"VendorProductionRecord"> | string
+  }
+
   export type DepartmentCreateWithoutProductTypesInput = {
     id?: string
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
     returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
@@ -42751,6 +44527,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
     returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
@@ -42774,6 +44551,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -42783,6 +44563,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -42801,12 +44582,16 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -42835,6 +44620,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
@@ -42845,6 +44631,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
@@ -42879,6 +44666,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -42888,6 +44678,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -42907,11 +44698,15 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -42946,6 +44741,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -42975,6 +44771,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -43006,6 +44803,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -43015,6 +44815,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -43034,11 +44835,15 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -43079,6 +44884,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -43108,6 +44914,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -43123,6 +44930,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -43132,6 +44942,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -43151,11 +44962,15 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -43190,6 +45005,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -43219,6 +45035,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -43250,6 +45067,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -43259,6 +45079,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -43278,11 +45099,15 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -43323,6 +45148,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -43352,6 +45178,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -43367,6 +45194,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -43376,6 +45206,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
@@ -43395,11 +45226,15 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
@@ -43434,6 +45269,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -43463,6 +45299,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
@@ -43497,6 +45334,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
@@ -43526,6 +45364,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
@@ -43593,6 +45432,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -43602,6 +45444,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
@@ -43621,11 +45464,15 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsUploadedInput = {
@@ -43666,6 +45513,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -43695,6 +45543,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsApprovedInput = {
@@ -43735,6 +45584,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
@@ -43764,6 +45614,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
@@ -43795,6 +45646,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -43804,6 +45658,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutReturnsInput = {
@@ -43823,11 +45678,15 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutReturnsInput = {
@@ -43862,6 +45721,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsRaisedInput = {
@@ -43891,6 +45751,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsRaisedInput = {
@@ -43903,6 +45764,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
@@ -43913,6 +45775,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
@@ -43950,6 +45813,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
@@ -43979,6 +45843,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
@@ -44077,6 +45942,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -44086,6 +45954,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutReturnsInput = {
@@ -44105,11 +45974,15 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutReturnsRaisedInput = {
@@ -44150,6 +46023,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
@@ -44179,6 +46053,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutReturnsInput = {
@@ -44197,6 +46072,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
@@ -44207,6 +46083,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
@@ -44250,6 +46127,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
@@ -44279,6 +46157,7 @@ export namespace Prisma {
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DesignVersionUpsertWithoutReturnsInput = {
@@ -44420,6 +46299,270 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemCreateWithoutVendorProductionRecordsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutVendorProductionRecordsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutVendorProductionRecordsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutVendorProductionRecordsInput, WorkItemUncheckedCreateWithoutVendorProductionRecordsInput>
+  }
+
+  export type UserCreateWithoutVendorProductionRecordsCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutVendorProductionRecordsCreatedInput, UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput>
+  }
+
+  export type WorkItemUpsertWithoutVendorProductionRecordsInput = {
+    update: XOR<WorkItemUpdateWithoutVendorProductionRecordsInput, WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput>
+    create: XOR<WorkItemCreateWithoutVendorProductionRecordsInput, WorkItemUncheckedCreateWithoutVendorProductionRecordsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutVendorProductionRecordsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutVendorProductionRecordsInput, WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput>
+  }
+
+  export type WorkItemUpdateWithoutVendorProductionRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutVendorProductionRecordsCreatedInput = {
+    update: XOR<UserUpdateWithoutVendorProductionRecordsCreatedInput, UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput>
+    create: XOR<UserCreateWithoutVendorProductionRecordsCreatedInput, UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutVendorProductionRecordsCreatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutVendorProductionRecordsCreatedInput, UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput>
+  }
+
+  export type UserUpdateWithoutVendorProductionRecordsCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -45077,6 +47220,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -45086,6 +47232,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -45104,12 +47251,16 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -45335,6 +47486,32 @@ export namespace Prisma {
 
   export type ReturnCreateManyAssignedToInputEnvelope = {
     data: ReturnCreateManyAssignedToInput | ReturnCreateManyAssignedToInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type VendorProductionRecordCreateWithoutCreatedByInput = {
+    id?: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutVendorProductionRecordsInput
+  }
+
+  export type VendorProductionRecordUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    workItemId: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+  }
+
+  export type VendorProductionRecordCreateOrConnectWithoutCreatedByInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    create: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type VendorProductionRecordCreateManyCreatedByInputEnvelope = {
+    data: VendorProductionRecordCreateManyCreatedByInput | VendorProductionRecordCreateManyCreatedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -45649,6 +47826,22 @@ export namespace Prisma {
     data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutAssignedToInput>
   }
 
+  export type VendorProductionRecordUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    update: XOR<VendorProductionRecordUpdateWithoutCreatedByInput, VendorProductionRecordUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<VendorProductionRecordCreateWithoutCreatedByInput, VendorProductionRecordUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: VendorProductionRecordWhereUniqueInput
+    data: XOR<VendorProductionRecordUpdateWithoutCreatedByInput, VendorProductionRecordUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput = {
+    where: VendorProductionRecordScalarWhereInput
+    data: XOR<VendorProductionRecordUpdateManyMutationInput, VendorProductionRecordUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -45676,6 +47869,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -45705,6 +47899,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -45750,6 +47945,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -45779,6 +47975,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -45808,6 +48005,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -45837,6 +48035,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -45882,6 +48081,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -45911,6 +48111,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -46069,6 +48270,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -46098,6 +48300,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -46164,6 +48367,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -46193,6 +48397,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -46249,6 +48454,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -46278,6 +48484,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -46312,6 +48519,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -46341,6 +48549,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -46386,6 +48595,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -46415,6 +48625,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -46455,6 +48666,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -46484,6 +48696,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -46513,6 +48726,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -46542,6 +48756,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -46554,6 +48769,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
     returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
@@ -46564,6 +48780,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    isExternalProduction?: boolean
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
     returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
@@ -46612,6 +48829,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -46641,6 +48859,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -46659,6 +48878,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
@@ -46669,6 +48889,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isExternalProduction?: BoolFieldUpdateOperationsInput | boolean
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
@@ -46701,6 +48922,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -46730,6 +48952,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -46775,6 +48998,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -46804,6 +49028,7 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -46822,6 +49047,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -46866,6 +49094,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -46875,6 +49106,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -46893,12 +49125,16 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -46917,6 +49153,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -47223,6 +49462,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47240,6 +49482,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
@@ -47249,6 +49494,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -47267,12 +49513,16 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -47291,6 +49541,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -47340,6 +49593,14 @@ export namespace Prisma {
     note?: string | null
     designVersionId?: string | null
     createdAt?: Date | string
+  }
+
+  export type VendorProductionRecordCreateManyWorkItemInput = {
+    id?: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
+    createdById: string
   }
 
   export type WorkItemTransitionUpdateWithoutWorkItemInput = {
@@ -47487,6 +49748,30 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type VendorProductionRecordUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdBy?: UserUpdateOneRequiredWithoutVendorProductionRecordsCreatedNestedInput
+  }
+
+  export type VendorProductionRecordUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type VendorProductionRecordUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+  }
+
   export type WorkItemCreateManyProductTypeInput = {
     id?: string
     orderId: string
@@ -47503,6 +49788,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47520,6 +49808,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -47529,6 +49820,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -47547,12 +49839,16 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -47571,6 +49867,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -47813,6 +50112,9 @@ export namespace Prisma {
     material?: string | null
     finishNotes?: string | null
     dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -47889,6 +50191,14 @@ export namespace Prisma {
     note?: string | null
     designVersionId?: string | null
     createdAt?: Date | string
+  }
+
+  export type VendorProductionRecordCreateManyCreatedByInput = {
+    id?: string
+    workItemId: string
+    vendorName: string
+    sentAt?: Date | string
+    receivedAt?: Date | string | null
   }
 
   export type SessionUpdateWithoutUserInput = {
@@ -48127,6 +50437,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -48136,6 +50449,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -48154,12 +50468,16 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -48178,6 +50496,9 @@ export namespace Prisma {
     material?: NullableStringFieldUpdateOperationsInput | string | null
     finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -48410,6 +50731,30 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type VendorProductionRecordUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutVendorProductionRecordsNestedInput
+  }
+
+  export type VendorProductionRecordUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type VendorProductionRecordUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    vendorName?: StringFieldUpdateOperationsInput | string
+    sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type RolePermissionCreateManyRoleInput = {

@@ -59,6 +59,7 @@ model User {
   designVersionsApproved DesignVersion[]   @relation("DesignVersionApprovedBy")
   returnsRaised          Return[]          @relation("ReturnRaisedBy")
   returnsAssignedToMe    Return[]          @relation("ReturnAssignedTo")
+  vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
 
   @@unique([email])
   @@map("user")
