@@ -83,13 +83,26 @@ model Department {
 }
 
 model Customer {
-  id             String   @id @default(cuid())
-  name           String
-  /// Exactly one row has this true (seeded, not user-creatable).
-  isCashCustomer Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  id               String   @id @default(cuid())
+  name             String
+  normalizedName   String   @default("")
+  nationalId       String?
+  notes            String?
+  isCashCustomer   Boolean  @default(false)
+  isArchived       Boolean  @default(false)
+  classificationId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  orders Order[]
+  orders         Order[]
+  phones         CustomerPhone[]
+  addresses      CustomerAddress[]
+  classification CustomerClassification? @relation(fields: [classificationId], references: [id])
+  promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
+  promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
+
+  @@index([normalizedName])
+  @@index([isArchived])
 }
 
 model Order {
