@@ -9,3 +9,23 @@ import "./guards";
 
 export { DomainReviewError } from "./errors";
 export type { DomainReviewErrorCode } from "./errors";
+
+// US1 — src/server/review/queue.ts
+export { getReviewQueue } from "./queue";
+export type { ReviewQueueRow } from "./queue";
+
+// US2 / US3 — src/server/review/review.ts, src/server/review/returns.ts
+export {
+  getReviewDetail,
+  approveDesign,
+  rejectDesign,
+  WorkItemTransitionError,
+  rejectDesignInputSchema,
+} from "./review";
+export type { ReviewDetail, VersionSummary, RejectDesignInput } from "./review";
+export { createReturn, createReturnInTx, uploadReturnAttachments } from "./returns";
+export type { CreateReturnInput, ReturnAttachmentFile, ReturnAttachmentKind } from "./returns";
+
+// US4 — src/server/review/timeline.ts
+export { getVersionTimeline } from "./timeline";
+export type { TimelineEntry, TimelineOutcome } from "./timeline";
