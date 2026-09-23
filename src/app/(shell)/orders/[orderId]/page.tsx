@@ -195,6 +195,17 @@ export default async function OrderDetailPage({
   });
   const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
 
+  // US5 (013, T036): rework count per Work Item — count(Return WHERE
+  // workItemId = ...), same derived-value rule as getReviewQueue
+  // (research.md §1), but queried directly here since order detail shows
+  // Work Items outside WAITING_REVIEW too, not via a getReviewQueue call.
+  const reworkCounts = await db.return.groupBy({
+    by: ["workItemId"],
+    where: { workItemId: { in: detail.workItems.map((wi) => wi.id) } },
+    _count: { _all: true },
+  });
+  const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
+
   const eligibleDesignersByWorkItem = new Map<string, EligibleDesigner[]>();
   if (canAssignDesigner) {
     for (const wi of detail.workItems) {
@@ -270,13 +281,21 @@ export default async function OrderDetailPage({
         {detail.workItems.map((wi) => {
           const assigneeInfo = assigneeById.get(wi.id);
           const hasAssignee = Boolean(assigneeInfo?.assigneeId);
+          const reworkCount = reworkCountByWorkItem.get(wi.id) ?? 0;
           return (
           <div key={wi.id} className="rounded-lg border border-border bg-card p-6">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-medium">
                 {S.workItemCardHeading} — {wi.description ?? wi.id}
               </span>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{wi.state}</span>
+              <div className="flex items-center gap-2">
+                {reworkCount > 0 && (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-900/30 dark:text-amber-300">
+                    {S.reworkCountBadgePrefix} {reworkCount} {S.reworkCountBadgeSuffix}
+                  </span>
+                )}
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium">{wi.state}</span>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-end gap-3">

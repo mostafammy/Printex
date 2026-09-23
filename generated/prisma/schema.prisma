@@ -64,6 +64,12 @@ enum WorkItemDimensionUnit {
   IN
 }
 
+enum ReturnAttachmentKind {
+  VOICE_NOTE
+  IMAGE
+  FILE
+}
+
 // --- Models ------------------------------------------------------------
 
 /// Admin-configured production department (constitution VI: data, not an enum).
@@ -74,6 +80,7 @@ model Department {
   createdAt DateTime @default(now())
 
   workItems       WorkItem[]
+  returns         Return[]
   // Back-relation for 001-identity-access-audit's UserDepartment join
   // (identity.prisma). Cross-file relations work transparently with
   // prismaSchemaFolder — no import needed.
@@ -160,6 +167,7 @@ model WorkItem {
   transitions    WorkItemTransition[]
   phaseTimings   PhaseTiming[]
   designVersions DesignVersion[]
+  returns        Return[]
 
   @@index([orderId, state])
 }
@@ -244,8 +252,58 @@ model DesignVersion {
   uploadedBy   User     @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
   createdAt    DateTime @default(now())
 
+  /// Set once by 013's approveDesign; never cleared (constitution IV).
+  approvedAt   DateTime?
+  approvedById String?
+  approvedBy   User?     @relation("DesignVersionApprovedBy", fields: [approvedById], references: [id])
+
+  returns Return[]
+
   @@unique([workItemId, version])
   @@index([workItemId, createdAt])
+}
+
+/// Generic "sent back" record — 013's own rejection flow creates one, and
+/// 014/051 are expected to reuse this same shape for non-review returns
+/// (spec.md User Story 6). Immutable — no application code path updates or
+/// deletes a row here (constitution III).
+model Return {
+  id                 String            @id @default(cuid())
+  workItemId         String
+  workItem           WorkItem          @relation(fields: [workItemId], references: [id])
+  raisedById         String
+  raisedBy           User              @relation("ReturnRaisedBy", fields: [raisedById], references: [id])
+  originDepartmentId String
+  originDepartment   Department        @relation(fields: [originDepartmentId], references: [id])
+  category           RejectionCategory
+  assignedToId       String
+  assignedTo         User              @relation("ReturnAssignedTo", fields: [assignedToId], references: [id])
+  explanation        String
+  note               String?
+  /// Nullable — only set when raised from 013's own design-review rejection
+  /// flow; a future 014/051-originated return has no design version.
+  designVersionId    String?
+  designVersion      DesignVersion?    @relation(fields: [designVersionId], references: [id])
+  createdAt          DateTime          @default(now())
+
+  attachments ReturnAttachment[]
+
+  @@index([workItemId, createdAt])
+}
+
+model ReturnAttachment {
+  id         String               @id @default(cuid())
+  returnId   String
+  return     Return               @relation(fields: [returnId], references: [id])
+  kind       ReturnAttachmentKind
+  /// Opaque key passed to StorageAdapter.put/get (constitution IV).
+  storageKey String
+  fileName   String
+  mimeType   String?
+  sizeBytes  Int
+  createdAt  DateTime             @default(now())
+
+  @@index([returnId])
 }
 
 /// Outbox — polymorphic via entityType/entityId, not a Prisma relation.
@@ -378,6 +436,9 @@ model User {
   workItemTransitions    WorkItemTransition[] @relation("WorkItemTransitionActor")
   phaseTimings           PhaseTiming[]        @relation("PhaseTimingUser")
   designVersionsUploaded DesignVersion[]      @relation("DesignVersionUploadedBy")
+  designVersionsApproved DesignVersion[]      @relation("DesignVersionApprovedBy")
+  returnsRaised          Return[]             @relation("ReturnRaisedBy")
+  returnsAssignedToMe    Return[]             @relation("ReturnAssignedTo")
 
   @@unique([email])
   @@map("user")

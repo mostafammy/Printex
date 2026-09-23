@@ -218,6 +218,32 @@ exports.Prisma.DesignVersionScalarFieldEnum = {
   sha256: 'sha256',
   note: 'note',
   uploadedById: 'uploadedById',
+  createdAt: 'createdAt',
+  approvedAt: 'approvedAt',
+  approvedById: 'approvedById'
+};
+
+exports.Prisma.ReturnScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  raisedById: 'raisedById',
+  originDepartmentId: 'originDepartmentId',
+  category: 'category',
+  assignedToId: 'assignedToId',
+  explanation: 'explanation',
+  note: 'note',
+  designVersionId: 'designVersionId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ReturnAttachmentScalarFieldEnum = {
+  id: 'id',
+  returnId: 'returnId',
+  kind: 'kind',
+  storageKey: 'storageKey',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
   createdAt: 'createdAt'
 };
 
@@ -461,6 +487,12 @@ exports.PhaseTimingKind = exports.$Enums.PhaseTimingKind = {
   ACTIVE: 'ACTIVE'
 };
 
+exports.ReturnAttachmentKind = exports.$Enums.ReturnAttachmentKind = {
+  VOICE_NOTE: 'VOICE_NOTE',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE'
+};
+
 exports.Prisma.ModelName = {
   Department: 'Department',
   Customer: 'Customer',
@@ -470,6 +502,8 @@ exports.Prisma.ModelName = {
   WorkItemTransition: 'WorkItemTransition',
   PhaseTiming: 'PhaseTiming',
   DesignVersion: 'DesignVersion',
+  Return: 'Return',
+  ReturnAttachment: 'ReturnAttachment',
   NotificationEvent: 'NotificationEvent',
   CustomerPhone: 'CustomerPhone',
   CustomerAddress: 'CustomerAddress',
