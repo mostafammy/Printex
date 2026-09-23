@@ -82,7 +82,7 @@ description: "Task list template for feature implementation"
 ### Implementation for User Story 2
 
 - [ ] T024 [P] [US2] Seed configurable classification rows Individual, Company, Agency, and VIP in `prisma/seed.ts`, preserving inactive historical classifications and never introducing a classification enum.
-- [ ] T025 [US2] Implement `createCustomer(input)`, `getCustomer(id)`, update, and archive operations in `src/server/customers/service.ts` with normalization, hard duplicate blocking, validation, atomic audit writes through feature 001, and clarified Reception/Admin permissions.
+- [X] T025 [US2] Implement `createCustomer(input)`, `getCustomer(id)`, update, and archive operations in `src/server/customers/service.ts` with normalization, hard duplicate blocking, validation, atomic audit writes through feature 001, and clarified Reception/Admin permissions.
 - [ ] T026 [US2] Implement classification query/configuration operations in `src/server/customers/classifications.ts`: `findClassifications`, `createClassification`, `updateClassification`, and `deactivateClassification`; require Admin authorization for configuration mutations.
 - [ ] T027 [US2] Add customer mutation/profile server boundaries in `src/app/api/customers/route.ts` and `src/app/api/customers/[id]/route.ts`, including auth, authorization, validation, and no-partial-write behavior.
 - [ ] T028 [US2] Add classification configuration boundaries in `src/app/api/customer-classifications/route.ts` and `src/app/api/customer-classifications/[id]/route.ts` with Admin-only mutation checks.
