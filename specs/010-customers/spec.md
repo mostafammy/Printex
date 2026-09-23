@@ -111,7 +111,7 @@ Staff can open a customer profile showing overview, orders, and notes. The order
 - **FR-017**: Every customer-management entry point MUST authenticate and authorize the caller using `authorize('customer.manage')`; enforcement MUST occur server-side.
 - **FR-018**: Every external/client input MUST be validated at the server boundary, and failed mutations MUST make no partial changes.
 - **FR-019**: Phone search MUST return a matching customer in under 300 ms with 50,000 seeded customers under representative operating conditions.
-- **FR-020**: The feature MUST extend the Customer base model from 002 in `prisma/schema/customer.prisma` without redefining the shared ownership model.
+- **FR-020**: The feature MUST extend the Customer base model from 002 in `prisma/schema/core.prisma`; customer-owned related models MAY be defined in `prisma/schema/customer.prisma`, without redefining the shared ownership model.
 - **FR-021**: The feature MUST expose `findCustomers(query)`, `getCustomer(id)`, `createCustomer(input)`, `normalizePhone(raw)`, `<CustomerPicker onSelect>`, and the profile tab slot API as stable contracts for consuming features.
 - **FR-022**: Customer data MUST remain operational data owned by the application, not by Accounting; balances and payments remain owned by 052.
 - **FR-023**: The classification starter list and field-level role permissions MUST be documented before implementation. Reception MAY edit all customer fields except archive and promotion; Admin authorization is required for archive and promotion.
@@ -166,7 +166,6 @@ Staff can open a customer profile showing overview, orders, and notes. The order
 - Q: Should merging duplicate customer records be included in V1, or remain out of scope? → A: Keep customer merging out of scope for V1.
 - Q: Which customer fields may Reception edit directly, and which fields require Admin authorization? → A: Reception may edit all customer fields except archive and promotion; Admin authorization is required for archive and promotion.
 
-### Pending decisions for `/speckit-clarify`
+### Planning note
 
-- Reception-editable fields versus Admin-only fields.
-- Classification starter list, with the proposed default: Individual, Company, Agency, VIP.
+- Classification starter list remains configurable data; proposed initial values are Individual, Company, Agency, and VIP.
