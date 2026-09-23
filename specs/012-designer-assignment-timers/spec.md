@@ -8,6 +8,15 @@
 
 **Input**: User description: "Putting the right designer on the job and measuring every minute of design work. Assignment dialog with eligible designers, workload, and customer history. Rule-based 'lightest eligible designer' suggestion, no auto-assign. Assign/reassign with reason. Designer 'My queue'. Work timer (start/pause/resume/stop) producing queue time, active time, total phase duration. Upload design version. Mark design complete. Continue after rework."
 
+## Clarifications
+
+### Session 2026-09-23
+
+- Q: When a Work Item is unassigned, should a designer ever be able to pick it up themselves from a shared pool, or does every assignment always start with reception (or a head designer) choosing someone? → A: No self-pick in V1 — every assignment is made by reception or a head designer via the dialog.
+- Q: Who should be allowed to reassign a Work Item that's already assigned to a designer — reception staff, a head designer, or either? → A: Reception (`order.create`) or a head designer only — not any designer holding plain `design.work`; the plan must define how "head designer" is identified since the permission vocabulary doesn't distinguish it from "designer" yet.
+- Q: Can a designer have more than one Work Item timer running at once, or does starting a new timer always pause whatever they were previously timing? → A: No — starting a new timer auto-pauses (closes) whatever the designer was previously actively timing (confirms FR-012 as drafted).
+- Q: Should a designer's running timer auto-pause when they log out or their shift/session ends, or does it keep running until explicitly stopped? → A: No auto-pause — the segment stays open until an explicit stop/pause or a state-ending transition closes it (confirms the existing Assumptions-section default).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Assign a designer to a new Work Item (Priority: P1) 🎯 MVP
@@ -199,6 +208,9 @@ under the existing phase-timing history rather than starting a new phase from ze
 - What happens when a Work Item is cancelled while a timer is actively running on it? Any open
   active-time or queue-time segment is closed at the moment of cancellation, same as any other
   state transition that ends a phase.
+- What happens if a designer wants to work on an unassigned Work Item they see is unclaimed? There
+  is no self-pick pool in V1 (Clarifications, 2026-09-23) — they must ask reception or a head
+  designer to assign it to them through the assignment dialog like any other Work Item.
 
 ## Requirements *(mandatory)*
 
@@ -221,6 +233,10 @@ under the existing phase-timing history rather than starting a new phase from ze
   new assignee, and an optional reason.
 - **FR-005**: A reassignment (changing the assignee of a Work Item that already has one) MUST
   require a non-empty reason before it can be confirmed.
+- **FR-005a**: Only reception (holding `order.create`) or a head designer may confirm a
+  reassignment; an ordinary designer holding only `design.work` MUST be rejected if they attempt
+  to reassign a Work Item away from its current assignee (Clarifications, 2026-09-23). Initial
+  assignment (`NEW → ASSIGNED`, no prior assignee) remains open to reception as today.
 - **FR-006**: Confirming an assignment or reassignment MUST notify the newly assigned designer via
   the existing `notify()` mechanism.
 - **FR-007**: Reassigning a Work Item MUST NOT discard or alter the previous designer's already
@@ -315,15 +331,19 @@ under the existing phase-timing history rather than starting a new phase from ze
 - Estimated wait shown in the assignment dialog is a simple derived figure (e.g., current queue size
   times an average recent phase duration for that designer) — an approximation for reception's
   decision-making, not a committed SLA; exact formula is an implementation detail for the plan.
-- Reassignment authority (reception, head designer, or both) defaults to: anyone holding
-  `order.create` (reception) or `design.work` (a designer or head designer acting for their team)
-  may reassign, since PRI-9's spec.md's own "Decisions for /speckit-clarify" leaves this open and no
-  stricter existing permission (e.g., a dedicated "design.manage") exists yet in the permission
-  vocabulary; this MAY be tightened during `/speckit-clarify` if the answer differs.
+- Reassignment authority is reception (`order.create`) or a head designer — resolved via
+  Clarifications (2026-09-23). The permission vocabulary does not yet distinguish "head designer"
+  from "designer" (both currently hold only `design.work`); this spec requires a new way to
+  identify a head designer (e.g., a `design.manage` permission or a head-designer role flag) as
+  part of its own scope — `/speckit-plan` must define exactly how, since no existing mechanism
+  covers it. Until that lands, an ordinary designer holding only `design.work` MUST NOT be able to
+  reassign another designer's Work Item — only initiate their own timer actions on items already
+  assigned to them.
 - A designer may only run one active timer at a time, and starting a new one auto-pauses the
-  previous one (per PRI-9's own recommended default) rather than blocking the new start outright.
-- There is no auto-pause on logout or shift end in V1 (per PRI-9's out-of-scope framing for
-  V1/Phase-2 auto behaviors) — an open segment simply keeps accruing until explicitly closed by a
-  state-ending action; this is why FR-015 requires "elapsed-so-far" to always be computed correctly
-  from persisted timestamps rather than relying on any close-on-logout behavior.
+  previous one — resolved via Clarifications (2026-09-23) — rather than blocking the new start
+  outright.
+- There is no auto-pause on logout or shift end in V1 — resolved via Clarifications (2026-09-23) —
+  an open segment simply keeps accruing until explicitly closed by a state-ending action; this is
+  why FR-015 requires "elapsed-so-far" to always be computed correctly from persisted timestamps
+  rather than relying on any close-on-logout behavior.
 

@@ -16,10 +16,10 @@
 
 ## Requirement Completeness
 
-- [x] No [NEEDS CLARIFICATION] markers remain — PRI-9's four open "Decisions for
-      `/speckit-clarify`" questions are carried forward as documented Assumptions with a
-      reasonable default each, to be revisited in `/speckit-clarify` rather than blocking spec
-      completion (consistent with the max-3-markers guidance favoring informed defaults).
+- [x] No [NEEDS CLARIFICATION] markers remain — all four of PRI-9's open "Decisions for
+      `/speckit-clarify`" questions were confirmed via `/speckit-clarify` on 2026-09-23 (see
+      spec.md's Clarifications section) and are reflected in the Functional Requirements,
+      Edge Cases, and Assumptions sections.
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -38,9 +38,9 @@
 
 ## Notes
 
-- The four PRI-9 "Decisions for /speckit-clarify" questions (concurrent timers, auto-pause on
-  logout, who may reassign, pool self-pick) are resolved here as explicit, reversible Assumptions
-  rather than spec-blocking markers, per the project's own instruction to run `/speckit-clarify`
-  next — `/speckit-clarify` is the intended place to confirm or override these defaults with Fady
-  before `/speckit-plan`.
-</content>
+- The four PRI-9 "Decisions for /speckit-clarify" questions (pool self-pick, reassignment
+  authority, concurrent timers, auto-pause on logout) are now resolved via the 2026-09-23
+  `/speckit-clarify` session. Reassignment authority surfaced a real spec gap — the permission
+  vocabulary doesn't yet distinguish "head designer" from "designer" — flagged in Assumptions for
+  `/speckit-plan` to resolve concretely.
+
