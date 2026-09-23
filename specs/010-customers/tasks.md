@@ -129,8 +129,8 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] Implement `<CustomerPicker onSelect>` in `src/components/customers/customer-picker.tsx` with Arabic RTL search, bounded results, listbox keyboard behavior, inline create, and exactly-once `customerId` callback.
-- [ ] T041 [US4] Implement profile slot composition in `src/components/customers/profile-slots.tsx` and integrate it into `src/components/customers/customer-profile.tsx` for `payments-balance`, `special-pricing`, and `messages`.
+- [X] T040 [US4] Implement `<CustomerPicker onSelect>` in `src/components/customers/customer-picker.tsx` with Arabic RTL search, bounded results, listbox keyboard behavior, inline create, and exactly-once `customerId` callback.
+- [X] T041 [US4] Implement profile slot composition in `src/components/customers/profile-slots.tsx` and integrate it into `src/components/customers/customer-profile.tsx` for `payments-balance`, `special-pricing`, and `messages`.
 - [ ] T042 [US4] Add the order-entry integration adapter contract in `src/components/customers/index.ts` and document consumption example in `specs/010-customers/contracts/customer-picker.md` without implementing order creation.
 
 **Checkpoint**: 011 can consume the picker and profile slots without customer-internal dependencies.

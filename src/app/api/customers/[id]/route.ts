@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { archiveCustomer, getCustomer, updateCustomer } from "~/server/customers";
+import { archiveCustomer, customerInput, getCustomer, updateCustomer } from "~/server/customers";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -14,7 +14,7 @@ export async function GET(_: Request, context: Context) {
 
 export async function PUT(request: Request, context: Context) {
   try {
-    const customer = await updateCustomer((await context.params).id, await request.json());
+    const customer = await updateCustomer((await context.params).id, customerInput.parse(await request.json()));
     return NextResponse.json(customer);
   } catch {
     return NextResponse.json({ error: "CUSTOMER_UPDATE_FAILED" }, { status: 400 });
