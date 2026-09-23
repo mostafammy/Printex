@@ -113,6 +113,18 @@ jobs:
             "
           done
 
+      - name: Seed roles, permissions, and dev data
+        # prisma db push creates empty tables only — it never runs
+        # prisma/seed.ts. Several contract/integration tests depend on the
+        # seeded Role/RolePermission rows (tests/contract/role-permission-matrix.test.ts
+        # and others), so seed both databases before running tests. Runs as
+        # printex_app (matching production's runtime role) — seed.ts is
+        # idempotent (upsert-based), so this is safe to run on every CI run.
+        run: |
+          pnpm exec prisma db seed
+          DATABASE_URL="postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test" \
+            pnpm exec prisma db seed
+
       - name: Apply audit_event append-only REVOKE
         # audit-event-append-only.sql's `REVOKE ... FROM CURRENT_USER` is
         # written for a single-role deployment where the runtime role also
