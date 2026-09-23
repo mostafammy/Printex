@@ -9,6 +9,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testDb } from "../../helpers/testDb";
 import { recordSentToVendor, recordReceivedFromVendor } from "~/server/production/vendor";
+import { completeProduction } from "~/server/production/completion";
 import type { Actor } from "~/server/auth";
 import type { Permission } from "~/server/auth";
 
@@ -94,5 +95,42 @@ describe("recordSentToVendor + recordReceivedFromVendor (integration, US6)", () 
 
     record = await testDb.vendorProductionRecord.findUnique({ where: { id: recordId } });
     expect(record?.receivedAt).toBeInstanceOf(Date);
+  });
+
+  it("blocks completeProduction until the vendor receipt is recorded, then allows it (FR-012)", async () => {
+    const actor = actorFor([externalDept.id]);
+    await seedActorUser(actor);
+
+    const order = await testDb.order.create({
+      data: {
+        number: Number(process.hrtime.bigint() % 1_000_000_000n),
+        customerId,
+        channel: "WALK_IN",
+        priority: "NORMAL",
+        mode: "SEPARATE",
+        createdById: actor.userId,
+      },
+    });
+    const workItem = await testDb.workItem.create({
+      data: { orderId: order.id, state: "IN_PRODUCTION", departmentId: externalDept.id },
+    });
+
+    await expect(
+      completeProduction(actor, workItem.id, { producedQuantity: 10 }),
+    ).rejects.toMatchObject({ code: "VENDOR_RECEIPT_REQUIRED" });
+
+    const { recordId } = await recordSentToVendor(actor, workItem.id, { vendorName: "Riverside Vendor" });
+
+    await expect(
+      completeProduction(actor, workItem.id, { producedQuantity: 10 }),
+    ).rejects.toMatchObject({ code: "VENDOR_RECEIPT_REQUIRED" });
+
+    await recordReceivedFromVendor(actor, workItem.id, recordId);
+
+    await completeProduction(actor, workItem.id, { producedQuantity: 10 });
+
+    const completed = await testDb.workItem.findUnique({ where: { id: workItem.id } });
+    expect(completed?.state).toBe("PRODUCTION_COMPLETED");
+    expect(completed?.producedQuantity).toBe(10);
   });
 });

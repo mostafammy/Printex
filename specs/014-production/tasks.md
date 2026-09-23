@@ -41,7 +41,7 @@ Single Next.js project (plan.md Project Structure): `src/server/production/**`,
 **Purpose**: Land the schema diff, the one new workflow edge, and module scaffolding every story
 builds on.
 
-- [ ] T001 Apply the schema diff in `prisma/schema/core.prisma` per data-model.md: add
+- [x] T001 Apply the schema diff in `prisma/schema/core.prisma` per data-model.md: add
   `WorkItem.producedQuantity Int?`, `WorkItem.productionNotes String?`,
   `WorkItem.pendingFileRevisionAt DateTime?`; add `Department.isExternalProduction Boolean
   @default(false)`; add `model VendorProductionRecord` (id, `workItemId` + relation, `vendorName
@@ -55,14 +55,14 @@ builds on.
   confirm with Fady before pushing. Whoever picks this up: (1) confirm with Fady, (2) run the two
   commands, (3) re-run the integration suite below to confirm it passes against a live schema, (4)
   check off the manual quickstart QA task once seeded data is available
-- [ ] T003 [P] Add the new allowed edge to `src/server/core/workflow/edges.ts` per
+- [x] T003 [P] Add the new allowed edge to `src/server/core/workflow/edges.ts` per
   data-model.md/research.md §2: `IN_PRODUCTION: ["PRODUCTION_COMPLETED", "REWORK_REQUIRED",
   "CANCELLED"]` (replacing the current `["PRODUCTION_COMPLETED", "CANCELLED"]` entry)
-- [ ] T004 [P] Add a `no-restricted-imports` rule for `src/server/production/**` to
+- [x] T004 [P] Add a `no-restricted-imports` rule for `src/server/production/**` to
   `eslint.config.js`, identical in shape to the existing `src/server/orders/**`/
   `src/server/designers/**`/`src/server/review/**` rules: only `~/server/production` (the barrel)
   is importable from outside; `tests/**` exempted
-- [ ] T005 [P] Create the barrel `src/server/production/index.ts` with no exports yet
+- [x] T005 [P] Create the barrel `src/server/production/index.ts` with no exports yet
   (placeholder `export {}` — populated incrementally as each story's functions land)
 
 ---
@@ -73,12 +73,12 @@ builds on.
 
 **⚠️ CRITICAL**: No user story implementation task may start until this phase is complete.
 
-- [ ] T006 [P] Implement `DomainProductionError` in `src/server/production/errors.ts` — a local
+- [x] T006 [P] Implement `DomainProductionError` in `src/server/production/errors.ts` — a local
   error class carrying `code: "WORK_ITEM_NOT_FOUND" | "NOT_READY_FOR_PRODUCTION" |
   "PENDING_FILE_REVISION" | "MISSING_PRODUCED_QUANTITY" | "VENDOR_RECEIPT_REQUIRED" |
   "NOT_EXTERNAL_DEPARTMENT" | "ALREADY_RECEIVED" | "PRODUCTION_ALREADY_STARTED"` and a
   human-readable message (contracts/production.md's Errors section)
-- [ ] T007 [P] Unit test in `tests/unit/production.test.ts` for the edges.ts change: assert
+- [x] T007 [P] Unit test in `tests/unit/production.test.ts` for the edges.ts change: assert
   `ALLOWED_EDGES.IN_PRODUCTION` includes `"REWORK_REQUIRED"` alongside the pre-existing
   `"PRODUCTION_COMPLETED"`/`"CANCELLED"` targets (T003)
 
@@ -102,18 +102,18 @@ directly depends on T013's effective-department helper.
 
 ### Tests for User Story 1
 
-- [ ] T008 [P] [US1] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T008 [P] [US1] Contract test in `tests/contract/production/production.test.ts`:
   `getOperatorQueue` requires `production.operate` (FORBIDDEN without it), returns only
   `READY_FOR_PRODUCTION` rows scoped to the actor's effective departments, matches the frozen
   `ProductionQueueRow` shape; `routeToDepartment` requires the Head-Designer/Reception routing
   permission, refuses once the Work Item is `IN_PRODUCTION` or later
   (`DomainProductionError("PRODUCTION_ALREADY_STARTED")`)
-- [ ] T009 [P] [US1] Integration test in `tests/integration/production/queue.test.ts`: seed 3
+- [x] T009 [P] [US1] Integration test in `tests/integration/production/queue.test.ts`: seed 3
   ready items across 2 departments (1 urgent, 2 normal at different `enteredQueueAt`) + 1
   non-ready item; assert an operator scoped to only one department sees just that department's
   items, urgent-first then oldest-first, and a direct job-card request for the other
   department's item is refused
-- [ ] T009a [P] [US1] Integration test in `tests/integration/production/queue.test.ts`: seed a
+- [x] T009a [P] [US1] Integration test in `tests/integration/production/queue.test.ts`: seed a
   Work Item whose `departmentId` is null but whose order's Product Type has a
   `defaultDepartmentId`; assert it appears in that department's queue via the effective-department
   fallback (research.md §8); call `routeToDepartment` to override it to a different department;
@@ -122,23 +122,23 @@ directly depends on T013's effective-department helper.
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] Implement the effective-department helper in `src/server/production/queue.ts`
+- [x] T013 [US1] Implement the effective-department helper in `src/server/production/queue.ts`
   (or a shared internal function both `queue.ts` and `jobCard.ts` import): resolves
   `workItem.departmentId ?? productType.defaultDepartmentId` (research.md §8, data-model.md's
   Effective department derived value)
-- [ ] T014a [US1] Implement `routeToDepartment(actor, workItemId, departmentId)` in
+- [x] T014a [US1] Implement `routeToDepartment(actor, workItemId, departmentId)` in
   `src/server/production/queue.ts` per contracts/production.md: authorize with the Head-Designer/
   Reception routing permission (confirm exact key against 001's role table — no new key expected);
   refuse with `DomainProductionError("PRODUCTION_ALREADY_STARTED")` once the Work Item is
   `IN_PRODUCTION` or later; `db.workItem.update({ departmentId })`, no state transition (depends
   on T006)
-- [ ] T010 [US1] Implement `getOperatorQueue(actor)` in `src/server/production/queue.ts` per
+- [x] T010 [US1] Implement `getOperatorQueue(actor)` in `src/server/production/queue.ts` per
   contracts/production.md: `authorize(actor, "production.operate")`; query `WorkItem WHERE state =
   "READY_FOR_PRODUCTION"`, filter to rows whose effective department (T013) is in
   `actor.departmentIds`; derive `enteredQueueAt` from the most recent `WorkItemTransition` landing
   in `READY_FOR_PRODUCTION`; sort urgent-first then oldest (research.md §6/§7, same rule as
   012/013's queues)
-- [ ] T011 [US1] Export `getOperatorQueue`, `routeToDepartment`, and `ProductionQueueRow` from
+- [x] T011 [US1] Export `getOperatorQueue`, `routeToDepartment`, and `ProductionQueueRow` from
   `src/server/production/index.ts`
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable
@@ -313,22 +313,22 @@ completion (refused), record received-from-vendor, retry completion (succeeds).
 
 ### Tests for User Story 6
 
-- [ ] T032 [P] [US6] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T032 [P] [US6] Contract test in `tests/contract/production/production.test.ts`:
   `recordSentToVendor` refuses for a non-external department
   (`DomainProductionError("NOT_EXTERNAL_DEPARTMENT")`); `recordReceivedFromVendor` refuses a
   second receipt on an already-received record (`"ALREADY_RECEIVED"`)
-- [ ] T033 [P] [US6] Integration test in `tests/integration/production/vendor.test.ts`: route a
+- [x] T033 [P] [US6] Integration test in `tests/integration/production/vendor.test.ts`: route a
   Work Item to an external department; attempt `completeProduction` before any vendor record
   exists (refused, `"VENDOR_RECEIPT_REQUIRED"`); record sent-to-vendor, attempt completion again
   (still refused); record received-from-vendor; retry completion (succeeds)
 
 ### Implementation for User Story 6
 
-- [ ] T034 [US6] Implement `recordSentToVendor(actor, workItemId, input)` in
+- [x] T034 [US6] Implement `recordSentToVendor(actor, workItemId, input)` in
   `src/server/production/vendor.ts` per contracts/production.md: `authorize`, validate
   `vendorName` non-empty, refuse if the Work Item's department is not `isExternalProduction`;
   create a `VendorProductionRecord` row (`sentAt: now`, `receivedAt: null`)
-- [ ] T035 [US6] Implement `recordReceivedFromVendor(actor, workItemId, recordId)` in the same
+- [x] T035 [US6] Implement `recordReceivedFromVendor(actor, workItemId, recordId)` in the same
   file: refuse if no such record exists or it already has a non-null `receivedAt`; set
   `receivedAt = now`
 - [ ] T036 [US6] Export `recordSentToVendor`, `recordReceivedFromVendor` from
