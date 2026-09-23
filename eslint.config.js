@@ -99,6 +99,30 @@ export default tseslint.config(
     },
   },
   {
+    // Nothing outside `src/server/auth/**` (and this project's own tests,
+    // which deliberately unit-test auth's internal modules in isolation —
+    // see tests/unit/authorize.test.ts, tests/integration/getActor.test.ts,
+    // etc.) may deep-import its internals — the only legal public surface
+    // for application code is the barrel export at `src/server/auth/index.ts`
+    // (contracts/auth.md, contracts/audit.md, T036).
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/auth/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/auth/**", "!~/server/auth", "!~/server/auth/index"],
+              message:
+                "Import from the public barrel `~/server/auth` (src/server/auth/index.ts) instead of reaching into its internals (contracts/auth.md, contracts/audit.md).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
     // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
     // `src/server/core/storage/**`, which are Ports per contracts/storage.md

@@ -5,8 +5,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
-import { recordFailedLogin, recordSuccessfulLogin } from "~/server/auth/lockout";
-import { audit } from "~/server/auth/audit";
+import { recordFailedLogin, recordSuccessfulLogin, audit } from "~/server/auth";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
