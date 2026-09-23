@@ -5,3 +5,7 @@
 export { DomainDesignerError } from "./errors";
 export { suggestDesigner } from "./suggestion";
 export type { DesignerLoadCandidate } from "./suggestion";
+
+// US4
+export { uploadDesignVersion, markDesignComplete, WorkItemDesignTransitionError } from "./designVersions";
+export type { UploadDesignVersionFile } from "./designVersions";
