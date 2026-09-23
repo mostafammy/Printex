@@ -13,7 +13,7 @@
 ### Session 2026-09-23
 
 - Q: When a Work Item is unassigned, should a designer ever be able to pick it up themselves from a shared pool, or does every assignment always start with reception (or a head designer) choosing someone? → A: No self-pick in V1 — every assignment is made by reception or a head designer via the dialog.
-- Q: Who should be allowed to reassign a Work Item that's already assigned to a designer — reception staff, a head designer, or either? → A: Reception (`order.create`) or a head designer only — not any designer holding plain `design.work`; the plan must define how "head designer" is identified since the permission vocabulary doesn't distinguish it from "designer" yet.
+- Q: Who should be allowed to reassign a Work Item that's already assigned to a designer — reception staff, a head designer, or either? → A: Whoever holds the existing `workitem.assign_designer` permission — seeded to RECEPTION and ADMIN_OWNER by default, extensible to HEAD_DESIGNER via admin config; never to a plain DESIGNER.
 - Q: Can a designer have more than one Work Item timer running at once, or does starting a new timer always pause whatever they were previously timing? → A: No — starting a new timer auto-pauses (closes) whatever the designer was previously actively timing (confirms FR-012 as drafted).
 - Q: Should a designer's running timer auto-pause when they log out or their shift/session ends, or does it keep running until explicitly stopped? → A: No auto-pause — the segment stays open until an explicit stop/pause or a state-ending transition closes it (confirms the existing Assumptions-section default).
 
@@ -216,9 +216,9 @@ under the existing phase-timing history rather than starting a new phase from ze
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST let an authorized user open an assignment dialog for any Work Item in
-  state `NEW`, `ASSIGNED`, `REWORK_REQUIRED`, or already `IN_DESIGN` (the latter two cases being a
-  reassignment).
+- **FR-001**: The system MUST let a user holding the `workitem.assign_designer` permission open an
+  assignment dialog for any Work Item in state `NEW`, `ASSIGNED`, `REWORK_REQUIRED`, or already
+  `IN_DESIGN` (the latter two cases being a reassignment).
 - **FR-002**: The assignment dialog MUST list every active user holding the `design.work`
   permission as an eligible designer, showing for each: count of currently active (non-terminal,
   non-`DELIVERED`/`COMPLETED`/`CANCELLED`) assigned Work Items, queue size, an estimated wait, and
@@ -233,10 +233,14 @@ under the existing phase-timing history rather than starting a new phase from ze
   new assignee, and an optional reason.
 - **FR-005**: A reassignment (changing the assignee of a Work Item that already has one) MUST
   require a non-empty reason before it can be confirmed.
-- **FR-005a**: Only reception (holding `order.create`) or a head designer may confirm a
-  reassignment; an ordinary designer holding only `design.work` MUST be rejected if they attempt
-  to reassign a Work Item away from its current assignee (Clarifications, 2026-09-23). Initial
-  assignment (`NEW → ASSIGNED`, no prior assignee) remains open to reception as today.
+- **FR-005a**: Confirming a reassignment requires the same `workitem.assign_designer` permission as
+  initial assignment (FR-001) — there is no separate reassignment permission. By default only the
+  RECEPTION and ADMIN_OWNER roles are seeded with `workitem.assign_designer` (data-model.md /
+  prisma/seed.ts's existing role × permission matrix); a shop MAY additionally grant it to
+  HEAD_DESIGNER via that same seed/admin configuration (constitution VI: roles are
+  admin-configurable data, not code) if they want head designers to reassign too, but an ordinary
+  DESIGNER (holding only `design.work`) never has it by default and MUST be rejected
+  (Clarifications, 2026-09-23).
 - **FR-006**: Confirming an assignment or reassignment MUST notify the newly assigned designer via
   the existing `notify()` mechanism.
 - **FR-007**: Reassigning a Work Item MUST NOT discard or alter the previous designer's already
@@ -271,8 +275,9 @@ under the existing phase-timing history rather than starting a new phase from ze
 - **FR-017**: A designer MUST be able to mark an `IN_DESIGN` Work Item design-complete only after at
   least one Design Version has been uploaded for it.
 - **FR-018**: Marking a Work Item design-complete MUST close any open active-time segment, transition
-  it through `DESIGN_COMPLETED`, and then to `WAITING_REVIEW` if its product type's
-  `requiresReview` is true, or to `APPROVED` if it is false.
+  it through `DESIGN_COMPLETED`, and then to `WAITING_REVIEW` if its own `requiresReview` field
+  (set at creation from the product type's default, per 011) is true, or to `APPROVED` if it is
+  false.
 - **FR-019**: When a Work Item's state becomes `REWORK_REQUIRED` (by a separate feature), it MUST
   reappear in its currently assigned designer's "My queue" with a rework indicator and the
   rejection details attached to it visible.
@@ -296,8 +301,10 @@ under the existing phase-timing history rather than starting a new phase from ze
   feature is the primary producer of `ACTIVE` segments during the design phase and a consumer of
   both kinds for duration display.
 - **Design Version**: A design file plus a short note, attached to a Work Item, produced by the
-  upload action in this feature (stored via the shared file-upload capability); an ordered history
-  of these versions is shown on the Work Item.
+  upload action in this feature; bytes go through the existing `StorageAdapter` port (002),
+  metadata (version number, uploader, note, timestamp) is this feature's own new record, matching
+  constitution IV's "new version, never overwritten"; an ordered history of these versions is shown
+  on the Work Item.
 - **Assignment audit event**: A record of who assigned or reassigned a Work Item to whom, when, and
   (for reassignment) why.
 
@@ -320,25 +327,25 @@ under the existing phase-timing history rather than starting a new phase from ze
 
 ## Assumptions
 
-- The shared file-upload capability referenced by PRI-9 as "050's `files.upload`" does not exist in
-  the codebase yet (feature 050 is unbuilt). This spec proceeds on the same pattern 011 used for the
-  not-yet-built Customer Picker: implementation will define a small stub upload capability
-  (storing a file reference + note against the Work Item) that is swapped for the real 050 module
-  once it lands, so the design-version and mark-complete stories aren't blocked on it.
+- The shared file capability referenced by PRI-9 as "050's `files.upload`" is only partially built:
+  002 already shipped a low-level `StorageAdapter` port (put/get/exists byte storage,
+  `LocalDiskStorageAdapter` for dev) satisfying constitution IV's "storage abstraction," but no
+  file-metadata model (versions, checksums, uploader, notes) exists yet — that's 050's undone job.
+  This spec defines its own minimal Design Version metadata (Key Entities) on top of the existing
+  `StorageAdapter`, shaped so 050 can later generalize it into a shared file model across features,
+  rather than inventing parallel storage.
 - "Active users with `design.work`" means users who both hold that permission (via their role) and
   are not deactivated — the same activity definition already used elsewhere in the codebase for
   "active" staff.
 - Estimated wait shown in the assignment dialog is a simple derived figure (e.g., current queue size
   times an average recent phase duration for that designer) — an approximation for reception's
   decision-making, not a committed SLA; exact formula is an implementation detail for the plan.
-- Reassignment authority is reception (`order.create`) or a head designer — resolved via
-  Clarifications (2026-09-23). The permission vocabulary does not yet distinguish "head designer"
-  from "designer" (both currently hold only `design.work`); this spec requires a new way to
-  identify a head designer (e.g., a `design.manage` permission or a head-designer role flag) as
-  part of its own scope — `/speckit-plan` must define exactly how, since no existing mechanism
-  covers it. Until that lands, an ordinary designer holding only `design.work` MUST NOT be able to
-  reassign another designer's Work Item — only initiate their own timer actions on items already
-  assigned to them.
+- Assignment and reassignment authority both gate on the existing `workitem.assign_designer`
+  permission (001's fixed permission vocabulary) — no new permission is needed. By default (per
+  the existing seeded role × permission matrix) only RECEPTION and ADMIN_OWNER hold it; HEAD_DESIGNER
+  is seeded with only `design.review`. This spec doesn't change the default seed — if a shop wants
+  its head designer to also reassign, that's an existing admin/config action (constitution VI),
+  not new code. Resolved via Clarifications (2026-09-23).
 - A designer may only run one active timer at a time, and starting a new one auto-pauses the
   previous one — resolved via Clarifications (2026-09-23) — rather than blocking the new start
   outright.

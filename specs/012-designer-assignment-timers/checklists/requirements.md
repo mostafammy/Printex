@@ -40,7 +40,6 @@
 
 - The four PRI-9 "Decisions for /speckit-clarify" questions (pool self-pick, reassignment
   authority, concurrent timers, auto-pause on logout) are now resolved via the 2026-09-23
-  `/speckit-clarify` session. Reassignment authority surfaced a real spec gap — the permission
-  vocabulary doesn't yet distinguish "head designer" from "designer" — flagged in Assumptions for
-  `/speckit-plan` to resolve concretely.
+  `/speckit-clarify` session. Reassignment authority uses the existing `workitem.assign_designer`
+  permission (001's fixed vocabulary) — no new permission needed.
 
