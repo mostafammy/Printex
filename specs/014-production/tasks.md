@@ -386,7 +386,7 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
 
 **Purpose**: Final verification across the whole module, plus 090's workload query.
 
-- [ ] T042 [P] Implement `getDepartmentWorkload(actor)` in `src/server/production/workload.ts` per
+- [x] T042 [P] Implement `getDepartmentWorkload(actor)` in `src/server/production/workload.ts` per
   contracts/production.md: per department, `readyCount`
   (`count(WorkItem WHERE departmentId = ... AND state = "READY_FOR_PRODUCTION")`) and
   `inProductionCount` (same with `state = "IN_PRODUCTION"`); export from

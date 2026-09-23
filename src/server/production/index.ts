@@ -14,3 +14,5 @@ export type { CompleteProductionInput } from "./completion";
 export { sendBackToDesign } from "./sendBack";
 export type { SendBackToDesignInput } from "./sendBack";
 export { recordSentToVendor, recordReceivedFromVendor } from "./vendor";
+export { getDepartmentWorkload } from "./workload";
+export type { DepartmentWorkload } from "./workload";
