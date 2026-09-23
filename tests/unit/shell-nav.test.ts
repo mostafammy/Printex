@@ -44,7 +44,7 @@ describe("filterNavByPermissions", () => {
     );
 
     const reception = filterNavByPermissions(
-      { userId: asUserId("u1"), roles: ["reception"], departmentIds: [] },
+      { userId: asUserId("u1"), roles: ["RECEPTION"], departmentIds: [] },
       navItems,
     );
     const ids = reception.map((i) => i.id);
@@ -63,7 +63,7 @@ describe("filterNavByPermissions", () => {
     );
 
     const admin = filterNavByPermissions(
-      { userId: asUserId("u2"), roles: ["admin"], departmentIds: [] },
+      { userId: asUserId("u2"), roles: ["ADMIN_OWNER"], departmentIds: [] },
       navItems,
     );
 
@@ -102,7 +102,7 @@ describe("SidebarNav component", () => {
 
     render(
       SidebarNav({
-        actor: { userId: asUserId("u4"), roles: ["production"], departmentIds: [] },
+        actor: { userId: asUserId("u4"), roles: ["PRODUCTION_OPERATOR"], departmentIds: [] },
       }),
     );
 
