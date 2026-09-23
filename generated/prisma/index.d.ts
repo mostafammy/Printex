@@ -57,6 +57,19 @@ export type PhaseTiming = $Result.DefaultSelection<Prisma.$PhaseTimingPayload>
  */
 export type DesignVersion = $Result.DefaultSelection<Prisma.$DesignVersionPayload>
 /**
+ * Model Return
+ * Generic "sent back" record — 013's own rejection flow creates one, and
+ * 014/051 are expected to reuse this same shape for non-review returns
+ * (spec.md User Story 6). Immutable — no application code path updates or
+ * deletes a row here (constitution III).
+ */
+export type Return = $Result.DefaultSelection<Prisma.$ReturnPayload>
+/**
+ * Model ReturnAttachment
+ * 
+ */
+export type ReturnAttachment = $Result.DefaultSelection<Prisma.$ReturnAttachmentPayload>
+/**
  * Model NotificationEvent
  * Outbox — polymorphic via entityType/entityId, not a Prisma relation.
  */
@@ -232,6 +245,15 @@ export const WorkItemDimensionUnit: {
 
 export type WorkItemDimensionUnit = (typeof WorkItemDimensionUnit)[keyof typeof WorkItemDimensionUnit]
 
+
+export const ReturnAttachmentKind: {
+  VOICE_NOTE: 'VOICE_NOTE',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE'
+};
+
+export type ReturnAttachmentKind = (typeof ReturnAttachmentKind)[keyof typeof ReturnAttachmentKind]
+
 }
 
 export type WorkItemState = $Enums.WorkItemState
@@ -261,6 +283,10 @@ export const RejectionCategory: typeof $Enums.RejectionCategory
 export type WorkItemDimensionUnit = $Enums.WorkItemDimensionUnit
 
 export const WorkItemDimensionUnit: typeof $Enums.WorkItemDimensionUnit
+
+export type ReturnAttachmentKind = $Enums.ReturnAttachmentKind
+
+export const ReturnAttachmentKind: typeof $Enums.ReturnAttachmentKind
 
 /**
  * ##  Prisma Client ʲˢ
@@ -459,6 +485,26 @@ export class PrismaClient<
     * ```
     */
   get designVersion(): Prisma.DesignVersionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.return`: Exposes CRUD operations for the **Return** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Returns
+    * const returns = await prisma.return.findMany()
+    * ```
+    */
+  get return(): Prisma.ReturnDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.returnAttachment`: Exposes CRUD operations for the **ReturnAttachment** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ReturnAttachments
+    * const returnAttachments = await prisma.returnAttachment.findMany()
+    * ```
+    */
+  get returnAttachment(): Prisma.ReturnAttachmentDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.notificationEvent`: Exposes CRUD operations for the **NotificationEvent** model.
@@ -1058,6 +1104,8 @@ export namespace Prisma {
     WorkItemTransition: 'WorkItemTransition',
     PhaseTiming: 'PhaseTiming',
     DesignVersion: 'DesignVersion',
+    Return: 'Return',
+    ReturnAttachment: 'ReturnAttachment',
     NotificationEvent: 'NotificationEvent',
     CustomerPhone: 'CustomerPhone',
     CustomerAddress: 'CustomerAddress',
@@ -1091,7 +1139,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
+      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1684,6 +1732,154 @@ export namespace Prisma {
           count: {
             args: Prisma.DesignVersionCountArgs<ExtArgs>
             result: $Utils.Optional<DesignVersionCountAggregateOutputType> | number
+          }
+        }
+      }
+      Return: {
+        payload: Prisma.$ReturnPayload<ExtArgs>
+        fields: Prisma.ReturnFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ReturnFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ReturnFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          findFirst: {
+            args: Prisma.ReturnFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ReturnFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          findMany: {
+            args: Prisma.ReturnFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>[]
+          }
+          create: {
+            args: Prisma.ReturnCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          createMany: {
+            args: Prisma.ReturnCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ReturnCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>[]
+          }
+          delete: {
+            args: Prisma.ReturnDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          update: {
+            args: Prisma.ReturnUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          deleteMany: {
+            args: Prisma.ReturnDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ReturnUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ReturnUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>[]
+          }
+          upsert: {
+            args: Prisma.ReturnUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnPayload>
+          }
+          aggregate: {
+            args: Prisma.ReturnAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateReturn>
+          }
+          groupBy: {
+            args: Prisma.ReturnGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ReturnGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ReturnCountArgs<ExtArgs>
+            result: $Utils.Optional<ReturnCountAggregateOutputType> | number
+          }
+        }
+      }
+      ReturnAttachment: {
+        payload: Prisma.$ReturnAttachmentPayload<ExtArgs>
+        fields: Prisma.ReturnAttachmentFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ReturnAttachmentFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ReturnAttachmentFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          findFirst: {
+            args: Prisma.ReturnAttachmentFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ReturnAttachmentFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          findMany: {
+            args: Prisma.ReturnAttachmentFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>[]
+          }
+          create: {
+            args: Prisma.ReturnAttachmentCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          createMany: {
+            args: Prisma.ReturnAttachmentCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ReturnAttachmentCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>[]
+          }
+          delete: {
+            args: Prisma.ReturnAttachmentDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          update: {
+            args: Prisma.ReturnAttachmentUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          deleteMany: {
+            args: Prisma.ReturnAttachmentDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ReturnAttachmentUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ReturnAttachmentUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>[]
+          }
+          upsert: {
+            args: Prisma.ReturnAttachmentUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ReturnAttachmentPayload>
+          }
+          aggregate: {
+            args: Prisma.ReturnAttachmentAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateReturnAttachment>
+          }
+          groupBy: {
+            args: Prisma.ReturnAttachmentGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ReturnAttachmentGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ReturnAttachmentCountArgs<ExtArgs>
+            result: $Utils.Optional<ReturnAttachmentCountAggregateOutputType> | number
           }
         }
       }
@@ -2901,6 +3097,8 @@ export namespace Prisma {
     workItemTransition?: WorkItemTransitionOmit
     phaseTiming?: PhaseTimingOmit
     designVersion?: DesignVersionOmit
+    return?: ReturnOmit
+    returnAttachment?: ReturnAttachmentOmit
     notificationEvent?: NotificationEventOmit
     customerPhone?: CustomerPhoneOmit
     customerAddress?: CustomerAddressOmit
@@ -2997,12 +3195,14 @@ export namespace Prisma {
 
   export type DepartmentCountOutputType = {
     workItems: number
+    returns: number
     userDepartments: number
     productTypes: number
   }
 
   export type DepartmentCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItems?: boolean | DepartmentCountOutputTypeCountWorkItemsArgs
+    returns?: boolean | DepartmentCountOutputTypeCountReturnsArgs
     userDepartments?: boolean | DepartmentCountOutputTypeCountUserDepartmentsArgs
     productTypes?: boolean | DepartmentCountOutputTypeCountProductTypesArgs
   }
@@ -3023,6 +3223,13 @@ export namespace Prisma {
    */
   export type DepartmentCountOutputTypeCountWorkItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WorkItemWhereInput
+  }
+
+  /**
+   * DepartmentCountOutputType without action
+   */
+  export type DepartmentCountOutputTypeCountReturnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
   }
 
   /**
@@ -3146,12 +3353,14 @@ export namespace Prisma {
     transitions: number
     phaseTimings: number
     designVersions: number
+    returns: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transitions?: boolean | WorkItemCountOutputTypeCountTransitionsArgs
     phaseTimings?: boolean | WorkItemCountOutputTypeCountPhaseTimingsArgs
     designVersions?: boolean | WorkItemCountOutputTypeCountDesignVersionsArgs
+    returns?: boolean | WorkItemCountOutputTypeCountReturnsArgs
   }
 
   // Custom InputTypes
@@ -3186,6 +3395,13 @@ export namespace Prisma {
     where?: DesignVersionWhereInput
   }
 
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountReturnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
+  }
+
 
   /**
    * Count Type ProductTypeCountOutputType
@@ -3215,6 +3431,68 @@ export namespace Prisma {
    */
   export type ProductTypeCountOutputTypeCountWorkItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WorkItemWhereInput
+  }
+
+
+  /**
+   * Count Type DesignVersionCountOutputType
+   */
+
+  export type DesignVersionCountOutputType = {
+    returns: number
+  }
+
+  export type DesignVersionCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    returns?: boolean | DesignVersionCountOutputTypeCountReturnsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * DesignVersionCountOutputType without action
+   */
+  export type DesignVersionCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersionCountOutputType
+     */
+    select?: DesignVersionCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * DesignVersionCountOutputType without action
+   */
+  export type DesignVersionCountOutputTypeCountReturnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
+  }
+
+
+  /**
+   * Count Type ReturnCountOutputType
+   */
+
+  export type ReturnCountOutputType = {
+    attachments: number
+  }
+
+  export type ReturnCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    attachments?: boolean | ReturnCountOutputTypeCountAttachmentsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * ReturnCountOutputType without action
+   */
+  export type ReturnCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnCountOutputType
+     */
+    select?: ReturnCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * ReturnCountOutputType without action
+   */
+  export type ReturnCountOutputTypeCountAttachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnAttachmentWhereInput
   }
 
 
@@ -3266,6 +3544,9 @@ export namespace Prisma {
     workItemTransitions: number
     phaseTimings: number
     designVersionsUploaded: number
+    designVersionsApproved: number
+    returnsRaised: number
+    returnsAssignedToMe: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3281,6 +3562,9 @@ export namespace Prisma {
     workItemTransitions?: boolean | UserCountOutputTypeCountWorkItemTransitionsArgs
     phaseTimings?: boolean | UserCountOutputTypeCountPhaseTimingsArgs
     designVersionsUploaded?: boolean | UserCountOutputTypeCountDesignVersionsUploadedArgs
+    designVersionsApproved?: boolean | UserCountOutputTypeCountDesignVersionsApprovedArgs
+    returnsRaised?: boolean | UserCountOutputTypeCountReturnsRaisedArgs
+    returnsAssignedToMe?: boolean | UserCountOutputTypeCountReturnsAssignedToMeArgs
   }
 
   // Custom InputTypes
@@ -3376,6 +3660,27 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountDesignVersionsUploadedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DesignVersionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountDesignVersionsApprovedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DesignVersionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountReturnsRaisedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountReturnsAssignedToMeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
   }
 
 
@@ -3580,6 +3885,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: boolean
     workItems?: boolean | Department$workItemsArgs<ExtArgs>
+    returns?: boolean | Department$returnsArgs<ExtArgs>
     userDepartments?: boolean | Department$userDepartmentsArgs<ExtArgs>
     productTypes?: boolean | Department$productTypesArgs<ExtArgs>
     _count?: boolean | DepartmentCountOutputTypeDefaultArgs<ExtArgs>
@@ -3609,6 +3915,7 @@ export namespace Prisma {
   export type DepartmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "isActive" | "createdAt", ExtArgs["result"]["department"]>
   export type DepartmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItems?: boolean | Department$workItemsArgs<ExtArgs>
+    returns?: boolean | Department$returnsArgs<ExtArgs>
     userDepartments?: boolean | Department$userDepartmentsArgs<ExtArgs>
     productTypes?: boolean | Department$productTypesArgs<ExtArgs>
     _count?: boolean | DepartmentCountOutputTypeDefaultArgs<ExtArgs>
@@ -3620,6 +3927,7 @@ export namespace Prisma {
     name: "Department"
     objects: {
       workItems: Prisma.$WorkItemPayload<ExtArgs>[]
+      returns: Prisma.$ReturnPayload<ExtArgs>[]
       userDepartments: Prisma.$UserDepartmentPayload<ExtArgs>[]
       productTypes: Prisma.$ProductTypePayload<ExtArgs>[]
     }
@@ -4023,6 +4331,7 @@ export namespace Prisma {
   export interface Prisma__DepartmentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     workItems<T extends Department$workItemsArgs<ExtArgs> = {}>(args?: Subset<T, Department$workItemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    returns<T extends Department$returnsArgs<ExtArgs> = {}>(args?: Subset<T, Department$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     userDepartments<T extends Department$userDepartmentsArgs<ExtArgs> = {}>(args?: Subset<T, Department$userDepartmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserDepartmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     productTypes<T extends Department$productTypesArgs<ExtArgs> = {}>(args?: Subset<T, Department$productTypesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductTypePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
@@ -4467,6 +4776,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WorkItemScalarFieldEnum | WorkItemScalarFieldEnum[]
+  }
+
+  /**
+   * Department.returns
+   */
+  export type Department$returnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    cursor?: ReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
   }
 
   /**
@@ -7326,6 +7659,7 @@ export namespace Prisma {
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
+    returns?: boolean | WorkItem$returnsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -7409,6 +7743,7 @@ export namespace Prisma {
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
+    returns?: boolean | WorkItem$returnsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7434,6 +7769,7 @@ export namespace Prisma {
       transitions: Prisma.$WorkItemTransitionPayload<ExtArgs>[]
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
       designVersions: Prisma.$DesignVersionPayload<ExtArgs>[]
+      returns: Prisma.$ReturnPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7870,6 +8206,7 @@ export namespace Prisma {
     transitions<T extends WorkItem$transitionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$transitionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     phaseTimings<T extends WorkItem$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     designVersions<T extends WorkItem$designVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$designVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    returns<T extends WorkItem$returnsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8439,6 +8776,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.returns
+   */
+  export type WorkItem$returnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    cursor?: ReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
   }
 
   /**
@@ -11887,6 +12248,8 @@ export namespace Prisma {
     note: string | null
     uploadedById: string | null
     createdAt: Date | null
+    approvedAt: Date | null
+    approvedById: string | null
   }
 
   export type DesignVersionMaxAggregateOutputType = {
@@ -11901,6 +12264,8 @@ export namespace Prisma {
     note: string | null
     uploadedById: string | null
     createdAt: Date | null
+    approvedAt: Date | null
+    approvedById: string | null
   }
 
   export type DesignVersionCountAggregateOutputType = {
@@ -11915,6 +12280,8 @@ export namespace Prisma {
     note: number
     uploadedById: number
     createdAt: number
+    approvedAt: number
+    approvedById: number
     _all: number
   }
 
@@ -11941,6 +12308,8 @@ export namespace Prisma {
     note?: true
     uploadedById?: true
     createdAt?: true
+    approvedAt?: true
+    approvedById?: true
   }
 
   export type DesignVersionMaxAggregateInputType = {
@@ -11955,6 +12324,8 @@ export namespace Prisma {
     note?: true
     uploadedById?: true
     createdAt?: true
+    approvedAt?: true
+    approvedById?: true
   }
 
   export type DesignVersionCountAggregateInputType = {
@@ -11969,6 +12340,8 @@ export namespace Prisma {
     note?: true
     uploadedById?: true
     createdAt?: true
+    approvedAt?: true
+    approvedById?: true
     _all?: true
   }
 
@@ -12070,6 +12443,8 @@ export namespace Prisma {
     note: string | null
     uploadedById: string
     createdAt: Date
+    approvedAt: Date | null
+    approvedById: string | null
     _count: DesignVersionCountAggregateOutputType | null
     _avg: DesignVersionAvgAggregateOutputType | null
     _sum: DesignVersionSumAggregateOutputType | null
@@ -12103,8 +12478,13 @@ export namespace Prisma {
     note?: boolean
     uploadedById?: boolean
     createdAt?: boolean
+    approvedAt?: boolean
+    approvedById?: boolean
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
+    returns?: boolean | DesignVersion$returnsArgs<ExtArgs>
+    _count?: boolean | DesignVersionCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["designVersion"]>
 
   export type DesignVersionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -12119,8 +12499,11 @@ export namespace Prisma {
     note?: boolean
     uploadedById?: boolean
     createdAt?: boolean
+    approvedAt?: boolean
+    approvedById?: boolean
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
   }, ExtArgs["result"]["designVersion"]>
 
   export type DesignVersionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -12135,8 +12518,11 @@ export namespace Prisma {
     note?: boolean
     uploadedById?: boolean
     createdAt?: boolean
+    approvedAt?: boolean
+    approvedById?: boolean
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
   }, ExtArgs["result"]["designVersion"]>
 
   export type DesignVersionSelectScalar = {
@@ -12151,20 +12537,27 @@ export namespace Prisma {
     note?: boolean
     uploadedById?: boolean
     createdAt?: boolean
+    approvedAt?: boolean
+    approvedById?: boolean
   }
 
-  export type DesignVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "version" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "sha256" | "note" | "uploadedById" | "createdAt", ExtArgs["result"]["designVersion"]>
+  export type DesignVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "version" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "sha256" | "note" | "uploadedById" | "createdAt" | "approvedAt" | "approvedById", ExtArgs["result"]["designVersion"]>
   export type DesignVersionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
+    returns?: boolean | DesignVersion$returnsArgs<ExtArgs>
+    _count?: boolean | DesignVersionCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type DesignVersionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
   }
   export type DesignVersionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
     uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+    approvedBy?: boolean | DesignVersion$approvedByArgs<ExtArgs>
   }
 
   export type $DesignVersionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -12172,6 +12565,8 @@ export namespace Prisma {
     objects: {
       workItem: Prisma.$WorkItemPayload<ExtArgs>
       uploadedBy: Prisma.$UserPayload<ExtArgs>
+      approvedBy: Prisma.$UserPayload<ExtArgs> | null
+      returns: Prisma.$ReturnPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -12195,6 +12590,11 @@ export namespace Prisma {
       note: string | null
       uploadedById: string
       createdAt: Date
+      /**
+       * Set once by 013's approveDesign; never cleared (constitution IV).
+       */
+      approvedAt: Date | null
+      approvedById: string | null
     }, ExtArgs["result"]["designVersion"]>
     composites: {}
   }
@@ -12591,6 +12991,8 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     uploadedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    approvedBy<T extends DesignVersion$approvedByArgs<ExtArgs> = {}>(args?: Subset<T, DesignVersion$approvedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    returns<T extends DesignVersion$returnsArgs<ExtArgs> = {}>(args?: Subset<T, DesignVersion$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -12631,6 +13033,8 @@ export namespace Prisma {
     readonly note: FieldRef<"DesignVersion", 'String'>
     readonly uploadedById: FieldRef<"DesignVersion", 'String'>
     readonly createdAt: FieldRef<"DesignVersion", 'DateTime'>
+    readonly approvedAt: FieldRef<"DesignVersion", 'DateTime'>
+    readonly approvedById: FieldRef<"DesignVersion", 'String'>
   }
     
 
@@ -13027,6 +13431,49 @@ export namespace Prisma {
   }
 
   /**
+   * DesignVersion.approvedBy
+   */
+  export type DesignVersion$approvedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * DesignVersion.returns
+   */
+  export type DesignVersion$returnsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    cursor?: ReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
    * DesignVersion without action
    */
   export type DesignVersionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -13042,6 +13489,2348 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: DesignVersionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Return
+   */
+
+  export type AggregateReturn = {
+    _count: ReturnCountAggregateOutputType | null
+    _min: ReturnMinAggregateOutputType | null
+    _max: ReturnMaxAggregateOutputType | null
+  }
+
+  export type ReturnMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    raisedById: string | null
+    originDepartmentId: string | null
+    category: $Enums.RejectionCategory | null
+    assignedToId: string | null
+    explanation: string | null
+    note: string | null
+    designVersionId: string | null
+    createdAt: Date | null
+  }
+
+  export type ReturnMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    raisedById: string | null
+    originDepartmentId: string | null
+    category: $Enums.RejectionCategory | null
+    assignedToId: string | null
+    explanation: string | null
+    note: string | null
+    designVersionId: string | null
+    createdAt: Date | null
+  }
+
+  export type ReturnCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    raisedById: number
+    originDepartmentId: number
+    category: number
+    assignedToId: number
+    explanation: number
+    note: number
+    designVersionId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ReturnMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    raisedById?: true
+    originDepartmentId?: true
+    category?: true
+    assignedToId?: true
+    explanation?: true
+    note?: true
+    designVersionId?: true
+    createdAt?: true
+  }
+
+  export type ReturnMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    raisedById?: true
+    originDepartmentId?: true
+    category?: true
+    assignedToId?: true
+    explanation?: true
+    note?: true
+    designVersionId?: true
+    createdAt?: true
+  }
+
+  export type ReturnCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    raisedById?: true
+    originDepartmentId?: true
+    category?: true
+    assignedToId?: true
+    explanation?: true
+    note?: true
+    designVersionId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ReturnAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Return to aggregate.
+     */
+    where?: ReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Returns to fetch.
+     */
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Returns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Returns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Returns
+    **/
+    _count?: true | ReturnCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ReturnMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ReturnMaxAggregateInputType
+  }
+
+  export type GetReturnAggregateType<T extends ReturnAggregateArgs> = {
+        [P in keyof T & keyof AggregateReturn]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateReturn[P]>
+      : GetScalarType<T[P], AggregateReturn[P]>
+  }
+
+
+
+
+  export type ReturnGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithAggregationInput | ReturnOrderByWithAggregationInput[]
+    by: ReturnScalarFieldEnum[] | ReturnScalarFieldEnum
+    having?: ReturnScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ReturnCountAggregateInputType | true
+    _min?: ReturnMinAggregateInputType
+    _max?: ReturnMaxAggregateInputType
+  }
+
+  export type ReturnGroupByOutputType = {
+    id: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note: string | null
+    designVersionId: string | null
+    createdAt: Date
+    _count: ReturnCountAggregateOutputType | null
+    _min: ReturnMinAggregateOutputType | null
+    _max: ReturnMaxAggregateOutputType | null
+  }
+
+  type GetReturnGroupByPayload<T extends ReturnGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ReturnGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ReturnGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ReturnGroupByOutputType[P]>
+            : GetScalarType<T[P], ReturnGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ReturnSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    raisedById?: boolean
+    originDepartmentId?: boolean
+    category?: boolean
+    assignedToId?: boolean
+    explanation?: boolean
+    note?: boolean
+    designVersionId?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+    attachments?: boolean | Return$attachmentsArgs<ExtArgs>
+    _count?: boolean | ReturnCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["return"]>
+
+  export type ReturnSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    raisedById?: boolean
+    originDepartmentId?: boolean
+    category?: boolean
+    assignedToId?: boolean
+    explanation?: boolean
+    note?: boolean
+    designVersionId?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+  }, ExtArgs["result"]["return"]>
+
+  export type ReturnSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    raisedById?: boolean
+    originDepartmentId?: boolean
+    category?: boolean
+    assignedToId?: boolean
+    explanation?: boolean
+    note?: boolean
+    designVersionId?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+  }, ExtArgs["result"]["return"]>
+
+  export type ReturnSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    raisedById?: boolean
+    originDepartmentId?: boolean
+    category?: boolean
+    assignedToId?: boolean
+    explanation?: boolean
+    note?: boolean
+    designVersionId?: boolean
+    createdAt?: boolean
+  }
+
+  export type ReturnOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "raisedById" | "originDepartmentId" | "category" | "assignedToId" | "explanation" | "note" | "designVersionId" | "createdAt", ExtArgs["result"]["return"]>
+  export type ReturnInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+    attachments?: boolean | Return$attachmentsArgs<ExtArgs>
+    _count?: boolean | ReturnCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type ReturnIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+  }
+  export type ReturnIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    originDepartment?: boolean | DepartmentDefaultArgs<ExtArgs>
+    assignedTo?: boolean | UserDefaultArgs<ExtArgs>
+    designVersion?: boolean | Return$designVersionArgs<ExtArgs>
+  }
+
+  export type $ReturnPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Return"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      raisedBy: Prisma.$UserPayload<ExtArgs>
+      originDepartment: Prisma.$DepartmentPayload<ExtArgs>
+      assignedTo: Prisma.$UserPayload<ExtArgs>
+      designVersion: Prisma.$DesignVersionPayload<ExtArgs> | null
+      attachments: Prisma.$ReturnAttachmentPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      raisedById: string
+      originDepartmentId: string
+      category: $Enums.RejectionCategory
+      assignedToId: string
+      explanation: string
+      note: string | null
+      /**
+       * Nullable — only set when raised from 013's own design-review rejection
+       * flow; a future 014/051-originated return has no design version.
+       */
+      designVersionId: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["return"]>
+    composites: {}
+  }
+
+  type ReturnGetPayload<S extends boolean | null | undefined | ReturnDefaultArgs> = $Result.GetResult<Prisma.$ReturnPayload, S>
+
+  type ReturnCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ReturnFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ReturnCountAggregateInputType | true
+    }
+
+  export interface ReturnDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Return'], meta: { name: 'Return' } }
+    /**
+     * Find zero or one Return that matches the filter.
+     * @param {ReturnFindUniqueArgs} args - Arguments to find a Return
+     * @example
+     * // Get one Return
+     * const return = await prisma.return.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ReturnFindUniqueArgs>(args: SelectSubset<T, ReturnFindUniqueArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Return that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ReturnFindUniqueOrThrowArgs} args - Arguments to find a Return
+     * @example
+     * // Get one Return
+     * const return = await prisma.return.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ReturnFindUniqueOrThrowArgs>(args: SelectSubset<T, ReturnFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Return that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnFindFirstArgs} args - Arguments to find a Return
+     * @example
+     * // Get one Return
+     * const return = await prisma.return.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ReturnFindFirstArgs>(args?: SelectSubset<T, ReturnFindFirstArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Return that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnFindFirstOrThrowArgs} args - Arguments to find a Return
+     * @example
+     * // Get one Return
+     * const return = await prisma.return.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ReturnFindFirstOrThrowArgs>(args?: SelectSubset<T, ReturnFindFirstOrThrowArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Returns that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Returns
+     * const returns = await prisma.return.findMany()
+     * 
+     * // Get first 10 Returns
+     * const returns = await prisma.return.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const returnWithIdOnly = await prisma.return.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ReturnFindManyArgs>(args?: SelectSubset<T, ReturnFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Return.
+     * @param {ReturnCreateArgs} args - Arguments to create a Return.
+     * @example
+     * // Create one Return
+     * const Return = await prisma.return.create({
+     *   data: {
+     *     // ... data to create a Return
+     *   }
+     * })
+     * 
+     */
+    create<T extends ReturnCreateArgs>(args: SelectSubset<T, ReturnCreateArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Returns.
+     * @param {ReturnCreateManyArgs} args - Arguments to create many Returns.
+     * @example
+     * // Create many Returns
+     * const return = await prisma.return.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ReturnCreateManyArgs>(args?: SelectSubset<T, ReturnCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Returns and returns the data saved in the database.
+     * @param {ReturnCreateManyAndReturnArgs} args - Arguments to create many Returns.
+     * @example
+     * // Create many Returns
+     * const return = await prisma.return.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Returns and only return the `id`
+     * const returnWithIdOnly = await prisma.return.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ReturnCreateManyAndReturnArgs>(args?: SelectSubset<T, ReturnCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Return.
+     * @param {ReturnDeleteArgs} args - Arguments to delete one Return.
+     * @example
+     * // Delete one Return
+     * const Return = await prisma.return.delete({
+     *   where: {
+     *     // ... filter to delete one Return
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ReturnDeleteArgs>(args: SelectSubset<T, ReturnDeleteArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Return.
+     * @param {ReturnUpdateArgs} args - Arguments to update one Return.
+     * @example
+     * // Update one Return
+     * const return = await prisma.return.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ReturnUpdateArgs>(args: SelectSubset<T, ReturnUpdateArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Returns.
+     * @param {ReturnDeleteManyArgs} args - Arguments to filter Returns to delete.
+     * @example
+     * // Delete a few Returns
+     * const { count } = await prisma.return.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ReturnDeleteManyArgs>(args?: SelectSubset<T, ReturnDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Returns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Returns
+     * const return = await prisma.return.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ReturnUpdateManyArgs>(args: SelectSubset<T, ReturnUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Returns and returns the data updated in the database.
+     * @param {ReturnUpdateManyAndReturnArgs} args - Arguments to update many Returns.
+     * @example
+     * // Update many Returns
+     * const return = await prisma.return.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Returns and only return the `id`
+     * const returnWithIdOnly = await prisma.return.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ReturnUpdateManyAndReturnArgs>(args: SelectSubset<T, ReturnUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Return.
+     * @param {ReturnUpsertArgs} args - Arguments to update or create a Return.
+     * @example
+     * // Update or create a Return
+     * const return = await prisma.return.upsert({
+     *   create: {
+     *     // ... data to create a Return
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Return we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ReturnUpsertArgs>(args: SelectSubset<T, ReturnUpsertArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Returns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnCountArgs} args - Arguments to filter Returns to count.
+     * @example
+     * // Count the number of Returns
+     * const count = await prisma.return.count({
+     *   where: {
+     *     // ... the filter for the Returns we want to count
+     *   }
+     * })
+    **/
+    count<T extends ReturnCountArgs>(
+      args?: Subset<T, ReturnCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ReturnCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Return.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ReturnAggregateArgs>(args: Subset<T, ReturnAggregateArgs>): Prisma.PrismaPromise<GetReturnAggregateType<T>>
+
+    /**
+     * Group by Return.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ReturnGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ReturnGroupByArgs['orderBy'] }
+        : { orderBy?: ReturnGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ReturnGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetReturnGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Return model
+   */
+  readonly fields: ReturnFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Return.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ReturnClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    raisedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    originDepartment<T extends DepartmentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DepartmentDefaultArgs<ExtArgs>>): Prisma__DepartmentClient<$Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    assignedTo<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    designVersion<T extends Return$designVersionArgs<ExtArgs> = {}>(args?: Subset<T, Return$designVersionArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    attachments<T extends Return$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, Return$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Return model
+   */
+  interface ReturnFieldRefs {
+    readonly id: FieldRef<"Return", 'String'>
+    readonly workItemId: FieldRef<"Return", 'String'>
+    readonly raisedById: FieldRef<"Return", 'String'>
+    readonly originDepartmentId: FieldRef<"Return", 'String'>
+    readonly category: FieldRef<"Return", 'RejectionCategory'>
+    readonly assignedToId: FieldRef<"Return", 'String'>
+    readonly explanation: FieldRef<"Return", 'String'>
+    readonly note: FieldRef<"Return", 'String'>
+    readonly designVersionId: FieldRef<"Return", 'String'>
+    readonly createdAt: FieldRef<"Return", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Return findUnique
+   */
+  export type ReturnFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which Return to fetch.
+     */
+    where: ReturnWhereUniqueInput
+  }
+
+  /**
+   * Return findUniqueOrThrow
+   */
+  export type ReturnFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which Return to fetch.
+     */
+    where: ReturnWhereUniqueInput
+  }
+
+  /**
+   * Return findFirst
+   */
+  export type ReturnFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which Return to fetch.
+     */
+    where?: ReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Returns to fetch.
+     */
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Returns.
+     */
+    cursor?: ReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Returns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Returns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Returns.
+     */
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * Return findFirstOrThrow
+   */
+  export type ReturnFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which Return to fetch.
+     */
+    where?: ReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Returns to fetch.
+     */
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Returns.
+     */
+    cursor?: ReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Returns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Returns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Returns.
+     */
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * Return findMany
+   */
+  export type ReturnFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter, which Returns to fetch.
+     */
+    where?: ReturnWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Returns to fetch.
+     */
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Returns.
+     */
+    cursor?: ReturnWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Returns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Returns.
+     */
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * Return create
+   */
+  export type ReturnCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Return.
+     */
+    data: XOR<ReturnCreateInput, ReturnUncheckedCreateInput>
+  }
+
+  /**
+   * Return createMany
+   */
+  export type ReturnCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Returns.
+     */
+    data: ReturnCreateManyInput | ReturnCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Return createManyAndReturn
+   */
+  export type ReturnCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * The data used to create many Returns.
+     */
+    data: ReturnCreateManyInput | ReturnCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Return update
+   */
+  export type ReturnUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Return.
+     */
+    data: XOR<ReturnUpdateInput, ReturnUncheckedUpdateInput>
+    /**
+     * Choose, which Return to update.
+     */
+    where: ReturnWhereUniqueInput
+  }
+
+  /**
+   * Return updateMany
+   */
+  export type ReturnUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Returns.
+     */
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyInput>
+    /**
+     * Filter which Returns to update
+     */
+    where?: ReturnWhereInput
+    /**
+     * Limit how many Returns to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Return updateManyAndReturn
+   */
+  export type ReturnUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * The data used to update Returns.
+     */
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyInput>
+    /**
+     * Filter which Returns to update
+     */
+    where?: ReturnWhereInput
+    /**
+     * Limit how many Returns to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Return upsert
+   */
+  export type ReturnUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Return to update in case it exists.
+     */
+    where: ReturnWhereUniqueInput
+    /**
+     * In case the Return found by the `where` argument doesn't exist, create a new Return with this data.
+     */
+    create: XOR<ReturnCreateInput, ReturnUncheckedCreateInput>
+    /**
+     * In case the Return was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ReturnUpdateInput, ReturnUncheckedUpdateInput>
+  }
+
+  /**
+   * Return delete
+   */
+  export type ReturnDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    /**
+     * Filter which Return to delete.
+     */
+    where: ReturnWhereUniqueInput
+  }
+
+  /**
+   * Return deleteMany
+   */
+  export type ReturnDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Returns to delete
+     */
+    where?: ReturnWhereInput
+    /**
+     * Limit how many Returns to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Return.designVersion
+   */
+  export type Return$designVersionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    where?: DesignVersionWhereInput
+  }
+
+  /**
+   * Return.attachments
+   */
+  export type Return$attachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    where?: ReturnAttachmentWhereInput
+    orderBy?: ReturnAttachmentOrderByWithRelationInput | ReturnAttachmentOrderByWithRelationInput[]
+    cursor?: ReturnAttachmentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnAttachmentScalarFieldEnum | ReturnAttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * Return without action
+   */
+  export type ReturnDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ReturnAttachment
+   */
+
+  export type AggregateReturnAttachment = {
+    _count: ReturnAttachmentCountAggregateOutputType | null
+    _avg: ReturnAttachmentAvgAggregateOutputType | null
+    _sum: ReturnAttachmentSumAggregateOutputType | null
+    _min: ReturnAttachmentMinAggregateOutputType | null
+    _max: ReturnAttachmentMaxAggregateOutputType | null
+  }
+
+  export type ReturnAttachmentAvgAggregateOutputType = {
+    sizeBytes: number | null
+  }
+
+  export type ReturnAttachmentSumAggregateOutputType = {
+    sizeBytes: number | null
+  }
+
+  export type ReturnAttachmentMinAggregateOutputType = {
+    id: string | null
+    returnId: string | null
+    kind: $Enums.ReturnAttachmentKind | null
+    storageKey: string | null
+    fileName: string | null
+    mimeType: string | null
+    sizeBytes: number | null
+    createdAt: Date | null
+  }
+
+  export type ReturnAttachmentMaxAggregateOutputType = {
+    id: string | null
+    returnId: string | null
+    kind: $Enums.ReturnAttachmentKind | null
+    storageKey: string | null
+    fileName: string | null
+    mimeType: string | null
+    sizeBytes: number | null
+    createdAt: Date | null
+  }
+
+  export type ReturnAttachmentCountAggregateOutputType = {
+    id: number
+    returnId: number
+    kind: number
+    storageKey: number
+    fileName: number
+    mimeType: number
+    sizeBytes: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type ReturnAttachmentAvgAggregateInputType = {
+    sizeBytes?: true
+  }
+
+  export type ReturnAttachmentSumAggregateInputType = {
+    sizeBytes?: true
+  }
+
+  export type ReturnAttachmentMinAggregateInputType = {
+    id?: true
+    returnId?: true
+    kind?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    createdAt?: true
+  }
+
+  export type ReturnAttachmentMaxAggregateInputType = {
+    id?: true
+    returnId?: true
+    kind?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    createdAt?: true
+  }
+
+  export type ReturnAttachmentCountAggregateInputType = {
+    id?: true
+    returnId?: true
+    kind?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type ReturnAttachmentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ReturnAttachment to aggregate.
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnAttachments to fetch.
+     */
+    orderBy?: ReturnAttachmentOrderByWithRelationInput | ReturnAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ReturnAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ReturnAttachments
+    **/
+    _count?: true | ReturnAttachmentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ReturnAttachmentAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ReturnAttachmentSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ReturnAttachmentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ReturnAttachmentMaxAggregateInputType
+  }
+
+  export type GetReturnAttachmentAggregateType<T extends ReturnAttachmentAggregateArgs> = {
+        [P in keyof T & keyof AggregateReturnAttachment]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateReturnAttachment[P]>
+      : GetScalarType<T[P], AggregateReturnAttachment[P]>
+  }
+
+
+
+
+  export type ReturnAttachmentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReturnAttachmentWhereInput
+    orderBy?: ReturnAttachmentOrderByWithAggregationInput | ReturnAttachmentOrderByWithAggregationInput[]
+    by: ReturnAttachmentScalarFieldEnum[] | ReturnAttachmentScalarFieldEnum
+    having?: ReturnAttachmentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ReturnAttachmentCountAggregateInputType | true
+    _avg?: ReturnAttachmentAvgAggregateInputType
+    _sum?: ReturnAttachmentSumAggregateInputType
+    _min?: ReturnAttachmentMinAggregateInputType
+    _max?: ReturnAttachmentMaxAggregateInputType
+  }
+
+  export type ReturnAttachmentGroupByOutputType = {
+    id: string
+    returnId: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType: string | null
+    sizeBytes: number
+    createdAt: Date
+    _count: ReturnAttachmentCountAggregateOutputType | null
+    _avg: ReturnAttachmentAvgAggregateOutputType | null
+    _sum: ReturnAttachmentSumAggregateOutputType | null
+    _min: ReturnAttachmentMinAggregateOutputType | null
+    _max: ReturnAttachmentMaxAggregateOutputType | null
+  }
+
+  type GetReturnAttachmentGroupByPayload<T extends ReturnAttachmentGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ReturnAttachmentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ReturnAttachmentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ReturnAttachmentGroupByOutputType[P]>
+            : GetScalarType<T[P], ReturnAttachmentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ReturnAttachmentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    returnId?: boolean
+    kind?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    createdAt?: boolean
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnAttachment"]>
+
+  export type ReturnAttachmentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    returnId?: boolean
+    kind?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    createdAt?: boolean
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnAttachment"]>
+
+  export type ReturnAttachmentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    returnId?: boolean
+    kind?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    createdAt?: boolean
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["returnAttachment"]>
+
+  export type ReturnAttachmentSelectScalar = {
+    id?: boolean
+    returnId?: boolean
+    kind?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    createdAt?: boolean
+  }
+
+  export type ReturnAttachmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "returnId" | "kind" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "createdAt", ExtArgs["result"]["returnAttachment"]>
+  export type ReturnAttachmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }
+  export type ReturnAttachmentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }
+  export type ReturnAttachmentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    return?: boolean | ReturnDefaultArgs<ExtArgs>
+  }
+
+  export type $ReturnAttachmentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ReturnAttachment"
+    objects: {
+      return: Prisma.$ReturnPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      returnId: string
+      kind: $Enums.ReturnAttachmentKind
+      /**
+       * Opaque key passed to StorageAdapter.put/get (constitution IV).
+       */
+      storageKey: string
+      fileName: string
+      mimeType: string | null
+      sizeBytes: number
+      createdAt: Date
+    }, ExtArgs["result"]["returnAttachment"]>
+    composites: {}
+  }
+
+  type ReturnAttachmentGetPayload<S extends boolean | null | undefined | ReturnAttachmentDefaultArgs> = $Result.GetResult<Prisma.$ReturnAttachmentPayload, S>
+
+  type ReturnAttachmentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ReturnAttachmentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ReturnAttachmentCountAggregateInputType | true
+    }
+
+  export interface ReturnAttachmentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ReturnAttachment'], meta: { name: 'ReturnAttachment' } }
+    /**
+     * Find zero or one ReturnAttachment that matches the filter.
+     * @param {ReturnAttachmentFindUniqueArgs} args - Arguments to find a ReturnAttachment
+     * @example
+     * // Get one ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ReturnAttachmentFindUniqueArgs>(args: SelectSubset<T, ReturnAttachmentFindUniqueArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ReturnAttachment that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ReturnAttachmentFindUniqueOrThrowArgs} args - Arguments to find a ReturnAttachment
+     * @example
+     * // Get one ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ReturnAttachmentFindUniqueOrThrowArgs>(args: SelectSubset<T, ReturnAttachmentFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ReturnAttachment that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentFindFirstArgs} args - Arguments to find a ReturnAttachment
+     * @example
+     * // Get one ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ReturnAttachmentFindFirstArgs>(args?: SelectSubset<T, ReturnAttachmentFindFirstArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ReturnAttachment that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentFindFirstOrThrowArgs} args - Arguments to find a ReturnAttachment
+     * @example
+     * // Get one ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ReturnAttachmentFindFirstOrThrowArgs>(args?: SelectSubset<T, ReturnAttachmentFindFirstOrThrowArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ReturnAttachments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ReturnAttachments
+     * const returnAttachments = await prisma.returnAttachment.findMany()
+     * 
+     * // Get first 10 ReturnAttachments
+     * const returnAttachments = await prisma.returnAttachment.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const returnAttachmentWithIdOnly = await prisma.returnAttachment.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ReturnAttachmentFindManyArgs>(args?: SelectSubset<T, ReturnAttachmentFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ReturnAttachment.
+     * @param {ReturnAttachmentCreateArgs} args - Arguments to create a ReturnAttachment.
+     * @example
+     * // Create one ReturnAttachment
+     * const ReturnAttachment = await prisma.returnAttachment.create({
+     *   data: {
+     *     // ... data to create a ReturnAttachment
+     *   }
+     * })
+     * 
+     */
+    create<T extends ReturnAttachmentCreateArgs>(args: SelectSubset<T, ReturnAttachmentCreateArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ReturnAttachments.
+     * @param {ReturnAttachmentCreateManyArgs} args - Arguments to create many ReturnAttachments.
+     * @example
+     * // Create many ReturnAttachments
+     * const returnAttachment = await prisma.returnAttachment.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ReturnAttachmentCreateManyArgs>(args?: SelectSubset<T, ReturnAttachmentCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ReturnAttachments and returns the data saved in the database.
+     * @param {ReturnAttachmentCreateManyAndReturnArgs} args - Arguments to create many ReturnAttachments.
+     * @example
+     * // Create many ReturnAttachments
+     * const returnAttachment = await prisma.returnAttachment.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ReturnAttachments and only return the `id`
+     * const returnAttachmentWithIdOnly = await prisma.returnAttachment.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ReturnAttachmentCreateManyAndReturnArgs>(args?: SelectSubset<T, ReturnAttachmentCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ReturnAttachment.
+     * @param {ReturnAttachmentDeleteArgs} args - Arguments to delete one ReturnAttachment.
+     * @example
+     * // Delete one ReturnAttachment
+     * const ReturnAttachment = await prisma.returnAttachment.delete({
+     *   where: {
+     *     // ... filter to delete one ReturnAttachment
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ReturnAttachmentDeleteArgs>(args: SelectSubset<T, ReturnAttachmentDeleteArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ReturnAttachment.
+     * @param {ReturnAttachmentUpdateArgs} args - Arguments to update one ReturnAttachment.
+     * @example
+     * // Update one ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ReturnAttachmentUpdateArgs>(args: SelectSubset<T, ReturnAttachmentUpdateArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ReturnAttachments.
+     * @param {ReturnAttachmentDeleteManyArgs} args - Arguments to filter ReturnAttachments to delete.
+     * @example
+     * // Delete a few ReturnAttachments
+     * const { count } = await prisma.returnAttachment.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ReturnAttachmentDeleteManyArgs>(args?: SelectSubset<T, ReturnAttachmentDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ReturnAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ReturnAttachments
+     * const returnAttachment = await prisma.returnAttachment.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ReturnAttachmentUpdateManyArgs>(args: SelectSubset<T, ReturnAttachmentUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ReturnAttachments and returns the data updated in the database.
+     * @param {ReturnAttachmentUpdateManyAndReturnArgs} args - Arguments to update many ReturnAttachments.
+     * @example
+     * // Update many ReturnAttachments
+     * const returnAttachment = await prisma.returnAttachment.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ReturnAttachments and only return the `id`
+     * const returnAttachmentWithIdOnly = await prisma.returnAttachment.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ReturnAttachmentUpdateManyAndReturnArgs>(args: SelectSubset<T, ReturnAttachmentUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ReturnAttachment.
+     * @param {ReturnAttachmentUpsertArgs} args - Arguments to update or create a ReturnAttachment.
+     * @example
+     * // Update or create a ReturnAttachment
+     * const returnAttachment = await prisma.returnAttachment.upsert({
+     *   create: {
+     *     // ... data to create a ReturnAttachment
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ReturnAttachment we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ReturnAttachmentUpsertArgs>(args: SelectSubset<T, ReturnAttachmentUpsertArgs<ExtArgs>>): Prisma__ReturnAttachmentClient<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ReturnAttachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentCountArgs} args - Arguments to filter ReturnAttachments to count.
+     * @example
+     * // Count the number of ReturnAttachments
+     * const count = await prisma.returnAttachment.count({
+     *   where: {
+     *     // ... the filter for the ReturnAttachments we want to count
+     *   }
+     * })
+    **/
+    count<T extends ReturnAttachmentCountArgs>(
+      args?: Subset<T, ReturnAttachmentCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ReturnAttachmentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ReturnAttachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ReturnAttachmentAggregateArgs>(args: Subset<T, ReturnAttachmentAggregateArgs>): Prisma.PrismaPromise<GetReturnAttachmentAggregateType<T>>
+
+    /**
+     * Group by ReturnAttachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ReturnAttachmentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ReturnAttachmentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ReturnAttachmentGroupByArgs['orderBy'] }
+        : { orderBy?: ReturnAttachmentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ReturnAttachmentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetReturnAttachmentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ReturnAttachment model
+   */
+  readonly fields: ReturnAttachmentFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ReturnAttachment.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ReturnAttachmentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    return<T extends ReturnDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ReturnDefaultArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ReturnAttachment model
+   */
+  interface ReturnAttachmentFieldRefs {
+    readonly id: FieldRef<"ReturnAttachment", 'String'>
+    readonly returnId: FieldRef<"ReturnAttachment", 'String'>
+    readonly kind: FieldRef<"ReturnAttachment", 'ReturnAttachmentKind'>
+    readonly storageKey: FieldRef<"ReturnAttachment", 'String'>
+    readonly fileName: FieldRef<"ReturnAttachment", 'String'>
+    readonly mimeType: FieldRef<"ReturnAttachment", 'String'>
+    readonly sizeBytes: FieldRef<"ReturnAttachment", 'Int'>
+    readonly createdAt: FieldRef<"ReturnAttachment", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ReturnAttachment findUnique
+   */
+  export type ReturnAttachmentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnAttachment to fetch.
+     */
+    where: ReturnAttachmentWhereUniqueInput
+  }
+
+  /**
+   * ReturnAttachment findUniqueOrThrow
+   */
+  export type ReturnAttachmentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnAttachment to fetch.
+     */
+    where: ReturnAttachmentWhereUniqueInput
+  }
+
+  /**
+   * ReturnAttachment findFirst
+   */
+  export type ReturnAttachmentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnAttachment to fetch.
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnAttachments to fetch.
+     */
+    orderBy?: ReturnAttachmentOrderByWithRelationInput | ReturnAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ReturnAttachments.
+     */
+    cursor?: ReturnAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ReturnAttachments.
+     */
+    distinct?: ReturnAttachmentScalarFieldEnum | ReturnAttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnAttachment findFirstOrThrow
+   */
+  export type ReturnAttachmentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnAttachment to fetch.
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnAttachments to fetch.
+     */
+    orderBy?: ReturnAttachmentOrderByWithRelationInput | ReturnAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ReturnAttachments.
+     */
+    cursor?: ReturnAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnAttachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ReturnAttachments.
+     */
+    distinct?: ReturnAttachmentScalarFieldEnum | ReturnAttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnAttachment findMany
+   */
+  export type ReturnAttachmentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which ReturnAttachments to fetch.
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ReturnAttachments to fetch.
+     */
+    orderBy?: ReturnAttachmentOrderByWithRelationInput | ReturnAttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ReturnAttachments.
+     */
+    cursor?: ReturnAttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ReturnAttachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ReturnAttachments.
+     */
+    skip?: number
+    distinct?: ReturnAttachmentScalarFieldEnum | ReturnAttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * ReturnAttachment create
+   */
+  export type ReturnAttachmentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ReturnAttachment.
+     */
+    data: XOR<ReturnAttachmentCreateInput, ReturnAttachmentUncheckedCreateInput>
+  }
+
+  /**
+   * ReturnAttachment createMany
+   */
+  export type ReturnAttachmentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ReturnAttachments.
+     */
+    data: ReturnAttachmentCreateManyInput | ReturnAttachmentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ReturnAttachment createManyAndReturn
+   */
+  export type ReturnAttachmentCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * The data used to create many ReturnAttachments.
+     */
+    data: ReturnAttachmentCreateManyInput | ReturnAttachmentCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ReturnAttachment update
+   */
+  export type ReturnAttachmentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ReturnAttachment.
+     */
+    data: XOR<ReturnAttachmentUpdateInput, ReturnAttachmentUncheckedUpdateInput>
+    /**
+     * Choose, which ReturnAttachment to update.
+     */
+    where: ReturnAttachmentWhereUniqueInput
+  }
+
+  /**
+   * ReturnAttachment updateMany
+   */
+  export type ReturnAttachmentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ReturnAttachments.
+     */
+    data: XOR<ReturnAttachmentUpdateManyMutationInput, ReturnAttachmentUncheckedUpdateManyInput>
+    /**
+     * Filter which ReturnAttachments to update
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * Limit how many ReturnAttachments to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ReturnAttachment updateManyAndReturn
+   */
+  export type ReturnAttachmentUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * The data used to update ReturnAttachments.
+     */
+    data: XOR<ReturnAttachmentUpdateManyMutationInput, ReturnAttachmentUncheckedUpdateManyInput>
+    /**
+     * Filter which ReturnAttachments to update
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * Limit how many ReturnAttachments to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ReturnAttachment upsert
+   */
+  export type ReturnAttachmentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ReturnAttachment to update in case it exists.
+     */
+    where: ReturnAttachmentWhereUniqueInput
+    /**
+     * In case the ReturnAttachment found by the `where` argument doesn't exist, create a new ReturnAttachment with this data.
+     */
+    create: XOR<ReturnAttachmentCreateInput, ReturnAttachmentUncheckedCreateInput>
+    /**
+     * In case the ReturnAttachment was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ReturnAttachmentUpdateInput, ReturnAttachmentUncheckedUpdateInput>
+  }
+
+  /**
+   * ReturnAttachment delete
+   */
+  export type ReturnAttachmentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
+    /**
+     * Filter which ReturnAttachment to delete.
+     */
+    where: ReturnAttachmentWhereUniqueInput
+  }
+
+  /**
+   * ReturnAttachment deleteMany
+   */
+  export type ReturnAttachmentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ReturnAttachments to delete
+     */
+    where?: ReturnAttachmentWhereInput
+    /**
+     * Limit how many ReturnAttachments to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ReturnAttachment without action
+   */
+  export type ReturnAttachmentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ReturnAttachment
+     */
+    select?: ReturnAttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ReturnAttachment
+     */
+    omit?: ReturnAttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnAttachmentInclude<ExtArgs> | null
   }
 
 
@@ -18716,6 +21505,9 @@ export namespace Prisma {
     workItemTransitions?: boolean | User$workItemTransitionsArgs<ExtArgs>
     phaseTimings?: boolean | User$phaseTimingsArgs<ExtArgs>
     designVersionsUploaded?: boolean | User$designVersionsUploadedArgs<ExtArgs>
+    designVersionsApproved?: boolean | User$designVersionsApprovedArgs<ExtArgs>
+    returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
+    returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -18778,6 +21570,9 @@ export namespace Prisma {
     workItemTransitions?: boolean | User$workItemTransitionsArgs<ExtArgs>
     phaseTimings?: boolean | User$phaseTimingsArgs<ExtArgs>
     designVersionsUploaded?: boolean | User$designVersionsUploadedArgs<ExtArgs>
+    designVersionsApproved?: boolean | User$designVersionsApprovedArgs<ExtArgs>
+    returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
+    returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -18798,6 +21593,9 @@ export namespace Prisma {
       workItemTransitions: Prisma.$WorkItemTransitionPayload<ExtArgs>[]
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
       designVersionsUploaded: Prisma.$DesignVersionPayload<ExtArgs>[]
+      designVersionsApproved: Prisma.$DesignVersionPayload<ExtArgs>[]
+      returnsRaised: Prisma.$ReturnPayload<ExtArgs>[]
+      returnsAssignedToMe: Prisma.$ReturnPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -19218,6 +22016,9 @@ export namespace Prisma {
     workItemTransitions<T extends User$workItemTransitionsArgs<ExtArgs> = {}>(args?: Subset<T, User$workItemTransitionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     phaseTimings<T extends User$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, User$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     designVersionsUploaded<T extends User$designVersionsUploadedArgs<ExtArgs> = {}>(args?: Subset<T, User$designVersionsUploadedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    designVersionsApproved<T extends User$designVersionsApprovedArgs<ExtArgs> = {}>(args?: Subset<T, User$designVersionsApprovedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    returnsRaised<T extends User$returnsRaisedArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsRaisedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    returnsAssignedToMe<T extends User$returnsAssignedToMeArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsAssignedToMeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -19932,6 +22733,78 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * User.designVersionsApproved
+   */
+  export type User$designVersionsApprovedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    where?: DesignVersionWhereInput
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    cursor?: DesignVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * User.returnsRaised
+   */
+  export type User$returnsRaisedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    cursor?: ReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
+  }
+
+  /**
+   * User.returnsAssignedToMe
+   */
+  export type User$returnsAssignedToMeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+    orderBy?: ReturnOrderByWithRelationInput | ReturnOrderByWithRelationInput[]
+    cursor?: ReturnWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReturnScalarFieldEnum | ReturnScalarFieldEnum[]
   }
 
   /**
@@ -29815,10 +32688,42 @@ export namespace Prisma {
     sha256: 'sha256',
     note: 'note',
     uploadedById: 'uploadedById',
-    createdAt: 'createdAt'
+    createdAt: 'createdAt',
+    approvedAt: 'approvedAt',
+    approvedById: 'approvedById'
   };
 
   export type DesignVersionScalarFieldEnum = (typeof DesignVersionScalarFieldEnum)[keyof typeof DesignVersionScalarFieldEnum]
+
+
+  export const ReturnScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    raisedById: 'raisedById',
+    originDepartmentId: 'originDepartmentId',
+    category: 'category',
+    assignedToId: 'assignedToId',
+    explanation: 'explanation',
+    note: 'note',
+    designVersionId: 'designVersionId',
+    createdAt: 'createdAt'
+  };
+
+  export type ReturnScalarFieldEnum = (typeof ReturnScalarFieldEnum)[keyof typeof ReturnScalarFieldEnum]
+
+
+  export const ReturnAttachmentScalarFieldEnum: {
+    id: 'id',
+    returnId: 'returnId',
+    kind: 'kind',
+    storageKey: 'storageKey',
+    fileName: 'fileName',
+    mimeType: 'mimeType',
+    sizeBytes: 'sizeBytes',
+    createdAt: 'createdAt'
+  };
+
+  export type ReturnAttachmentScalarFieldEnum = (typeof ReturnAttachmentScalarFieldEnum)[keyof typeof ReturnAttachmentScalarFieldEnum]
 
 
   export const NotificationEventScalarFieldEnum: {
@@ -30247,6 +33152,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'ReturnAttachmentKind'
+   */
+  export type EnumReturnAttachmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnAttachmentKind'>
+    
+
+
+  /**
+   * Reference to a field of type 'ReturnAttachmentKind[]'
+   */
+  export type ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ReturnAttachmentKind[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -30272,6 +33191,7 @@ export namespace Prisma {
     isActive?: BoolFilter<"Department"> | boolean
     createdAt?: DateTimeFilter<"Department"> | Date | string
     workItems?: WorkItemListRelationFilter
+    returns?: ReturnListRelationFilter
     userDepartments?: UserDepartmentListRelationFilter
     productTypes?: ProductTypeListRelationFilter
   }
@@ -30282,6 +33202,7 @@ export namespace Prisma {
     isActive?: SortOrder
     createdAt?: SortOrder
     workItems?: WorkItemOrderByRelationAggregateInput
+    returns?: ReturnOrderByRelationAggregateInput
     userDepartments?: UserDepartmentOrderByRelationAggregateInput
     productTypes?: ProductTypeOrderByRelationAggregateInput
   }
@@ -30295,6 +33216,7 @@ export namespace Prisma {
     isActive?: BoolFilter<"Department"> | boolean
     createdAt?: DateTimeFilter<"Department"> | Date | string
     workItems?: WorkItemListRelationFilter
+    returns?: ReturnListRelationFilter
     userDepartments?: UserDepartmentListRelationFilter
     productTypes?: ProductTypeListRelationFilter
   }, "id" | "name">
@@ -30526,6 +33448,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
+    returns?: ReturnListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -30554,6 +33477,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionOrderByRelationAggregateInput
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
     designVersions?: DesignVersionOrderByRelationAggregateInput
+    returns?: ReturnOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -30585,6 +33509,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
+    returns?: ReturnListRelationFilter
   }, "id">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -30871,8 +33796,12 @@ export namespace Prisma {
     note?: StringNullableFilter<"DesignVersion"> | string | null
     uploadedById?: StringFilter<"DesignVersion"> | string
     createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+    approvedAt?: DateTimeNullableFilter<"DesignVersion"> | Date | string | null
+    approvedById?: StringNullableFilter<"DesignVersion"> | string | null
     workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
     uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    approvedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    returns?: ReturnListRelationFilter
   }
 
   export type DesignVersionOrderByWithRelationInput = {
@@ -30887,8 +33816,12 @@ export namespace Prisma {
     note?: SortOrderInput | SortOrder
     uploadedById?: SortOrder
     createdAt?: SortOrder
+    approvedAt?: SortOrderInput | SortOrder
+    approvedById?: SortOrderInput | SortOrder
     workItem?: WorkItemOrderByWithRelationInput
     uploadedBy?: UserOrderByWithRelationInput
+    approvedBy?: UserOrderByWithRelationInput
+    returns?: ReturnOrderByRelationAggregateInput
   }
 
   export type DesignVersionWhereUniqueInput = Prisma.AtLeast<{
@@ -30907,8 +33840,12 @@ export namespace Prisma {
     note?: StringNullableFilter<"DesignVersion"> | string | null
     uploadedById?: StringFilter<"DesignVersion"> | string
     createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+    approvedAt?: DateTimeNullableFilter<"DesignVersion"> | Date | string | null
+    approvedById?: StringNullableFilter<"DesignVersion"> | string | null
     workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
     uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    approvedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    returns?: ReturnListRelationFilter
   }, "id" | "workItemId_version">
 
   export type DesignVersionOrderByWithAggregationInput = {
@@ -30923,6 +33860,8 @@ export namespace Prisma {
     note?: SortOrderInput | SortOrder
     uploadedById?: SortOrder
     createdAt?: SortOrder
+    approvedAt?: SortOrderInput | SortOrder
+    approvedById?: SortOrderInput | SortOrder
     _count?: DesignVersionCountOrderByAggregateInput
     _avg?: DesignVersionAvgOrderByAggregateInput
     _max?: DesignVersionMaxOrderByAggregateInput
@@ -30945,6 +33884,175 @@ export namespace Prisma {
     note?: StringNullableWithAggregatesFilter<"DesignVersion"> | string | null
     uploadedById?: StringWithAggregatesFilter<"DesignVersion"> | string
     createdAt?: DateTimeWithAggregatesFilter<"DesignVersion"> | Date | string
+    approvedAt?: DateTimeNullableWithAggregatesFilter<"DesignVersion"> | Date | string | null
+    approvedById?: StringNullableWithAggregatesFilter<"DesignVersion"> | string | null
+  }
+
+  export type ReturnWhereInput = {
+    AND?: ReturnWhereInput | ReturnWhereInput[]
+    OR?: ReturnWhereInput[]
+    NOT?: ReturnWhereInput | ReturnWhereInput[]
+    id?: StringFilter<"Return"> | string
+    workItemId?: StringFilter<"Return"> | string
+    raisedById?: StringFilter<"Return"> | string
+    originDepartmentId?: StringFilter<"Return"> | string
+    category?: EnumRejectionCategoryFilter<"Return"> | $Enums.RejectionCategory
+    assignedToId?: StringFilter<"Return"> | string
+    explanation?: StringFilter<"Return"> | string
+    note?: StringNullableFilter<"Return"> | string | null
+    designVersionId?: StringNullableFilter<"Return"> | string | null
+    createdAt?: DateTimeFilter<"Return"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    raisedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    originDepartment?: XOR<DepartmentScalarRelationFilter, DepartmentWhereInput>
+    assignedTo?: XOR<UserScalarRelationFilter, UserWhereInput>
+    designVersion?: XOR<DesignVersionNullableScalarRelationFilter, DesignVersionWhereInput> | null
+    attachments?: ReturnAttachmentListRelationFilter
+  }
+
+  export type ReturnOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    raisedById?: SortOrder
+    originDepartmentId?: SortOrder
+    category?: SortOrder
+    assignedToId?: SortOrder
+    explanation?: SortOrder
+    note?: SortOrderInput | SortOrder
+    designVersionId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    raisedBy?: UserOrderByWithRelationInput
+    originDepartment?: DepartmentOrderByWithRelationInput
+    assignedTo?: UserOrderByWithRelationInput
+    designVersion?: DesignVersionOrderByWithRelationInput
+    attachments?: ReturnAttachmentOrderByRelationAggregateInput
+  }
+
+  export type ReturnWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ReturnWhereInput | ReturnWhereInput[]
+    OR?: ReturnWhereInput[]
+    NOT?: ReturnWhereInput | ReturnWhereInput[]
+    workItemId?: StringFilter<"Return"> | string
+    raisedById?: StringFilter<"Return"> | string
+    originDepartmentId?: StringFilter<"Return"> | string
+    category?: EnumRejectionCategoryFilter<"Return"> | $Enums.RejectionCategory
+    assignedToId?: StringFilter<"Return"> | string
+    explanation?: StringFilter<"Return"> | string
+    note?: StringNullableFilter<"Return"> | string | null
+    designVersionId?: StringNullableFilter<"Return"> | string | null
+    createdAt?: DateTimeFilter<"Return"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    raisedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    originDepartment?: XOR<DepartmentScalarRelationFilter, DepartmentWhereInput>
+    assignedTo?: XOR<UserScalarRelationFilter, UserWhereInput>
+    designVersion?: XOR<DesignVersionNullableScalarRelationFilter, DesignVersionWhereInput> | null
+    attachments?: ReturnAttachmentListRelationFilter
+  }, "id">
+
+  export type ReturnOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    raisedById?: SortOrder
+    originDepartmentId?: SortOrder
+    category?: SortOrder
+    assignedToId?: SortOrder
+    explanation?: SortOrder
+    note?: SortOrderInput | SortOrder
+    designVersionId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: ReturnCountOrderByAggregateInput
+    _max?: ReturnMaxOrderByAggregateInput
+    _min?: ReturnMinOrderByAggregateInput
+  }
+
+  export type ReturnScalarWhereWithAggregatesInput = {
+    AND?: ReturnScalarWhereWithAggregatesInput | ReturnScalarWhereWithAggregatesInput[]
+    OR?: ReturnScalarWhereWithAggregatesInput[]
+    NOT?: ReturnScalarWhereWithAggregatesInput | ReturnScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Return"> | string
+    workItemId?: StringWithAggregatesFilter<"Return"> | string
+    raisedById?: StringWithAggregatesFilter<"Return"> | string
+    originDepartmentId?: StringWithAggregatesFilter<"Return"> | string
+    category?: EnumRejectionCategoryWithAggregatesFilter<"Return"> | $Enums.RejectionCategory
+    assignedToId?: StringWithAggregatesFilter<"Return"> | string
+    explanation?: StringWithAggregatesFilter<"Return"> | string
+    note?: StringNullableWithAggregatesFilter<"Return"> | string | null
+    designVersionId?: StringNullableWithAggregatesFilter<"Return"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Return"> | Date | string
+  }
+
+  export type ReturnAttachmentWhereInput = {
+    AND?: ReturnAttachmentWhereInput | ReturnAttachmentWhereInput[]
+    OR?: ReturnAttachmentWhereInput[]
+    NOT?: ReturnAttachmentWhereInput | ReturnAttachmentWhereInput[]
+    id?: StringFilter<"ReturnAttachment"> | string
+    returnId?: StringFilter<"ReturnAttachment"> | string
+    kind?: EnumReturnAttachmentKindFilter<"ReturnAttachment"> | $Enums.ReturnAttachmentKind
+    storageKey?: StringFilter<"ReturnAttachment"> | string
+    fileName?: StringFilter<"ReturnAttachment"> | string
+    mimeType?: StringNullableFilter<"ReturnAttachment"> | string | null
+    sizeBytes?: IntFilter<"ReturnAttachment"> | number
+    createdAt?: DateTimeFilter<"ReturnAttachment"> | Date | string
+    return?: XOR<ReturnScalarRelationFilter, ReturnWhereInput>
+  }
+
+  export type ReturnAttachmentOrderByWithRelationInput = {
+    id?: SortOrder
+    returnId?: SortOrder
+    kind?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrderInput | SortOrder
+    sizeBytes?: SortOrder
+    createdAt?: SortOrder
+    return?: ReturnOrderByWithRelationInput
+  }
+
+  export type ReturnAttachmentWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: ReturnAttachmentWhereInput | ReturnAttachmentWhereInput[]
+    OR?: ReturnAttachmentWhereInput[]
+    NOT?: ReturnAttachmentWhereInput | ReturnAttachmentWhereInput[]
+    returnId?: StringFilter<"ReturnAttachment"> | string
+    kind?: EnumReturnAttachmentKindFilter<"ReturnAttachment"> | $Enums.ReturnAttachmentKind
+    storageKey?: StringFilter<"ReturnAttachment"> | string
+    fileName?: StringFilter<"ReturnAttachment"> | string
+    mimeType?: StringNullableFilter<"ReturnAttachment"> | string | null
+    sizeBytes?: IntFilter<"ReturnAttachment"> | number
+    createdAt?: DateTimeFilter<"ReturnAttachment"> | Date | string
+    return?: XOR<ReturnScalarRelationFilter, ReturnWhereInput>
+  }, "id">
+
+  export type ReturnAttachmentOrderByWithAggregationInput = {
+    id?: SortOrder
+    returnId?: SortOrder
+    kind?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrderInput | SortOrder
+    sizeBytes?: SortOrder
+    createdAt?: SortOrder
+    _count?: ReturnAttachmentCountOrderByAggregateInput
+    _avg?: ReturnAttachmentAvgOrderByAggregateInput
+    _max?: ReturnAttachmentMaxOrderByAggregateInput
+    _min?: ReturnAttachmentMinOrderByAggregateInput
+    _sum?: ReturnAttachmentSumOrderByAggregateInput
+  }
+
+  export type ReturnAttachmentScalarWhereWithAggregatesInput = {
+    AND?: ReturnAttachmentScalarWhereWithAggregatesInput | ReturnAttachmentScalarWhereWithAggregatesInput[]
+    OR?: ReturnAttachmentScalarWhereWithAggregatesInput[]
+    NOT?: ReturnAttachmentScalarWhereWithAggregatesInput | ReturnAttachmentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ReturnAttachment"> | string
+    returnId?: StringWithAggregatesFilter<"ReturnAttachment"> | string
+    kind?: EnumReturnAttachmentKindWithAggregatesFilter<"ReturnAttachment"> | $Enums.ReturnAttachmentKind
+    storageKey?: StringWithAggregatesFilter<"ReturnAttachment"> | string
+    fileName?: StringWithAggregatesFilter<"ReturnAttachment"> | string
+    mimeType?: StringNullableWithAggregatesFilter<"ReturnAttachment"> | string | null
+    sizeBytes?: IntWithAggregatesFilter<"ReturnAttachment"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"ReturnAttachment"> | Date | string
   }
 
   export type NotificationEventWhereInput = {
@@ -31315,6 +34423,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersionsUploaded?: DesignVersionListRelationFilter
+    designVersionsApproved?: DesignVersionListRelationFilter
+    returnsRaised?: ReturnListRelationFilter
+    returnsAssignedToMe?: ReturnListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -31342,6 +34453,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionOrderByRelationAggregateInput
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
     designVersionsUploaded?: DesignVersionOrderByRelationAggregateInput
+    designVersionsApproved?: DesignVersionOrderByRelationAggregateInput
+    returnsRaised?: ReturnOrderByRelationAggregateInput
+    returnsAssignedToMe?: ReturnOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -31372,6 +34486,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersionsUploaded?: DesignVersionListRelationFilter
+    designVersionsApproved?: DesignVersionListRelationFilter
+    returnsRaised?: ReturnListRelationFilter
+    returnsAssignedToMe?: ReturnListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -31986,6 +35103,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
   }
@@ -31996,6 +35114,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
   }
@@ -32006,6 +35125,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
   }
@@ -32016,6 +35136,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
   }
@@ -32257,6 +35378,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -32281,6 +35403,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -32305,6 +35428,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -32329,6 +35453,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -32630,8 +35755,11 @@ export namespace Prisma {
     sha256: string
     note?: string | null
     createdAt?: Date | string
+    approvedAt?: Date | string | null
     workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
     uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+    approvedBy?: UserCreateNestedOneWithoutDesignVersionsApprovedInput
+    returns?: ReturnCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionUncheckedCreateInput = {
@@ -32646,6 +35774,9 @@ export namespace Prisma {
     note?: string | null
     uploadedById: string
     createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+    returns?: ReturnUncheckedCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionUpdateInput = {
@@ -32658,8 +35789,11 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
     uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+    approvedBy?: UserUpdateOneWithoutDesignVersionsApprovedNestedInput
+    returns?: ReturnUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionUncheckedUpdateInput = {
@@ -32674,6 +35808,9 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     uploadedById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    returns?: ReturnUncheckedUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionCreateManyInput = {
@@ -32688,6 +35825,8 @@ export namespace Prisma {
     note?: string | null
     uploadedById: string
     createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
   }
 
   export type DesignVersionUpdateManyMutationInput = {
@@ -32700,6 +35839,7 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
   export type DesignVersionUncheckedUpdateManyInput = {
@@ -32713,6 +35853,174 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ReturnCreateInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnCreateManyInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ReturnUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentCreateInput = {
+    id?: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+    return: ReturnCreateNestedOneWithoutAttachmentsInput
+  }
+
+  export type ReturnAttachmentUncheckedCreateInput = {
+    id?: string
+    returnId: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+  }
+
+  export type ReturnAttachmentUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    return?: ReturnUpdateOneRequiredWithoutAttachmentsNestedInput
+  }
+
+  export type ReturnAttachmentUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    returnId?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentCreateManyInput = {
+    id?: string
+    returnId: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+  }
+
+  export type ReturnAttachmentUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    returnId?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -33112,6 +36420,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -33139,6 +36450,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUpdateInput = {
@@ -33166,6 +36480,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -33193,6 +36510,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -33863,6 +37183,12 @@ export namespace Prisma {
     none?: WorkItemWhereInput
   }
 
+  export type ReturnListRelationFilter = {
+    every?: ReturnWhereInput
+    some?: ReturnWhereInput
+    none?: ReturnWhereInput
+  }
+
   export type UserDepartmentListRelationFilter = {
     every?: UserDepartmentWhereInput
     some?: UserDepartmentWhereInput
@@ -33876,6 +37202,10 @@ export namespace Prisma {
   }
 
   export type WorkItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ReturnOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -34642,6 +37972,8 @@ export namespace Prisma {
     note?: SortOrder
     uploadedById?: SortOrder
     createdAt?: SortOrder
+    approvedAt?: SortOrder
+    approvedById?: SortOrder
   }
 
   export type DesignVersionAvgOrderByAggregateInput = {
@@ -34661,6 +37993,8 @@ export namespace Prisma {
     note?: SortOrder
     uploadedById?: SortOrder
     createdAt?: SortOrder
+    approvedAt?: SortOrder
+    approvedById?: SortOrder
   }
 
   export type DesignVersionMinOrderByAggregateInput = {
@@ -34675,11 +38009,152 @@ export namespace Prisma {
     note?: SortOrder
     uploadedById?: SortOrder
     createdAt?: SortOrder
+    approvedAt?: SortOrder
+    approvedById?: SortOrder
   }
 
   export type DesignVersionSumOrderByAggregateInput = {
     version?: SortOrder
     sizeBytes?: SortOrder
+  }
+
+  export type EnumRejectionCategoryFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionCategory | EnumRejectionCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionCategoryFilter<$PrismaModel> | $Enums.RejectionCategory
+  }
+
+  export type DepartmentScalarRelationFilter = {
+    is?: DepartmentWhereInput
+    isNot?: DepartmentWhereInput
+  }
+
+  export type DesignVersionNullableScalarRelationFilter = {
+    is?: DesignVersionWhereInput | null
+    isNot?: DesignVersionWhereInput | null
+  }
+
+  export type ReturnAttachmentListRelationFilter = {
+    every?: ReturnAttachmentWhereInput
+    some?: ReturnAttachmentWhereInput
+    none?: ReturnAttachmentWhereInput
+  }
+
+  export type ReturnAttachmentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ReturnCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    raisedById?: SortOrder
+    originDepartmentId?: SortOrder
+    category?: SortOrder
+    assignedToId?: SortOrder
+    explanation?: SortOrder
+    note?: SortOrder
+    designVersionId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ReturnMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    raisedById?: SortOrder
+    originDepartmentId?: SortOrder
+    category?: SortOrder
+    assignedToId?: SortOrder
+    explanation?: SortOrder
+    note?: SortOrder
+    designVersionId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ReturnMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    raisedById?: SortOrder
+    originDepartmentId?: SortOrder
+    category?: SortOrder
+    assignedToId?: SortOrder
+    explanation?: SortOrder
+    note?: SortOrder
+    designVersionId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumRejectionCategoryWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionCategory | EnumRejectionCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionCategoryWithAggregatesFilter<$PrismaModel> | $Enums.RejectionCategory
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRejectionCategoryFilter<$PrismaModel>
+    _max?: NestedEnumRejectionCategoryFilter<$PrismaModel>
+  }
+
+  export type EnumReturnAttachmentKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnAttachmentKind | EnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnAttachmentKindFilter<$PrismaModel> | $Enums.ReturnAttachmentKind
+  }
+
+  export type ReturnScalarRelationFilter = {
+    is?: ReturnWhereInput
+    isNot?: ReturnWhereInput
+  }
+
+  export type ReturnAttachmentCountOrderByAggregateInput = {
+    id?: SortOrder
+    returnId?: SortOrder
+    kind?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ReturnAttachmentAvgOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+  }
+
+  export type ReturnAttachmentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    returnId?: SortOrder
+    kind?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ReturnAttachmentMinOrderByAggregateInput = {
+    id?: SortOrder
+    returnId?: SortOrder
+    kind?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type ReturnAttachmentSumOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+  }
+
+  export type EnumReturnAttachmentKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnAttachmentKind | EnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnAttachmentKindWithAggregatesFilter<$PrismaModel> | $Enums.ReturnAttachmentKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
+    _max?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
   }
 
   export type StringNullableListFilter<$PrismaModel = never> = {
@@ -35220,11 +38695,6 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
-  export type DepartmentScalarRelationFilter = {
-    is?: DepartmentWhereInput
-    isNot?: DepartmentWhereInput
-  }
-
   export type UserDepartmentUserIdDepartmentIdCompoundUniqueInput = {
     userId: string
     departmentId: string
@@ -35294,6 +38764,13 @@ export namespace Prisma {
     connect?: WorkItemWhereUniqueInput | WorkItemWhereUniqueInput[]
   }
 
+  export type ReturnCreateNestedManyWithoutOriginDepartmentInput = {
+    create?: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput> | ReturnCreateWithoutOriginDepartmentInput[] | ReturnUncheckedCreateWithoutOriginDepartmentInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutOriginDepartmentInput | ReturnCreateOrConnectWithoutOriginDepartmentInput[]
+    createMany?: ReturnCreateManyOriginDepartmentInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
   export type UserDepartmentCreateNestedManyWithoutDepartmentInput = {
     create?: XOR<UserDepartmentCreateWithoutDepartmentInput, UserDepartmentUncheckedCreateWithoutDepartmentInput> | UserDepartmentCreateWithoutDepartmentInput[] | UserDepartmentUncheckedCreateWithoutDepartmentInput[]
     connectOrCreate?: UserDepartmentCreateOrConnectWithoutDepartmentInput | UserDepartmentCreateOrConnectWithoutDepartmentInput[]
@@ -35313,6 +38790,13 @@ export namespace Prisma {
     connectOrCreate?: WorkItemCreateOrConnectWithoutDepartmentInput | WorkItemCreateOrConnectWithoutDepartmentInput[]
     createMany?: WorkItemCreateManyDepartmentInputEnvelope
     connect?: WorkItemWhereUniqueInput | WorkItemWhereUniqueInput[]
+  }
+
+  export type ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput = {
+    create?: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput> | ReturnCreateWithoutOriginDepartmentInput[] | ReturnUncheckedCreateWithoutOriginDepartmentInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutOriginDepartmentInput | ReturnCreateOrConnectWithoutOriginDepartmentInput[]
+    createMany?: ReturnCreateManyOriginDepartmentInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
   }
 
   export type UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput = {
@@ -35355,6 +38839,20 @@ export namespace Prisma {
     deleteMany?: WorkItemScalarWhereInput | WorkItemScalarWhereInput[]
   }
 
+  export type ReturnUpdateManyWithoutOriginDepartmentNestedInput = {
+    create?: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput> | ReturnCreateWithoutOriginDepartmentInput[] | ReturnUncheckedCreateWithoutOriginDepartmentInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutOriginDepartmentInput | ReturnCreateOrConnectWithoutOriginDepartmentInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput | ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput[]
+    createMany?: ReturnCreateManyOriginDepartmentInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutOriginDepartmentInput | ReturnUpdateWithWhereUniqueWithoutOriginDepartmentInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutOriginDepartmentInput | ReturnUpdateManyWithWhereWithoutOriginDepartmentInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
   export type UserDepartmentUpdateManyWithoutDepartmentNestedInput = {
     create?: XOR<UserDepartmentCreateWithoutDepartmentInput, UserDepartmentUncheckedCreateWithoutDepartmentInput> | UserDepartmentCreateWithoutDepartmentInput[] | UserDepartmentUncheckedCreateWithoutDepartmentInput[]
     connectOrCreate?: UserDepartmentCreateOrConnectWithoutDepartmentInput | UserDepartmentCreateOrConnectWithoutDepartmentInput[]
@@ -35395,6 +38893,20 @@ export namespace Prisma {
     update?: WorkItemUpdateWithWhereUniqueWithoutDepartmentInput | WorkItemUpdateWithWhereUniqueWithoutDepartmentInput[]
     updateMany?: WorkItemUpdateManyWithWhereWithoutDepartmentInput | WorkItemUpdateManyWithWhereWithoutDepartmentInput[]
     deleteMany?: WorkItemScalarWhereInput | WorkItemScalarWhereInput[]
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput = {
+    create?: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput> | ReturnCreateWithoutOriginDepartmentInput[] | ReturnUncheckedCreateWithoutOriginDepartmentInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutOriginDepartmentInput | ReturnCreateOrConnectWithoutOriginDepartmentInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput | ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput[]
+    createMany?: ReturnCreateManyOriginDepartmentInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutOriginDepartmentInput | ReturnUpdateWithWhereUniqueWithoutOriginDepartmentInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutOriginDepartmentInput | ReturnUpdateManyWithWhereWithoutOriginDepartmentInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
   }
 
   export type UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput = {
@@ -35794,6 +39306,13 @@ export namespace Prisma {
     connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
   }
 
+  export type ReturnCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput> | ReturnCreateWithoutWorkItemInput[] | ReturnUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutWorkItemInput | ReturnCreateOrConnectWithoutWorkItemInput[]
+    createMany?: ReturnCreateManyWorkItemInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -35813,6 +39332,13 @@ export namespace Prisma {
     connectOrCreate?: DesignVersionCreateOrConnectWithoutWorkItemInput | DesignVersionCreateOrConnectWithoutWorkItemInput[]
     createMany?: DesignVersionCreateManyWorkItemInputEnvelope
     connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
+  export type ReturnUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput> | ReturnCreateWithoutWorkItemInput[] | ReturnUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutWorkItemInput | ReturnCreateOrConnectWithoutWorkItemInput[]
+    createMany?: ReturnCreateManyWorkItemInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
   }
 
   export type EnumWorkItemStateFieldUpdateOperationsInput = {
@@ -35919,6 +39445,20 @@ export namespace Prisma {
     deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
   }
 
+  export type ReturnUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput> | ReturnCreateWithoutWorkItemInput[] | ReturnUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutWorkItemInput | ReturnCreateOrConnectWithoutWorkItemInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutWorkItemInput | ReturnUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: ReturnCreateManyWorkItemInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutWorkItemInput | ReturnUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutWorkItemInput | ReturnUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -35959,6 +39499,20 @@ export namespace Prisma {
     update?: DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput | DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: DesignVersionUpdateManyWithWhereWithoutWorkItemInput | DesignVersionUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput> | ReturnCreateWithoutWorkItemInput[] | ReturnUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutWorkItemInput | ReturnCreateOrConnectWithoutWorkItemInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutWorkItemInput | ReturnUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: ReturnCreateManyWorkItemInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutWorkItemInput | ReturnUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutWorkItemInput | ReturnUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
   }
 
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
@@ -36097,6 +39651,26 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type UserCreateNestedOneWithoutDesignVersionsApprovedInput = {
+    create?: XOR<UserCreateWithoutDesignVersionsApprovedInput, UserUncheckedCreateWithoutDesignVersionsApprovedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDesignVersionsApprovedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ReturnCreateNestedManyWithoutDesignVersionInput = {
+    create?: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput> | ReturnCreateWithoutDesignVersionInput[] | ReturnUncheckedCreateWithoutDesignVersionInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutDesignVersionInput | ReturnCreateOrConnectWithoutDesignVersionInput[]
+    createMany?: ReturnCreateManyDesignVersionInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
+  export type ReturnUncheckedCreateNestedManyWithoutDesignVersionInput = {
+    create?: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput> | ReturnCreateWithoutDesignVersionInput[] | ReturnUncheckedCreateWithoutDesignVersionInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutDesignVersionInput | ReturnCreateOrConnectWithoutDesignVersionInput[]
+    createMany?: ReturnCreateManyDesignVersionInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
   export type WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput = {
     create?: XOR<WorkItemCreateWithoutDesignVersionsInput, WorkItemUncheckedCreateWithoutDesignVersionsInput>
     connectOrCreate?: WorkItemCreateOrConnectWithoutDesignVersionsInput
@@ -36111,6 +39685,180 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutDesignVersionsUploadedInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDesignVersionsUploadedInput, UserUpdateWithoutDesignVersionsUploadedInput>, UserUncheckedUpdateWithoutDesignVersionsUploadedInput>
+  }
+
+  export type UserUpdateOneWithoutDesignVersionsApprovedNestedInput = {
+    create?: XOR<UserCreateWithoutDesignVersionsApprovedInput, UserUncheckedCreateWithoutDesignVersionsApprovedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDesignVersionsApprovedInput
+    upsert?: UserUpsertWithoutDesignVersionsApprovedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDesignVersionsApprovedInput, UserUpdateWithoutDesignVersionsApprovedInput>, UserUncheckedUpdateWithoutDesignVersionsApprovedInput>
+  }
+
+  export type ReturnUpdateManyWithoutDesignVersionNestedInput = {
+    create?: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput> | ReturnCreateWithoutDesignVersionInput[] | ReturnUncheckedCreateWithoutDesignVersionInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutDesignVersionInput | ReturnCreateOrConnectWithoutDesignVersionInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutDesignVersionInput | ReturnUpsertWithWhereUniqueWithoutDesignVersionInput[]
+    createMany?: ReturnCreateManyDesignVersionInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutDesignVersionInput | ReturnUpdateWithWhereUniqueWithoutDesignVersionInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutDesignVersionInput | ReturnUpdateManyWithWhereWithoutDesignVersionInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutDesignVersionNestedInput = {
+    create?: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput> | ReturnCreateWithoutDesignVersionInput[] | ReturnUncheckedCreateWithoutDesignVersionInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutDesignVersionInput | ReturnCreateOrConnectWithoutDesignVersionInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutDesignVersionInput | ReturnUpsertWithWhereUniqueWithoutDesignVersionInput[]
+    createMany?: ReturnCreateManyDesignVersionInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutDesignVersionInput | ReturnUpdateWithWhereUniqueWithoutDesignVersionInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutDesignVersionInput | ReturnUpdateManyWithWhereWithoutDesignVersionInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type WorkItemCreateNestedOneWithoutReturnsInput = {
+    create?: XOR<WorkItemCreateWithoutReturnsInput, WorkItemUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutReturnsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutReturnsRaisedInput = {
+    create?: XOR<UserCreateWithoutReturnsRaisedInput, UserUncheckedCreateWithoutReturnsRaisedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsRaisedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type DepartmentCreateNestedOneWithoutReturnsInput = {
+    create?: XOR<DepartmentCreateWithoutReturnsInput, DepartmentUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: DepartmentCreateOrConnectWithoutReturnsInput
+    connect?: DepartmentWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutReturnsAssignedToMeInput = {
+    create?: XOR<UserCreateWithoutReturnsAssignedToMeInput, UserUncheckedCreateWithoutReturnsAssignedToMeInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsAssignedToMeInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type DesignVersionCreateNestedOneWithoutReturnsInput = {
+    create?: XOR<DesignVersionCreateWithoutReturnsInput, DesignVersionUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutReturnsInput
+    connect?: DesignVersionWhereUniqueInput
+  }
+
+  export type ReturnAttachmentCreateNestedManyWithoutReturnInput = {
+    create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
+    connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
+    createMany?: ReturnAttachmentCreateManyReturnInputEnvelope
+    connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+  }
+
+  export type ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput = {
+    create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
+    connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
+    createMany?: ReturnAttachmentCreateManyReturnInputEnvelope
+    connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+  }
+
+  export type EnumRejectionCategoryFieldUpdateOperationsInput = {
+    set?: $Enums.RejectionCategory
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutReturnsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutReturnsInput, WorkItemUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutReturnsInput
+    upsert?: WorkItemUpsertWithoutReturnsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutReturnsInput, WorkItemUpdateWithoutReturnsInput>, WorkItemUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutReturnsRaisedNestedInput = {
+    create?: XOR<UserCreateWithoutReturnsRaisedInput, UserUncheckedCreateWithoutReturnsRaisedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsRaisedInput
+    upsert?: UserUpsertWithoutReturnsRaisedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReturnsRaisedInput, UserUpdateWithoutReturnsRaisedInput>, UserUncheckedUpdateWithoutReturnsRaisedInput>
+  }
+
+  export type DepartmentUpdateOneRequiredWithoutReturnsNestedInput = {
+    create?: XOR<DepartmentCreateWithoutReturnsInput, DepartmentUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: DepartmentCreateOrConnectWithoutReturnsInput
+    upsert?: DepartmentUpsertWithoutReturnsInput
+    connect?: DepartmentWhereUniqueInput
+    update?: XOR<XOR<DepartmentUpdateToOneWithWhereWithoutReturnsInput, DepartmentUpdateWithoutReturnsInput>, DepartmentUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput = {
+    create?: XOR<UserCreateWithoutReturnsAssignedToMeInput, UserUncheckedCreateWithoutReturnsAssignedToMeInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReturnsAssignedToMeInput
+    upsert?: UserUpsertWithoutReturnsAssignedToMeInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReturnsAssignedToMeInput, UserUpdateWithoutReturnsAssignedToMeInput>, UserUncheckedUpdateWithoutReturnsAssignedToMeInput>
+  }
+
+  export type DesignVersionUpdateOneWithoutReturnsNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutReturnsInput, DesignVersionUncheckedCreateWithoutReturnsInput>
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutReturnsInput
+    upsert?: DesignVersionUpsertWithoutReturnsInput
+    disconnect?: DesignVersionWhereInput | boolean
+    delete?: DesignVersionWhereInput | boolean
+    connect?: DesignVersionWhereUniqueInput
+    update?: XOR<XOR<DesignVersionUpdateToOneWithWhereWithoutReturnsInput, DesignVersionUpdateWithoutReturnsInput>, DesignVersionUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type ReturnAttachmentUpdateManyWithoutReturnNestedInput = {
+    create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
+    connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
+    upsert?: ReturnAttachmentUpsertWithWhereUniqueWithoutReturnInput | ReturnAttachmentUpsertWithWhereUniqueWithoutReturnInput[]
+    createMany?: ReturnAttachmentCreateManyReturnInputEnvelope
+    set?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    disconnect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    delete?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    update?: ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput | ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput[]
+    updateMany?: ReturnAttachmentUpdateManyWithWhereWithoutReturnInput | ReturnAttachmentUpdateManyWithWhereWithoutReturnInput[]
+    deleteMany?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
+  }
+
+  export type ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput = {
+    create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
+    connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
+    upsert?: ReturnAttachmentUpsertWithWhereUniqueWithoutReturnInput | ReturnAttachmentUpsertWithWhereUniqueWithoutReturnInput[]
+    createMany?: ReturnAttachmentCreateManyReturnInputEnvelope
+    set?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    disconnect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    delete?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+    update?: ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput | ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput[]
+    updateMany?: ReturnAttachmentUpdateManyWithWhereWithoutReturnInput | ReturnAttachmentUpdateManyWithWhereWithoutReturnInput[]
+    deleteMany?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
+  }
+
+  export type ReturnCreateNestedOneWithoutAttachmentsInput = {
+    create?: XOR<ReturnCreateWithoutAttachmentsInput, ReturnUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: ReturnCreateOrConnectWithoutAttachmentsInput
+    connect?: ReturnWhereUniqueInput
+  }
+
+  export type EnumReturnAttachmentKindFieldUpdateOperationsInput = {
+    set?: $Enums.ReturnAttachmentKind
+  }
+
+  export type ReturnUpdateOneRequiredWithoutAttachmentsNestedInput = {
+    create?: XOR<ReturnCreateWithoutAttachmentsInput, ReturnUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: ReturnCreateOrConnectWithoutAttachmentsInput
+    upsert?: ReturnUpsertWithoutAttachmentsInput
+    connect?: ReturnWhereUniqueInput
+    update?: XOR<XOR<ReturnUpdateToOneWithWhereWithoutAttachmentsInput, ReturnUpdateWithoutAttachmentsInput>, ReturnUncheckedUpdateWithoutAttachmentsInput>
   }
 
   export type NotificationEventCreaterecipientUserIdsInput = {
@@ -36322,6 +40070,27 @@ export namespace Prisma {
     connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
   }
 
+  export type DesignVersionCreateNestedManyWithoutApprovedByInput = {
+    create?: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput> | DesignVersionCreateWithoutApprovedByInput[] | DesignVersionUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutApprovedByInput | DesignVersionCreateOrConnectWithoutApprovedByInput[]
+    createMany?: DesignVersionCreateManyApprovedByInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
+  export type ReturnCreateNestedManyWithoutRaisedByInput = {
+    create?: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput> | ReturnCreateWithoutRaisedByInput[] | ReturnUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutRaisedByInput | ReturnCreateOrConnectWithoutRaisedByInput[]
+    createMany?: ReturnCreateManyRaisedByInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
+  export type ReturnCreateNestedManyWithoutAssignedToInput = {
+    create?: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput> | ReturnCreateWithoutAssignedToInput[] | ReturnUncheckedCreateWithoutAssignedToInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutAssignedToInput | ReturnCreateOrConnectWithoutAssignedToInput[]
+    createMany?: ReturnCreateManyAssignedToInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -36404,6 +40173,27 @@ export namespace Prisma {
     connectOrCreate?: DesignVersionCreateOrConnectWithoutUploadedByInput | DesignVersionCreateOrConnectWithoutUploadedByInput[]
     createMany?: DesignVersionCreateManyUploadedByInputEnvelope
     connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
+  export type DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput = {
+    create?: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput> | DesignVersionCreateWithoutApprovedByInput[] | DesignVersionUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutApprovedByInput | DesignVersionCreateOrConnectWithoutApprovedByInput[]
+    createMany?: DesignVersionCreateManyApprovedByInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
+  export type ReturnUncheckedCreateNestedManyWithoutRaisedByInput = {
+    create?: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput> | ReturnCreateWithoutRaisedByInput[] | ReturnUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutRaisedByInput | ReturnCreateOrConnectWithoutRaisedByInput[]
+    createMany?: ReturnCreateManyRaisedByInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+  }
+
+  export type ReturnUncheckedCreateNestedManyWithoutAssignedToInput = {
+    create?: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput> | ReturnCreateWithoutAssignedToInput[] | ReturnUncheckedCreateWithoutAssignedToInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutAssignedToInput | ReturnCreateOrConnectWithoutAssignedToInput[]
+    createMany?: ReturnCreateManyAssignedToInputEnvelope
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -36574,6 +40364,48 @@ export namespace Prisma {
     deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
   }
 
+  export type DesignVersionUpdateManyWithoutApprovedByNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput> | DesignVersionCreateWithoutApprovedByInput[] | DesignVersionUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutApprovedByInput | DesignVersionCreateOrConnectWithoutApprovedByInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutApprovedByInput | DesignVersionUpsertWithWhereUniqueWithoutApprovedByInput[]
+    createMany?: DesignVersionCreateManyApprovedByInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutApprovedByInput | DesignVersionUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutApprovedByInput | DesignVersionUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
+  export type ReturnUpdateManyWithoutRaisedByNestedInput = {
+    create?: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput> | ReturnCreateWithoutRaisedByInput[] | ReturnUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutRaisedByInput | ReturnCreateOrConnectWithoutRaisedByInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutRaisedByInput | ReturnUpsertWithWhereUniqueWithoutRaisedByInput[]
+    createMany?: ReturnCreateManyRaisedByInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutRaisedByInput | ReturnUpdateWithWhereUniqueWithoutRaisedByInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutRaisedByInput | ReturnUpdateManyWithWhereWithoutRaisedByInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type ReturnUpdateManyWithoutAssignedToNestedInput = {
+    create?: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput> | ReturnCreateWithoutAssignedToInput[] | ReturnUncheckedCreateWithoutAssignedToInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutAssignedToInput | ReturnCreateOrConnectWithoutAssignedToInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutAssignedToInput | ReturnUpsertWithWhereUniqueWithoutAssignedToInput[]
+    createMany?: ReturnCreateManyAssignedToInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutAssignedToInput | ReturnUpdateWithWhereUniqueWithoutAssignedToInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutAssignedToInput | ReturnUpdateManyWithWhereWithoutAssignedToInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -36740,6 +40572,48 @@ export namespace Prisma {
     update?: DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput | DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput[]
     updateMany?: DesignVersionUpdateManyWithWhereWithoutUploadedByInput | DesignVersionUpdateManyWithWhereWithoutUploadedByInput[]
     deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput> | DesignVersionCreateWithoutApprovedByInput[] | DesignVersionUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutApprovedByInput | DesignVersionCreateOrConnectWithoutApprovedByInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutApprovedByInput | DesignVersionUpsertWithWhereUniqueWithoutApprovedByInput[]
+    createMany?: DesignVersionCreateManyApprovedByInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutApprovedByInput | DesignVersionUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutApprovedByInput | DesignVersionUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutRaisedByNestedInput = {
+    create?: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput> | ReturnCreateWithoutRaisedByInput[] | ReturnUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutRaisedByInput | ReturnCreateOrConnectWithoutRaisedByInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutRaisedByInput | ReturnUpsertWithWhereUniqueWithoutRaisedByInput[]
+    createMany?: ReturnCreateManyRaisedByInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutRaisedByInput | ReturnUpdateWithWhereUniqueWithoutRaisedByInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutRaisedByInput | ReturnUpdateManyWithWhereWithoutRaisedByInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutAssignedToNestedInput = {
+    create?: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput> | ReturnCreateWithoutAssignedToInput[] | ReturnUncheckedCreateWithoutAssignedToInput[]
+    connectOrCreate?: ReturnCreateOrConnectWithoutAssignedToInput | ReturnCreateOrConnectWithoutAssignedToInput[]
+    upsert?: ReturnUpsertWithWhereUniqueWithoutAssignedToInput | ReturnUpsertWithWhereUniqueWithoutAssignedToInput[]
+    createMany?: ReturnCreateManyAssignedToInputEnvelope
+    set?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    disconnect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    delete?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    connect?: ReturnWhereUniqueInput | ReturnWhereUniqueInput[]
+    update?: ReturnUpdateWithWhereUniqueWithoutAssignedToInput | ReturnUpdateWithWhereUniqueWithoutAssignedToInput[]
+    updateMany?: ReturnUpdateManyWithWhereWithoutAssignedToInput | ReturnUpdateManyWithWhereWithoutAssignedToInput[]
+    deleteMany?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -37346,6 +41220,40 @@ export namespace Prisma {
     _min?: NestedEnumPhaseTimingKindFilter<$PrismaModel>
     _max?: NestedEnumPhaseTimingKindFilter<$PrismaModel>
   }
+
+  export type NestedEnumRejectionCategoryFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionCategory | EnumRejectionCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionCategoryFilter<$PrismaModel> | $Enums.RejectionCategory
+  }
+
+  export type NestedEnumRejectionCategoryWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.RejectionCategory | EnumRejectionCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumRejectionCategoryWithAggregatesFilter<$PrismaModel> | $Enums.RejectionCategory
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumRejectionCategoryFilter<$PrismaModel>
+    _max?: NestedEnumRejectionCategoryFilter<$PrismaModel>
+  }
+
+  export type NestedEnumReturnAttachmentKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnAttachmentKind | EnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnAttachmentKindFilter<$PrismaModel> | $Enums.ReturnAttachmentKind
+  }
+
+  export type NestedEnumReturnAttachmentKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ReturnAttachmentKind | EnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ReturnAttachmentKind[] | ListEnumReturnAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumReturnAttachmentKindWithAggregatesFilter<$PrismaModel> | $Enums.ReturnAttachmentKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
+    _max?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
+  }
   export type NestedJsonFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -37391,6 +41299,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -37414,6 +41323,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -37423,6 +41333,42 @@ export namespace Prisma {
 
   export type WorkItemCreateManyDepartmentInputEnvelope = {
     data: WorkItemCreateManyDepartmentInput | WorkItemCreateManyDepartmentInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ReturnCreateWithoutOriginDepartmentInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutOriginDepartmentInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutOriginDepartmentInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput>
+  }
+
+  export type ReturnCreateManyOriginDepartmentInputEnvelope = {
+    data: ReturnCreateManyOriginDepartmentInput | ReturnCreateManyOriginDepartmentInput[]
     skipDuplicates?: boolean
   }
 
@@ -37516,6 +41462,38 @@ export namespace Prisma {
     dueDate?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
+  }
+
+  export type ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput = {
+    where: ReturnWhereUniqueInput
+    update: XOR<ReturnUpdateWithoutOriginDepartmentInput, ReturnUncheckedUpdateWithoutOriginDepartmentInput>
+    create: XOR<ReturnCreateWithoutOriginDepartmentInput, ReturnUncheckedCreateWithoutOriginDepartmentInput>
+  }
+
+  export type ReturnUpdateWithWhereUniqueWithoutOriginDepartmentInput = {
+    where: ReturnWhereUniqueInput
+    data: XOR<ReturnUpdateWithoutOriginDepartmentInput, ReturnUncheckedUpdateWithoutOriginDepartmentInput>
+  }
+
+  export type ReturnUpdateManyWithWhereWithoutOriginDepartmentInput = {
+    where: ReturnScalarWhereInput
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutOriginDepartmentInput>
+  }
+
+  export type ReturnScalarWhereInput = {
+    AND?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+    OR?: ReturnScalarWhereInput[]
+    NOT?: ReturnScalarWhereInput | ReturnScalarWhereInput[]
+    id?: StringFilter<"Return"> | string
+    workItemId?: StringFilter<"Return"> | string
+    raisedById?: StringFilter<"Return"> | string
+    originDepartmentId?: StringFilter<"Return"> | string
+    category?: EnumRejectionCategoryFilter<"Return"> | $Enums.RejectionCategory
+    assignedToId?: StringFilter<"Return"> | string
+    explanation?: StringFilter<"Return"> | string
+    note?: StringNullableFilter<"Return"> | string | null
+    designVersionId?: StringNullableFilter<"Return"> | string | null
+    createdAt?: DateTimeFilter<"Return"> | Date | string
   }
 
   export type UserDepartmentUpsertWithWhereUniqueWithoutDepartmentInput = {
@@ -37971,6 +41949,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -37997,6 +41978,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -38025,6 +42009,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -38048,6 +42033,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -38140,6 +42126,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -38166,6 +42155,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -38245,6 +42237,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
   }
@@ -38254,6 +42247,7 @@ export namespace Prisma {
     name: string
     isActive?: boolean
     createdAt?: Date | string
+    returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
   }
@@ -38287,6 +42281,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -38313,6 +42310,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -38390,7 +42390,10 @@ export namespace Prisma {
     sha256: string
     note?: string | null
     createdAt?: Date | string
+    approvedAt?: Date | string | null
     uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+    approvedBy?: UserCreateNestedOneWithoutDesignVersionsApprovedInput
+    returns?: ReturnCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionUncheckedCreateWithoutWorkItemInput = {
@@ -38404,6 +42407,9 @@ export namespace Prisma {
     note?: string | null
     uploadedById: string
     createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+    returns?: ReturnUncheckedCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionCreateOrConnectWithoutWorkItemInput = {
@@ -38413,6 +42419,42 @@ export namespace Prisma {
 
   export type DesignVersionCreateManyWorkItemInputEnvelope = {
     data: DesignVersionCreateManyWorkItemInput | DesignVersionCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ReturnCreateWithoutWorkItemInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutWorkItemInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type ReturnCreateManyWorkItemInputEnvelope = {
+    data: ReturnCreateManyWorkItemInput | ReturnCreateManyWorkItemInput[]
     skipDuplicates?: boolean
   }
 
@@ -38499,6 +42541,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
   }
@@ -38508,6 +42551,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
   }
@@ -38547,6 +42591,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -38573,6 +42620,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -38666,6 +42716,24 @@ export namespace Prisma {
     note?: StringNullableFilter<"DesignVersion"> | string | null
     uploadedById?: StringFilter<"DesignVersion"> | string
     createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+    approvedAt?: DateTimeNullableFilter<"DesignVersion"> | Date | string | null
+    approvedById?: StringNullableFilter<"DesignVersion"> | string | null
+  }
+
+  export type ReturnUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: ReturnWhereUniqueInput
+    update: XOR<ReturnUpdateWithoutWorkItemInput, ReturnUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<ReturnCreateWithoutWorkItemInput, ReturnUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type ReturnUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: ReturnWhereUniqueInput
+    data: XOR<ReturnUpdateWithoutWorkItemInput, ReturnUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type ReturnUpdateManyWithWhereWithoutWorkItemInput = {
+    where: ReturnScalarWhereInput
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutWorkItemInput>
   }
 
   export type DepartmentCreateWithoutProductTypesInput = {
@@ -38674,6 +42742,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
   }
 
@@ -38683,6 +42752,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
   }
 
@@ -38712,6 +42782,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -38735,6 +42806,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -38764,6 +42836,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
   }
 
@@ -38773,6 +42846,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
   }
 
@@ -38813,6 +42887,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -38836,6 +42911,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -38867,6 +42943,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -38893,6 +42972,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -38932,6 +43014,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -38955,6 +43038,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -38992,6 +43076,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -39018,6 +43105,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -39041,6 +43131,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -39064,6 +43155,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -39095,6 +43187,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -39121,6 +43216,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -39160,6 +43258,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -39183,6 +43282,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -39220,6 +43320,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -39246,6 +43349,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -39269,6 +43375,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
@@ -39292,6 +43399,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
@@ -39323,6 +43431,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -39349,11 +43460,113 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutDesignVersionsUploadedInput, UserUncheckedCreateWithoutDesignVersionsUploadedInput>
+  }
+
+  export type UserCreateWithoutDesignVersionsApprovedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutDesignVersionsApprovedInput, UserUncheckedCreateWithoutDesignVersionsApprovedInput>
+  }
+
+  export type ReturnCreateWithoutDesignVersionInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutDesignVersionInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutDesignVersionInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput>
+  }
+
+  export type ReturnCreateManyDesignVersionInputEnvelope = {
+    data: ReturnCreateManyDesignVersionInput | ReturnCreateManyDesignVersionInput[]
+    skipDuplicates?: boolean
   }
 
   export type WorkItemUpsertWithoutDesignVersionsInput = {
@@ -39388,6 +43601,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
@@ -39411,6 +43625,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsUploadedInput = {
@@ -39448,6 +43663,9 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -39474,6 +43692,734 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type UserUpsertWithoutDesignVersionsApprovedInput = {
+    update: XOR<UserUpdateWithoutDesignVersionsApprovedInput, UserUncheckedUpdateWithoutDesignVersionsApprovedInput>
+    create: XOR<UserCreateWithoutDesignVersionsApprovedInput, UserUncheckedCreateWithoutDesignVersionsApprovedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutDesignVersionsApprovedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutDesignVersionsApprovedInput, UserUncheckedUpdateWithoutDesignVersionsApprovedInput>
+  }
+
+  export type UserUpdateWithoutDesignVersionsApprovedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
+    where: ReturnWhereUniqueInput
+    update: XOR<ReturnUpdateWithoutDesignVersionInput, ReturnUncheckedUpdateWithoutDesignVersionInput>
+    create: XOR<ReturnCreateWithoutDesignVersionInput, ReturnUncheckedCreateWithoutDesignVersionInput>
+  }
+
+  export type ReturnUpdateWithWhereUniqueWithoutDesignVersionInput = {
+    where: ReturnWhereUniqueInput
+    data: XOR<ReturnUpdateWithoutDesignVersionInput, ReturnUncheckedUpdateWithoutDesignVersionInput>
+  }
+
+  export type ReturnUpdateManyWithWhereWithoutDesignVersionInput = {
+    where: ReturnScalarWhereInput
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutDesignVersionInput>
+  }
+
+  export type WorkItemCreateWithoutReturnsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutReturnsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutReturnsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutReturnsInput, WorkItemUncheckedCreateWithoutReturnsInput>
+  }
+
+  export type UserCreateWithoutReturnsRaisedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserUncheckedCreateWithoutReturnsRaisedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+  }
+
+  export type UserCreateOrConnectWithoutReturnsRaisedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReturnsRaisedInput, UserUncheckedCreateWithoutReturnsRaisedInput>
+  }
+
+  export type DepartmentCreateWithoutReturnsInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+    workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
+    userDepartments?: UserDepartmentCreateNestedManyWithoutDepartmentInput
+    productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
+  }
+
+  export type DepartmentUncheckedCreateWithoutReturnsInput = {
+    id?: string
+    name: string
+    isActive?: boolean
+    createdAt?: Date | string
+    workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
+    userDepartments?: UserDepartmentUncheckedCreateNestedManyWithoutDepartmentInput
+    productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
+  }
+
+  export type DepartmentCreateOrConnectWithoutReturnsInput = {
+    where: DepartmentWhereUniqueInput
+    create: XOR<DepartmentCreateWithoutReturnsInput, DepartmentUncheckedCreateWithoutReturnsInput>
+  }
+
+  export type UserCreateWithoutReturnsAssignedToMeInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+  }
+
+  export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+  }
+
+  export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReturnsAssignedToMeInput, UserUncheckedCreateWithoutReturnsAssignedToMeInput>
+  }
+
+  export type DesignVersionCreateWithoutReturnsInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+    approvedBy?: UserCreateNestedOneWithoutDesignVersionsApprovedInput
+  }
+
+  export type DesignVersionUncheckedCreateWithoutReturnsInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+  }
+
+  export type DesignVersionCreateOrConnectWithoutReturnsInput = {
+    where: DesignVersionWhereUniqueInput
+    create: XOR<DesignVersionCreateWithoutReturnsInput, DesignVersionUncheckedCreateWithoutReturnsInput>
+  }
+
+  export type ReturnAttachmentCreateWithoutReturnInput = {
+    id?: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+  }
+
+  export type ReturnAttachmentUncheckedCreateWithoutReturnInput = {
+    id?: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+  }
+
+  export type ReturnAttachmentCreateOrConnectWithoutReturnInput = {
+    where: ReturnAttachmentWhereUniqueInput
+    create: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput>
+  }
+
+  export type ReturnAttachmentCreateManyReturnInputEnvelope = {
+    data: ReturnAttachmentCreateManyReturnInput | ReturnAttachmentCreateManyReturnInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WorkItemUpsertWithoutReturnsInput = {
+    update: XOR<WorkItemUpdateWithoutReturnsInput, WorkItemUncheckedUpdateWithoutReturnsInput>
+    create: XOR<WorkItemCreateWithoutReturnsInput, WorkItemUncheckedCreateWithoutReturnsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutReturnsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutReturnsInput, WorkItemUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type WorkItemUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutReturnsRaisedInput = {
+    update: XOR<UserUpdateWithoutReturnsRaisedInput, UserUncheckedUpdateWithoutReturnsRaisedInput>
+    create: XOR<UserCreateWithoutReturnsRaisedInput, UserUncheckedCreateWithoutReturnsRaisedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReturnsRaisedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReturnsRaisedInput, UserUncheckedUpdateWithoutReturnsRaisedInput>
+  }
+
+  export type UserUpdateWithoutReturnsRaisedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+  }
+
+  export type DepartmentUpsertWithoutReturnsInput = {
+    update: XOR<DepartmentUpdateWithoutReturnsInput, DepartmentUncheckedUpdateWithoutReturnsInput>
+    create: XOR<DepartmentCreateWithoutReturnsInput, DepartmentUncheckedCreateWithoutReturnsInput>
+    where?: DepartmentWhereInput
+  }
+
+  export type DepartmentUpdateToOneWithWhereWithoutReturnsInput = {
+    where?: DepartmentWhereInput
+    data: XOR<DepartmentUpdateWithoutReturnsInput, DepartmentUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type DepartmentUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
+    userDepartments?: UserDepartmentUpdateManyWithoutDepartmentNestedInput
+    productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
+  }
+
+  export type DepartmentUncheckedUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
+    userDepartments?: UserDepartmentUncheckedUpdateManyWithoutDepartmentNestedInput
+    productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
+  }
+
+  export type UserUpsertWithoutReturnsAssignedToMeInput = {
+    update: XOR<UserUpdateWithoutReturnsAssignedToMeInput, UserUncheckedUpdateWithoutReturnsAssignedToMeInput>
+    create: XOR<UserCreateWithoutReturnsAssignedToMeInput, UserUncheckedCreateWithoutReturnsAssignedToMeInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReturnsAssignedToMeInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReturnsAssignedToMeInput, UserUncheckedUpdateWithoutReturnsAssignedToMeInput>
+  }
+
+  export type UserUpdateWithoutReturnsAssignedToMeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+  }
+
+  export type DesignVersionUpsertWithoutReturnsInput = {
+    update: XOR<DesignVersionUpdateWithoutReturnsInput, DesignVersionUncheckedUpdateWithoutReturnsInput>
+    create: XOR<DesignVersionCreateWithoutReturnsInput, DesignVersionUncheckedCreateWithoutReturnsInput>
+    where?: DesignVersionWhereInput
+  }
+
+  export type DesignVersionUpdateToOneWithWhereWithoutReturnsInput = {
+    where?: DesignVersionWhereInput
+    data: XOR<DesignVersionUpdateWithoutReturnsInput, DesignVersionUncheckedUpdateWithoutReturnsInput>
+  }
+
+  export type DesignVersionUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+    approvedBy?: UserUpdateOneWithoutDesignVersionsApprovedNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateWithoutReturnsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ReturnAttachmentUpsertWithWhereUniqueWithoutReturnInput = {
+    where: ReturnAttachmentWhereUniqueInput
+    update: XOR<ReturnAttachmentUpdateWithoutReturnInput, ReturnAttachmentUncheckedUpdateWithoutReturnInput>
+    create: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput>
+  }
+
+  export type ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput = {
+    where: ReturnAttachmentWhereUniqueInput
+    data: XOR<ReturnAttachmentUpdateWithoutReturnInput, ReturnAttachmentUncheckedUpdateWithoutReturnInput>
+  }
+
+  export type ReturnAttachmentUpdateManyWithWhereWithoutReturnInput = {
+    where: ReturnAttachmentScalarWhereInput
+    data: XOR<ReturnAttachmentUpdateManyMutationInput, ReturnAttachmentUncheckedUpdateManyWithoutReturnInput>
+  }
+
+  export type ReturnAttachmentScalarWhereInput = {
+    AND?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
+    OR?: ReturnAttachmentScalarWhereInput[]
+    NOT?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
+    id?: StringFilter<"ReturnAttachment"> | string
+    returnId?: StringFilter<"ReturnAttachment"> | string
+    kind?: EnumReturnAttachmentKindFilter<"ReturnAttachment"> | $Enums.ReturnAttachmentKind
+    storageKey?: StringFilter<"ReturnAttachment"> | string
+    fileName?: StringFilter<"ReturnAttachment"> | string
+    mimeType?: StringNullableFilter<"ReturnAttachment"> | string | null
+    sizeBytes?: IntFilter<"ReturnAttachment"> | number
+    createdAt?: DateTimeFilter<"ReturnAttachment"> | Date | string
+  }
+
+  export type ReturnCreateWithoutAttachmentsInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+  }
+
+  export type ReturnUncheckedCreateWithoutAttachmentsInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ReturnCreateOrConnectWithoutAttachmentsInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutAttachmentsInput, ReturnUncheckedCreateWithoutAttachmentsInput>
+  }
+
+  export type ReturnUpsertWithoutAttachmentsInput = {
+    update: XOR<ReturnUpdateWithoutAttachmentsInput, ReturnUncheckedUpdateWithoutAttachmentsInput>
+    create: XOR<ReturnCreateWithoutAttachmentsInput, ReturnUncheckedCreateWithoutAttachmentsInput>
+    where?: ReturnWhereInput
+  }
+
+  export type ReturnUpdateToOneWithWhereWithoutAttachmentsInput = {
+    where?: ReturnWhereInput
+    data: XOR<ReturnUpdateWithoutAttachmentsInput, ReturnUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type ReturnUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -40139,6 +45085,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -40162,6 +45109,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -40244,7 +45192,10 @@ export namespace Prisma {
     sha256: string
     note?: string | null
     createdAt?: Date | string
+    approvedAt?: Date | string | null
     workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
+    approvedBy?: UserCreateNestedOneWithoutDesignVersionsApprovedInput
+    returns?: ReturnCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionUncheckedCreateWithoutUploadedByInput = {
@@ -40258,6 +45209,9 @@ export namespace Prisma {
     sha256: string
     note?: string | null
     createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+    returns?: ReturnUncheckedCreateNestedManyWithoutDesignVersionInput
   }
 
   export type DesignVersionCreateOrConnectWithoutUploadedByInput = {
@@ -40267,6 +45221,120 @@ export namespace Prisma {
 
   export type DesignVersionCreateManyUploadedByInputEnvelope = {
     data: DesignVersionCreateManyUploadedByInput | DesignVersionCreateManyUploadedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DesignVersionCreateWithoutApprovedByInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+    returns?: ReturnCreateNestedManyWithoutDesignVersionInput
+  }
+
+  export type DesignVersionUncheckedCreateWithoutApprovedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    returns?: ReturnUncheckedCreateNestedManyWithoutDesignVersionInput
+  }
+
+  export type DesignVersionCreateOrConnectWithoutApprovedByInput = {
+    where: DesignVersionWhereUniqueInput
+    create: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type DesignVersionCreateManyApprovedByInputEnvelope = {
+    data: DesignVersionCreateManyApprovedByInput | DesignVersionCreateManyApprovedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ReturnCreateWithoutRaisedByInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutRaisedByInput = {
+    id?: string
+    workItemId: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutRaisedByInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput>
+  }
+
+  export type ReturnCreateManyRaisedByInputEnvelope = {
+    data: ReturnCreateManyRaisedByInput | ReturnCreateManyRaisedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ReturnCreateWithoutAssignedToInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutAssignedToInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutAssignedToInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput>
+  }
+
+  export type ReturnCreateManyAssignedToInputEnvelope = {
+    data: ReturnCreateManyAssignedToInput | ReturnCreateManyAssignedToInput[]
     skipDuplicates?: boolean
   }
 
@@ -40533,6 +45601,54 @@ export namespace Prisma {
     data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyWithoutUploadedByInput>
   }
 
+  export type DesignVersionUpsertWithWhereUniqueWithoutApprovedByInput = {
+    where: DesignVersionWhereUniqueInput
+    update: XOR<DesignVersionUpdateWithoutApprovedByInput, DesignVersionUncheckedUpdateWithoutApprovedByInput>
+    create: XOR<DesignVersionCreateWithoutApprovedByInput, DesignVersionUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type DesignVersionUpdateWithWhereUniqueWithoutApprovedByInput = {
+    where: DesignVersionWhereUniqueInput
+    data: XOR<DesignVersionUpdateWithoutApprovedByInput, DesignVersionUncheckedUpdateWithoutApprovedByInput>
+  }
+
+  export type DesignVersionUpdateManyWithWhereWithoutApprovedByInput = {
+    where: DesignVersionScalarWhereInput
+    data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyWithoutApprovedByInput>
+  }
+
+  export type ReturnUpsertWithWhereUniqueWithoutRaisedByInput = {
+    where: ReturnWhereUniqueInput
+    update: XOR<ReturnUpdateWithoutRaisedByInput, ReturnUncheckedUpdateWithoutRaisedByInput>
+    create: XOR<ReturnCreateWithoutRaisedByInput, ReturnUncheckedCreateWithoutRaisedByInput>
+  }
+
+  export type ReturnUpdateWithWhereUniqueWithoutRaisedByInput = {
+    where: ReturnWhereUniqueInput
+    data: XOR<ReturnUpdateWithoutRaisedByInput, ReturnUncheckedUpdateWithoutRaisedByInput>
+  }
+
+  export type ReturnUpdateManyWithWhereWithoutRaisedByInput = {
+    where: ReturnScalarWhereInput
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutRaisedByInput>
+  }
+
+  export type ReturnUpsertWithWhereUniqueWithoutAssignedToInput = {
+    where: ReturnWhereUniqueInput
+    update: XOR<ReturnUpdateWithoutAssignedToInput, ReturnUncheckedUpdateWithoutAssignedToInput>
+    create: XOR<ReturnCreateWithoutAssignedToInput, ReturnUncheckedCreateWithoutAssignedToInput>
+  }
+
+  export type ReturnUpdateWithWhereUniqueWithoutAssignedToInput = {
+    where: ReturnWhereUniqueInput
+    data: XOR<ReturnUpdateWithoutAssignedToInput, ReturnUncheckedUpdateWithoutAssignedToInput>
+  }
+
+  export type ReturnUpdateManyWithWhereWithoutAssignedToInput = {
+    where: ReturnScalarWhereInput
+    data: XOR<ReturnUpdateManyMutationInput, ReturnUncheckedUpdateManyWithoutAssignedToInput>
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -40557,6 +45673,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -40583,6 +45702,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -40625,6 +45747,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -40651,6 +45776,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -40677,6 +45805,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -40703,6 +45834,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -40745,6 +45879,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -40771,6 +45908,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -40926,6 +46066,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -40952,6 +46095,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -41015,6 +46161,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -41041,6 +46190,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -41094,6 +46246,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -41120,6 +46275,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -41151,6 +46309,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -41177,6 +46338,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -41219,6 +46383,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -41245,6 +46412,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -41282,6 +46452,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -41308,6 +46481,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -41334,6 +46510,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -41360,6 +46539,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -41373,6 +46555,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnCreateNestedManyWithoutOriginDepartmentInput
     productTypes?: ProductTypeCreateNestedManyWithoutDefaultDepartmentInput
   }
 
@@ -41382,6 +46565,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutDepartmentInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutOriginDepartmentInput
     productTypes?: ProductTypeUncheckedCreateNestedManyWithoutDefaultDepartmentInput
   }
 
@@ -41425,6 +46609,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -41451,6 +46638,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -41470,6 +46660,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUpdateManyWithoutOriginDepartmentNestedInput
     productTypes?: ProductTypeUpdateManyWithoutDefaultDepartmentNestedInput
   }
 
@@ -41479,6 +46670,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutDepartmentNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutOriginDepartmentNestedInput
     productTypes?: ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentNestedInput
   }
 
@@ -41506,6 +46698,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -41532,6 +46727,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
     designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -41574,6 +46772,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -41600,6 +46801,9 @@ export namespace Prisma {
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
     designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -41620,6 +46824,18 @@ export namespace Prisma {
     dueDate?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+  }
+
+  export type ReturnCreateManyOriginDepartmentInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
   }
 
   export type UserDepartmentCreateManyDepartmentInput = {
@@ -41658,6 +46874,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -41681,6 +46898,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -41701,6 +46919,44 @@ export namespace Prisma {
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnUpdateWithoutOriginDepartmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutOriginDepartmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutOriginDepartmentInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type UserDepartmentUpdateWithoutDepartmentInput = {
@@ -41992,6 +47248,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -42015,6 +47272,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -42067,6 +47325,20 @@ export namespace Prisma {
     sha256: string
     note?: string | null
     uploadedById: string
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+  }
+
+  export type ReturnCreateManyWorkItemInput = {
+    id?: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
     createdAt?: Date | string
   }
 
@@ -42140,7 +47412,10 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+    approvedBy?: UserUpdateOneWithoutDesignVersionsApprovedNestedInput
+    returns?: ReturnUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionUncheckedUpdateWithoutWorkItemInput = {
@@ -42154,6 +47429,9 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     uploadedById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    returns?: ReturnUncheckedUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionUncheckedUpdateManyWithoutWorkItemInput = {
@@ -42166,6 +47444,46 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ReturnUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -42210,6 +47528,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -42233,6 +47552,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -42253,6 +47573,96 @@ export namespace Prisma {
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnCreateManyDesignVersionInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ReturnUpdateWithoutDesignVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutDesignVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutDesignVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentCreateManyReturnInput = {
+    id?: string
+    kind: $Enums.ReturnAttachmentKind
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    createdAt?: Date | string
+  }
+
+  export type ReturnAttachmentUpdateWithoutReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentUncheckedUpdateWithoutReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnAttachmentUncheckedUpdateManyWithoutReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    kind?: EnumReturnAttachmentKindFieldUpdateOperationsInput | $Enums.ReturnAttachmentKind
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type CustomerCreateManyClassificationInput = {
@@ -42437,6 +47847,47 @@ export namespace Prisma {
     sizeBytes: number
     sha256: string
     note?: string | null
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+    approvedById?: string | null
+  }
+
+  export type DesignVersionCreateManyApprovedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+    approvedAt?: Date | string | null
+  }
+
+  export type ReturnCreateManyRaisedByInput = {
+    id?: string
+    workItemId: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ReturnCreateManyAssignedToInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
     createdAt?: Date | string
   }
 
@@ -42684,6 +48135,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -42707,6 +48159,7 @@ export namespace Prisma {
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -42799,7 +48252,10 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
+    approvedBy?: UserUpdateOneWithoutDesignVersionsApprovedNestedInput
+    returns?: ReturnUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionUncheckedUpdateWithoutUploadedByInput = {
@@ -42813,6 +48269,9 @@ export namespace Prisma {
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    returns?: ReturnUncheckedUpdateManyWithoutDesignVersionNestedInput
   }
 
   export type DesignVersionUncheckedUpdateManyWithoutUploadedByInput = {
@@ -42825,6 +48284,131 @@ export namespace Prisma {
     sizeBytes?: IntFieldUpdateOperationsInput | number
     sha256?: StringFieldUpdateOperationsInput | string
     note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    approvedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type DesignVersionUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+    returns?: ReturnUpdateManyWithoutDesignVersionNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    returns?: ReturnUncheckedUpdateManyWithoutDesignVersionNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ReturnUpdateWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ReturnUpdateWithoutAssignedToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutAssignedToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateManyWithoutAssignedToInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
