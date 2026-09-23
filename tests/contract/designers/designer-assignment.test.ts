@@ -22,6 +22,7 @@ import {
   phaseDurations,
   uploadDesignVersion,
   markDesignComplete,
+  getDesignerWorkload,
   DomainDesignerError,
 } from "~/server/designers";
 import { ForbiddenError } from "~/server/auth/authorize";
@@ -322,5 +323,21 @@ describe("designer-assignment contract: getEligibleDesigners / assignDesigner", 
     const updated = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
     expect(updated.assigneeId).toBe(designerB.userId);
     expect(updated.state).toBe("ASSIGNED");
+  });
+});
+
+describe("designer-assignment contract: getDesignerWorkload", () => {
+  it("requires no permission beyond an authenticated actor, and matches the frozen shape", async () => {
+    const actor = await createActor([]);
+    const designer = await createActor(["design.work"]);
+    await seedWorkItem("ASSIGNED", designer.userId);
+
+    const workload = await getDesignerWorkload(actor);
+
+    const row = workload.find((w) => w.userId === designer.userId);
+    expect(row).toBeDefined();
+    expect(typeof row?.name).toBe("string");
+    expect(typeof row?.activeWorkItemCount).toBe("number");
+    expect(row?.activeWorkItemCount).toBeGreaterThanOrEqual(1);
   });
 });

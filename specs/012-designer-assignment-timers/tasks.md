@@ -149,12 +149,12 @@ Single Next.js project (plan.md Project Structure): `src/server/designers/**`, `
 
 ### Tests for User Story 5
 
-- [ ] T036 [P] [US5] Integration test in `tests/integration/designers/rework.test.ts`: a Work Item forced into `REWORK_REQUIRED` (via a `WorkItemTransition` row with `rejectionCategory`/`reason`, matching how 013 will eventually produce this state) appears in `getMyQueue` for its designer with `isRework: true` and `rejectionDetails` populated from that transition row; `startTimer` on it transitions to `IN_DESIGN` and opens a new `ACTIVE` segment whose duration adds to (not replaces) `phaseDurations`' pre-existing `activeTimeMs` — covers US5 Acceptance Scenarios 1–2
+- [x] T036 [P] [US5] Integration test in `tests/integration/designers/rework.test.ts`: a Work Item forced into `REWORK_REQUIRED` (via a `WorkItemTransition` row with `rejectionCategory`/`reason`, matching how 013 will eventually produce this state) appears in `getMyQueue` for its designer with `isRework: true` and `rejectionDetails` populated from that transition row; `startTimer` on it transitions to `IN_DESIGN` and opens a new `ACTIVE` segment whose duration adds to (not replaces) `phaseDurations`' pre-existing `activeTimeMs` — covers US5 Acceptance Scenarios 1–2
 
 ### Implementation for User Story 5
 
-- [ ] T037 [US5] Verify/extend `getMyQueue` (`src/server/designers/queue.ts`, T022) to populate `rejectionDetails` from the most recent `WorkItemTransition` landing in `REWORK_REQUIRED` for each `REWORK_REQUIRED` row (data-model.md's `MyQueueRow.rejectionDetails`) — T022 already queries per-row transitions for `assignedAt`; this extends that same query rather than adding a new one (depends on T022)
-- [ ] T038 [US5] Confirm `startTimer` (`src/server/designers/timer.ts`, T023)'s `NOT_TIMEABLE` guard and `ALLOWED_EDGES`-driven `transitionWorkItem` call already accept `REWORK_REQUIRED → IN_DESIGN` with no code change needed (`REWORK_REQUIRED` is already in T023's timeable-state guard) — this task is verification via T036's test, not new implementation, per FR-020's "continues accumulating" requirement being satisfied automatically by `PhaseTiming`'s additive segment model (research.md §2)
+- [x] T037 [US5] Verify/extend `getMyQueue` (`src/server/designers/queue.ts`, T022) to populate `rejectionDetails` from the most recent `WorkItemTransition` landing in `REWORK_REQUIRED` for each `REWORK_REQUIRED` row (data-model.md's `MyQueueRow.rejectionDetails`) — T022 already queries per-row transitions for `assignedAt`; this extends that same query rather than adding a new one (depends on T022)
+- [x] T038 [US5] Confirm `startTimer` (`src/server/designers/timer.ts`, T023)'s `NOT_TIMEABLE` guard and `ALLOWED_EDGES`-driven `transitionWorkItem` call already accept `REWORK_REQUIRED → IN_DESIGN` with no code change needed (`REWORK_REQUIRED` is already in T023's timeable-state guard) — this task is verification via T036's test, not new implementation, per FR-020's "continues accumulating" requirement being satisfied automatically by `PhaseTiming`'s additive segment model (research.md §2)
 
 **Checkpoint**: User Story 5 is fully functional and testable independently. All 5 user stories complete.
 
@@ -164,8 +164,8 @@ Single Next.js project (plan.md Project Structure): `src/server/designers/**`, `
 
 **Purpose**: Round out the feature's read-side consumer contract and verify nothing else broke.
 
-- [ ] T039 [P] Implement `getDesignerWorkload(actor)` in `src/server/designers/workload.ts` per contracts/designer-assignment.md: no `authorize()` beyond authenticated actor; same underlying active-count query as `getEligibleDesigners` (T011), whole-shop scope (not per-Work-Item); export from `src/server/designers/index.ts` (depends on T011)
-- [ ] T040 [P] Document the `HEAD_DESIGNER` reassignment opt-in (adding `"workitem.assign_designer"` to that role's `permissions` array in `prisma/seed.ts`'s `ROLE_SEED_DATA`) as a code comment at that array, cross-referencing data-model.md's Seed data addition section — no default behavior change (Clarifications, 2026-09-23)
+- [x] T039 [P] Implement `getDesignerWorkload(actor)` in `src/server/designers/workload.ts` per contracts/designer-assignment.md: no `authorize()` beyond authenticated actor; same underlying active-count query as `getEligibleDesigners` (T011), whole-shop scope (not per-Work-Item); export from `src/server/designers/index.ts` (depends on T011)
+- [x] T040 [P] Document the `HEAD_DESIGNER` reassignment opt-in (adding `"workitem.assign_designer"` to that role's `permissions` array in `prisma/seed.ts`'s `ROLE_SEED_DATA`) as a code comment at that array, cross-referencing data-model.md's Seed data addition section — no default behavior change (Clarifications, 2026-09-23)
 - [x] T041 Run `pnpm check` (lint + typecheck) across the new `src/server/designers/**` module and every edited file; fix any violation
 - [ ] T042 Run the full `pnpm test` suite; confirm every pre-existing 001/002/011 test still passes unmodified and every new `tests/{unit,contract,integration}/designers/**` test passes once T002 unblocks the DB-dependent ones (unit tests T008 pass regardless of T002)
 - [ ] T043 Manual quickstart QA — DB-dependent, blocked on T002 like 011's T052: walk through quickstart.md's Scenarios 1–7 end-to-end against a running dev server

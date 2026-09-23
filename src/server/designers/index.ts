@@ -20,3 +20,7 @@ export type { PhaseDurations } from "./timer";
 // US4
 export { uploadDesignVersion, markDesignComplete, WorkItemDesignTransitionError } from "./designVersions";
 export type { UploadDesignVersionFile } from "./designVersions";
+
+// Polish — src/server/designers/workload.ts (T039)
+export { getDesignerWorkload } from "./workload";
+export type { DesignerWorkload } from "./workload";
