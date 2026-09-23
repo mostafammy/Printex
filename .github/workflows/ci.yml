@@ -33,13 +33,23 @@ jobs:
       # Two separate databases in the same service container: one for the app
       # (schema push / generate), one dedicated to the Vitest suite — never
       # the same database, per research.md §9.
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/printex"
+      #
+      # DATABASE_URL / DATABASE_URL_TEST connect as `printex_app`, a
+      # NON-superuser role created below — required for the append-only
+      # REVOKE (prisma/manual-sql/audit-event-append-only.sql) to actually
+      # bind: a Postgres superuser bypasses every GRANT/REVOKE check, so
+      # running the app (and the test suite, including the append-only
+      # contract test) as `postgres` would make that test meaningless.
+      # DIRECT_URL stays on the `postgres` superuser role — schema
+      # creation/administration (`prisma db push`) needs it.
+      DATABASE_URL: "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex"
       # DIRECT_URL: prisma/schema/schema.prisma declares directUrl to bypass
       # Supabase's connection pooler in production — `prisma db push`/`migrate`
       # use directUrl (not url) to connect. This local CI Postgres has no
-      # pooler, so DIRECT_URL is just the same connection as DATABASE_URL.
+      # pooler, so DIRECT_URL is just the same connection as DATABASE_URL
+      # would be, minus the role split described above.
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/printex"
-      DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/printex_test"
+      DATABASE_URL_TEST: "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
       STORAGE_ROOT: "/tmp/printex-storage"
       BETTER_AUTH_SECRET: "ci-only-not-a-real-secret"
       BETTER_AUTH_GITHUB_CLIENT_ID: "ci-placeholder"
@@ -64,7 +74,18 @@ jobs:
       - name: Create test database
         run: PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE printex_test;"
 
+      - name: Create non-superuser app role
+        # Mirrors the production deployment prerequisite (research.md
+        # "Database-level append-only enforcement", src/env.js's DIRECT_URL
+        # comment): the role the app connects as must be a non-superuser for
+        # the append-only REVOKE below to have any effect.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c \
+            "CREATE ROLE printex_app WITH LOGIN PASSWORD 'printex_app_ci_pw';"
+
       - name: Push app database schema
+        # Runs via DIRECT_URL (postgres superuser) — schema creation needs
+        # elevated privileges the app role deliberately does not have.
         run: pnpm exec prisma db push --skip-generate
 
       - name: Push test database schema
@@ -72,11 +93,43 @@ jobs:
         env:
           # `prisma db push` connects via directUrl, not url — override both
           # so this push actually targets printex_test, not the app db again.
-          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
-          DIRECT_URL: ${{ env.DATABASE_URL_TEST }}
+          # Stays on the postgres superuser (not DATABASE_URL_TEST, which is
+          # printex_app) for the same reason as the app db push above.
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/printex_test"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/printex_test"
+
+      - name: Grant printex_app its runtime privileges
+        # SELECT/INSERT/UPDATE/DELETE on every table in both databases —
+        # audit_event's UPDATE/DELETE are revoked specifically in the next
+        # step. Tables were just created by the postgres superuser via
+        # `prisma db push`, so printex_app has zero access until granted.
+        run: |
+          for db in printex printex_test; do
+            PGPASSWORD=postgres psql -h localhost -U postgres -d "$db" -c "
+              GRANT CONNECT ON DATABASE $db TO printex_app;
+              GRANT USAGE ON SCHEMA public TO printex_app;
+              GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO printex_app;
+              GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO printex_app;
+            "
+          done
+
+      - name: Apply audit_event append-only REVOKE
+        # --url (not --schema's directUrl) so this connects AS printex_app —
+        # REVOKE ... FROM CURRENT_USER must run as the role being restricted.
+        run: |
+          pnpm exec prisma db execute \
+            --file prisma/manual-sql/audit-event-append-only.sql \
+            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex"
+          pnpm exec prisma db execute \
+            --file prisma/manual-sql/audit-event-append-only.sql \
+            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
 
       - name: Check (lint + typecheck)
         run: pnpm check
 
       - name: Test
+        # DATABASE_URL / DATABASE_URL_TEST (job-level env) connect as
+        # printex_app, so tests/contract/audit-append-only.test.ts's raw SQL
+        # UPDATE/DELETE against audit_event now genuinely hits the REVOKE
+        # applied above, instead of running as a superuser that ignores it.
         run: pnpm test
