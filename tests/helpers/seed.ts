@@ -16,7 +16,12 @@ function unique(prefix: string): string {
 export async function seedUser(): Promise<UserId> {
   const id = unique("user");
   const user = await testDb.user.create({
-    data: { id, name: "Test User", email: `${id}@example.test` },
+    data: {
+      id,
+      name: "Test User",
+      email: `${id}@example.test`,
+      username: id,
+    },
   });
   return asUserId(user.id);
 }

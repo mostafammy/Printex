@@ -20,7 +20,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: printex
+          POSTGRES_DB: printex_test
         ports:
           - 5432:5432
         options: >-
@@ -30,11 +30,33 @@ jobs:
           --health-retries 5
 
     env:
-      # Two separate databases in the same service container: one for the app
-      # (schema push / generate), one dedicated to the Vitest suite — never
-      # the same database, per research.md §9.
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/printex"
-      DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/printex_test"
+      # A single database, referenced by both names: `src/server/db.ts` (the
+      # app code under test — getActor.ts, admin/*.ts, etc.) reads
+      # DATABASE_URL, while tests seed fixtures directly via `testDb`
+      # (tests/helpers/testDb.ts), which reads DATABASE_URL_TEST — so the two
+      # MUST resolve to the same physical database, or app code writes
+      # through `db` (e.g. audit.record() inside a transaction) can't see
+      # rows a test just inserted through `testDb`, and vice versa. This is
+      # the same pattern README.md documents ("the test suite executes
+      # exclusively against DATABASE_URL_TEST") — DATABASE_URL_TEST isn't a
+      # second database, it's the one database tests (and the app code they
+      # exercise) are allowed to touch, kept separate from any real dev data.
+      #
+      # Both connect as `printex_app`, a NON-superuser role created below —
+      # required for the append-only REVOKE
+      # (prisma/manual-sql/audit-event-append-only.sql) to actually bind: a
+      # Postgres superuser bypasses every GRANT/REVOKE check, so running the
+      # app (and the test suite, including the append-only contract test) as
+      # `postgres` would make that test meaningless.
+      DATABASE_URL: "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
+      DATABASE_URL_TEST: "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
+      # DIRECT_URL: prisma/schema/schema.prisma declares directUrl to bypass
+      # Supabase's connection pooler in production — `prisma db push`/`migrate`
+      # use directUrl (not url) to connect. This local CI Postgres has no
+      # pooler, so DIRECT_URL is just the same connection as DATABASE_URL
+      # would be, minus the role split described above (schema creation
+      # needs the postgres superuser; printex_app doesn't own anything).
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/printex_test"
       STORAGE_ROOT: "/tmp/printex-storage"
       BETTER_AUTH_SECRET: "ci-only-not-a-real-secret"
       BETTER_AUTH_GITHUB_CLIENT_ID: "ci-placeholder"
@@ -50,25 +72,75 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # prisma/seed.ts relies on Node's built-in TypeScript stripping
+          # (Node 22.6+, see that file's own comment) to run via plain
+          # `node prisma/seed.ts` with no ts-node/tsx loader — Node 20
+          # fails with ERR_UNKNOWN_FILE_EXTENSION on the bare .ts file.
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create test database
-        run: PGPASSWORD=postgres psql -h localhost -U postgres -c "CREATE DATABASE printex_test;"
+      - name: Create non-superuser app role
+        # Mirrors the production deployment prerequisite (research.md
+        # "Database-level append-only enforcement", src/env.js's DIRECT_URL
+        # comment): the role the app connects as must be a non-superuser for
+        # the append-only REVOKE below to have any effect.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -c \
+            "CREATE ROLE printex_app WITH LOGIN PASSWORD 'printex_app_ci_pw';"
 
-      - name: Push app database schema
+      - name: Push database schema
+        # Runs via DIRECT_URL (postgres superuser) — schema creation needs
+        # elevated privileges the app role deliberately does not have.
         run: pnpm exec prisma db push --skip-generate
 
-      - name: Push test database schema
-        run: pnpm exec prisma db push --skip-generate
-        env:
-          DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+      - name: Grant printex_app its runtime privileges
+        # SELECT/INSERT/UPDATE/DELETE on every table — audit_event's
+        # UPDATE/DELETE are revoked specifically in a later step. Tables
+        # were just created by the postgres superuser via `prisma db push`,
+        # so printex_app has zero access until granted.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d printex_test -c "
+            GRANT CONNECT ON DATABASE printex_test TO printex_app;
+            GRANT USAGE ON SCHEMA public TO printex_app;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO printex_app;
+            GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO printex_app;
+          "
+
+      - name: Seed roles, permissions, and dev data
+        # prisma db push creates empty tables only — it never runs
+        # prisma/seed.ts. Several contract/integration tests depend on the
+        # seeded Role/RolePermission rows (tests/contract/role-permission-matrix.test.ts
+        # and others). Runs as printex_app (matching production's runtime
+        # role) — seed.ts is upsert-based, safe to run on every CI run.
+        run: pnpm exec prisma db seed
+
+      - name: Apply audit_event append-only REVOKE
+        # audit-event-append-only.sql's `REVOKE ... FROM CURRENT_USER` is
+        # written for a single-role deployment where the runtime role also
+        # owns the schema (i.e. it ran its own `prisma db push`). CI instead
+        # splits ownership — `postgres` (superuser) creates all tables,
+        # `printex_app` is a separate non-owner runtime role — so
+        # printex_app has no GRANT OPTION on audit_event and Postgres
+        # silently WARNs (not errors) when a non-owner without GRANT OPTION
+        # attempts a REVOKE, making CURRENT_USER framing a no-op here.
+        # Run the REVOKE as the actual table owner (postgres) instead,
+        # targeting printex_app explicitly by name — same resulting
+        # privilege state, just with an executor that has the authority to
+        # change it.
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d printex_test -c \
+            "REVOKE UPDATE, DELETE ON audit_event FROM printex_app;"
 
       - name: Check (lint + typecheck)
         run: pnpm check
 
       - name: Test
+        # DATABASE_URL / DATABASE_URL_TEST both point at the same database
+        # and connect as printex_app, so tests/contract/audit-append-only.test.ts's
+        # raw SQL UPDATE/DELETE against audit_event genuinely hits the
+        # REVOKE applied above, and app code under test (using `db`) sees
+        # fixtures tests seed via `testDb`.
         run: pnpm test

@@ -2,14 +2,13 @@
 //
 // Permission/role logic here is deliberately shell-local (not
 // `src/server/core/**`): the real permission model belongs to
-// `001-identity-access-audit`, which this feature only stubs the `Actor`
-// shape for (see `src/server/core/actor.ts`, `src/server/auth/index.ts`).
-// This is a placeholder, role-based filter good enough to demonstrate
-// FR-013's "navigation filtered to what the signed-in user's permissions
-// allow" acceptance scenario for the Phase 5 shell; 001 may replace the
-// matching rule (e.g. permission strings instead of role names) without
-// touching `src/server/core/**`.
+// `001-identity-access-audit` (see `src/server/core/actor.ts`,
+// `src/server/auth/index.ts`). The role lists below use
+// `~/server/auth`'s real `RoleKey` union (type-only import, no runtime
+// dependency), matching what `src/app/(shell)/layout.tsx` actually
+// populates `actor.roles` with from `getActor()`.
 import type { Actor } from "~/server/core";
+import type { RoleKey } from "~/server/auth";
 
 import ar from "~/messages/ar.json";
 
@@ -23,7 +22,16 @@ export interface NavItem {
   readonly roles: readonly string[];
 }
 
-// Placeholder sidebar sections. Only `my-queue` (T033) is a real, reachable
+// Real RoleKey values (~/server/auth), not the pre-001 placeholder strings
+// this file used to use. `NavItem.roles` stays `readonly string[]` (not
+// `readonly RoleKey[]`) so it remains structurally compatible with
+// `~/server/core`'s `Actor.roles: readonly string[]` — core must not import
+// from `~/server/auth` (module boundary rule), so it can't reference
+// `RoleKey` directly; this file bridges the gap by importing the type only
+// for compile-time literal-string safety here, not to change the field type.
+const ADMIN: RoleKey = "ADMIN_OWNER";
+
+// Sidebar sections. Only `my-queue` (T033) is a real, reachable
 // page this phase; the rest are realistic print-shop department sections
 // (loosely matching PRD role names: Reception, Design, Production, Delivery,
 // Admin) reserved for future features' nav entries — not yet backed by a
@@ -34,27 +42,27 @@ export const navItems: readonly NavItem[] = [
     id: "reception",
     href: "/reception",
     label: ar.nav.reception,
-    roles: ["reception", "admin"],
+    roles: ["RECEPTION", ADMIN],
   },
   {
     id: "design",
     href: "/design",
     label: ar.nav.design,
-    roles: ["design", "admin"],
+    roles: ["DESIGNER", "HEAD_DESIGNER", ADMIN],
   },
   {
     id: "production",
     href: "/production",
     label: ar.nav.production,
-    roles: ["production", "admin"],
+    roles: ["PRODUCTION_OPERATOR", ADMIN],
   },
   {
     id: "delivery",
     href: "/delivery",
     label: ar.nav.delivery,
-    roles: ["delivery", "admin"],
+    roles: ["PRINT_RECEPTION_DELIVERY", ADMIN],
   },
-  { id: "admin", href: "/admin", label: ar.nav.admin, roles: ["admin"] },
+  { id: "admin", href: "/admin", label: ar.nav.admin, roles: [ADMIN] },
 ];
 
 // Pure, framework-free filter: shows only the entries `actor`'s roles allow.

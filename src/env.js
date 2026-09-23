@@ -14,6 +14,13 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_ID: z.string(),
     BETTER_AUTH_GITHUB_CLIENT_SECRET: z.string(),
     DATABASE_URL: z.string().url(),
+    // DIRECT_URL: non-pooled Postgres connection used only by `prisma db push`/`migrate` at
+    // migration time (see prisma/schema/schema.prisma datasource block). Not read by the app
+    // at runtime, but validated here so a missing value fails fast instead of hanging silently.
+    DIRECT_URL: z.string().url().optional(),
+    // DATABASE_URL_TEST: used by integration/contract tests against a real Postgres instance.
+    // DEPLOYMENT PREREQUISITE (001 T005): the role in DATABASE_URL must be a non-superuser for
+    // `REVOKE UPDATE, DELETE ON audit_event` to bind — a superuser bypasses all GRANT/REVOKE.
     DATABASE_URL_TEST: z.string().url().optional(),
     STORAGE_ROOT: z.string().default("./.storage"),
     NODE_ENV: z
@@ -40,6 +47,7 @@ export const env = createEnv({
     BETTER_AUTH_GITHUB_CLIENT_SECRET:
       process.env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
+    DIRECT_URL: process.env.DIRECT_URL,
     DATABASE_URL_TEST: process.env.DATABASE_URL_TEST,
     STORAGE_ROOT: process.env.STORAGE_ROOT,
     NODE_ENV: process.env.NODE_ENV,

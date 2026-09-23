@@ -66,7 +66,11 @@ model Department {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  workItems WorkItem[]
+  workItems       WorkItem[]
+  // Back-relation for 001-identity-access-audit's UserDepartment join
+  // (identity.prisma). Cross-file relations work transparently with
+  // prismaSchemaFolder — no import needed.
+  userDepartments UserDepartment[]
 }
 
 model Customer {
@@ -182,6 +186,9 @@ model NotificationEvent {
 
 // Better Auth models — moved as-is from the original single-file schema.
 // Owned in practice by feature 001 going forward.
+// Extended by 001-identity-access-audit: username plugin fields, lockout
+// columns, RBAC models (Role/RolePermission/UserRole/UserPermission/
+// UserDepartment), and AuditEvent.
 // learn more: https://better-auth.com/docs/concepts/database
 
 // NOTE: When using mysql or sqlserver, uncomment the //@db.Text annotations in model Account below
@@ -189,18 +196,47 @@ model NotificationEvent {
 // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
 
 model User {
-  id            String    @id
+  id            String   @id
   name          String //@db.Text
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String? //@db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
-  // Reverse relations to core.prisma domain models (multi-file schema —
-  // no import needed; owned in practice by 002-core-domain-shell).
+  // --- Better Auth username plugin fields (001-identity-access-audit) ---
+  // Login identifier. Populated at account-creation time; never shown in
+  // the UI as the email (which stays as a synthetic placeholder per
+  // research.md: "{username}@local.invalid").
+  username        String  @unique
+  // Preserves original casing of the username for display purposes while
+  // the canonical `username` is stored lower-cased for case-insensitive
+  // lookup (Better Auth username plugin convention).
+  displayUsername String?
+
+  // --- Deactivation / lockout fields (001-identity-access-audit) ---
+  // FR-015: users are never hard-deleted — only deactivated/reactivated.
+  isActive            Boolean   @default(true)
+  // FR-004: failed-attempt counter; reset to 0 on any successful login.
+  failedLoginAttempts Int       @default(0)
+  // FR-004: set to now+15 min on the 5th consecutive failure; login is
+  // rejected while this is in the future.
+  lockedUntil         DateTime?
+
+  // --- Better Auth core relations ---
+  sessions Session[]
+  accounts Account[]
+
+  // --- RBAC relations (001-identity-access-audit) ---
+  roles              UserRole[]
+  extraPermissions   UserPermission[]
+  departments        UserDepartment[]
+  auditEvents        AuditEvent[]
+  // Back-reference: UserPermission rows this user granted to others.
+  grantedPermissions UserPermission[] @relation("PermissionGrantedBy")
+
+  // --- Reverse relations to core.prisma domain models (multi-file schema —
+  // no import needed; owned in practice by 002-core-domain-shell). ---
   createdOrders       Order[]              @relation
   assignedWorkItems   WorkItem[]           @relation("WorkItemAssignee")
   workItemTransitions WorkItemTransition[] @relation("WorkItemTransitionActor")
@@ -255,6 +291,130 @@ model Verification {
   @@map("verification")
 }
 
+// ---------------------------------------------------------------------------
+// RBAC models — 001-identity-access-audit
+// ---------------------------------------------------------------------------
+
+/// A named, seeded bundle of Permission keys. Seeded once from PRD §48's
+/// role × permission matrix; editing the matrix is out of scope (spec
+/// Assumptions) — per-user extra grants use UserPermission instead (FR-014).
+model Role {
+  id        String   @id @default(cuid())
+  /// Stable code identifier matching the RoleKey union in permissions.ts.
+  /// e.g. "RECEPTION", "ADMIN_OWNER". Used in seed and in Actor.roles.
+  key       String   @unique
+  /// Human-readable display name shown in the Admin Roles screen.
+  name      String
+  createdAt DateTime @default(now())
+
+  permissions RolePermission[]
+  userRoles   UserRole[]
+
+  @@map("role")
+}
+
+/// Junction: one permission key granted to one Role.
+/// The permission value is one of the 21 fixed keys from the Permission union
+/// (permissions.ts) — stored as a plain String so adding a new key never
+/// requires a migration to this table's schema, only to permissions.ts and
+/// the seed (constitution VI).
+model RolePermission {
+  id         String @id @default(cuid())
+  roleId     String
+  role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  /// One of the 21 fixed Permission union keys (FR-010). Validated at the
+  /// application layer (Zod), not as a DB enum.
+  permission String
+
+  @@unique([roleId, permission])
+  @@map("role_permission")
+}
+
+/// Junction: a User holds a Role. A user may hold multiple roles; their
+/// effective permission set is the union of all assigned roles' permissions
+/// plus any UserPermission extras (FR-012).
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_role")
+}
+
+/// Per-user extra permission beyond what the user's Role(s) grant (FR-014).
+/// Supports PRD §26's requirement: e.g. one Accounting user gaining
+/// `pricing.set_variable` without making it role-wide for all Accounting.
+model UserPermission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// One of the 21 fixed Permission union keys (FR-010).
+  permission  String
+  /// The Admin who granted this extra permission. Itself audited via
+  /// audit.record() at grant time (FR-022 role.changed event).
+  grantedById String
+  grantedBy   User     @relation("PermissionGrantedBy", fields: [grantedById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, permission])
+  @@map("user_permission")
+}
+
+/// Junction: a User is a member of a Department. Scopes department-sensitive
+/// permission checks — e.g. production.operate is only valid for the
+/// departments the acting user is a member of (FR-017).
+/// Department is defined in core.prisma; cross-file relations work transparently
+/// with Prisma's prismaSchemaFolder feature (research.md).
+model UserDepartment {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  @@unique([userId, departmentId])
+  @@map("user_department")
+}
+
+/// Append-only audit log. The only writer is audit.record() inside the
+/// caller's transaction (constitution III, FR-019, FR-020). UPDATE and DELETE
+/// are revoked at the Postgres role level (FR-021 — see
+/// prisma/manual-sql/audit-event-append-only.sql).
+model AuditEvent {
+  id            String   @id @default(cuid())
+  /// Nullable: omit only for system-originated events (e.g. login.failure on
+  /// an unknown username where no User row can be identified — spec Edge Cases).
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id])
+  /// Conventionally "entity.verb", e.g. "user.created", "login.failure".
+  action        String
+  /// e.g. "User", "WorkItem", "Order".
+  entityType    String
+  /// The affected record's ID.
+  entityId      String
+  /// Full snapshot pre-change (snapshots, not diffs — research.md).
+  before        Json?
+  /// Full snapshot post-change.
+  after         Json?
+  /// Required by the application layer (not the schema) for override-class
+  /// actions (FR-024). Schema does not enforce presence — callers do.
+  reason        String?
+  /// References only — the actual files live in feature 050 (FR-020).
+  attachmentIds String[]
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  // Indexes support the Admin Audit Log viewer's filter axes (FR-023).
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_event")
+}
+
 // Prisma schema root — multi-file schema (prismaSchemaFolder preview feature).
 // This file holds only the generator and datasource blocks. Domain models live
 // in sibling files under prisma/schema/ (identity.prisma, core.prisma, ...).
@@ -267,6 +427,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase's pooled connection (DATABASE_URL, port 6543) is PgBouncer in
+  // transaction mode, which cannot grant the advisory locks/prepared
+  // statements `prisma db push`/`migrate` need — without directUrl those
+  // commands hang indefinitely waiting on a lock the pooler can never grant.
+  // DIRECT_URL (port 5432) bypasses the pooler for migration-time only.
+  directUrl = env("DIRECT_URL")
 }

@@ -1,5 +1,5 @@
 // Actor shape — plan.md §5.3, contracts/workflow.md ("actor: Actor — from
-// 001's getActor(); { id, roles, departmentIds }").
+// 001's getActor(); { userId, roles, departmentIds }").
 //
 // `src/server/core/**` must not import from `~/server/auth/**` (module
 // boundary rule, eslint.config.js: core may only import from itself — two
@@ -13,7 +13,7 @@
 import type { UserId } from "./ids";
 
 export interface Actor {
-  readonly id: UserId;
+  readonly userId: UserId;
   readonly roles: readonly string[];
   readonly departmentIds: readonly string[];
 }
