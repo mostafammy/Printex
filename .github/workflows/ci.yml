@@ -113,39 +113,23 @@ jobs:
             "
           done
 
-      - name: Debug — whoami inside prisma db execute --url
-        continue-on-error: true
-        run: |
-          pnpm exec prisma db execute \
-            --file prisma/manual-sql/_debug-whoami.sql \
-            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex"
-
       - name: Apply audit_event append-only REVOKE
-        # --url (not --schema's directUrl) so this connects AS printex_app —
-        # REVOKE ... FROM CURRENT_USER must run as the role being restricted.
-        run: |
-          pnpm exec prisma db execute \
-            --file prisma/manual-sql/audit-event-append-only.sql \
-            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex"
-          pnpm exec prisma db execute \
-            --file prisma/manual-sql/audit-event-append-only.sql \
-            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
-
-      - name: Debug — verify REVOKE actually bound
-        # Temporary diagnostic: the append-only contract test still fails
-        # after the GRANT/REVOKE steps both report success, so inspect the
-        # actual resulting privilege state directly via psql (bypassing
-        # Prisma) to see what printex_app can really do.
+        # audit-event-append-only.sql's `REVOKE ... FROM CURRENT_USER` is
+        # written for a single-role deployment where the runtime role also
+        # owns the schema (i.e. it ran its own `prisma db push`). CI instead
+        # splits ownership — `postgres` (superuser) creates all tables,
+        # `printex_app` is a separate non-owner runtime role — so
+        # printex_app has no GRANT OPTION on audit_event and Postgres
+        # silently WARNs (not errors) when a non-owner without GRANT OPTION
+        # attempts a REVOKE, making CURRENT_USER framing a no-op here.
+        # Run the REVOKE as the actual table owner (postgres) instead,
+        # targeting printex_app explicitly by name — same resulting
+        # privilege state, just with an executor that has the authority to
+        # change it.
         run: |
           for db in printex printex_test; do
-            echo "=== $db: current_user as connected ==="
-            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c "SELECT current_user;"
-            echo "=== $db: role_table_grants for audit_event ==="
-            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c \
-              "SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name = 'audit_event';"
-            echo "=== $db: attempt UPDATE as printex_app ==="
-            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c \
-              "UPDATE audit_event SET reason = 'debug-probe' WHERE false;"
+            PGPASSWORD=postgres psql -h localhost -U postgres -d "$db" -c \
+              "REVOKE UPDATE, DELETE ON audit_event FROM printex_app;"
           done
 
       - name: Check (lint + typecheck)
