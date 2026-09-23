@@ -10,36 +10,36 @@
 // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
 
 model User {
-  id            String    @id
+  id            String   @id
   name          String //@db.Text
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String? //@db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   // --- Better Auth username plugin fields (001-identity-access-audit) ---
   // Login identifier. Populated at account-creation time; never shown in
   // the UI as the email (which stays as a synthetic placeholder per
   // research.md: "{username}@local.invalid").
-  username         String  @unique
+  username        String  @unique
   // Preserves original casing of the username for display purposes while
   // the canonical `username` is stored lower-cased for case-insensitive
   // lookup (Better Auth username plugin convention).
-  displayUsername  String?
+  displayUsername String?
 
   // --- Deactivation / lockout fields (001-identity-access-audit) ---
   // FR-015: users are never hard-deleted — only deactivated/reactivated.
-  isActive             Boolean   @default(true)
+  isActive            Boolean   @default(true)
   // FR-004: failed-attempt counter; reset to 0 on any successful login.
-  failedLoginAttempts  Int       @default(0)
+  failedLoginAttempts Int       @default(0)
   // FR-004: set to now+15 min on the 5th consecutive failure; login is
   // rejected while this is in the future.
-  lockedUntil          DateTime?
+  lockedUntil         DateTime?
 
   // --- Better Auth core relations ---
-  sessions      Session[]
-  accounts      Account[]
+  sessions Session[]
+  accounts Account[]
 
   // --- RBAC relations (001-identity-access-audit) ---
   roles              UserRole[]
@@ -198,29 +198,29 @@ model UserDepartment {
 /// are revoked at the Postgres role level (FR-021 — see
 /// prisma/manual-sql/audit-event-append-only.sql).
 model AuditEvent {
-  id         String   @id @default(cuid())
+  id            String   @id @default(cuid())
   /// Nullable: omit only for system-originated events (e.g. login.failure on
   /// an unknown username where no User row can be identified — spec Edge Cases).
-  actorId    String?
-  actor      User?    @relation(fields: [actorId], references: [id])
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id])
   /// Conventionally "entity.verb", e.g. "user.created", "login.failure".
-  action     String
+  action        String
   /// e.g. "User", "WorkItem", "Order".
-  entityType String
+  entityType    String
   /// The affected record's ID.
-  entityId   String
+  entityId      String
   /// Full snapshot pre-change (snapshots, not diffs — research.md).
-  before     Json?
+  before        Json?
   /// Full snapshot post-change.
-  after      Json?
+  after         Json?
   /// Required by the application layer (not the schema) for override-class
   /// actions (FR-024). Schema does not enforce presence — callers do.
-  reason     String?
+  reason        String?
   /// References only — the actual files live in feature 050 (FR-020).
   attachmentIds String[]
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
 
   // Indexes support the Admin Audit Log viewer's filter axes (FR-023).
   @@index([entityType, entityId])
