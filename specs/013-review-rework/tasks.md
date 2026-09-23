@@ -156,8 +156,8 @@ reimplement `DesignVersion` here).
 
 ### Implementation for User Story 5
 
-- [ ] T035 [US5] Verify `getReviewQueue` (`src/server/review/queue.ts`, T010) already exposes `reworkCount`/`isRework` per data-model.md/contracts/review-rework.md — this task is verification via T034's test, not new implementation, since T010 already includes the derived count (research.md §1's design was applied at US1 build time, not deferred)
-- [ ] T036 [US5] Surface `reworkCount`/`isRework` on the order detail page (`src/app/(shell)/orders/[orderId]/page.tsx`, 011/012) next to each Work Item row that has `reworkCount > 0`, reusing `getReviewQueue`'s derived-count query pattern (a small standalone read, not a `getReviewQueue` call, since order detail may show Work Items not currently in `WAITING_REVIEW`); Arabic keys in `src/messages/ar.json`
+- [x] T035 [US5] Verify `getReviewQueue` (`src/server/review/queue.ts`, T010) already exposes `reworkCount`/`isRework` per data-model.md/contracts/review-rework.md — this task is verification via T034's test, not new implementation, since T010 already includes the derived count (research.md §1's design was applied at US1 build time, not deferred)
+- [x] T036 [US5] Surface `reworkCount`/`isRework` on the order detail page (`src/app/(shell)/orders/[orderId]/page.tsx`, 011/012) next to each Work Item row that has `reworkCount > 0`, reusing `getReviewQueue`'s derived-count query pattern (a small standalone read, not a `getReviewQueue` call, since order detail may show Work Items not currently in `WAITING_REVIEW`); Arabic keys in `src/messages/ar.json`
 
 **Checkpoint**: All P1/P2/P3-visibility user stories functional.
 
@@ -171,11 +171,11 @@ reimplement `DesignVersion` here).
 
 ### Tests for User Story 6
 
-- [ ] T037 [US6] Unit test in `tests/unit/review-rework.test.ts`: type-level/runtime check that `createReturn` accepts a call with `designVersionId` omitted (simulating a non-design-review caller) and successfully creates a `Return` row with `designVersionId: null`
+- [x] T037 [US6] Unit test in `tests/unit/review-rework.test.ts`: type-level/runtime check that `createReturn` accepts a call with `designVersionId` omitted (simulating a non-design-review caller) and successfully creates a `Return` row with `designVersionId: null`
 
 ### Implementation for User Story 6
 
-- [ ] T038 [US6] Confirm `createReturn` (`src/server/review/returns.ts`, T024) already has no `authorize()` call beyond the caller being an authenticated `Actor`, and that `designVersionId` is optional in both the Zod schema and the Prisma write — this task is verification via T037's test, not new implementation (User Story 6 depends on T024's shape being right, not on new code)
+- [x] T038 [US6] Confirm `createReturn` (`src/server/review/returns.ts`, T024) already has no `authorize()` call beyond the caller being an authenticated `Actor`, and that `designVersionId` is optional in both the Zod schema and the Prisma write — this task is verification via T037's test, not new implementation (User Story 6 depends on T024's shape being right, not on new code)
 
 **Checkpoint**: All 6 user stories independently functional — feature complete pending Polish.
 
@@ -185,7 +185,7 @@ reimplement `DesignVersion` here).
 
 **Purpose**: Final verification across the whole module.
 
-- [ ] T039 [P] Add the `/review` queue page in `src/app/(shell)/review/page.tsx` rendering `getReviewQueue`'s rows (urgent-first, rework-count badge per US5); reserve/confirm the `review` nav entry exists for the `design.review` permission (mirrors 012's `my-queue` nav entry for `design.work`)
+- [x] T039 [P] Add the `/review` queue page in `src/app/(shell)/review/page.tsx` rendering `getReviewQueue`'s rows (urgent-first, rework-count badge per US5); reserve/confirm the `review` nav entry exists for the `design.review` permission (mirrors 012's `my-queue` nav entry for `design.work`)
 - [x] T040 Run `pnpm check` (lint + typecheck) across the new `src/server/review/**` module and every edited file; fix any violation
 - [ ] T041 Run the full `pnpm test` suite; confirm every pre-existing 001/002/011/012 test still passes unmodified and every new `tests/{unit,contract,integration}/review/**` test passes once T002 unblocks the DB-dependent ones (unit tests T007/T022/T037 pass regardless of T002)
 - [ ] T042 Manual quickstart QA — DB-dependent, blocked on T002 like 011's/012's own T052/T043: walk through quickstart.md's Scenarios 1–8 end-to-end against a running dev server
