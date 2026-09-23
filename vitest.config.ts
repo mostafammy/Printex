@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Integration tests hit a real remote Supabase Postgres instance over
+    // the network — the default 5s timeout occasionally trips under normal
+    // pooler latency, especially with several tests running in parallel.
+    testTimeout: 20000,
   },
   resolve: {
     alias: {
