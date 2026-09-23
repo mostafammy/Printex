@@ -157,8 +157,9 @@ model WorkItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  transitions  WorkItemTransition[]
-  phaseTimings PhaseTiming[]
+  transitions    WorkItemTransition[]
+  phaseTimings   PhaseTiming[]
+  designVersions DesignVersion[]
 
   @@index([orderId, state])
 }
@@ -219,6 +220,32 @@ model PhaseTiming {
   endedAt    DateTime?
 
   @@index([workItemId, phase, kind])
+}
+
+/// A single uploaded design file version for a Work Item (constitution IV:
+/// "new version, never overwritten in place"). Bytes live in the existing
+/// StorageAdapter (002); this table is metadata only. Owned by 012.
+model DesignVersion {
+  id           String   @id @default(cuid())
+  workItemId   String
+  workItem     WorkItem @relation(fields: [workItemId], references: [id])
+  /// 1, 2, 3... per Work Item — never reused, never decremented.
+  version      Int
+  /// Opaque key passed to StorageAdapter.put/get — no folder/filename
+  /// semantics assumed by application code (constitution IV).
+  storageKey   String
+  fileName     String
+  mimeType     String?
+  sizeBytes    Int
+  sha256       String
+  /// Short note the designer attaches (e.g. "v2 — updated logo size").
+  note         String?
+  uploadedById String
+  uploadedBy   User     @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@unique([workItemId, version])
+  @@index([workItemId, createdAt])
 }
 
 /// Outbox — polymorphic via entityType/entityId, not a Prisma relation.
