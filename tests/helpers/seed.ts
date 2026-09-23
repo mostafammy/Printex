@@ -28,7 +28,7 @@ export async function seedUser(): Promise<UserId> {
 
 export async function seedCustomer(): Promise<CustomerId> {
   const customer = await testDb.customer.create({
-    data: { name: unique("Customer") },
+    data: { name: unique("Customer"), normalizedName: unique("customer") },
   });
   return asCustomerId(customer.id);
 }
