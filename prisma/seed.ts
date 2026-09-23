@@ -40,6 +40,7 @@ const ADMIN_USER_ID = "seed_admin_user";
 const DEPARTMENT_NAMES = ["Digital", "Banner", "Outdoor", "Laser", "External"] as const;
 const CASH_CUSTOMER_ID = "seed_cash_customer";
 const SAMPLE_CUSTOMER_ID = "seed_sample_customer";
+const CLASSIFICATIONS = ["Individual", "Company", "Agency", "VIP"] as const;
 
 // ---------------------------------------------------------------------------
 // Role × permission matrix — data-model.md §"Seeded role × permission matrix"
@@ -243,6 +244,12 @@ async function seedDepartments() {
   return departments;
 }
 
+async function seedClassifications() {
+  for (const name of CLASSIFICATIONS) {
+    await db.customerClassification.upsert({ where: { name }, update: { isActive: true }, create: { name } });
+  }
+}
+
 async function seedCashCustomer() {
   const cashCustomer = await db.customer.upsert({
     where: { id: CASH_CUSTOMER_ID },
@@ -250,6 +257,7 @@ async function seedCashCustomer() {
     create: {
       id: CASH_CUSTOMER_ID,
       name: "Cash Customer",
+      normalizedName: "cash customer",
       isCashCustomer: true,
     },
   });
@@ -264,6 +272,7 @@ async function seedSampleCustomer() {
     create: {
       id: SAMPLE_CUSTOMER_ID,
       name: "Sample Walk-in Customer",
+      normalizedName: "sample walk-in customer",
       isCashCustomer: false,
     },
   });
@@ -380,6 +389,7 @@ async function main() {
   await seedRoles();
   const adminUser = await seedAdminUser();
   const departments = await seedDepartments();
+  await seedClassifications();
   await seedCashCustomer();
   const sampleCustomer = await seedSampleCustomer();
 
