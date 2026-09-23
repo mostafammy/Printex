@@ -174,7 +174,7 @@ approved version's file is offered for download.
   `DomainProductionError("WORK_ITEM_NOT_FOUND")` if missing; resolve the effective department
   (T013) and `authorize(actor, "production.operate", { departmentId: effectiveDepartmentId })`
   (depends on T006, T013)
-- [ ] T015 [US2] Export `getJobCard`, `JobCard` from `src/server/production/index.ts`; build the
+- [x] T015 [US2] Export `getJobCard`, `JobCard` from `src/server/production/index.ts`; build the
   job card's read-only spec + download section in `src/app/(shell)/production/[workItemId]/page.tsx`;
   Arabic keys in `src/messages/ar.json`
 
@@ -331,7 +331,7 @@ completion (refused), record received-from-vendor, retry completion (succeeds).
 - [x] T035 [US6] Implement `recordReceivedFromVendor(actor, workItemId, recordId)` in the same
   file: refuse if no such record exists or it already has a non-null `receivedAt`; set
   `receivedAt = now`
-- [ ] T036 [US6] Export `recordSentToVendor`, `recordReceivedFromVendor` from
+- [x] T036 [US6] Export `recordSentToVendor`, `recordReceivedFromVendor` from
   `src/server/production/index.ts`; add the vendor sent/received controls to the job card page
   (rendered only when the department is `isExternalProduction`); Arabic keys in
   `src/messages/ar.json`
@@ -371,11 +371,11 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
   `src/server/production/timer.ts`: `authorize(actor, "production.operate", { departmentId })`;
   set `pendingFileRevisionAt = null` (does not itself resume the timer — the operator still calls
   `resumeProduction()` after)
-- [ ] T040 [US7] Wire T020's existing `resumeProduction` refusal (already checks
+- [x] T040 [US7] Wire T020's existing `resumeProduction` refusal (already checks
   `pendingFileRevisionAt`) to this story's UI: show a revised-file alert badge on the queue (US1's
   `hasPendingFileRevision`) and job card, with an acknowledge control that calls
   `acknowledgeFileRevision`
-- [ ] T041 [US7] Export `acknowledgeFileRevision` from `src/server/production/index.ts`; Arabic
+- [x] T041 [US7] Export `acknowledgeFileRevision` from `src/server/production/index.ts`; Arabic
   keys in `src/messages/ar.json`
 
 **Checkpoint**: All 7 user stories independently functional — feature complete pending Polish.
@@ -391,7 +391,7 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
   (`count(WorkItem WHERE departmentId = ... AND state = "READY_FOR_PRODUCTION")`) and
   `inProductionCount` (same with `state = "IN_PRODUCTION"`); export from
   `src/server/production/index.ts`
-- [ ] T043 [P] Add the `/production` queue page in `src/app/(shell)/production/page.tsx` rendering
+- [x] T043 [P] Add the `/production` queue page in `src/app/(shell)/production/page.tsx` rendering
   `getOperatorQueue`'s rows (urgent-first, revised-file badge per US7); add a `production` nav
   entry gated to `PRODUCTION_OPERATOR`/`ADMIN_OWNER` (mirrors 013's `review` nav entry)
 - [ ] T044 Run `pnpm check` (lint + typecheck) across the new `src/server/production/**` module,
