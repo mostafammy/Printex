@@ -113,6 +113,12 @@ jobs:
             "
           done
 
+      - name: Debug — whoami inside prisma db execute --url
+        run: |
+          pnpm exec prisma db execute \
+            --file prisma/manual-sql/_debug-whoami.sql \
+            --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex"
+
       - name: Apply audit_event append-only REVOKE
         # --url (not --schema's directUrl) so this connects AS printex_app —
         # REVOKE ... FROM CURRENT_USER must run as the role being restricted.
