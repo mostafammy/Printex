@@ -124,6 +124,23 @@ jobs:
             --file prisma/manual-sql/audit-event-append-only.sql \
             --url "postgresql://printex_app:printex_app_ci_pw@localhost:5432/printex_test"
 
+      - name: Debug — verify REVOKE actually bound
+        # Temporary diagnostic: the append-only contract test still fails
+        # after the GRANT/REVOKE steps both report success, so inspect the
+        # actual resulting privilege state directly via psql (bypassing
+        # Prisma) to see what printex_app can really do.
+        run: |
+          for db in printex printex_test; do
+            echo "=== $db: current_user as connected ==="
+            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c "SELECT current_user;"
+            echo "=== $db: role_table_grants for audit_event ==="
+            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c \
+              "SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name = 'audit_event';"
+            echo "=== $db: attempt UPDATE as printex_app ==="
+            PGPASSWORD=printex_app_ci_pw psql -h localhost -U printex_app -d "$db" -c \
+              "UPDATE audit_event SET reason = 'debug-probe' WHERE false;"
+          done
+
       - name: Check (lint + typecheck)
         run: pnpm check
 
