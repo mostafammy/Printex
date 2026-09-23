@@ -158,17 +158,17 @@ approved version's file is offered for download.
 
 ### Tests for User Story 2
 
-- [ ] T012 [P] [US2] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T012 [P] [US2] Contract test in `tests/contract/production/production.test.ts`:
   `getJobCard` requires `production.operate` scoped to the Work Item's department (FORBIDDEN
   for an operator outside it), returns spec fields and only the approved file pointer
-- [ ] T013 [P] [US2] Integration test in `tests/integration/production/jobCard.test.ts`: seed a
+- [x] T013 [P] [US2] Integration test in `tests/integration/production/jobCard.test.ts`: seed a
   Work Item with an approved `DesignVersion` and a newer unapproved draft; assert the job card's
   `approvedFile` points at the approved version only, never the draft, and spec fields match the
   Work Item's stored values
 
 ### Implementation for User Story 2
 
-- [ ] T014 [US2] Implement `getJobCard(actor, workItemId)` in `src/server/production/jobCard.ts`
+- [x] T014 [US2] Implement `getJobCard(actor, workItemId)` in `src/server/production/jobCard.ts`
   per contracts/production.md: load the Work Item + order + the current approved `DesignVersion`
   only (filter on `approvedAt IS NOT NULL`, take the latest); throw
   `DomainProductionError("WORK_ITEM_NOT_FOUND")` if missing; resolve the effective department
