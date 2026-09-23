@@ -7,7 +7,10 @@ export type ErrorCode =
   | "FORBIDDEN"
   | "INVALID_TRANSITION"
   | "GUARD_FAILED"
-  | "VALIDATION";
+  | "VALIDATION"
+  | "DUPLICATE_PHONE"
+  | "IMMUTABLE_CASH_CUSTOMER"
+  | "PROMOTION_CONFLICT";
 
 export interface DomainError {
   readonly code: ErrorCode;
