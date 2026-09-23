@@ -4,11 +4,25 @@ All functions live in `src/server/production/**`, exported only from the barrel
 `src/server/production/index.ts` (module-boundary ESLint rule, mirrors `orders`/`designers`/
 `review`). Every function takes `actor: Actor` first and calls `authorize()` before touching data.
 
+## `routeToDepartment(actor: Actor, workItemId: string, departmentId: string): Promise<void>`
+
+- `authorize(actor, "orders.manage")` or equivalent Head-Designer/Reception permission (FR-001 —
+  not `production.operate`, since routing is a pre-production decision made by whoever approves or
+  receives the order, not the operator who later works it; final permission key confirmed against
+  001's existing role/permission table during implementation, no new key expected).
+- Refuse (`DomainProductionError("PRODUCTION_ALREADY_STARTED")`) once the Work Item is
+  `IN_PRODUCTION` or later — routing is only changeable "before production starts" (FR-001).
+- Sets `WorkItem.departmentId = departmentId`, overriding whatever the effective-department
+  fallback (research.md §8) would otherwise have derived from the Product Type's
+  `defaultDepartmentId`. No state transition.
+
 ## `getOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]>`
 
 - `authorize(actor, "production.operate")` (no department scope on the queue call itself — the
   query already filters to the actor's own departments).
-- Query `WorkItem WHERE state = "READY_FOR_PRODUCTION" AND departmentId IN (actor.departmentIds)`.
+- Query `WorkItem WHERE state = "READY_FOR_PRODUCTION"` and filter to rows whose **effective**
+  department (research.md §8: `departmentId ?? productType.defaultDepartmentId`) is in
+  `actor.departmentIds`.
 - Derive `enteredQueueAt`, sort urgent-first then oldest (research.md §6/§7).
 - `ProductionQueueRow`: `{ workItemId, orderId, orderNumber, customerName, productTypeName,
   departmentId, priority, enteredQueueAt, hasPendingFileRevision }`.
@@ -99,13 +113,15 @@ All functions live in `src/server/production/**`, exported only from the barrel
 
 `DomainProductionError` codes: `WORK_ITEM_NOT_FOUND | NOT_READY_FOR_PRODUCTION |
 PENDING_FILE_REVISION | MISSING_PRODUCED_QUANTITY | VENDOR_RECEIPT_REQUIRED |
-NOT_EXTERNAL_DEPARTMENT | ALREADY_RECEIVED`. `WorkItemTransitionError` (mirrors 011/012/013)
-surfaces `transitionWorkItem`'s own `Result` error unchanged for edge-check failures.
+NOT_EXTERNAL_DEPARTMENT | ALREADY_RECEIVED | PRODUCTION_ALREADY_STARTED`.
+`WorkItemTransitionError` (mirrors 011/012/013) surfaces `transitionWorkItem`'s own `Result` error
+unchanged for edge-check failures.
 
 ## Authorization table
 
 | Function | Permission | Department-scoped? |
 |---|---|---|
+| `routeToDepartment` | Head-Designer/Reception routing permission (FR-001) | No (pre-production) |
 | `getOperatorQueue` | `production.operate` | Implicit (query filter) |
 | `getJobCard` | `production.operate` | Yes (`{ departmentId }`) |
 | `startProduction`/`pauseProduction`/`resumeProduction` | `production.operate` | Yes |

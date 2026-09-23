@@ -104,3 +104,31 @@ no new membership concept needed, matches 012's identical pattern for designer d
 
 **Alternatives considered**: none — this is simply reading the existing `Actor.departmentIds`
 array, no design choice beyond confirming the field already supports it.
+
+## §8. Department routing — default at read time, explicit override stored
+
+**Decision**: `WorkItem.departmentId` (already a column, confirmed by grep to never be written
+anywhere in the current codebase — 011's order creation does not apply
+`ProductType.defaultDepartmentId` to it) is treated as an explicit override, nullable in practice
+today. `getOperatorQueue`/`getJobCard`/every other production function reads the **effective**
+department as `workItem.departmentId ?? productType.defaultDepartmentId` at query time. A new
+`routeToDepartment(actor, workItemId, departmentId)` lets Head Designer/Reception persist an
+explicit override onto `WorkItem.departmentId`, permitted any time before the Work Item enters
+`IN_PRODUCTION` (FR-001's "before production starts").
+
+**Rationale**: This was a genuine gap — FR-001 ("System MUST route each approved Work Item to a
+production department, defaulting to its Product Type's configured default department...") and
+the original brief's contract list both require `routeToDepartment()`, but no prior phase of this
+feature's own docs defined it, and no earlier feature ever wires `defaultDepartmentId` to a real
+`WorkItem`. Without this, every queue/job-card query in this feature would silently return nothing
+for any Work Item that has never had an explicit department set — which today is all of them.
+Deriving the *default* at read time (rather than writing it once at order-creation or
+approval-time) avoids a second touch-point into 011's or 013's transactions and matches this
+feature's existing derived-value pattern (§6/§7); only the *override* is real, stored mutable
+state, which is what `routeToDepartment()` actually is.
+
+**Alternatives considered**: Writing the default into `WorkItem.departmentId` at the moment a Work
+Item reaches `READY_FOR_PRODUCTION` (inside 013's `approveDesign`) — rejected as a second
+unnecessary touch-point into another feature's transaction (this feature already touches 013's
+`approveDesign` once, for US7's `pendingFileRevisionAt`); a read-time fallback achieves the same
+observable behavior with less cross-module coupling.

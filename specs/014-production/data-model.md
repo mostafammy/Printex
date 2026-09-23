@@ -85,6 +85,10 @@ IN_PRODUCTION: ["PRODUCTION_COMPLETED", "REWORK_REQUIRED", "CANCELLED"],
   ... AND state = "IN_PRODUCTION")` — two plain counts, no new aggregate table.
 - **Revised-file badge** (queue display, US1 Acceptance Scenario 3): `pendingFileRevisionAt IS NOT
   NULL` on the Work Item row already being read for the queue — no extra query.
+- **Effective department** (FR-001, research.md §8): `workItem.departmentId ?? productType
+  .defaultDepartmentId`, computed at read time by every production query; `WorkItem.departmentId`
+  itself is only ever written by `routeToDepartment()` (an explicit override), never defaulted
+  eagerly at order-creation or approval time.
 
 ## Validation rules
 
@@ -104,6 +108,9 @@ IN_PRODUCTION: ["PRODUCTION_COMPLETED", "REWORK_REQUIRED", "CANCELLED"],
   Item, or if the existing record already has a non-null `receivedAt` (no double-receipt).
 - `resumeProduction()`: refuses (a plain `DomainProductionError`, not a `WorkItemTransitionError`)
   while `WorkItem.pendingFileRevisionAt` is non-null (US7, FR-013, research.md §4).
+- `routeToDepartment()`: refuses (`DomainProductionError("PRODUCTION_ALREADY_STARTED")`) once the
+  Work Item has reached `IN_PRODUCTION` or later (FR-001's "before production starts");
+  `departmentId` required, must reference an existing `Department` row.
 
 ## Permission model (no new `Permission` key)
 
