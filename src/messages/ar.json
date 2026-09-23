@@ -67,6 +67,26 @@
     "renameDepartmentButton": "تغيير الاسم",
     "deactivateDepartmentButton": "تعطيل القسم",
     "tableHeaderDepartmentName": "اسم القسم",
-    "tableHeaderDepartmentStatus": "الحالة"
+    "tableHeaderDepartmentStatus": "الحالة",
+
+    "adminAuditPageTitle": "سجل التدقيق",
+    "auditFilterEntityType": "نوع الكيان",
+    "auditFilterEntityId": "معرف الكيان",
+    "auditFilterActor": "المستخدم المنفذ",
+    "auditFilterAction": "الإجراء",
+    "auditFilterDateFrom": "من تاريخ",
+    "auditFilterDateTo": "إلى تاريخ",
+    "auditFilterSubmitButton": "تصفية",
+    "auditFilterClearButton": "مسح التصفية",
+    "tableHeaderAction": "الإجراء",
+    "tableHeaderEntity": "الكيان",
+    "tableHeaderActor": "المستخدم",
+    "tableHeaderDate": "التاريخ",
+    "tableHeaderDetails": "التفاصيل",
+    "auditDetailBefore": "قبل",
+    "auditDetailAfter": "بعد",
+    "auditDetailReason": "السبب",
+    "auditNoResults": "لا توجد نتائج",
+    "auditUnknownActor": "النظام"
   }
 }
