@@ -350,7 +350,7 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
 
 ### Tests for User Story 7
 
-- [ ] T037 [P] [US7] Integration test in `tests/integration/production/revisedFileAck.test.ts`:
+- [x] T037 [P] [US7] Integration test in `tests/integration/production/revisedFileAck.test.ts`:
   start production on a Work Item, approve a newer `DesignVersion` for it (013's `approveDesign`);
   assert `WorkItem.pendingFileRevisionAt` is non-null; attempt `resumeProduction` and assert it is
   refused with `DomainProductionError("PENDING_FILE_REVISION")`; call
@@ -359,7 +359,7 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
 
 ### Implementation for User Story 7
 
-- [ ] T038 [US7] Extend 013's `approveDesign` (`src/server/review/review.ts`) — or add a small
+- [x] T038 [US7] Extend 013's `approveDesign` (`src/server/review/review.ts`) — or add a small
   hook it calls — to set `WorkItem.pendingFileRevisionAt = now()` in the same transaction when the
   Work Item being approved is currently `IN_PRODUCTION` (a design revision approved for a Work
   Item not in production has nothing to alert; the field stays null). This is the one place this
@@ -367,7 +367,7 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
   before landing, since `src/server/review/**` is barrel-only from outside (eslint
   `no-restricted-imports`) and this write must happen inside 013's own transaction, not as a
   separate post-hoc update
-- [ ] T039 [US7] Implement `acknowledgeFileRevision(actor, workItemId)` in
+- [x] T039 [US7] Implement `acknowledgeFileRevision(actor, workItemId)` in
   `src/server/production/timer.ts`: `authorize(actor, "production.operate", { departmentId })`;
   set `pendingFileRevisionAt = null` (does not itself resume the timer — the operator still calls
   `resumeProduction()` after)
