@@ -6,6 +6,7 @@ import { createAuthMiddleware, APIError } from "better-auth/api";
 import { env } from "~/env";
 import { db } from "~/server/db";
 import { recordFailedLogin, recordSuccessfulLogin } from "~/server/auth/lockout";
+import { audit } from "~/server/auth/audit";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -32,6 +33,25 @@ export const auth = betterAuth({
     // This fires BEFORE credentials are verified, so a locked user sees the
     // lockout error without any password check ever completing.
     before: createAuthMiddleware(async (ctx) => {
+      // Record the audit event before the session is actually destroyed by the
+      // sign-out handler — `/sign-out` has `requireHeaders: true`, so the
+      // existing session cookie is reliably present and `ctx.context.session`
+      // is populated whenever this hook is reached.
+      if (ctx.path === "/sign-out") {
+        const userId = ctx.context.session?.user.id;
+        if (userId) {
+          await db.$transaction(async (tx) => {
+            await audit.record(tx, {
+              action: "logout",
+              entityType: "User",
+              entityId: userId,
+              actorId: userId,
+            });
+          });
+        }
+        return;
+      }
+
       if (ctx.path !== "/sign-in/username") return;
       const body = ctx.body as { username?: unknown } | undefined;
       const usernameAttempt = typeof body?.username === "string" ? body.username : undefined;
@@ -67,8 +87,24 @@ export const auth = betterAuth({
 
       if (didSucceed) {
         await recordSuccessfulLogin(usernameAttempt);
+        const userId = ctx.context.newSession!.user.id;
+        await db.$transaction(async (tx) => {
+          await audit.record(tx, {
+            action: "login.success",
+            entityType: "User",
+            entityId: userId,
+            actorId: userId,
+          });
+        });
       } else {
         await recordFailedLogin(usernameAttempt);
+        const user = await db.user.findUnique({ where: { username: usernameAttempt } });
+        const event = user
+          ? { action: "login.failure" as const, entityType: "User", entityId: user.id, actorId: user.id }
+          : { action: "login.failure" as const, entityType: "User", entityId: usernameAttempt };
+        await db.$transaction(async (tx) => {
+          await audit.record(tx, event);
+        });
       }
     }),
   },
