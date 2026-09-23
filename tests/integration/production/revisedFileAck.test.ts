@@ -49,6 +49,7 @@ describe("revised-file acknowledgment (integration, US7)", () => {
   it("blocks resumeProduction until the operator acknowledges a mid-production file revision", async () => {
     const department = await testDb.department.create({ data: { name: unique("Dept") } });
     const operator = await createActor(["production.operate"], [department.id]);
+    const designer = await createActor([], []);
     const reviewer = await createActor(["design.review"], []);
 
     const customer = await testDb.customer.create({ data: { name: unique("Customer") } });
@@ -77,7 +78,7 @@ describe("revised-file acknowledgment (integration, US7)", () => {
         fileName: "revised.pdf",
         sizeBytes: 100,
         sha256: unique("sha"),
-        uploadedById: reviewer.userId,
+        uploadedById: designer.userId,
       },
     });
 
@@ -97,5 +98,49 @@ describe("revised-file acknowledgment (integration, US7)", () => {
     expect(wi?.pendingFileRevisionAt).toBeNull();
 
     await expect(resumeProduction(operator, workItem.id)).resolves.toBeUndefined();
+  });
+
+  it("blocks a reviewer from approving their own revised DesignVersion mid-production (013 SC-005, no re-entry bypass)", async () => {
+    const department = await testDb.department.create({ data: { name: unique("Dept") } });
+    const operator = await createActor(["production.operate"], [department.id]);
+    const designerReviewer = await createActor(["design.review"], []);
+
+    const customer = await testDb.customer.create({ data: { name: unique("Customer") } });
+    const order = await testDb.order.create({
+      data: {
+        number: Number(process.hrtime.bigint() % 1_000_000_000n),
+        customerId: customer.id,
+        channel: "WALK_IN",
+        priority: "NORMAL",
+        mode: "SEPARATE",
+        createdById: operator.userId,
+      },
+    });
+    const workItem = await testDb.workItem.create({
+      data: { orderId: order.id, state: "READY_FOR_PRODUCTION", departmentId: department.id },
+    });
+
+    await startProduction(operator, workItem.id);
+    await pauseProduction(operator, workItem.id);
+
+    await testDb.designVersion.create({
+      data: {
+        workItemId: workItem.id,
+        version: 1,
+        storageKey: unique("storage-key"),
+        fileName: "revised.pdf",
+        sizeBytes: 100,
+        sha256: unique("sha"),
+        uploadedById: designerReviewer.userId,
+      },
+    });
+
+    await expect(approveDesign(designerReviewer, workItem.id)).rejects.toMatchObject({
+      error: { code: "GUARD_FAILED" },
+    });
+
+    const wi = await testDb.workItem.findUnique({ where: { id: workItem.id } });
+    expect(wi?.state).toBe("IN_PRODUCTION");
+    expect(wi?.pendingFileRevisionAt).toBeNull();
   });
 });

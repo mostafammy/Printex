@@ -18,6 +18,7 @@ import type { RejectionCategory } from "~/server/core";
 import { DomainReviewError } from "./errors";
 import { createReturnInTx, uploadReturnAttachments } from "./returns";
 import type { ReturnAttachmentFile } from "./returns";
+import { isSelfReview } from "./selfReview";
 
 function toCoreActor(actor: Actor): CoreActor {
   return { userId: asUserId(actor.userId), roles: actor.roles, departmentIds: actor.departmentIds };
@@ -194,10 +195,21 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
       const currentVersion = await tx.designVersion.findFirst({
         where: { workItemId },
         orderBy: { version: "desc" },
-        select: { id: true },
+        select: { id: true, uploadedById: true },
       });
       if (!currentVersion) {
         throw new DomainReviewError("NO_DESIGN_VERSION", "Work item has no design version to review");
+      }
+      // SC-005: the no-self-review rule is unconditional — this path bypasses
+      // transitionWorkItem (no WAITING_REVIEW->APPROVED edge exists here), so
+      // it must not also bypass guards.ts's check. Same DomainError shape as
+      // the guard failure below (`GUARD_FAILED`) so callers handle both paths
+      // identically.
+      if (isSelfReview(currentVersion.uploadedById, actor.userId)) {
+        throw new WorkItemTransitionError({
+          code: "GUARD_FAILED",
+          message: "A reviewer cannot approve a design version they uploaded themselves.",
+        });
       }
 
       await tx.designVersion.update({
