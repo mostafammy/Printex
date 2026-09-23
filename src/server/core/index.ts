@@ -68,3 +68,9 @@ export type { NotifyEvent } from "./notifications/notify";
 
 // contracts/workflow.md: Actor shape
 export type { Actor } from "./actor";
+
+// contracts/workflow.md: PhaseTiming segment primitives (specs/012-designer-
+// assignment-timers/research.md §2 — added to the barrel here for the first
+// time; the underlying functions/types are unchanged, owned by 002).
+export { openSegment, closeOpenSegment, calculatePhaseDurationMs } from "./workflow/timing";
+export type { PhaseTimingKind, PhaseTimingSegment } from "./workflow/timing";

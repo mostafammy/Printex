@@ -55,6 +55,7 @@ model User {
   assignedWorkItems   WorkItem[]           @relation("WorkItemAssignee")
   workItemTransitions WorkItemTransition[] @relation("WorkItemTransitionActor")
   phaseTimings        PhaseTiming[]        @relation("PhaseTimingUser")
+  designVersionsUploaded DesignVersion[]   @relation("DesignVersionUploadedBy")
 
   @@unique([email])
   @@map("user")

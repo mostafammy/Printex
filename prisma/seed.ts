@@ -76,6 +76,9 @@ const ROLE_SEED_DATA = [
     id: "seed_role_head_designer",
     key: "HEAD_DESIGNER",
     name: "Head Designer",
+    // 012 Clarifications (2026-09-23): a shop MAY opt HEAD_DESIGNER into
+    // reassignment by adding "workitem.assign_designer" here — data-model.md
+    // "Seed data addition". Not added by default; no default behavior change.
     permissions: ["design.review"],
   },
   {
