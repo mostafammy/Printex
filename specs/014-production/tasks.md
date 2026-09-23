@@ -248,7 +248,7 @@ timer stops, and it becomes visible to a collection-queue-scoped query.
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Implement `completeProduction(actor, workItemId, input)` in
+- [x] T025 [US4] Implement `completeProduction(actor, workItemId, input)` in
   `src/server/production/completion.ts` per contracts/production.md and data-model.md's
   Validation rules: validate `producedQuantity` (positive integer) before opening a transaction;
   if `Department.isExternalProduction`, refuse unless a `VendorProductionRecord` with non-null
@@ -256,7 +256,7 @@ timer stops, and it becomes visible to a collection-queue-scoped query.
   close any open `ACTIVE` `PhaseTiming` row, `transitionWorkItem(tx, { to:
   "PRODUCTION_COMPLETED", actor })`, `tx.workItem.update({ producedQuantity, productionNotes })`,
   `audit.record(tx, { action: "workitem.production_completed", ... })` (depends on T006, T018)
-- [ ] T026 [US4] Export `completeProduction` from `src/server/production/index.ts`; add the
+- [x] T026 [US4] Export `completeProduction` from `src/server/production/index.ts`; add the
   completion form (produced quantity, notes) to the job card page; Arabic keys in
   `src/messages/ar.json`
 
@@ -287,16 +287,16 @@ assigned designer is notified.
 
 ### Implementation for User Story 5
 
-- [ ] T029 [US5] Define the `sendBackToDesign` input Zod schema in
+- [x] T029 [US5] Define the `sendBackToDesign` input Zod schema in
   `src/server/production/sendBack.ts`: `reason` string required non-empty-after-trim
-- [ ] T030 [US5] Implement `sendBackToDesign(actor, workItemId, input)` in the same file per
+- [x] T030 [US5] Implement `sendBackToDesign(actor, workItemId, input)` in the same file per
   contracts/production.md: `authorize`, validate input, `db.$transaction`: close any open
   `ACTIVE` `PhaseTiming` row, `transitionWorkItem(tx, { to: "REWORK_REQUIRED", actor, reason,
   rejectionCategory: "PRODUCTION_ISSUE" })` (T003's new edge), call 013's `createReturnInTx(tx,
   actor, workItemId, { category: "PRODUCTION_ISSUE", originDepartmentId: workItem.departmentId,
   assignedToId: workItem.assigneeId, explanation: input.reason })`, `notify(tx, { type:
   "workitem.rejected", ... })` (depends on T003, T006, T018, 013's exported `createReturnInTx`)
-- [ ] T031 [US5] Export `sendBackToDesign` from `src/server/production/index.ts`; add the
+- [x] T031 [US5] Export `sendBackToDesign` from `src/server/production/index.ts`; add the
   send-back form to the job card page; Arabic keys in `src/messages/ar.json`
 
 **Checkpoint**: All P1/P2 (partial) user stories functional.
