@@ -193,11 +193,11 @@ regardless of how long the pause lasted.
 
 ### Tests for User Story 3
 
-- [ ] T016 [P] [US3] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T016 [P] [US3] Contract test in `tests/contract/production/production.test.ts`:
   `startProduction` requires `production.operate` scoped to the department, transitions to
   `IN_PRODUCTION`, refuses if the Work Item is not `READY_FOR_PRODUCTION`; `pauseProduction`/
   `resumeProduction` require the same scope
-- [ ] T017 [P] [US3] Integration test in `tests/integration/production/timer.test.ts`: start a
+- [x] T017 [P] [US3] Integration test in `tests/integration/production/timer.test.ts`: start a
   timer, pause after a recorded interval, resume, pause again; assert the summed active duration
   across both `ACTIVE` `PhaseTiming` segments matches the elapsed intervals exactly, independent
   of wall-clock time spent paused
