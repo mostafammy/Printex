@@ -39,6 +39,12 @@ const ADMIN: RoleKey = "ADMIN_OWNER";
 export const navItems: readonly NavItem[] = [
   { id: "my-queue", href: "/my-queue", label: ar.nav.myQueue, roles: [] },
   {
+    id: "review",
+    href: "/review",
+    label: ar.nav.review,
+    roles: ["HEAD_DESIGNER", ADMIN],
+  },
+  {
     id: "reception",
     href: "/reception",
     label: ar.nav.reception,
