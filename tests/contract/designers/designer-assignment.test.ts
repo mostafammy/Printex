@@ -1,13 +1,26 @@
-// Contract tests for src/server/designers/** — tasks.md T021 (US3 slice).
-// Asserts contracts/designer-assignment.md's frozen shapes and Authorization
-// table for getMyQueue/startTimer/pauseTimer/phaseDurations. Other rows of
-// the Authorization table (getEligibleDesigners, assignDesigner,
-// uploadDesignVersion, markDesignComplete, getDesignerWorkload) belong to
-// other tasks/phases and are covered by their own test files.
+// Contract tests for src/server/designers/** —
+// specs/012-designer-assignment-timers/contracts/designer-assignment.md.
+//
+// Populated incrementally as each user story lands (matching
+// src/server/designers/index.ts's own barrel growth). Currently covers:
+// - User Story 3 (getMyQueue/startTimer/pauseTimer/phaseDurations — T021)
+// - User Story 4 (uploadDesignVersion/markDesignComplete — T030)
+// Other Authorization-table rows (getEligibleDesigners, assignDesigner,
+// getDesignerWorkload) belong to other tasks/phases and are covered by
+// their own test files.
 
+import { Readable } from "node:stream";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testDb } from "../../helpers/testDb";
-import { getMyQueue, startTimer, pauseTimer, phaseDurations } from "~/server/designers";
+import {
+  getMyQueue,
+  startTimer,
+  pauseTimer,
+  phaseDurations,
+  uploadDesignVersion,
+  markDesignComplete,
+  DomainDesignerError,
+} from "~/server/designers";
 import { ForbiddenError } from "~/server/auth/authorize";
 import type { Actor } from "~/server/auth";
 import type { Permission } from "~/server/auth";
@@ -22,33 +35,38 @@ function unique(prefix: string): string {
   return `${prefix}_${Date.now()}_${_counter}`;
 }
 
-const designer: Actor = {
-  userId: unique("test-contract-designer"),
-  roles: [],
-  permissions: new Set<Permission>(["design.work"]),
-  departmentIds: [],
-};
+function fileStream(content: string): NodeJS.ReadableStream {
+  return Readable.from([Buffer.from(content)]);
+}
 
-const noPermissionActor: Actor = {
-  userId: unique("test-contract-no-permission"),
-  roles: [],
-  permissions: new Set<Permission>(),
-  departmentIds: [],
-};
-
-let customerId: string;
-
-beforeAll(async () => {
-  await testDb.user.createMany({
-    data: [designer, noPermissionActor].map((actor) => ({
+async function createActor(permissions: Permission[]): Promise<Actor> {
+  const actor: Actor = {
+    userId: unique("test-contract-actor"),
+    roles: [],
+    permissions: new Set<Permission>(permissions),
+    departmentIds: [],
+  };
+  await testDb.user.create({
+    data: {
       id: actor.userId,
-      name: "Test Actor",
+      name: actor.userId,
       email: `${actor.userId}@local.invalid`,
       username: actor.userId,
       isActive: true,
       failedLoginAttempts: 0,
-    })),
+    },
   });
+  return actor;
+}
+
+let customerId: string;
+let designerActor: Actor;
+let noPermissionActor: Actor;
+
+beforeAll(async () => {
+  designerActor = await createActor(["design.work"]);
+  noPermissionActor = await createActor([]);
+
   const customer = await testDb.customer.create({ data: { name: unique("Customer") } });
   customerId = customer.id;
 });
@@ -72,9 +90,29 @@ async function seedAssignedWorkItem(assigneeId: string) {
   return { orderId: order.id, workItemId: workItem.id };
 }
 
+async function seedInDesignWorkItem() {
+  const order = await testDb.order.create({
+    data: {
+      customerId,
+      channel: "WALK_IN",
+      priority: "NORMAL",
+      mode: "SEPARATE",
+      createdById: designerActor.userId,
+    },
+  });
+  return testDb.workItem.create({
+    data: {
+      orderId: order.id,
+      state: "IN_DESIGN",
+      assigneeId: designerActor.userId,
+      requiresReview: true,
+    },
+  });
+}
+
 describe("designer-assignment contract: getMyQueue", () => {
   it("requires no permission beyond an authenticated actor, and scopes rows to actor.userId", async () => {
-    const { workItemId } = await seedAssignedWorkItem(designer.userId);
+    const { workItemId } = await seedAssignedWorkItem(designerActor.userId);
 
     // No permission at all — still resolves, because getMyQueue has no
     // authorize() gate (contracts/designer-assignment.md's Authorization
@@ -82,7 +120,7 @@ describe("designer-assignment contract: getMyQueue", () => {
     const rows = await getMyQueue(noPermissionActor);
     expect(rows.find((r) => r.workItemId === workItemId)).toBeUndefined();
 
-    const ownRows = await getMyQueue(designer);
+    const ownRows = await getMyQueue(designerActor);
     const row = ownRows.find((r) => r.workItemId === workItemId);
     expect(row).toBeDefined();
     expect(row?.state).toBe("ASSIGNED");
@@ -102,16 +140,16 @@ describe("designer-assignment contract: startTimer / pauseTimer", () => {
   });
 
   it("succeeds for the assignee holding design.work", async () => {
-    const { workItemId } = await seedAssignedWorkItem(designer.userId);
+    const { workItemId } = await seedAssignedWorkItem(designerActor.userId);
 
-    await expect(startTimer(designer, workItemId)).resolves.toBeUndefined();
-    await expect(pauseTimer(designer, workItemId)).resolves.toBeUndefined();
+    await expect(startTimer(designerActor, workItemId)).resolves.toBeUndefined();
+    await expect(pauseTimer(designerActor, workItemId)).resolves.toBeUndefined();
   });
 });
 
 describe("designer-assignment contract: phaseDurations", () => {
   it("requires no permission beyond an authenticated actor, and matches the frozen PhaseDurations shape", async () => {
-    const { workItemId } = await seedAssignedWorkItem(designer.userId);
+    const { workItemId } = await seedAssignedWorkItem(designerActor.userId);
 
     const durations = await phaseDurations(noPermissionActor, workItemId);
     expect(durations).toEqual(
@@ -121,5 +159,70 @@ describe("designer-assignment contract: phaseDurations", () => {
         totalPhaseDurationMs: null,
       }),
     );
+  });
+});
+
+describe("designer-assignment contract: uploadDesignVersion", () => {
+  it("requires design.work — FORBIDDEN without it", async () => {
+    const workItem = await seedInDesignWorkItem();
+
+    await expect(
+      uploadDesignVersion(noPermissionActor, workItem.id, {
+        stream: fileStream("x"),
+        fileName: "x.png",
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("returns { designVersionId, version } matching the frozen shape", async () => {
+    const workItem = await seedInDesignWorkItem();
+
+    const result = await uploadDesignVersion(
+      designerActor,
+      workItem.id,
+      { stream: fileStream("content"), fileName: "design.png", mimeType: "image/png" },
+      "a note",
+    );
+
+    expect(typeof result.designVersionId).toBe("string");
+    expect(result.version).toBe(1);
+  });
+
+  it("NOT_ASSIGNEE is a DomainDesignerError instance", async () => {
+    const workItem = await seedInDesignWorkItem();
+    const otherActor = await createActor(["design.work"]);
+
+    await expect(
+      uploadDesignVersion(otherActor, workItem.id, { stream: fileStream("x"), fileName: "x.png" }),
+    ).rejects.toBeInstanceOf(DomainDesignerError);
+  });
+});
+
+describe("designer-assignment contract: markDesignComplete", () => {
+  it("requires design.work — FORBIDDEN without it", async () => {
+    const workItem = await seedInDesignWorkItem();
+
+    await expect(markDesignComplete(noPermissionActor, workItem.id)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+  });
+
+  it("requires >=1 DesignVersion — NO_DESIGN_VERSION otherwise", async () => {
+    const workItem = await seedInDesignWorkItem();
+
+    await expect(markDesignComplete(designerActor, workItem.id)).rejects.toMatchObject({
+      code: "NO_DESIGN_VERSION",
+    });
+  });
+
+  it("requires assigneeId === actor.userId — NOT_ASSIGNEE otherwise", async () => {
+    const workItem = await seedInDesignWorkItem();
+    await uploadDesignVersion(designerActor, workItem.id, { stream: fileStream("x"), fileName: "x.png" });
+
+    const otherActor = await createActor(["design.work"]);
+
+    await expect(markDesignComplete(otherActor, workItem.id)).rejects.toMatchObject({
+      code: "NOT_ASSIGNEE",
+    });
   });
 });

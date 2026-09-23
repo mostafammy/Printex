@@ -205,6 +205,21 @@
     "renameProductTypeButton": "تغيير الاسم",
     "deactivateProductTypeButton": "تعطيل",
     "tableHeaderProductTypeName": "الاسم",
-    "tableHeaderDefaultDepartment": "القسم الافتراضي"
+    "tableHeaderDefaultDepartment": "القسم الافتراضي",
+
+    "designWorkspacePageTitle": "مساحة عمل التصميم",
+    "designWorkspaceBackLink": "العودة لتفاصيل الطلب",
+    "designWorkspaceNotFound": "صنف العمل غير موجود",
+    "uploadDesignVersionHeading": "رفع نسخة تصميم",
+    "designVersionFileLabel": "الملف",
+    "designVersionNoteLabel": "ملاحظة (اختياري)",
+    "uploadDesignVersionButton": "رفع النسخة",
+    "uploadDesignVersionNotInDesignNote": "رفع نسخ التصميم متاح فقط أثناء مرحلة التصميم (قيد التصميم).",
+    "designVersionHistoryHeading": "سجل نسخ التصميم",
+    "designVersionHistoryEmpty": "لا توجد نسخ مرفوعة بعد",
+    "designVersionLabel": "نسخة",
+    "markDesignCompleteHeading": "إنهاء التصميم",
+    "markDesignCompleteButton": "تمييز التصميم كمكتمل",
+    "markDesignCompleteDisabledNote": "يجب رفع نسخة تصميم واحدة على الأقل قبل تمييز التصميم كمكتمل."
   }
 }

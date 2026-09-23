@@ -470,7 +470,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/mac/Documents/Printex/.claude/worktrees/agent-abacdac727c147c76/generated/prisma",
+      "value": "/Users/mac/Documents/Printex/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -486,11 +486,12 @@ const config = {
     "previewFeatures": [
       "prismaSchemaFolder"
     ],
-    "sourceFilePath": "/Users/mac/Documents/Printex/.claude/worktrees/agent-abacdac727c147c76/prisma/schema/schema.prisma",
+    "sourceFilePath": "/Users/mac/Documents/Printex/prisma/schema/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null
+    "rootEnvPath": null,
+    "schemaEnvPath": "../../.env"
   },
   "relativePath": "../../prisma/schema",
   "clientVersion": "6.19.3",

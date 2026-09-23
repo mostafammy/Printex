@@ -12,3 +12,7 @@ export { getMyQueue } from "./queue";
 export type { MyQueueRow, MyQueueRowState } from "./queue";
 export { startTimer, pauseTimer, phaseDurations } from "./timer";
 export type { PhaseDurations } from "./timer";
+
+// US4
+export { uploadDesignVersion, markDesignComplete, WorkItemDesignTransitionError } from "./designVersions";
+export type { UploadDesignVersionFile } from "./designVersions";
