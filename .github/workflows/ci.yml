@@ -114,6 +114,7 @@ jobs:
           done
 
       - name: Debug — whoami inside prisma db execute --url
+        continue-on-error: true
         run: |
           pnpm exec prisma db execute \
             --file prisma/manual-sql/_debug-whoami.sql \
