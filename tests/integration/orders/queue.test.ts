@@ -65,6 +65,7 @@ async function seedOrderWithWorkItem(opts: {
           heightValue: 1,
           dimensionUnit: "CM",
           departmentId: (await testDb.department.create({ data: { name: unique("QueueDept") } })).id,
+          productTypeId: (await testDb.productType.create({ data: { name: unique("QueueProduct") } })).id,
         }
       : { orderId: order.id, state: "NEW", description: "incomplete item" },
   });
