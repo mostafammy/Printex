@@ -274,10 +274,13 @@ NEW state, saving, and confirming the change is reflected and recorded as an aud
 ### Functional Requirements
 
 - **FR-001**: The system MUST let a reception user create an Order and one Work Item in a single
-  Quick Create action, capturing at minimum: customer (or Cash Customer), a one-line description,
-  priority, and channel.
-- **FR-001a**: Quick Create MUST complete in three or fewer required user inputs and MUST NOT
-  require any field beyond what FR-001 lists.
+  Quick Create action, capturing: customer (or Cash Customer), a one-line description, priority,
+  and channel. Channel defaults to "Walk-in" and is only a required *input* when the reception user
+  changes it (e.g. to "Phone" or "WhatsApp"); it is always captured, but not always a step the user
+  must actively take.
+- **FR-001a**: Quick Create MUST complete in three or fewer required user *inputs* (customer,
+  description, priority — channel's default per FR-001 does not count as a required input unless
+  changed) and MUST NOT require any field beyond what FR-001 lists.
 - **FR-002**: An Order created via Quick Create with fields left unset MUST be flagged "incomplete"
   and MUST show the reception user which required fields (per FR-009) are still missing.
 - **FR-003**: The system MUST let a reception user build a full order containing multiple Work
@@ -314,8 +317,9 @@ NEW state, saving, and confirming the change is reflected and recorded as an aud
 - **FR-009a**: The order detail page MUST reserve clearly-labeled areas for information owned by
   other features not yet built or not yet applicable (designer assignment, pricing, payments,
   files, messages) rather than omitting them silently or showing a broken section.
-- **FR-010**: The system MUST let any authorized user search for orders by exact order number, and
-  by customer phone number or name (partial match).
+- **FR-010**: The system MUST let any authenticated user (not limited to Reception — order lookup
+  is needed by reception, designers, and admins alike, per Story 4) search for orders by exact
+  order number, and by customer phone number or name (partial match).
 - **FR-011**: The system MUST let an authorized user cancel a Work Item that is not in a terminal
   state (DELIVERED, COMPLETED, or already CANCELLED), requiring a reason, and MUST record the
   cancellation, its reason, and its actor on that Work Item's timeline. The system MUST refuse to

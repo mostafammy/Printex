@@ -107,14 +107,19 @@ src/server/orders/                       # NEW — this feature's service layer
 ├── index.ts                             # barrel — the ONLY legal import surface from outside
 │                                         #   (mirrors src/server/auth/index.ts's module-boundary
 │                                         #   pattern; add the matching eslint.config.js rule)
-├── orderNumber.ts                       # nextOrderNumber() — wraps the new DB sequence
-├── completeness.ts                      # isOrderComplete() — pure function, no I/O
+│                                         #   NOTE: no orderNumber.ts — research.md §1 resolved
+│                                         #   Order.number via Prisma's native
+│                                         #   @default(autoincrement()), zero custom code needed
+├── errors.ts                            # DomainOrderError
+├── completeness.ts                      # isOrderComplete(), isOrderFinished(),
+                                          #   PRE_DESIGN_EDITABLE_STATES — pure, no I/O
 ├── create.ts                            # quickCreateOrder(), createOrder()
-├── workItems.ts                         # addWorkItem(), editWorkItem(), cancelWorkItem()
-├── cancelOrder.ts                       # cancelOrder()
-├── search.ts                            # searchOrders()
+├── workItems.ts                         # addWorkItem(), editWorkItem()
+├── cancelOrder.ts                       # cancelWorkItem(), cancelOrder(), changeOrderPriority()
+├── search.ts                            # searchOrders(), listReceptionQueue(), getOrderDetail()
 └── productTypes.ts                      # createProductType(), renameProductType(),
-                                          #   updateProductTypeDefaults(), deactivateProductType()
+                                          #   updateProductTypeDefaults(), deactivateProductType(),
+                                          #   listActiveProductTypes()
 
 src/app/(shell)/
 ├── reception/                           # NEW route group — replaces the placeholder
@@ -226,7 +231,7 @@ function quickCreateOrder(
     customerId: string;              // from 010's CustomerPicker, or the Cash Customer's id
     description: string;             // one-line description → WorkItem.description
     priority: OrderPriority;         // "NORMAL" | "URGENT"
-    channel: OrderChannel;           // "WALK_IN" | "WHATSAPP" | "PHONE" | "RETURNING" | "DIRECT_TO_DESIGNER"
+    channel?: OrderChannel;          // "WALK_IN" | "WHATSAPP" | "PHONE" | "RETURNING" | "DIRECT_TO_DESIGNER" — defaults to "WALK_IN" (FR-001a: keeps Quick Create at 3 required inputs)
   },
 ): Promise<{ orderId: string; orderNumber: number; workItemId: string }>;
 
@@ -282,17 +287,26 @@ function cancelWorkItem(actor: Actor, workItemId: string, reason: string): Promi
 function cancelOrder(actor: Actor, orderId: string, reason: string): Promise<{ cancelledWorkItemIds: string[] }>;
                                           // calls cancelWorkItem's core logic once per non-terminal WorkItem, same tx
 
-// --- Read-side helpers used by pages (not authorize-gated on their own —
-// callers authorize before calling; these are plain data shaping) --------
+// --- Priority change ------------------------------------------------------
+function changeOrderPriority(actor: Actor, orderId: string, priority: OrderPriority): Promise<void>;
+                                          // FR-007's audited priority change; no-op (no write/audit) if unchanged
+
+// --- Read-side helpers used by pages (authenticated actor only — no
+// specific Permission gate; see contracts/order-entry.md's searchOrders
+// rationale for why this isn't scoped to order.create) --------------------
 function isOrderComplete(order: { workItems: ReadonlyArray<{
   productTypeId: string | null; quantity: number | null;
-  widthValue: unknown | null; heightValue: unknown | null; departmentId: string | null;
+  widthValue: unknown | null; heightValue: unknown | null;
+  dimensionUnit: WorkItemDimensionUnit | null; departmentId: string | null;
 }> }): boolean;                          // pure — FR-002's rule, unit-testable with plain literals
 
 function searchOrders(
   actor: Actor,
   query: { orderNumber?: number; phone?: string; customerName?: string },
 ): Promise<OrderSearchResult[]>;         // OrderSearchResult shape in contracts/order-entry.md
+
+function listReceptionQueue(actor: Actor): Promise<OrderQueueRow[]>;   // FR-008/FR-008a — see contracts/order-entry.md
+function getOrderDetail(actor: Actor, orderId: string): Promise<OrderDetail>; // FR-009 — see contracts/order-entry.md
 
 // --- Product Type catalog (Admin) ---------------------------------------
 function createProductType(actor: Actor, input: {

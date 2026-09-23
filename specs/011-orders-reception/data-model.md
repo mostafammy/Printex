@@ -139,6 +139,7 @@ function isOrderComplete(order: {
     quantity: number | null;
     widthValue: unknown | null;
     heightValue: unknown | null;
+    dimensionUnit: WorkItemDimensionUnit | null;
     departmentId: string | null;
   }>;
 }): boolean {
@@ -148,10 +149,16 @@ function isOrderComplete(order: {
       wi.quantity !== null &&
       wi.widthValue !== null &&
       wi.heightValue !== null &&
+      wi.dimensionUnit !== null &&
       wi.departmentId !== null,
   );
 }
 ```
+
+`dimensionUnit` is included per spec.md's Clarifications session verbatim answer — "product type,
+quantity, width × height + unit, and target department" — a width/height set without a unit does
+not count as complete (analyze pass H1: this field was missing from an earlier draft of this
+function).
 
 An order with zero Work Items is not a reachable state through this feature (spec.md Edge Cases) —
 `isOrderComplete` on an empty `workItems` array returns `true` (vacuous `every`) by construction,

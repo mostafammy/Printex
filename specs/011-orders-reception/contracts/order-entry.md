@@ -22,13 +22,16 @@ function quickCreateOrder(
     customerId: string;
     description: string;      // 1-500 chars, trimmed, required non-empty
     priority: OrderPriority;
-    channel: OrderChannel;
+    channel?: OrderChannel;   // defaults to "WALK_IN" when omitted (spec.md FR-001/FR-001a)
   },
 ): Promise<{ orderId: string; orderNumber: number; workItemId: string }>;
 ```
 
 1. Zod-validate `input` (`description` non-empty after trim, `customerId` non-empty string,
-   `priority`/`channel` must be valid enum members).
+   `priority` must be a valid enum member; `channel` defaults to `"WALK_IN"` via
+   `.default("WALK_IN")` in the Zod schema when omitted, so the UI only needs to send it when the
+   reception user picks something other than the default — this keeps Quick Create at 3 required
+   inputs per FR-001a).
 2. `db.$transaction(async (tx) => { ... })`:
    a. `tx.order.create({ data: { customerId, channel, priority, mode: "SEPARATE", createdById: actor.userId } })`
       — `mode` defaults to `"SEPARATE"` for a single-item Quick Create (grouping is meaningless
@@ -170,6 +173,24 @@ function cancelOrder(actor: Actor, orderId: string, reason: string): Promise<{ c
    c. For each item in `nonTerminal`, in order: `await transitionWorkItem(tx, { workItemId: asWorkItemId(wi.id), to: "CANCELLED", actor, reason })`, collecting successful ids. A single item's `INVALID_TRANSITION` mid-loop (e.g. it became terminal between step (a)'s read and this write, in a hypothetical concurrent edit) is logged and skipped, not thrown — cancelling "the order" is best-effort across its items, not an all-or-nothing atomic unit (matches FR-011a's per-item audited framing; document this explicitly in the function's own comment, since it deliberately does not roll back the whole batch on one item's edge case).
 4. Return `{ cancelledWorkItemIds }`.
 
+## `changeOrderPriority`
+
+```ts
+function changeOrderPriority(actor: Actor, orderId: string, priority: OrderPriority): Promise<void>;
+```
+
+1. `authorize(actor, "order.edit")`.
+2. Zod-validate `priority` is a valid `OrderPriority` member.
+3. `tx = db.$transaction`:
+   a. `existing = tx.order.findUniqueOrThrow({ where: { id: orderId }, select: { priority: true } })`.
+   b. If `existing.priority === priority` → return without writing or auditing (no-op change is not
+      an event).
+   c. `tx.order.update({ where: { id: orderId }, data: { priority } })`.
+   d. `audit.record(tx, { action: "order.priority_changed", entityType: "Order", entityId: orderId, actorId: actor.userId, before: { priority: existing.priority }, after: { priority } })`.
+4. Matches FR-007's "Changing an order's priority MUST be recorded as an audited event" and US3
+   Acceptance Scenario 3 (priority change moves the order to the front of the reception queue
+   without skipping any workflow gate — `changeOrderPriority` never touches `WorkItem.state`).
+
 ## `searchOrders`
 
 ```ts
@@ -189,12 +210,14 @@ interface OrderSearchResult {
 }
 ```
 
-1. `authorize(actor, "order.create")` — read access for search reuses the same broad Reception
-   capability set (constitution/PRD: reception users share one capability set) rather than
-   introducing a separate `order.view` permission that doesn't exist in 001's frozen 22-key
-   vocabulary; do not add a new `Permission` key for this (research.md's "don't invent scope
-   0-listed features" spirit applied to the permission vocabulary itself, which 001 explicitly
-   froze).
+1. Requires only an authenticated `actor` (`getActor()` resolved a session) — **no specific
+   `Permission` gate**. FR-010 says "any authorized user," and US4 frames order lookup as something
+   reception, a designer, *and* an admin all need ("anyone who needs to answer 'where is this
+   order?'") — narrower than Reception's own capability set. 001 froze the `Permission` vocabulary
+   at 22 keys with no `order.view` entry, so this stays a plain authentication check rather than
+   inventing one; every *mutating* function in this file keeps its specific permission gate as
+   before. `listReceptionQueue` and `getOrderDetail` (contracts below) apply this same
+   authenticated-only rule for the same reason.
 2. Build a single Prisma query with `OR` branches (research.md §5): exact `number` match if
    `query.orderNumber` is set; `customer: { name: { contains: query.customerName, mode: "insensitive" } }`
    if set; `customer: { phone: { contains: query.phone } }` if set **and** the `Customer.phone`
@@ -204,6 +227,50 @@ interface OrderSearchResult {
    per result without N+1 queries.
 4. Map each result through `deriveOrderStatus(order.workItems)` for `status`.
 
+## `listReceptionQueue`
+
+```ts
+function listReceptionQueue(
+  actor: Actor,
+  opts?: { getDelayedWorkItemIds?: () => Promise<ReadonlySet<string>> }, // 053, optional
+): Promise<OrderQueueRow[]>;
+
+interface OrderQueueRow extends OrderSearchResult {
+  isComplete: boolean;        // isOrderComplete() result
+  delayed: boolean;           // false when opts.getDelayedWorkItemIds is not supplied (053 not shipped)
+}
+```
+
+1. Requires only an authenticated `actor` — same rationale as `searchOrders` above.
+2. Query orders with their Work Items' completeness-relevant fields and states (no filter — every
+   order with at least one non-`DELIVERED` Work Item is "new/unassigned" territory; FR-008 does not
+   ask this list to hide finished orders, only to sort/flag the active ones usefully).
+3. Sort: `priority === "URGENT"` first, then `createdAt` ascending within each bucket (FR-008).
+4. Map each row through `isOrderComplete()` (FR-002) and, when `opts.getDelayedWorkItemIds` is
+   supplied, mark `delayed: true` if any of that order's Work Item ids appear in the returned set
+   (FR-008a) — omitted entirely (`delayed: false`) when 053 hasn't shipped.
+
+## `getOrderDetail`
+
+```ts
+function getOrderDetail(actor: Actor, orderId: string): Promise<{
+  order: OrderSearchResult;
+  workItems: WorkItemDetail[];
+  timeline: TimelineEntry[];
+  isComplete: boolean;
+}>;
+
+interface TimelineEntry { workItemId: string; from: WorkItemState | null; to: WorkItemState; actorId: string; at: Date; reason?: string; }
+```
+
+1. Requires only an authenticated `actor` — same rationale as `searchOrders` above.
+2. Fetch the `Order` with `Customer`, all `WorkItem`s, and each Work Item's
+   `WorkItemTransition[]` (002).
+3. Flatten every Work Item's transitions into one list, sort by `at` ascending, across the whole
+   order — this is FR-009's "chronological timeline of every transition recorded against any of its
+   Work Items."
+4. Compute `status` via `deriveOrderStatus` and `isComplete` via `isOrderComplete()`.
+
 ## Authorization table
 
 | Function | Permission |
@@ -211,8 +278,9 @@ interface OrderSearchResult {
 | `quickCreateOrder`, `createOrder`, `addWorkItem` | `order.create` |
 | `editWorkItem` | `order.edit` |
 | `cancelWorkItem`, `cancelOrder` | `order.cancel` |
-| `searchOrders` | `order.create` (read reuses Reception's existing broad capability — see rationale above) |
+| `changeOrderPriority` | `order.edit` |
+| `searchOrders`, `listReceptionQueue`, `getOrderDetail` | none — authenticated actor only (see rationale in `searchOrders` above) |
 
-All four permissions are already seeded onto `RECEPTION` and `PRINT_RECEPTION_DELIVERY` in
+All mutation permissions are already seeded onto `RECEPTION` and `PRINT_RECEPTION_DELIVERY` in
 `prisma/seed.ts` (confirmed by reading that file — no seed change needed for these permission
 grants; only the new `ProductType` starter-catalog seed data is new, per data-model.md).
