@@ -83,11 +83,11 @@ description: "Task list template for feature implementation"
 
 - [ ] T024 [P] [US2] Seed configurable classification rows Individual, Company, Agency, and VIP in `prisma/seed.ts`, preserving inactive historical classifications and never introducing a classification enum.
 - [X] T025 [US2] Implement `createCustomer(input)`, `getCustomer(id)`, update, and archive operations in `src/server/customers/service.ts` with normalization, hard duplicate blocking, validation, atomic audit writes through feature 001, and clarified Reception/Admin permissions.
-- [ ] T026 [US2] Implement classification query/configuration operations in `src/server/customers/classifications.ts`: `findClassifications`, `createClassification`, `updateClassification`, and `deactivateClassification`; require Admin authorization for configuration mutations.
-- [ ] T027 [US2] Add customer mutation/profile server boundaries in `src/app/api/customers/route.ts` and `src/app/api/customers/[id]/route.ts`, including auth, authorization, validation, and no-partial-write behavior.
-- [ ] T028 [US2] Add classification configuration boundaries in `src/app/api/customer-classifications/route.ts` and `src/app/api/customer-classifications/[id]/route.ts` with Admin-only mutation checks.
-- [ ] T029 [US2] Implement the customer profile route in `src/app/(shell)/customers/[id]/page.tsx` with Overview, active/completed Orders, Notes, and empty extension slots for 051/052/054.
-- [ ] T030 [US2] Add customer list/create/edit/archive UI in `src/app/(shell)/customers/page.tsx` and `src/components/customers/customer-form.tsx`, preserving Arabic RTL and logical directional styles.
+- [X] T026 [US2] Implement classification query/configuration operations in `src/server/customers/classifications.ts`: `findClassifications`, `createClassification`, `updateClassification`, and `deactivateClassification`; require Admin authorization for configuration mutations.
+- [X] T027 [US2] Add customer mutation/profile server boundaries in `src/app/api/customers/route.ts` and `src/app/api/customers/[id]/route.ts`, including auth, authorization, validation, and no-partial-write behavior.
+- [X] T028 [US2] Add classification configuration boundaries in `src/app/api/customer-classifications/route.ts` and `src/app/api/customer-classifications/[id]/route.ts` with Admin-only mutation checks.
+- [X] T029 [US2] Implement the customer profile route in `src/app/(shell)/customers/[id]/page.tsx` with Overview, active/completed Orders, Notes, and empty extension slots for 051/052/054.
+- [X] T030 [US2] Add customer list/create/edit/archive UI in `src/app/(shell)/customers/page.tsx` and `src/components/customers/customer-form.tsx`, preserving Arabic RTL and logical directional styles.
 
 **Checkpoint**: Customer lifecycle and configurable classification are independently testable with audit and archive guarantees.
 
@@ -106,9 +106,9 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Update `prisma/seed.ts` to idempotently seed exactly one immutable Cash Customer and reject duplicate seed records without modifying existing operational orders.
-- [ ] T034 [US3] Implement Cash Customer guards and promotion/reversal services in `src/server/customers/promotion.ts`, including explicit order selection, atomic audited re-link, Admin-only reversal, conflict precondition requiring every selected Order still belongs to the promoted customer, and no merge operation.
-- [ ] T035 [US3] Add promotion and protected-record server boundaries in `src/app/api/customers/promote/route.ts` and `src/app/api/customers/[id]/route.ts`, returning typed forbidden/immutable/conflict errors.
+- [X] T033 [US3] Update `prisma/seed.ts` to idempotently seed exactly one immutable Cash Customer and reject duplicate seed records without modifying existing operational orders.
+- [X] T034 [US3] Implement Cash Customer guards and promotion/reversal services in `src/server/customers/promotion.ts`, including explicit order selection, atomic audited re-link, Admin-only reversal, conflict precondition requiring every selected Order still belongs to the promoted customer, and no merge operation.
+- [X] T035 [US3] Add promotion and protected-record server boundaries in `src/app/api/customers/promote/route.ts` and `src/app/api/customers/[id]/route.ts`, returning typed forbidden/immutable/conflict errors.
 - [ ] T036 [US3] Add Cash Customer history and promotion controls in `src/components/customers/cash-customer.tsx` and `src/app/(shell)/customers/cash/page.tsx`, showing individually identifiable orders and explicit selected-order confirmation.
 
 **Checkpoint**: Cash Customer and promotion workflow are independently auditable and reversible.
