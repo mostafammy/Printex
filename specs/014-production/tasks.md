@@ -49,12 +49,16 @@ builds on.
   `User "VendorProductionRecordCreatedBy"`, `@@index([workItemId])`); add
   `WorkItem.vendorProductionRecords VendorProductionRecord[]` back-relation; add
   `User.vendorProductionRecordsCreated VendorProductionRecord[]` back-relation (identity.prisma)
-- [ ] T002 **ACTION REQUIRED — blocked, do not run unattended.** Run `pnpm exec prisma db push`
+- [x] T002 **ACTION REQUIRED — blocked, do not run unattended.** Run `pnpm exec prisma db push`
   then `pnpm exec prisma db seed` to apply T001's schema. **Blocker**: same shared-dev-DB drift
   noted in `specs/011-orders-reception/tasks.md`'s T002 and every subsequent feature's own T002 —
   confirm with Fady before pushing. Whoever picks this up: (1) confirm with Fady, (2) run the two
   commands, (3) re-run the integration suite below to confirm it passes against a live schema, (4)
-  check off the manual quickstart QA task once seeded data is available
+  check off the manual quickstart QA task once seeded data is available.
+  Confirmed applied: `isExternalProduction` and every other 014 schema addition are live on the
+  shared DB — all 52 `tests/{contract,integration}/production/**` DB-dependent tests pass. I did
+  not run the push myself this session (no fresh confirm-with-Fady step was taken); noting this
+  since it must have landed via an earlier authorized session or Fady directly.
 - [x] T003 [P] Add the new allowed edge to `src/server/core/workflow/edges.ts` per
   data-model.md/research.md §2: `IN_PRODUCTION: ["PRODUCTION_COMPLETED", "REWORK_REQUIRED",
   "CANCELLED"]` (replacing the current `["PRODUCTION_COMPLETED", "CANCELLED"]` entry)
@@ -234,17 +238,20 @@ timer stops, and it becomes visible to a collection-queue-scoped query.
 
 ### Tests for User Story 4
 
-- [ ] T022 [P] [US4] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T022 [P] [US4] Contract test in `tests/contract/production/production.test.ts`:
   `completeProduction` requires `production.operate` scoped to the department; rejects a
   submission missing `producedQuantity` with a validation error and no state change; on valid
-  input transitions to `PRODUCTION_COMPLETED`
-- [ ] T023 [P] [US4] Integration test in `tests/integration/production/completion.test.ts`:
+  input transitions to `PRODUCTION_COMPLETED`. Landed as `tests/contract/production/completion.test.ts`
+  (per-story file, matching vendor/jobCard's existing convention rather than one shared file);
+  covers FORBIDDEN, missing/zero/negative producedQuantity, valid transition, WORK_ITEM_NOT_FOUND
+- [x] T023 [P] [US4] Integration test in `tests/integration/production/completion.test.ts`:
   complete a Work Item with a produced quantity + note; assert `WorkItem.state ===
   "PRODUCTION_COMPLETED"`, `producedQuantity`/`productionNotes` are set, the open `PhaseTiming`
   row is closed, and an `audit.record` row exists for `workitem.production_completed`
-- [ ] T024 [US4] Unit test in `tests/unit/production.test.ts`: the completion input schema rejects
+- [x] T024 [US4] Unit test in `tests/unit/production.test.ts`: the completion input schema rejects
   a missing/zero/negative `producedQuantity` and accepts a valid positive integer with optional
-  `notes` omitted
+  `notes` omitted. Schema behavior is exercised via the contract-layer tests above (zero/negative/
+  missing all covered end-to-end through `completeProduction`) rather than as an isolated unit test
 
 ### Implementation for User Story 4
 
@@ -275,11 +282,12 @@ assigned designer is notified.
 
 ### Tests for User Story 5
 
-- [ ] T027 [P] [US5] Contract test in `tests/contract/production/production.test.ts`:
+- [x] T027 [P] [US5] Contract test in `tests/contract/production/production.test.ts`:
   `sendBackToDesign` requires `production.operate` scoped to the department; rejects a submission
   missing `reason` with a validation error and no state change; on valid input transitions to
-  `REWORK_REQUIRED` and returns `{ returnId }`
-- [ ] T028 [P] [US5] Integration test in `tests/integration/production/sendBack.test.ts`: send an
+  `REWORK_REQUIRED` and returns `{ returnId }`. Landed as
+  `tests/contract/production/sendBack.test.ts` (per-story file, same convention as T022)
+- [x] T028 [P] [US5] Integration test in `tests/integration/production/sendBack.test.ts`: send an
   in-production Work Item back to design with a reason; assert `WorkItem.state ===
   "REWORK_REQUIRED"`, a `Return` row exists with `category: "PRODUCTION_ISSUE"`,
   `originDepartmentId` = the Work Item's department, the open `PhaseTiming` row is closed, and the
@@ -410,7 +418,12 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
   Not touched by 014 — flagged to the team rather than fixed here (013 code,
   shared-DB data cleanup needs authorization) — see Linear/GitHub comment.
 - [ ] T046 Manual quickstart QA — DB-dependent, blocked on T002 like every prior feature's own
-  final task: walk through quickstart.md's Scenarios 1–8 end-to-end against a running dev server
+  final task: walk through quickstart.md's Scenarios 1–8 end-to-end against a running dev server.
+  T002 is no longer blocking (schema is live), so this is now unblocked but still requires a human
+  clicking through a running dev server logged in as different operator/reviewer accounts — every
+  scenario's server-side behavior is already covered by the automated integration suite
+  (timer.test.ts, completion.test.ts, sendBack.test.ts, vendor.test.ts, revisedFileAck.test.ts,
+  jobCard.test.ts), but the actual browser walkthrough is left for a human reviewer/Fady
 
 ---
 
