@@ -29,14 +29,14 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: No user story work begins until this phase is complete.
 
-- [ ] T004 Implement Egyptian phone normalization in `src/server/customers/normalizePhone.ts`: accept `01xxxxxxxxx`, `+201xxxxxxxxx`, and `00201...` with spaces/dashes; return one canonical E.164 value or a structured validation error.
-- [ ] T005 [P] Implement Arabic customer-name normalization in `src/server/customers/normalizeName.ts`: map `أ/إ/آ` to `ا`, treat `ة/ه` as equivalent, treat `ى/ي` as equivalent, strip tashkeel, and preserve the display name separately.
-- [ ] T006 [P] Define customer input/query schemas in `src/server/customers/schemas.ts`: require `name` and one primary phone; support alternate phones, national ID, multiple addresses, notes, and configurable classification; bound search limit/query length.
+- [X] T004 Implement Egyptian phone normalization in `src/server/customers/normalizePhone.ts`: accept `01xxxxxxxxx`, `+201xxxxxxxxx`, and `00201...` with spaces/dashes; return one canonical E.164 value or a structured validation error.
+- [X] T005 [P] Implement Arabic customer-name normalization in `src/server/customers/normalizeName.ts`: map `أ/إ/آ` to `ا`, treat `ة/ه` as equivalent, treat `ى/ي` as equivalent, strip tashkeel, and preserve the display name separately.
+- [X] T006 [P] Define customer input/query schemas in `src/server/customers/schemas.ts`: require `name` and one primary phone; support alternate phones, national ID, multiple addresses, notes, and configurable classification; bound search limit/query length.
 - [ ] T007 [P] Add customer-specific typed error codes/details in `src/server/core/errors.ts` only where existing `VALIDATION`/`FORBIDDEN` errors cannot represent duplicate phone, immutable Cash Customer, archived selection, or promotion conflicts.
 - [ ] T008 Implement customer authorization/audit adapters in `src/server/customers/authorization.ts` and `src/server/customers/audit.ts`, consuming feature 001's `authorize('customer.manage')` and append-only `audit.record` contracts; ensure failed mutations leave no partial changes and add no replacement audit storage.
-- [ ] T009 Define the complete customer schema in `prisma/schema/core.prisma` and `prisma/schema/customer.prisma`: extend `Customer` only in `core.prisma`; add related phone, address, classification, and promotion models in `customer.prisma` with required relations, unique canonical phones, and search indexes.
+- [X] T009 Define the complete customer schema in `prisma/schema/core.prisma` and `prisma/schema/customer.prisma`: extend `Customer` only in `core.prisma`; add related phone, address, classification, and promotion models in `customer.prisma` with required relations, unique canonical phones, and search indexes.
 - [ ] T010 Create the Prisma migration in `prisma/migrations/` after T009; include normalized names, phones, addresses, classifications, archive state, promotion records, unique phone constraints, search indexes, and documented backup scope.
-- [ ] T011 Run `pnpm db:generate` (which executes `prisma migrate dev`) to apply development migrations and generate the Prisma client; verify the migrated schema preserves every existing Order's non-null Customer relation in `tests/integration/customers/schema.integration.test.ts`.
+- [X] T011 Run `pnpm db:generate` (which executes `prisma migrate dev`) to apply development migrations and generate the Prisma client; verify the migrated schema preserves every existing Order's non-null Customer relation in `tests/integration/customers/schema.integration.test.ts`.
 
 **Checkpoint**: Foundation ready; user stories can proceed independently.
 
@@ -57,8 +57,8 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Implement `findCustomers(query)` in `src/server/customers/service.ts` using normalized phone first, normalized Arabic name fallback, active-only default filtering, authorized archived search, and bounded results.
-- [ ] T017 [US1] Expose `findCustomers` and `normalizePhone` from `src/server/customers/index.ts` with the repository's typed `Result`/action boundary shape and the contract in `specs/010-customers/contracts/customer-service.md`.
+- [X] T016 [US1] Implement `findCustomers(query)` in `src/server/customers/service.ts` using normalized phone first, normalized Arabic name fallback, active-only default filtering, authorized archived search, and bounded results.
+- [X] T017 [US1] Expose `findCustomers` and `normalizePhone` from `src/server/customers/index.ts` with the repository's typed `Result`/action boundary shape and the contract in `specs/010-customers/contracts/customer-service.md`.
 - [ ] T018 [US1] Add the customer search server route/action in `src/app/api/customers/search/route.ts` or the repository's established server-action boundary, including authentication, `authorize('customer.manage')`, schema validation, and typed errors.
 
 **Checkpoint**: Phone/name lookup is independently usable and benchmarked.

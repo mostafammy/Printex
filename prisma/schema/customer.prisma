@@ -1,0 +1,51 @@
+model CustomerPhone {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  phoneE164  String   @unique
+  kind       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId, kind])
+}
+
+model CustomerAddress {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  label      String?
+  value      String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId, isDefault])
+}
+
+model CustomerClassification {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customers Customer[]
+}
+
+model CustomerPromotion {
+  id               String    @id @default(cuid())
+  sourceCustomerId String
+  targetCustomerId String
+  orderIds         Json
+  reason           String
+  performedById    String
+  performedAt      DateTime  @default(now())
+  reversedAt       DateTime?
+  reversedById     String?
+
+  sourceCustomer Customer @relation("PromotionSource", fields: [sourceCustomerId], references: [id])
+  targetCustomer Customer @relation("PromotionTarget", fields: [targetCustomerId], references: [id])
+
+  @@index([sourceCustomerId, performedAt])
+  @@index([targetCustomerId, performedAt])
+}
