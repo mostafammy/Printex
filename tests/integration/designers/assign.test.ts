@@ -127,9 +127,13 @@ describe("assignDesigner + getEligibleDesigners (integration, US1)", () => {
     expect(light?.pastJobsForCustomer).toBe(1);
     expect(busy?.pastJobsForCustomer).toBe(0);
 
+    // The shared test DB holds other zero-load design.work holders (seed
+    // admin, other test files), so assert the rule rather than a winner.
     const suggested = eligible.filter((d) => d.isSuggested);
     expect(suggested).toHaveLength(1);
-    expect(suggested[0]?.userId).toBe(lightDesignerId);
+    const minLoad = Math.min(...eligible.map((d) => d.activeWorkItemCount));
+    expect(suggested[0]?.activeWorkItemCount).toBe(minLoad);
+    expect(suggested[0]?.userId).not.toBe(busyDesignerId);
   });
 
   it("throws NOT_ASSIGNABLE for a Work Item in a non-assignable state", async () => {
