@@ -6,11 +6,13 @@ import type { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
-
-const orderPriorityValues = ["NORMAL", "URGENT"] as const;
-const orderChannelValues = ["WALK_IN", "WHATSAPP", "PHONE", "RETURNING", "DIRECT_TO_DESIGNER"] as const;
-const orderModeValues = ["GROUPED", "SEPARATE"] as const;
-const dimensionUnitValues = ["MM", "CM", "M", "IN"] as const;
+import {
+  orderPriorityValues,
+  orderChannelValues,
+  orderModeValues,
+  workItemCreateSchema,
+} from "./validation";
+export type { WorkItemCreateInput } from "./validation";
 
 // ── quickCreateOrder (US1) ─────────────────────────────────────────────────
 
@@ -84,23 +86,6 @@ export async function quickCreateOrder(
 }
 
 // ── createOrder (US2) ───────────────────────────────────────────────────────
-
-const workItemCreateSchema = z.object({
-  productTypeId: z.string().min(1).optional(),
-  quantity: z.number().int().positive(),
-  widthValue: z.number().positive(),
-  heightValue: z.number().positive(),
-  dimensionUnit: z.enum(dimensionUnitValues),
-  material: z.string().optional(),
-  finishNotes: z.string().optional(),
-  requiresDesign: z.boolean(),
-  requiresReview: z.boolean(),
-  departmentId: z.string().min(1).optional(),
-  dueDate: z.date().optional(),
-  description: z.string().optional(),
-});
-
-export type WorkItemCreateInput = z.input<typeof workItemCreateSchema>;
 
 const createOrderSchema = z.object({
   customerId: z.string().min(1),

@@ -125,7 +125,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 ### Tests for User Story 4
 
-- [ ] T024 [P] [US4] Integration test in `tests/integration/orders/orderDetail.test.ts`: after several `transitionWorkItem` calls including one `CANCELLED`, `getOrderDetail` returns a chronologically-ordered timeline with actor/timestamp/reason per entry, and nothing from history is omitted (FR-009, Acceptance Scenario 3)
+- [x] T024 [P] [US4] Integration test in `tests/integration/orders/orderDetail.test.ts`: after several `transitionWorkItem` calls including one `CANCELLED`, `getOrderDetail` returns a chronologically-ordered timeline with actor/timestamp/reason per entry, and nothing from history is omitted (FR-009, Acceptance Scenario 3)
 
 ### Implementation for User Story 4
 
@@ -146,7 +146,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 ### Tests for User Story 5
 
-- [ ] T029 [P] [US5] Integration test in `tests/integration/orders/search.test.ts`: exact `orderNumber` match returns exactly that order; partial `customerName` (case-insensitive) returns all matches; `phone` search is exercised only if `Customer.phone` exists in the test schema, otherwise asserts the query still succeeds without that clause (research.md §5's guard)
+- [x] T029 [P] [US5] Integration test in `tests/integration/orders/search.test.ts`: exact `orderNumber` match returns exactly that order; partial `customerName` (case-insensitive) returns all matches; `phone` search is exercised only if `Customer.phone` exists in the test schema, otherwise asserts the query still succeeds without that clause (research.md §5's guard)
 
 ### Implementation for User Story 5
 
@@ -166,8 +166,8 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 ### Tests for User Story 6
 
-- [ ] T033 [P] [US6] Integration test in `tests/integration/orders/cancelWorkItem.test.ts`: cancelling a non-terminal Work Item without a `reason` is rejected before any write; cancelling with a reason transitions it to `CANCELLED` via `transitionWorkItem` with exactly one audit entry (no duplicate); cancelling an already-`DELIVERED`/`COMPLETED`/`CANCELLED` item is refused (FR-011)
-- [ ] T034 [P] [US6] Integration test in `tests/integration/orders/cancelOrder.test.ts`: cancelling an order with a mix of terminal and non-terminal Work Items transitions only the non-terminal ones to `CANCELLED`, each with its own audit entry, leaving already-terminal items untouched (FR-011a)
+- [x] T033 [P] [US6] Integration test in `tests/integration/orders/cancelWorkItem.test.ts`: cancelling a non-terminal Work Item without a `reason` is rejected before any write; cancelling with a reason transitions it to `CANCELLED` via `transitionWorkItem` with exactly one audit entry (no duplicate); cancelling an already-`DELIVERED`/`COMPLETED`/`CANCELLED` item is refused (FR-011)
+- [x] T034 [P] [US6] Integration test in `tests/integration/orders/cancelOrder.test.ts`: cancelling an order with a mix of terminal and non-terminal Work Items transitions only the non-terminal ones to `CANCELLED`, each with its own audit entry, leaving already-terminal items untouched (FR-011a)
 
 ### Implementation for User Story 6
 
@@ -188,7 +188,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 ### Tests for User Story 7
 
-- [ ] T039 [P] [US7] Integration test in `tests/integration/orders/addWorkItem.test.ts`: appending succeeds while the order has any non-`DELIVERED`/`COMPLETED`/`CANCELLED` Work Item, and the new item starts at `NEW` independent of siblings' states; appending is refused with `DomainOrderError("ORDER_FINISHED")` once every Work Item is terminal (FR-011b)
+- [x] T039 [P] [US7] Integration test in `tests/integration/orders/addWorkItem.test.ts`: appending succeeds while the order has any non-`DELIVERED`/`COMPLETED`/`CANCELLED` Work Item, and the new item starts at `NEW` independent of siblings' states; appending is refused with `DomainOrderError("ORDER_FINISHED")` once every Work Item is terminal (FR-011b)
 
 ### Implementation for User Story 7
 
@@ -208,7 +208,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 ### Tests for User Story 8
 
-- [ ] T043 [P] [US8] Integration test in `tests/integration/orders/editWorkItem.test.ts`: editing a `NEW`/`ASSIGNED` Work Item's quantity/dimensions/material/notes succeeds with a before/after audit entry; editing a Work Item in `IN_DESIGN` or later is refused with `DomainOrderError("PAST_EDIT_WINDOW")` (FR-012, FR-012a)
+- [x] T043 [P] [US8] Integration test in `tests/integration/orders/editWorkItem.test.ts`: editing a `NEW`/`ASSIGNED` Work Item's quantity/dimensions/material/notes succeeds with a before/after audit entry; editing a Work Item in `IN_DESIGN` or later is refused with `DomainOrderError("PAST_EDIT_WINDOW")` (FR-012, FR-012a)
 
 ### Implementation for User Story 8
 
@@ -227,8 +227,8 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 - [x] T047 [P] Implement `createProductType`, `renameProductType`, `updateProductTypeDefaults`, `deactivateProductType` in `src/server/orders/productTypes.ts` per contracts/product-types.md: each calls `authorize(actor, "admin.config")`; `createProductType`/`renameProductType` catch Prisma's `P2002` unique violation on `name` and rethrow `DomainOrderError("DUPLICATE_NAME")`; `deactivateProductType` sets `isActive: false` only, never a hard delete; each mutation calls `audit.record` with the appropriate `action` (`producttype.created`/`renamed`/`defaults_updated`/`deactivated`) (depends on T005, T018)
 - [x] T048 Export the four Product Type admin functions from `src/server/orders/index.ts`
 - [x] T049 Build `src/app/(shell)/admin/product-types/page.tsx` — Server Component + inline Server Actions mirroring `src/app/(shell)/admin/departments/page.tsx`: list table (name, default department, default flags, active/inactive), create form, inline rename/deactivate actions per row, `formStr()` reused, `revalidatePath("/admin/product-types")` after every mutation (depends on T047)
-- [ ] T050 [P] Contract tests in `tests/contract/orders/productTypes.test.ts`: creating a duplicate `name` yields `DUPLICATE_NAME`; deactivating never removes the row or breaks an existing `WorkItem.productTypeId` reference
-- [ ] T051 [P] Unit tests for shared Zod validation schemas in `tests/unit/orders/validation.test.ts`: `quantity` rejects zero/negative/non-integer; `widthValue`/`heightValue` reject zero/negative; `ProductType.name` rejects empty-after-trim and >100 chars
+- [x] T050 [P] Contract tests in `tests/contract/orders/productTypes.test.ts`: creating a duplicate `name` yields `DUPLICATE_NAME`; deactivating never removes the row or breaks an existing `WorkItem.productTypeId` reference
+- [x] T051 [P] Unit tests for shared Zod validation schemas in `tests/unit/orders/validation.test.ts`: `quantity` rejects zero/negative/non-integer; `widthValue`/`heightValue` reject zero/negative; `ProductType.name` rejects empty-after-trim and >100 chars
 - [ ] T052 Run every scenario in `quickstart.md` end-to-end against a freshly seeded database and record the result (manual QA pass, no code changes — confirms Scenarios 1–7 all behave as documented, including SC-006's keyboard-only check on Quick Create)
 
 ---

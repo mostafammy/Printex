@@ -7,24 +7,8 @@ import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { DomainOrderError } from "./errors";
 import { isOrderFinished, PRE_DESIGN_EDITABLE_STATES } from "./completeness";
-import type { WorkItemCreateInput } from "./create";
-
-const dimensionUnitValues = ["MM", "CM", "M", "IN"] as const;
-
-const workItemCreateSchema = z.object({
-  productTypeId: z.string().min(1).optional(),
-  quantity: z.number().int().positive(),
-  widthValue: z.number().positive(),
-  heightValue: z.number().positive(),
-  dimensionUnit: z.enum(dimensionUnitValues),
-  material: z.string().optional(),
-  finishNotes: z.string().optional(),
-  requiresDesign: z.boolean(),
-  requiresReview: z.boolean(),
-  departmentId: z.string().min(1).optional(),
-  dueDate: z.date().optional(),
-  description: z.string().optional(),
-});
+import { workItemCreateSchema, dimensionUnitValues } from "./validation";
+import type { WorkItemCreateInput } from "./validation";
 
 // ── addWorkItem (US7) ───────────────────────────────────────────────────────
 

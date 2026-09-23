@@ -7,6 +7,7 @@ import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { DomainOrderError } from "./errors";
+import { productTypeNameSchema } from "./validation";
 
 export interface ActiveProductType {
   id: string;
@@ -49,7 +50,7 @@ function isUniqueViolation(err: unknown): boolean {
 }
 
 const createProductTypeSchema = z.object({
-  name: z.string().trim().min(1).max(100),
+  name: productTypeNameSchema,
   defaultDepartmentId: z.string().min(1).optional(),
   defaultRequiresDesign: z.boolean().default(true),
   defaultRequiresReview: z.boolean().default(true),
@@ -94,7 +95,7 @@ export async function renameProductType(
   newName: string,
 ): Promise<void> {
   authorize(actor, "admin.config");
-  const name = z.string().trim().min(1).max(100).parse(newName);
+  const name = productTypeNameSchema.parse(newName);
 
   try {
     await db.$transaction(async (tx: Prisma.TransactionClient) => {
