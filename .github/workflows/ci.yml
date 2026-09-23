@@ -34,6 +34,11 @@ jobs:
       # (schema push / generate), one dedicated to the Vitest suite — never
       # the same database, per research.md §9.
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/printex"
+      # DIRECT_URL: prisma/schema/schema.prisma declares directUrl to bypass
+      # Supabase's connection pooler in production — `prisma db push`/`migrate`
+      # use directUrl (not url) to connect. This local CI Postgres has no
+      # pooler, so DIRECT_URL is just the same connection as DATABASE_URL.
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/printex"
       DATABASE_URL_TEST: "postgresql://postgres:postgres@localhost:5432/printex_test"
       STORAGE_ROOT: "/tmp/printex-storage"
       BETTER_AUTH_SECRET: "ci-only-not-a-real-secret"
@@ -65,7 +70,10 @@ jobs:
       - name: Push test database schema
         run: pnpm exec prisma db push --skip-generate
         env:
+          # `prisma db push` connects via directUrl, not url — override both
+          # so this push actually targets printex_test, not the app db again.
           DATABASE_URL: ${{ env.DATABASE_URL_TEST }}
+          DIRECT_URL: ${{ env.DATABASE_URL_TEST }}
 
       - name: Check (lint + typecheck)
         run: pnpm check
