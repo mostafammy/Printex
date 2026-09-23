@@ -7,7 +7,7 @@ export type { DomainProductionErrorCode } from "./errors";
 export { getOperatorQueue, routeToDepartment } from "./queue";
 export type { ProductionQueueRow } from "./queue";
 export { getJobCard } from "./jobCard";
-export type { JobCard, JobCardSpec, JobCardApprovedFile } from "./jobCard";
+export type { JobCard, JobCardSpec, JobCardApprovedFile, VendorRecordSummary } from "./jobCard";
 export { startProduction, pauseProduction, resumeProduction, acknowledgeFileRevision } from "./timer";
 export { completeProduction } from "./completion";
 export type { CompleteProductionInput } from "./completion";

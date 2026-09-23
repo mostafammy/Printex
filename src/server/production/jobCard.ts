@@ -28,6 +28,13 @@ export interface JobCardApprovedFile {
   downloadUrl: string;
 }
 
+export interface VendorRecordSummary {
+  recordId: string;
+  vendorName: string;
+  sentAt: Date;
+  receivedAt: Date | null;
+}
+
 export interface JobCard {
   workItemId: string;
   state: string;
@@ -35,6 +42,7 @@ export interface JobCard {
   spec: JobCardSpec;
   approvedFile: JobCardApprovedFile | null;
   pendingFileRevisionAt: Date | null;
+  vendorRecord: VendorRecordSummary | null;
 }
 
 export async function getJobCard(actor: Actor, workItemId: string): Promise<JobCard> {
@@ -43,6 +51,7 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
     include: {
       order: { include: { customer: { select: { name: true } } } },
       productType: { select: { defaultDepartmentId: true } },
+      department: { select: { isExternalProduction: true } },
     },
   });
   if (!workItem) {
@@ -57,6 +66,13 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
     where: { workItemId, approvedAt: { not: null } },
     orderBy: { version: "desc" },
   });
+
+  const latestVendorRecord = workItem.department?.isExternalProduction
+    ? await db.vendorProductionRecord.findFirst({
+        where: { workItemId },
+        orderBy: { sentAt: "desc" },
+      })
+    : null;
 
   return {
     workItemId: workItem.id,
@@ -83,5 +99,13 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
         }
       : null,
     pendingFileRevisionAt: workItem.pendingFileRevisionAt,
+    vendorRecord: latestVendorRecord
+      ? {
+          recordId: latestVendorRecord.id,
+          vendorName: latestVendorRecord.vendorName,
+          sentAt: latestVendorRecord.sentAt,
+          receivedAt: latestVendorRecord.receivedAt,
+        }
+      : null,
   };
 }
