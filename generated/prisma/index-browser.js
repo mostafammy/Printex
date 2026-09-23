@@ -207,6 +207,20 @@ exports.Prisma.PhaseTimingScalarFieldEnum = {
   endedAt: 'endedAt'
 };
 
+exports.Prisma.DesignVersionScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  version: 'version',
+  storageKey: 'storageKey',
+  fileName: 'fileName',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  sha256: 'sha256',
+  note: 'note',
+  uploadedById: 'uploadedById',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.NotificationEventScalarFieldEnum = {
   id: 'id',
   type: 'type',
@@ -455,6 +469,7 @@ exports.Prisma.ModelName = {
   ProductType: 'ProductType',
   WorkItemTransition: 'WorkItemTransition',
   PhaseTiming: 'PhaseTiming',
+  DesignVersion: 'DesignVersion',
   NotificationEvent: 'NotificationEvent',
   CustomerPhone: 'CustomerPhone',
   CustomerAddress: 'CustomerAddress',

@@ -50,6 +50,13 @@ export type WorkItemTransition = $Result.DefaultSelection<Prisma.$WorkItemTransi
  */
 export type PhaseTiming = $Result.DefaultSelection<Prisma.$PhaseTimingPayload>
 /**
+ * Model DesignVersion
+ * A single uploaded design file version for a Work Item (constitution IV:
+ * "new version, never overwritten in place"). Bytes live in the existing
+ * StorageAdapter (002); this table is metadata only. Owned by 012.
+ */
+export type DesignVersion = $Result.DefaultSelection<Prisma.$DesignVersionPayload>
+/**
  * Model NotificationEvent
  * Outbox — polymorphic via entityType/entityId, not a Prisma relation.
  */
@@ -442,6 +449,16 @@ export class PrismaClient<
     * ```
     */
   get phaseTiming(): Prisma.PhaseTimingDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.designVersion`: Exposes CRUD operations for the **DesignVersion** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DesignVersions
+    * const designVersions = await prisma.designVersion.findMany()
+    * ```
+    */
+  get designVersion(): Prisma.DesignVersionDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.notificationEvent`: Exposes CRUD operations for the **NotificationEvent** model.
@@ -1040,6 +1057,7 @@ export namespace Prisma {
     ProductType: 'ProductType',
     WorkItemTransition: 'WorkItemTransition',
     PhaseTiming: 'PhaseTiming',
+    DesignVersion: 'DesignVersion',
     NotificationEvent: 'NotificationEvent',
     CustomerPhone: 'CustomerPhone',
     CustomerAddress: 'CustomerAddress',
@@ -1073,7 +1091,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
+      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1592,6 +1610,80 @@ export namespace Prisma {
           count: {
             args: Prisma.PhaseTimingCountArgs<ExtArgs>
             result: $Utils.Optional<PhaseTimingCountAggregateOutputType> | number
+          }
+        }
+      }
+      DesignVersion: {
+        payload: Prisma.$DesignVersionPayload<ExtArgs>
+        fields: Prisma.DesignVersionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DesignVersionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DesignVersionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          findFirst: {
+            args: Prisma.DesignVersionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DesignVersionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          findMany: {
+            args: Prisma.DesignVersionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>[]
+          }
+          create: {
+            args: Prisma.DesignVersionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          createMany: {
+            args: Prisma.DesignVersionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DesignVersionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>[]
+          }
+          delete: {
+            args: Prisma.DesignVersionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          update: {
+            args: Prisma.DesignVersionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          deleteMany: {
+            args: Prisma.DesignVersionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DesignVersionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DesignVersionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>[]
+          }
+          upsert: {
+            args: Prisma.DesignVersionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DesignVersionPayload>
+          }
+          aggregate: {
+            args: Prisma.DesignVersionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDesignVersion>
+          }
+          groupBy: {
+            args: Prisma.DesignVersionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DesignVersionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DesignVersionCountArgs<ExtArgs>
+            result: $Utils.Optional<DesignVersionCountAggregateOutputType> | number
           }
         }
       }
@@ -2808,6 +2900,7 @@ export namespace Prisma {
     productType?: ProductTypeOmit
     workItemTransition?: WorkItemTransitionOmit
     phaseTiming?: PhaseTimingOmit
+    designVersion?: DesignVersionOmit
     notificationEvent?: NotificationEventOmit
     customerPhone?: CustomerPhoneOmit
     customerAddress?: CustomerAddressOmit
@@ -3052,11 +3145,13 @@ export namespace Prisma {
   export type WorkItemCountOutputType = {
     transitions: number
     phaseTimings: number
+    designVersions: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     transitions?: boolean | WorkItemCountOutputTypeCountTransitionsArgs
     phaseTimings?: boolean | WorkItemCountOutputTypeCountPhaseTimingsArgs
+    designVersions?: boolean | WorkItemCountOutputTypeCountDesignVersionsArgs
   }
 
   // Custom InputTypes
@@ -3082,6 +3177,13 @@ export namespace Prisma {
    */
   export type WorkItemCountOutputTypeCountPhaseTimingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PhaseTimingWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountDesignVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DesignVersionWhereInput
   }
 
 
@@ -3163,6 +3265,7 @@ export namespace Prisma {
     assignedWorkItems: number
     workItemTransitions: number
     phaseTimings: number
+    designVersionsUploaded: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3177,6 +3280,7 @@ export namespace Prisma {
     assignedWorkItems?: boolean | UserCountOutputTypeCountAssignedWorkItemsArgs
     workItemTransitions?: boolean | UserCountOutputTypeCountWorkItemTransitionsArgs
     phaseTimings?: boolean | UserCountOutputTypeCountPhaseTimingsArgs
+    designVersionsUploaded?: boolean | UserCountOutputTypeCountDesignVersionsUploadedArgs
   }
 
   // Custom InputTypes
@@ -3265,6 +3369,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountPhaseTimingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PhaseTimingWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountDesignVersionsUploadedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DesignVersionWhereInput
   }
 
 
@@ -7214,6 +7325,7 @@ export namespace Prisma {
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
+    designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -7296,6 +7408,7 @@ export namespace Prisma {
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
+    designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7320,6 +7433,7 @@ export namespace Prisma {
       assignee: Prisma.$UserPayload<ExtArgs> | null
       transitions: Prisma.$WorkItemTransitionPayload<ExtArgs>[]
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
+      designVersions: Prisma.$DesignVersionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -7755,6 +7869,7 @@ export namespace Prisma {
     assignee<T extends WorkItem$assigneeArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$assigneeArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     transitions<T extends WorkItem$transitionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$transitionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     phaseTimings<T extends WorkItem$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    designVersions<T extends WorkItem$designVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$designVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8300,6 +8415,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PhaseTimingScalarFieldEnum | PhaseTimingScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.designVersions
+   */
+  export type WorkItem$designVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    where?: DesignVersionWhereInput
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    cursor?: DesignVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
   }
 
   /**
@@ -11711,6 +11850,1198 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: PhaseTimingInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model DesignVersion
+   */
+
+  export type AggregateDesignVersion = {
+    _count: DesignVersionCountAggregateOutputType | null
+    _avg: DesignVersionAvgAggregateOutputType | null
+    _sum: DesignVersionSumAggregateOutputType | null
+    _min: DesignVersionMinAggregateOutputType | null
+    _max: DesignVersionMaxAggregateOutputType | null
+  }
+
+  export type DesignVersionAvgAggregateOutputType = {
+    version: number | null
+    sizeBytes: number | null
+  }
+
+  export type DesignVersionSumAggregateOutputType = {
+    version: number | null
+    sizeBytes: number | null
+  }
+
+  export type DesignVersionMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    version: number | null
+    storageKey: string | null
+    fileName: string | null
+    mimeType: string | null
+    sizeBytes: number | null
+    sha256: string | null
+    note: string | null
+    uploadedById: string | null
+    createdAt: Date | null
+  }
+
+  export type DesignVersionMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    version: number | null
+    storageKey: string | null
+    fileName: string | null
+    mimeType: string | null
+    sizeBytes: number | null
+    sha256: string | null
+    note: string | null
+    uploadedById: string | null
+    createdAt: Date | null
+  }
+
+  export type DesignVersionCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    version: number
+    storageKey: number
+    fileName: number
+    mimeType: number
+    sizeBytes: number
+    sha256: number
+    note: number
+    uploadedById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type DesignVersionAvgAggregateInputType = {
+    version?: true
+    sizeBytes?: true
+  }
+
+  export type DesignVersionSumAggregateInputType = {
+    version?: true
+    sizeBytes?: true
+  }
+
+  export type DesignVersionMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    sha256?: true
+    note?: true
+    uploadedById?: true
+    createdAt?: true
+  }
+
+  export type DesignVersionMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    sha256?: true
+    note?: true
+    uploadedById?: true
+    createdAt?: true
+  }
+
+  export type DesignVersionCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    storageKey?: true
+    fileName?: true
+    mimeType?: true
+    sizeBytes?: true
+    sha256?: true
+    note?: true
+    uploadedById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type DesignVersionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DesignVersion to aggregate.
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DesignVersions to fetch.
+     */
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DesignVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DesignVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DesignVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DesignVersions
+    **/
+    _count?: true | DesignVersionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DesignVersionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DesignVersionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DesignVersionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DesignVersionMaxAggregateInputType
+  }
+
+  export type GetDesignVersionAggregateType<T extends DesignVersionAggregateArgs> = {
+        [P in keyof T & keyof AggregateDesignVersion]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDesignVersion[P]>
+      : GetScalarType<T[P], AggregateDesignVersion[P]>
+  }
+
+
+
+
+  export type DesignVersionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DesignVersionWhereInput
+    orderBy?: DesignVersionOrderByWithAggregationInput | DesignVersionOrderByWithAggregationInput[]
+    by: DesignVersionScalarFieldEnum[] | DesignVersionScalarFieldEnum
+    having?: DesignVersionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DesignVersionCountAggregateInputType | true
+    _avg?: DesignVersionAvgAggregateInputType
+    _sum?: DesignVersionSumAggregateInputType
+    _min?: DesignVersionMinAggregateInputType
+    _max?: DesignVersionMaxAggregateInputType
+  }
+
+  export type DesignVersionGroupByOutputType = {
+    id: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType: string | null
+    sizeBytes: number
+    sha256: string
+    note: string | null
+    uploadedById: string
+    createdAt: Date
+    _count: DesignVersionCountAggregateOutputType | null
+    _avg: DesignVersionAvgAggregateOutputType | null
+    _sum: DesignVersionSumAggregateOutputType | null
+    _min: DesignVersionMinAggregateOutputType | null
+    _max: DesignVersionMaxAggregateOutputType | null
+  }
+
+  type GetDesignVersionGroupByPayload<T extends DesignVersionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DesignVersionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DesignVersionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DesignVersionGroupByOutputType[P]>
+            : GetScalarType<T[P], DesignVersionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DesignVersionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    note?: boolean
+    uploadedById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["designVersion"]>
+
+  export type DesignVersionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    note?: boolean
+    uploadedById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["designVersion"]>
+
+  export type DesignVersionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    note?: boolean
+    uploadedById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["designVersion"]>
+
+  export type DesignVersionSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    storageKey?: boolean
+    fileName?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    note?: boolean
+    uploadedById?: boolean
+    createdAt?: boolean
+  }
+
+  export type DesignVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "version" | "storageKey" | "fileName" | "mimeType" | "sizeBytes" | "sha256" | "note" | "uploadedById" | "createdAt", ExtArgs["result"]["designVersion"]>
+  export type DesignVersionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DesignVersionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DesignVersionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $DesignVersionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DesignVersion"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      uploadedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      /**
+       * 1, 2, 3... per Work Item — never reused, never decremented.
+       */
+      version: number
+      /**
+       * Opaque key passed to StorageAdapter.put/get — no folder/filename
+       * semantics assumed by application code (constitution IV).
+       */
+      storageKey: string
+      fileName: string
+      mimeType: string | null
+      sizeBytes: number
+      sha256: string
+      /**
+       * Short note the designer attaches (e.g. "v2 — updated logo size").
+       */
+      note: string | null
+      uploadedById: string
+      createdAt: Date
+    }, ExtArgs["result"]["designVersion"]>
+    composites: {}
+  }
+
+  type DesignVersionGetPayload<S extends boolean | null | undefined | DesignVersionDefaultArgs> = $Result.GetResult<Prisma.$DesignVersionPayload, S>
+
+  type DesignVersionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DesignVersionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DesignVersionCountAggregateInputType | true
+    }
+
+  export interface DesignVersionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DesignVersion'], meta: { name: 'DesignVersion' } }
+    /**
+     * Find zero or one DesignVersion that matches the filter.
+     * @param {DesignVersionFindUniqueArgs} args - Arguments to find a DesignVersion
+     * @example
+     * // Get one DesignVersion
+     * const designVersion = await prisma.designVersion.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DesignVersionFindUniqueArgs>(args: SelectSubset<T, DesignVersionFindUniqueArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DesignVersion that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DesignVersionFindUniqueOrThrowArgs} args - Arguments to find a DesignVersion
+     * @example
+     * // Get one DesignVersion
+     * const designVersion = await prisma.designVersion.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DesignVersionFindUniqueOrThrowArgs>(args: SelectSubset<T, DesignVersionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DesignVersion that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionFindFirstArgs} args - Arguments to find a DesignVersion
+     * @example
+     * // Get one DesignVersion
+     * const designVersion = await prisma.designVersion.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DesignVersionFindFirstArgs>(args?: SelectSubset<T, DesignVersionFindFirstArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DesignVersion that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionFindFirstOrThrowArgs} args - Arguments to find a DesignVersion
+     * @example
+     * // Get one DesignVersion
+     * const designVersion = await prisma.designVersion.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DesignVersionFindFirstOrThrowArgs>(args?: SelectSubset<T, DesignVersionFindFirstOrThrowArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DesignVersions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DesignVersions
+     * const designVersions = await prisma.designVersion.findMany()
+     * 
+     * // Get first 10 DesignVersions
+     * const designVersions = await prisma.designVersion.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const designVersionWithIdOnly = await prisma.designVersion.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DesignVersionFindManyArgs>(args?: SelectSubset<T, DesignVersionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DesignVersion.
+     * @param {DesignVersionCreateArgs} args - Arguments to create a DesignVersion.
+     * @example
+     * // Create one DesignVersion
+     * const DesignVersion = await prisma.designVersion.create({
+     *   data: {
+     *     // ... data to create a DesignVersion
+     *   }
+     * })
+     * 
+     */
+    create<T extends DesignVersionCreateArgs>(args: SelectSubset<T, DesignVersionCreateArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DesignVersions.
+     * @param {DesignVersionCreateManyArgs} args - Arguments to create many DesignVersions.
+     * @example
+     * // Create many DesignVersions
+     * const designVersion = await prisma.designVersion.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DesignVersionCreateManyArgs>(args?: SelectSubset<T, DesignVersionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DesignVersions and returns the data saved in the database.
+     * @param {DesignVersionCreateManyAndReturnArgs} args - Arguments to create many DesignVersions.
+     * @example
+     * // Create many DesignVersions
+     * const designVersion = await prisma.designVersion.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DesignVersions and only return the `id`
+     * const designVersionWithIdOnly = await prisma.designVersion.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DesignVersionCreateManyAndReturnArgs>(args?: SelectSubset<T, DesignVersionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DesignVersion.
+     * @param {DesignVersionDeleteArgs} args - Arguments to delete one DesignVersion.
+     * @example
+     * // Delete one DesignVersion
+     * const DesignVersion = await prisma.designVersion.delete({
+     *   where: {
+     *     // ... filter to delete one DesignVersion
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DesignVersionDeleteArgs>(args: SelectSubset<T, DesignVersionDeleteArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DesignVersion.
+     * @param {DesignVersionUpdateArgs} args - Arguments to update one DesignVersion.
+     * @example
+     * // Update one DesignVersion
+     * const designVersion = await prisma.designVersion.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DesignVersionUpdateArgs>(args: SelectSubset<T, DesignVersionUpdateArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DesignVersions.
+     * @param {DesignVersionDeleteManyArgs} args - Arguments to filter DesignVersions to delete.
+     * @example
+     * // Delete a few DesignVersions
+     * const { count } = await prisma.designVersion.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DesignVersionDeleteManyArgs>(args?: SelectSubset<T, DesignVersionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DesignVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DesignVersions
+     * const designVersion = await prisma.designVersion.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DesignVersionUpdateManyArgs>(args: SelectSubset<T, DesignVersionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DesignVersions and returns the data updated in the database.
+     * @param {DesignVersionUpdateManyAndReturnArgs} args - Arguments to update many DesignVersions.
+     * @example
+     * // Update many DesignVersions
+     * const designVersion = await prisma.designVersion.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DesignVersions and only return the `id`
+     * const designVersionWithIdOnly = await prisma.designVersion.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DesignVersionUpdateManyAndReturnArgs>(args: SelectSubset<T, DesignVersionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DesignVersion.
+     * @param {DesignVersionUpsertArgs} args - Arguments to update or create a DesignVersion.
+     * @example
+     * // Update or create a DesignVersion
+     * const designVersion = await prisma.designVersion.upsert({
+     *   create: {
+     *     // ... data to create a DesignVersion
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DesignVersion we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DesignVersionUpsertArgs>(args: SelectSubset<T, DesignVersionUpsertArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DesignVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionCountArgs} args - Arguments to filter DesignVersions to count.
+     * @example
+     * // Count the number of DesignVersions
+     * const count = await prisma.designVersion.count({
+     *   where: {
+     *     // ... the filter for the DesignVersions we want to count
+     *   }
+     * })
+    **/
+    count<T extends DesignVersionCountArgs>(
+      args?: Subset<T, DesignVersionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DesignVersionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DesignVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DesignVersionAggregateArgs>(args: Subset<T, DesignVersionAggregateArgs>): Prisma.PrismaPromise<GetDesignVersionAggregateType<T>>
+
+    /**
+     * Group by DesignVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DesignVersionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DesignVersionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DesignVersionGroupByArgs['orderBy'] }
+        : { orderBy?: DesignVersionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DesignVersionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDesignVersionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DesignVersion model
+   */
+  readonly fields: DesignVersionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DesignVersion.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DesignVersionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    uploadedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DesignVersion model
+   */
+  interface DesignVersionFieldRefs {
+    readonly id: FieldRef<"DesignVersion", 'String'>
+    readonly workItemId: FieldRef<"DesignVersion", 'String'>
+    readonly version: FieldRef<"DesignVersion", 'Int'>
+    readonly storageKey: FieldRef<"DesignVersion", 'String'>
+    readonly fileName: FieldRef<"DesignVersion", 'String'>
+    readonly mimeType: FieldRef<"DesignVersion", 'String'>
+    readonly sizeBytes: FieldRef<"DesignVersion", 'Int'>
+    readonly sha256: FieldRef<"DesignVersion", 'String'>
+    readonly note: FieldRef<"DesignVersion", 'String'>
+    readonly uploadedById: FieldRef<"DesignVersion", 'String'>
+    readonly createdAt: FieldRef<"DesignVersion", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DesignVersion findUnique
+   */
+  export type DesignVersionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which DesignVersion to fetch.
+     */
+    where: DesignVersionWhereUniqueInput
+  }
+
+  /**
+   * DesignVersion findUniqueOrThrow
+   */
+  export type DesignVersionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which DesignVersion to fetch.
+     */
+    where: DesignVersionWhereUniqueInput
+  }
+
+  /**
+   * DesignVersion findFirst
+   */
+  export type DesignVersionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which DesignVersion to fetch.
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DesignVersions to fetch.
+     */
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DesignVersions.
+     */
+    cursor?: DesignVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DesignVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DesignVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DesignVersions.
+     */
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * DesignVersion findFirstOrThrow
+   */
+  export type DesignVersionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which DesignVersion to fetch.
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DesignVersions to fetch.
+     */
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DesignVersions.
+     */
+    cursor?: DesignVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DesignVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DesignVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DesignVersions.
+     */
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * DesignVersion findMany
+   */
+  export type DesignVersionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which DesignVersions to fetch.
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DesignVersions to fetch.
+     */
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DesignVersions.
+     */
+    cursor?: DesignVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DesignVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DesignVersions.
+     */
+    skip?: number
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
+  }
+
+  /**
+   * DesignVersion create
+   */
+  export type DesignVersionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DesignVersion.
+     */
+    data: XOR<DesignVersionCreateInput, DesignVersionUncheckedCreateInput>
+  }
+
+  /**
+   * DesignVersion createMany
+   */
+  export type DesignVersionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DesignVersions.
+     */
+    data: DesignVersionCreateManyInput | DesignVersionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DesignVersion createManyAndReturn
+   */
+  export type DesignVersionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * The data used to create many DesignVersions.
+     */
+    data: DesignVersionCreateManyInput | DesignVersionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DesignVersion update
+   */
+  export type DesignVersionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DesignVersion.
+     */
+    data: XOR<DesignVersionUpdateInput, DesignVersionUncheckedUpdateInput>
+    /**
+     * Choose, which DesignVersion to update.
+     */
+    where: DesignVersionWhereUniqueInput
+  }
+
+  /**
+   * DesignVersion updateMany
+   */
+  export type DesignVersionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DesignVersions.
+     */
+    data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which DesignVersions to update
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * Limit how many DesignVersions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DesignVersion updateManyAndReturn
+   */
+  export type DesignVersionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * The data used to update DesignVersions.
+     */
+    data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which DesignVersions to update
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * Limit how many DesignVersions to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DesignVersion upsert
+   */
+  export type DesignVersionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DesignVersion to update in case it exists.
+     */
+    where: DesignVersionWhereUniqueInput
+    /**
+     * In case the DesignVersion found by the `where` argument doesn't exist, create a new DesignVersion with this data.
+     */
+    create: XOR<DesignVersionCreateInput, DesignVersionUncheckedCreateInput>
+    /**
+     * In case the DesignVersion was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DesignVersionUpdateInput, DesignVersionUncheckedUpdateInput>
+  }
+
+  /**
+   * DesignVersion delete
+   */
+  export type DesignVersionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    /**
+     * Filter which DesignVersion to delete.
+     */
+    where: DesignVersionWhereUniqueInput
+  }
+
+  /**
+   * DesignVersion deleteMany
+   */
+  export type DesignVersionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DesignVersions to delete
+     */
+    where?: DesignVersionWhereInput
+    /**
+     * Limit how many DesignVersions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DesignVersion without action
+   */
+  export type DesignVersionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
   }
 
 
@@ -17384,6 +18715,7 @@ export namespace Prisma {
     assignedWorkItems?: boolean | User$assignedWorkItemsArgs<ExtArgs>
     workItemTransitions?: boolean | User$workItemTransitionsArgs<ExtArgs>
     phaseTimings?: boolean | User$phaseTimingsArgs<ExtArgs>
+    designVersionsUploaded?: boolean | User$designVersionsUploadedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -17445,6 +18777,7 @@ export namespace Prisma {
     assignedWorkItems?: boolean | User$assignedWorkItemsArgs<ExtArgs>
     workItemTransitions?: boolean | User$workItemTransitionsArgs<ExtArgs>
     phaseTimings?: boolean | User$phaseTimingsArgs<ExtArgs>
+    designVersionsUploaded?: boolean | User$designVersionsUploadedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -17464,6 +18797,7 @@ export namespace Prisma {
       assignedWorkItems: Prisma.$WorkItemPayload<ExtArgs>[]
       workItemTransitions: Prisma.$WorkItemTransitionPayload<ExtArgs>[]
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
+      designVersionsUploaded: Prisma.$DesignVersionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -17883,6 +19217,7 @@ export namespace Prisma {
     assignedWorkItems<T extends User$assignedWorkItemsArgs<ExtArgs> = {}>(args?: Subset<T, User$assignedWorkItemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     workItemTransitions<T extends User$workItemTransitionsArgs<ExtArgs> = {}>(args?: Subset<T, User$workItemTransitionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     phaseTimings<T extends User$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, User$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    designVersionsUploaded<T extends User$designVersionsUploadedArgs<ExtArgs> = {}>(args?: Subset<T, User$designVersionsUploadedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -18573,6 +19908,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PhaseTimingScalarFieldEnum | PhaseTimingScalarFieldEnum[]
+  }
+
+  /**
+   * User.designVersionsUploaded
+   */
+  export type User$designVersionsUploadedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DesignVersion
+     */
+    select?: DesignVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DesignVersion
+     */
+    omit?: DesignVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DesignVersionInclude<ExtArgs> | null
+    where?: DesignVersionWhereInput
+    orderBy?: DesignVersionOrderByWithRelationInput | DesignVersionOrderByWithRelationInput[]
+    cursor?: DesignVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DesignVersionScalarFieldEnum | DesignVersionScalarFieldEnum[]
   }
 
   /**
@@ -28445,6 +29804,23 @@ export namespace Prisma {
   export type PhaseTimingScalarFieldEnum = (typeof PhaseTimingScalarFieldEnum)[keyof typeof PhaseTimingScalarFieldEnum]
 
 
+  export const DesignVersionScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    version: 'version',
+    storageKey: 'storageKey',
+    fileName: 'fileName',
+    mimeType: 'mimeType',
+    sizeBytes: 'sizeBytes',
+    sha256: 'sha256',
+    note: 'note',
+    uploadedById: 'uploadedById',
+    createdAt: 'createdAt'
+  };
+
+  export type DesignVersionScalarFieldEnum = (typeof DesignVersionScalarFieldEnum)[keyof typeof DesignVersionScalarFieldEnum]
+
+
   export const NotificationEventScalarFieldEnum: {
     id: 'id',
     type: 'type',
@@ -29149,6 +30525,7 @@ export namespace Prisma {
     assignee?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
+    designVersions?: DesignVersionListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -29176,6 +30553,7 @@ export namespace Prisma {
     assignee?: UserOrderByWithRelationInput
     transitions?: WorkItemTransitionOrderByRelationAggregateInput
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
+    designVersions?: DesignVersionOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -29206,6 +30584,7 @@ export namespace Prisma {
     assignee?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
+    designVersions?: DesignVersionListRelationFilter
   }, "id">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -29475,6 +30854,97 @@ export namespace Prisma {
     kind?: EnumPhaseTimingKindWithAggregatesFilter<"PhaseTiming"> | $Enums.PhaseTimingKind
     startedAt?: DateTimeWithAggregatesFilter<"PhaseTiming"> | Date | string
     endedAt?: DateTimeNullableWithAggregatesFilter<"PhaseTiming"> | Date | string | null
+  }
+
+  export type DesignVersionWhereInput = {
+    AND?: DesignVersionWhereInput | DesignVersionWhereInput[]
+    OR?: DesignVersionWhereInput[]
+    NOT?: DesignVersionWhereInput | DesignVersionWhereInput[]
+    id?: StringFilter<"DesignVersion"> | string
+    workItemId?: StringFilter<"DesignVersion"> | string
+    version?: IntFilter<"DesignVersion"> | number
+    storageKey?: StringFilter<"DesignVersion"> | string
+    fileName?: StringFilter<"DesignVersion"> | string
+    mimeType?: StringNullableFilter<"DesignVersion"> | string | null
+    sizeBytes?: IntFilter<"DesignVersion"> | number
+    sha256?: StringFilter<"DesignVersion"> | string
+    note?: StringNullableFilter<"DesignVersion"> | string | null
+    uploadedById?: StringFilter<"DesignVersion"> | string
+    createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type DesignVersionOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrderInput | SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    note?: SortOrderInput | SortOrder
+    uploadedById?: SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    uploadedBy?: UserOrderByWithRelationInput
+  }
+
+  export type DesignVersionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    workItemId_version?: DesignVersionWorkItemIdVersionCompoundUniqueInput
+    AND?: DesignVersionWhereInput | DesignVersionWhereInput[]
+    OR?: DesignVersionWhereInput[]
+    NOT?: DesignVersionWhereInput | DesignVersionWhereInput[]
+    workItemId?: StringFilter<"DesignVersion"> | string
+    version?: IntFilter<"DesignVersion"> | number
+    storageKey?: StringFilter<"DesignVersion"> | string
+    fileName?: StringFilter<"DesignVersion"> | string
+    mimeType?: StringNullableFilter<"DesignVersion"> | string | null
+    sizeBytes?: IntFilter<"DesignVersion"> | number
+    sha256?: StringFilter<"DesignVersion"> | string
+    note?: StringNullableFilter<"DesignVersion"> | string | null
+    uploadedById?: StringFilter<"DesignVersion"> | string
+    createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "workItemId_version">
+
+  export type DesignVersionOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrderInput | SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    note?: SortOrderInput | SortOrder
+    uploadedById?: SortOrder
+    createdAt?: SortOrder
+    _count?: DesignVersionCountOrderByAggregateInput
+    _avg?: DesignVersionAvgOrderByAggregateInput
+    _max?: DesignVersionMaxOrderByAggregateInput
+    _min?: DesignVersionMinOrderByAggregateInput
+    _sum?: DesignVersionSumOrderByAggregateInput
+  }
+
+  export type DesignVersionScalarWhereWithAggregatesInput = {
+    AND?: DesignVersionScalarWhereWithAggregatesInput | DesignVersionScalarWhereWithAggregatesInput[]
+    OR?: DesignVersionScalarWhereWithAggregatesInput[]
+    NOT?: DesignVersionScalarWhereWithAggregatesInput | DesignVersionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DesignVersion"> | string
+    workItemId?: StringWithAggregatesFilter<"DesignVersion"> | string
+    version?: IntWithAggregatesFilter<"DesignVersion"> | number
+    storageKey?: StringWithAggregatesFilter<"DesignVersion"> | string
+    fileName?: StringWithAggregatesFilter<"DesignVersion"> | string
+    mimeType?: StringNullableWithAggregatesFilter<"DesignVersion"> | string | null
+    sizeBytes?: IntWithAggregatesFilter<"DesignVersion"> | number
+    sha256?: StringWithAggregatesFilter<"DesignVersion"> | string
+    note?: StringNullableWithAggregatesFilter<"DesignVersion"> | string | null
+    uploadedById?: StringWithAggregatesFilter<"DesignVersion"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"DesignVersion"> | Date | string
   }
 
   export type NotificationEventWhereInput = {
@@ -29844,6 +31314,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemListRelationFilter
     workItemTransitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
+    designVersionsUploaded?: DesignVersionListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -29870,6 +31341,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemOrderByRelationAggregateInput
     workItemTransitions?: WorkItemTransitionOrderByRelationAggregateInput
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
+    designVersionsUploaded?: DesignVersionOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -29899,6 +31371,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemListRelationFilter
     workItemTransitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
+    designVersionsUploaded?: DesignVersionListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -30783,6 +32256,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -30806,6 +32280,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -30829,6 +32304,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -30852,6 +32328,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -31141,6 +32618,102 @@ export namespace Prisma {
     kind?: EnumPhaseTimingKindFieldUpdateOperationsInput | $Enums.PhaseTimingKind
     startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type DesignVersionCreateInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+  }
+
+  export type DesignVersionUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+  }
+
+  export type DesignVersionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DesignVersionCreateManyInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+  }
+
+  export type DesignVersionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DesignVersionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type NotificationEventCreateInput = {
@@ -31538,6 +33111,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -31564,6 +33138,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUpdateInput = {
@@ -31590,6 +33165,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -31616,6 +33192,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -32718,11 +34295,21 @@ export namespace Prisma {
     none?: PhaseTimingWhereInput
   }
 
+  export type DesignVersionListRelationFilter = {
+    every?: DesignVersionWhereInput
+    some?: DesignVersionWhereInput
+    none?: DesignVersionWhereInput
+  }
+
   export type WorkItemTransitionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
   export type PhaseTimingOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DesignVersionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -33036,6 +34623,63 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPhaseTimingKindFilter<$PrismaModel>
     _max?: NestedEnumPhaseTimingKindFilter<$PrismaModel>
+  }
+
+  export type DesignVersionWorkItemIdVersionCompoundUniqueInput = {
+    workItemId: string
+    version: number
+  }
+
+  export type DesignVersionCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    note?: SortOrder
+    uploadedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DesignVersionAvgOrderByAggregateInput = {
+    version?: SortOrder
+    sizeBytes?: SortOrder
+  }
+
+  export type DesignVersionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    note?: SortOrder
+    uploadedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DesignVersionMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    storageKey?: SortOrder
+    fileName?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    note?: SortOrder
+    uploadedById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DesignVersionSumOrderByAggregateInput = {
+    version?: SortOrder
+    sizeBytes?: SortOrder
   }
 
   export type StringNullableListFilter<$PrismaModel = never> = {
@@ -34143,6 +35787,13 @@ export namespace Prisma {
     connect?: PhaseTimingWhereUniqueInput | PhaseTimingWhereUniqueInput[]
   }
 
+  export type DesignVersionCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput> | DesignVersionCreateWithoutWorkItemInput[] | DesignVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutWorkItemInput | DesignVersionCreateOrConnectWithoutWorkItemInput[]
+    createMany?: DesignVersionCreateManyWorkItemInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -34155,6 +35806,13 @@ export namespace Prisma {
     connectOrCreate?: PhaseTimingCreateOrConnectWithoutWorkItemInput | PhaseTimingCreateOrConnectWithoutWorkItemInput[]
     createMany?: PhaseTimingCreateManyWorkItemInputEnvelope
     connect?: PhaseTimingWhereUniqueInput | PhaseTimingWhereUniqueInput[]
+  }
+
+  export type DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput> | DesignVersionCreateWithoutWorkItemInput[] | DesignVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutWorkItemInput | DesignVersionCreateOrConnectWithoutWorkItemInput[]
+    createMany?: DesignVersionCreateManyWorkItemInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
   }
 
   export type EnumWorkItemStateFieldUpdateOperationsInput = {
@@ -34247,6 +35905,20 @@ export namespace Prisma {
     deleteMany?: PhaseTimingScalarWhereInput | PhaseTimingScalarWhereInput[]
   }
 
+  export type DesignVersionUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput> | DesignVersionCreateWithoutWorkItemInput[] | DesignVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutWorkItemInput | DesignVersionCreateOrConnectWithoutWorkItemInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutWorkItemInput | DesignVersionUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: DesignVersionCreateManyWorkItemInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput | DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutWorkItemInput | DesignVersionUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -34273,6 +35945,20 @@ export namespace Prisma {
     update?: PhaseTimingUpdateWithWhereUniqueWithoutWorkItemInput | PhaseTimingUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: PhaseTimingUpdateManyWithWhereWithoutWorkItemInput | PhaseTimingUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: PhaseTimingScalarWhereInput | PhaseTimingScalarWhereInput[]
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput> | DesignVersionCreateWithoutWorkItemInput[] | DesignVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutWorkItemInput | DesignVersionCreateOrConnectWithoutWorkItemInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutWorkItemInput | DesignVersionUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: DesignVersionCreateManyWorkItemInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput | DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutWorkItemInput | DesignVersionUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
   }
 
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
@@ -34397,6 +36083,34 @@ export namespace Prisma {
     delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPhaseTimingsInput, UserUpdateWithoutPhaseTimingsInput>, UserUncheckedUpdateWithoutPhaseTimingsInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutDesignVersionsInput = {
+    create?: XOR<WorkItemCreateWithoutDesignVersionsInput, WorkItemUncheckedCreateWithoutDesignVersionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutDesignVersionsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutDesignVersionsUploadedInput = {
+    create?: XOR<UserCreateWithoutDesignVersionsUploadedInput, UserUncheckedCreateWithoutDesignVersionsUploadedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDesignVersionsUploadedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutDesignVersionsInput, WorkItemUncheckedCreateWithoutDesignVersionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutDesignVersionsInput
+    upsert?: WorkItemUpsertWithoutDesignVersionsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutDesignVersionsInput, WorkItemUpdateWithoutDesignVersionsInput>, WorkItemUncheckedUpdateWithoutDesignVersionsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput = {
+    create?: XOR<UserCreateWithoutDesignVersionsUploadedInput, UserUncheckedCreateWithoutDesignVersionsUploadedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDesignVersionsUploadedInput
+    upsert?: UserUpsertWithoutDesignVersionsUploadedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDesignVersionsUploadedInput, UserUpdateWithoutDesignVersionsUploadedInput>, UserUncheckedUpdateWithoutDesignVersionsUploadedInput>
   }
 
   export type NotificationEventCreaterecipientUserIdsInput = {
@@ -34601,6 +36315,13 @@ export namespace Prisma {
     connect?: PhaseTimingWhereUniqueInput | PhaseTimingWhereUniqueInput[]
   }
 
+  export type DesignVersionCreateNestedManyWithoutUploadedByInput = {
+    create?: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput> | DesignVersionCreateWithoutUploadedByInput[] | DesignVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutUploadedByInput | DesignVersionCreateOrConnectWithoutUploadedByInput[]
+    createMany?: DesignVersionCreateManyUploadedByInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -34676,6 +36397,13 @@ export namespace Prisma {
     connectOrCreate?: PhaseTimingCreateOrConnectWithoutUserInput | PhaseTimingCreateOrConnectWithoutUserInput[]
     createMany?: PhaseTimingCreateManyUserInputEnvelope
     connect?: PhaseTimingWhereUniqueInput | PhaseTimingWhereUniqueInput[]
+  }
+
+  export type DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput = {
+    create?: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput> | DesignVersionCreateWithoutUploadedByInput[] | DesignVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutUploadedByInput | DesignVersionCreateOrConnectWithoutUploadedByInput[]
+    createMany?: DesignVersionCreateManyUploadedByInputEnvelope
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -34832,6 +36560,20 @@ export namespace Prisma {
     deleteMany?: PhaseTimingScalarWhereInput | PhaseTimingScalarWhereInput[]
   }
 
+  export type DesignVersionUpdateManyWithoutUploadedByNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput> | DesignVersionCreateWithoutUploadedByInput[] | DesignVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutUploadedByInput | DesignVersionCreateOrConnectWithoutUploadedByInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutUploadedByInput | DesignVersionUpsertWithWhereUniqueWithoutUploadedByInput[]
+    createMany?: DesignVersionCreateManyUploadedByInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput | DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutUploadedByInput | DesignVersionUpdateManyWithWhereWithoutUploadedByInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -34984,6 +36726,20 @@ export namespace Prisma {
     update?: PhaseTimingUpdateWithWhereUniqueWithoutUserInput | PhaseTimingUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: PhaseTimingUpdateManyWithWhereWithoutUserInput | PhaseTimingUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: PhaseTimingScalarWhereInput | PhaseTimingScalarWhereInput[]
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput = {
+    create?: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput> | DesignVersionCreateWithoutUploadedByInput[] | DesignVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: DesignVersionCreateOrConnectWithoutUploadedByInput | DesignVersionCreateOrConnectWithoutUploadedByInput[]
+    upsert?: DesignVersionUpsertWithWhereUniqueWithoutUploadedByInput | DesignVersionUpsertWithWhereUniqueWithoutUploadedByInput[]
+    createMany?: DesignVersionCreateManyUploadedByInputEnvelope
+    set?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    disconnect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    delete?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    connect?: DesignVersionWhereUniqueInput | DesignVersionWhereUniqueInput[]
+    update?: DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput | DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput[]
+    updateMany?: DesignVersionUpdateManyWithWhereWithoutUploadedByInput | DesignVersionUpdateManyWithWhereWithoutUploadedByInput[]
+    deleteMany?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -35634,6 +37390,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -35656,6 +37413,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -36212,6 +37970,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -36237,6 +37996,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -36264,6 +38024,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -36286,6 +38047,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -36377,6 +38139,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -36402,6 +38165,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -36522,6 +38286,7 @@ export namespace Prisma {
     createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -36547,6 +38312,7 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -36611,6 +38377,42 @@ export namespace Prisma {
 
   export type PhaseTimingCreateManyWorkItemInputEnvelope = {
     data: PhaseTimingCreateManyWorkItemInput | PhaseTimingCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DesignVersionCreateWithoutWorkItemInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+    uploadedBy: UserCreateNestedOneWithoutDesignVersionsUploadedInput
+  }
+
+  export type DesignVersionUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
+  }
+
+  export type DesignVersionCreateOrConnectWithoutWorkItemInput = {
+    where: DesignVersionWhereUniqueInput
+    create: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type DesignVersionCreateManyWorkItemInputEnvelope = {
+    data: DesignVersionCreateManyWorkItemInput | DesignVersionCreateManyWorkItemInput[]
     skipDuplicates?: boolean
   }
 
@@ -36744,6 +38546,7 @@ export namespace Prisma {
     createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -36769,6 +38572,7 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -36831,6 +38635,39 @@ export namespace Prisma {
     endedAt?: DateTimeNullableFilter<"PhaseTiming"> | Date | string | null
   }
 
+  export type DesignVersionUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: DesignVersionWhereUniqueInput
+    update: XOR<DesignVersionUpdateWithoutWorkItemInput, DesignVersionUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<DesignVersionCreateWithoutWorkItemInput, DesignVersionUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type DesignVersionUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: DesignVersionWhereUniqueInput
+    data: XOR<DesignVersionUpdateWithoutWorkItemInput, DesignVersionUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type DesignVersionUpdateManyWithWhereWithoutWorkItemInput = {
+    where: DesignVersionScalarWhereInput
+    data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type DesignVersionScalarWhereInput = {
+    AND?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+    OR?: DesignVersionScalarWhereInput[]
+    NOT?: DesignVersionScalarWhereInput | DesignVersionScalarWhereInput[]
+    id?: StringFilter<"DesignVersion"> | string
+    workItemId?: StringFilter<"DesignVersion"> | string
+    version?: IntFilter<"DesignVersion"> | number
+    storageKey?: StringFilter<"DesignVersion"> | string
+    fileName?: StringFilter<"DesignVersion"> | string
+    mimeType?: StringNullableFilter<"DesignVersion"> | string | null
+    sizeBytes?: IntFilter<"DesignVersion"> | number
+    sha256?: StringFilter<"DesignVersion"> | string
+    note?: StringNullableFilter<"DesignVersion"> | string | null
+    uploadedById?: StringFilter<"DesignVersion"> | string
+    createdAt?: DateTimeFilter<"DesignVersion"> | Date | string
+  }
+
   export type DepartmentCreateWithoutProductTypesInput = {
     id?: string
     name: string
@@ -36874,6 +38711,7 @@ export namespace Prisma {
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -36896,6 +38734,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -36973,6 +38812,7 @@ export namespace Prisma {
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -36995,6 +38835,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -37025,6 +38866,7 @@ export namespace Prisma {
     createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -37050,6 +38892,7 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -37088,6 +38931,7 @@ export namespace Prisma {
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -37110,6 +38954,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -37146,6 +38991,7 @@ export namespace Prisma {
     createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -37171,6 +39017,7 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -37193,6 +39040,7 @@ export namespace Prisma {
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -37215,6 +39063,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -37245,6 +39094,7 @@ export namespace Prisma {
     createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -37270,6 +39120,7 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -37308,6 +39159,7 @@ export namespace Prisma {
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -37330,6 +39182,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -37366,6 +39219,7 @@ export namespace Prisma {
     createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -37391,6 +39245,235 @@ export namespace Prisma {
     createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+  }
+
+  export type WorkItemCreateWithoutDesignVersionsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutDesignVersionsInput, WorkItemUncheckedCreateWithoutDesignVersionsInput>
+  }
+
+  export type UserCreateWithoutDesignVersionsUploadedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutDesignVersionsUploadedInput, UserUncheckedCreateWithoutDesignVersionsUploadedInput>
+  }
+
+  export type WorkItemUpsertWithoutDesignVersionsInput = {
+    update: XOR<WorkItemUpdateWithoutDesignVersionsInput, WorkItemUncheckedUpdateWithoutDesignVersionsInput>
+    create: XOR<WorkItemCreateWithoutDesignVersionsInput, WorkItemUncheckedCreateWithoutDesignVersionsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutDesignVersionsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutDesignVersionsInput, WorkItemUncheckedUpdateWithoutDesignVersionsInput>
+  }
+
+  export type WorkItemUpdateWithoutDesignVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutDesignVersionsUploadedInput = {
+    update: XOR<UserUpdateWithoutDesignVersionsUploadedInput, UserUncheckedUpdateWithoutDesignVersionsUploadedInput>
+    create: XOR<UserCreateWithoutDesignVersionsUploadedInput, UserUncheckedCreateWithoutDesignVersionsUploadedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutDesignVersionsUploadedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutDesignVersionsUploadedInput, UserUncheckedUpdateWithoutDesignVersionsUploadedInput>
+  }
+
+  export type UserUpdateWithoutDesignVersionsUploadedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -38055,6 +40138,7 @@ export namespace Prisma {
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -38077,6 +40161,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -38146,6 +40231,42 @@ export namespace Prisma {
 
   export type PhaseTimingCreateManyUserInputEnvelope = {
     data: PhaseTimingCreateManyUserInput | PhaseTimingCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DesignVersionCreateWithoutUploadedByInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutDesignVersionsInput
+  }
+
+  export type DesignVersionUncheckedCreateWithoutUploadedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DesignVersionCreateOrConnectWithoutUploadedByInput = {
+    where: DesignVersionWhereUniqueInput
+    create: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput>
+  }
+
+  export type DesignVersionCreateManyUploadedByInputEnvelope = {
+    data: DesignVersionCreateManyUploadedByInput | DesignVersionCreateManyUploadedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -38396,6 +40517,22 @@ export namespace Prisma {
     data: XOR<PhaseTimingUpdateManyMutationInput, PhaseTimingUncheckedUpdateManyWithoutUserInput>
   }
 
+  export type DesignVersionUpsertWithWhereUniqueWithoutUploadedByInput = {
+    where: DesignVersionWhereUniqueInput
+    update: XOR<DesignVersionUpdateWithoutUploadedByInput, DesignVersionUncheckedUpdateWithoutUploadedByInput>
+    create: XOR<DesignVersionCreateWithoutUploadedByInput, DesignVersionUncheckedCreateWithoutUploadedByInput>
+  }
+
+  export type DesignVersionUpdateWithWhereUniqueWithoutUploadedByInput = {
+    where: DesignVersionWhereUniqueInput
+    data: XOR<DesignVersionUpdateWithoutUploadedByInput, DesignVersionUncheckedUpdateWithoutUploadedByInput>
+  }
+
+  export type DesignVersionUpdateManyWithWhereWithoutUploadedByInput = {
+    where: DesignVersionScalarWhereInput
+    data: XOR<DesignVersionUpdateManyMutationInput, DesignVersionUncheckedUpdateManyWithoutUploadedByInput>
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -38419,6 +40556,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -38444,6 +40582,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -38485,6 +40624,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -38510,6 +40650,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -38535,6 +40676,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -38560,6 +40702,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -38601,6 +40744,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -38626,6 +40770,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -38780,6 +40925,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -38805,6 +40951,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -38867,6 +41014,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -38892,6 +41040,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -38944,6 +41093,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -38969,6 +41119,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -38999,6 +41150,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -39024,6 +41176,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -39065,6 +41218,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -39090,6 +41244,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -39126,6 +41281,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -39151,6 +41307,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -39176,6 +41333,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -39201,6 +41359,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -39265,6 +41424,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -39290,6 +41450,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -39344,6 +41505,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -39369,6 +41531,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
     workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -39410,6 +41573,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -39435,6 +41599,7 @@ export namespace Prisma {
     assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
     workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -39492,6 +41657,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -39514,6 +41680,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -39824,6 +41991,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -39846,6 +42014,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -39886,6 +42055,19 @@ export namespace Prisma {
     kind: $Enums.PhaseTimingKind
     startedAt: Date | string
     endedAt?: Date | string | null
+  }
+
+  export type DesignVersionCreateManyWorkItemInput = {
+    id?: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    uploadedById: string
+    createdAt?: Date | string
   }
 
   export type WorkItemTransitionUpdateWithoutWorkItemInput = {
@@ -39948,6 +42130,45 @@ export namespace Prisma {
     endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type DesignVersionUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    uploadedBy?: UserUpdateOneRequiredWithoutDesignVersionsUploadedNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WorkItemCreateManyProductTypeInput = {
     id?: string
     orderId: string
@@ -39988,6 +42209,7 @@ export namespace Prisma {
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -40010,6 +42232,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -40202,6 +42425,19 @@ export namespace Prisma {
     kind: $Enums.PhaseTimingKind
     startedAt: Date | string
     endedAt?: Date | string | null
+  }
+
+  export type DesignVersionCreateManyUploadedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    storageKey: string
+    fileName: string
+    mimeType?: string | null
+    sizeBytes: number
+    sha256: string
+    note?: string | null
+    createdAt?: Date | string
   }
 
   export type SessionUpdateWithoutUserInput = {
@@ -40447,6 +42683,7 @@ export namespace Prisma {
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -40469,6 +42706,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -40549,6 +42787,45 @@ export namespace Prisma {
     kind?: EnumPhaseTimingKindFieldUpdateOperationsInput | $Enums.PhaseTimingKind
     startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     endedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type DesignVersionUpdateWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutDesignVersionsNestedInput
+  }
+
+  export type DesignVersionUncheckedUpdateWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DesignVersionUncheckedUpdateManyWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    storageKey?: StringFieldUpdateOperationsInput | string
+    fileName?: StringFieldUpdateOperationsInput | string
+    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RolePermissionCreateManyRoleInput = {

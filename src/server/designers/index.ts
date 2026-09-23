@@ -5,3 +5,10 @@
 export { DomainDesignerError } from "./errors";
 export { suggestDesigner } from "./suggestion";
 export type { DesignerLoadCandidate } from "./suggestion";
+
+// US3 — src/server/designers/queue.ts, src/server/designers/timer.ts
+// (contracts/designer-assignment.md).
+export { getMyQueue } from "./queue";
+export type { MyQueueRow, MyQueueRowState } from "./queue";
+export { startTimer, pauseTimer, phaseDurations } from "./timer";
+export type { PhaseDurations } from "./timer";
