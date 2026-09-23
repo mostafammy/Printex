@@ -125,7 +125,8 @@ exports.Prisma.DepartmentScalarFieldEnum = {
   id: 'id',
   name: 'name',
   isActive: 'isActive',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  isExternalProduction: 'isExternalProduction'
 };
 
 exports.Prisma.CustomerScalarFieldEnum = {
@@ -170,6 +171,9 @@ exports.Prisma.WorkItemScalarFieldEnum = {
   material: 'material',
   finishNotes: 'finishNotes',
   dueDate: 'dueDate',
+  producedQuantity: 'producedQuantity',
+  productionNotes: 'productionNotes',
+  pendingFileRevisionAt: 'pendingFileRevisionAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -245,6 +249,15 @@ exports.Prisma.ReturnAttachmentScalarFieldEnum = {
   mimeType: 'mimeType',
   sizeBytes: 'sizeBytes',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.VendorProductionRecordScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  vendorName: 'vendorName',
+  sentAt: 'sentAt',
+  receivedAt: 'receivedAt',
+  createdById: 'createdById'
 };
 
 exports.Prisma.NotificationEventScalarFieldEnum = {
@@ -504,6 +517,7 @@ exports.Prisma.ModelName = {
   DesignVersion: 'DesignVersion',
   Return: 'Return',
   ReturnAttachment: 'ReturnAttachment',
+  VendorProductionRecord: 'VendorProductionRecord',
   NotificationEvent: 'NotificationEvent',
   CustomerPhone: 'CustomerPhone',
   CustomerAddress: 'CustomerAddress',
