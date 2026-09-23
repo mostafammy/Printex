@@ -168,6 +168,9 @@ export async function getOrderDetail(
     state: WorkItemState;
     description: string | null;
     quantity: number | null;
+    widthValue: unknown;
+    heightValue: unknown;
+    dimensionUnit: string | null;
     departmentId: string | null;
     productTypeId: string | null;
   }>;
@@ -204,6 +207,9 @@ export async function getOrderDetail(
       state: wi.state,
       description: wi.description,
       quantity: wi.quantity,
+      widthValue: wi.widthValue,
+      heightValue: wi.heightValue,
+      dimensionUnit: wi.dimensionUnit,
       departmentId: wi.departmentId,
       productTypeId: wi.productTypeId,
     })),

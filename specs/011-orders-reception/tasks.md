@@ -131,8 +131,8 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 - [x] T025 [US4] Implement `getOrderDetail(actor, orderId)` in `src/server/orders/search.ts`: requires only an authenticated `actor` — same no-specific-permission rule as `listReceptionQueue`/`searchOrders`; fetch the `Order` with its `Customer`, all `WorkItem`s (each with its `WorkItemTransition[]` from 002), flatten and sort every transition across every Work Item into one chronological timeline entry list `{ workItemId, from, to, actorId, at, reason? }`; compute the order's derived status via `deriveOrderStatus` (~/server/core); return `{ order, workItems, timeline, status, isComplete: isOrderComplete(...) }` (depends on T006)
 - [x] T026 [US4] Export `getOrderDetail` from `src/server/orders/index.ts`
-- [ ] T027 [US4] Build `src/app/(shell)/orders/[orderId]/page.tsx` — Server Component rendering `getOrderDetail`'s result: header (customer, channel, priority, derived status), one card per Work Item with a state badge, the chronological timeline (actor, timestamp, reason where applicable), and clearly-labeled placeholder sections for designer assignment / pricing / payments / files / messages (FR-009a) rather than omitting or breaking (depends on T025)
-- [ ] T028 [US4] On the same page, show Quick-Create provenance ("Created via Quick Create") and the list of fields still missing per `isOrderComplete()` when the order is incomplete (US1 Acceptance Scenario 4, FR-002) (depends on T027)
+- [x] T027 [US4] Build `src/app/(shell)/orders/[orderId]/page.tsx` — Server Component rendering `getOrderDetail`'s result: header (customer, channel, priority, derived status), one card per Work Item with a state badge, the chronological timeline (actor, timestamp, reason where applicable), and clearly-labeled placeholder sections for designer assignment / pricing / payments / files / messages (FR-009a) rather than omitting or breaking (depends on T025)
+- [x] T028 [US4] On the same page, show Quick-Create provenance ("Created via Quick Create") and the list of fields still missing per `isOrderComplete()` when the order is incomplete (US1 Acceptance Scenario 4, FR-002) (depends on T027)
 
 **Checkpoint**: US1–US4 all independently functional.
 
@@ -152,7 +152,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 - [x] T030 [US5] Implement `searchOrders(actor, query)` in `src/server/orders/search.ts` per contracts/order-entry.md: requires only an authenticated `actor`, no specific `Permission` gate (contracts/order-entry.md's rationale); single Prisma query with `OR` branches (exact `number`, `customer.name` `contains`/`insensitive`, `customer.phone` `contains` guarded to only apply when that field exists on `Customer`); includes `workItems: { select: { state: true } }` for `deriveOrderStatus` without N+1; maps to `OrderSearchResult[]` (depends on T001)
 - [x] T031 [US5] Export `searchOrders` from `src/server/orders/index.ts`
-- [ ] T032 [US5] Build `src/app/(shell)/reception/search/page.tsx` — single search input dispatching to `searchOrders`, results list linking to each order's detail page (depends on T030)
+- [x] T032 [US5] Build `src/app/(shell)/reception/search/page.tsx` — single search input dispatching to `searchOrders`, results list linking to each order's detail page (depends on T030)
 
 **Checkpoint**: US1–US5 all independently functional.
 
@@ -174,7 +174,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 - [x] T035 [US6] Implement `cancelWorkItem(actor, workItemId, reason)` in `src/server/orders/cancelOrder.ts` per contracts/order-entry.md: `authorize(actor, "order.cancel")`; Zod-validate `reason` non-empty after trim; call `transitionWorkItem` (from `~/server/core`) with `to: "CANCELLED"`; surface the returned `Result`'s error code on failure without wrapping it in `DomainOrderError`; does not call `audit.record` itself (depends on T001, T005)
 - [x] T036 [US6] Implement `cancelOrder(actor, orderId, reason)` in `src/server/orders/cancelOrder.ts` per contracts/order-entry.md: `authorize(actor, "order.cancel")`; fetch all Work Items, filter to non-terminal, call `transitionWorkItem` on each in order, collecting successful ids and skipping (not throwing on) any mid-loop `INVALID_TRANSITION`; returns `{ cancelledWorkItemIds }` (depends on T035)
 - [x] T037 [US6] Export `cancelWorkItem` and `cancelOrder` from `src/server/orders/index.ts`
-- [ ] T038 [US6] Add "Cancel Work Item" (per card) and "Cancel Order" actions with a required-reason prompt to `src/app/(shell)/orders/[orderId]/page.tsx`, refreshing the page's data via `revalidatePath` after either action (depends on T027, T035, T036)
+- [x] T038 [US6] Add "Cancel Work Item" (per card) and "Cancel Order" actions with a required-reason prompt to `src/app/(shell)/orders/[orderId]/page.tsx`, refreshing the page's data via `revalidatePath` after either action (depends on T027, T035, T036)
 
 **Checkpoint**: US1–US6 all independently functional.
 
@@ -194,7 +194,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 - [x] T040 [US7] Implement `addWorkItem(actor, orderId, input)` in `src/server/orders/workItems.ts` per contracts/order-entry.md: `authorize(actor, "order.create")`; Zod-validate `input` (same per-item schema as `createOrder`'s `WorkItemCreateInput`); inside `db.$transaction`, fetch current Work Item states, throw `DomainOrderError("ORDER_FINISHED")` via `isOrderFinished()` **before** any write when finished, otherwise create the `WorkItem` at `state: "NEW"` and `audit.record("workitem.created", { ...input, orderId, addedToExistingOrder: true })` (depends on T001, T005, T007)
 - [x] T041 [US7] Export `addWorkItem` from `src/server/orders/index.ts`
-- [ ] T042 [US7] Add an "Add Work Item" action + form to `src/app/(shell)/orders/[orderId]/page.tsx`, surfacing the `ORDER_FINISHED` refusal message and directing the user to create a new order instead (depends on T027, T040)
+- [x] T042 [US7] Add an "Add Work Item" action + form to `src/app/(shell)/orders/[orderId]/page.tsx`, surfacing the `ORDER_FINISHED` refusal message and directing the user to create a new order instead (depends on T027, T040)
 
 **Checkpoint**: US1–US7 all independently functional.
 
@@ -214,7 +214,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 - [x] T044 [US8] Implement `editWorkItem(actor, workItemId, patch)` in `src/server/orders/workItems.ts` per contracts/order-entry.md: `authorize(actor, "order.edit")`; Zod-validate `patch` (at least one key, each field passing the same rule as its `WorkItemCreateInput` counterpart); inside `db.$transaction`, fetch the existing item, throw `DomainOrderError("PAST_EDIT_WINDOW")` when `!PRE_DESIGN_EDITABLE_STATES.has(existing.state)`, otherwise update and `audit.record("workitem.edited", { before: pick(existing, patchKeys), after: patch })` (depends on T001, T005, T008)
 - [x] T045 [US8] Export `editWorkItem` from `src/server/orders/index.ts`
-- [ ] T046 [US8] Add an inline "Edit" action + form per Work Item card on `src/app/(shell)/orders/[orderId]/page.tsx`, showing the `PAST_EDIT_WINDOW` refusal message and directing the user to the (out-of-scope) later change process when refused (depends on T027, T044)
+- [x] T046 [US8] Add an inline "Edit" action + form per Work Item card on `src/app/(shell)/orders/[orderId]/page.tsx`, showing the `PAST_EDIT_WINDOW` refusal message and directing the user to the (out-of-scope) later change process when refused (depends on T027, T044)
 
 **Checkpoint**: All 8 user stories independently functional.
 
@@ -226,7 +226,7 @@ Single Next.js project (plan.md Project Structure): `src/server/orders/**`, `src
 
 - [x] T047 [P] Implement `createProductType`, `renameProductType`, `updateProductTypeDefaults`, `deactivateProductType` in `src/server/orders/productTypes.ts` per contracts/product-types.md: each calls `authorize(actor, "admin.config")`; `createProductType`/`renameProductType` catch Prisma's `P2002` unique violation on `name` and rethrow `DomainOrderError("DUPLICATE_NAME")`; `deactivateProductType` sets `isActive: false` only, never a hard delete; each mutation calls `audit.record` with the appropriate `action` (`producttype.created`/`renamed`/`defaults_updated`/`deactivated`) (depends on T005, T018)
 - [x] T048 Export the four Product Type admin functions from `src/server/orders/index.ts`
-- [ ] T049 Build `src/app/(shell)/admin/product-types/page.tsx` — Server Component + inline Server Actions mirroring `src/app/(shell)/admin/departments/page.tsx`: list table (name, default department, default flags, active/inactive), create form, inline rename/deactivate actions per row, `formStr()` reused, `revalidatePath("/admin/product-types")` after every mutation (depends on T047)
+- [x] T049 Build `src/app/(shell)/admin/product-types/page.tsx` — Server Component + inline Server Actions mirroring `src/app/(shell)/admin/departments/page.tsx`: list table (name, default department, default flags, active/inactive), create form, inline rename/deactivate actions per row, `formStr()` reused, `revalidatePath("/admin/product-types")` after every mutation (depends on T047)
 - [ ] T050 [P] Contract tests in `tests/contract/orders/productTypes.test.ts`: creating a duplicate `name` yields `DUPLICATE_NAME`; deactivating never removes the row or breaks an existing `WorkItem.productTypeId` reference
 - [ ] T051 [P] Unit tests for shared Zod validation schemas in `tests/unit/orders/validation.test.ts`: `quantity` rejects zero/negative/non-integer; `widthValue`/`heightValue` reject zero/negative; `ProductType.name` rejects empty-after-trim and >100 chars
 - [ ] T052 Run every scenario in `quickstart.md` end-to-end against a freshly seeded database and record the result (manual QA pass, no code changes — confirms Scenarios 1–7 all behave as documented, including SC-006's keyboard-only check on Quick Create)
