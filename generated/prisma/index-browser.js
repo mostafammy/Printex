@@ -131,8 +131,14 @@ exports.Prisma.DepartmentScalarFieldEnum = {
 exports.Prisma.CustomerScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  normalizedName: 'normalizedName',
+  nationalId: 'nationalId',
+  notes: 'notes',
   isCashCustomer: 'isCashCustomer',
-  createdAt: 'createdAt'
+  isArchived: 'isArchived',
+  classificationId: 'classificationId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {
@@ -193,6 +199,45 @@ exports.Prisma.NotificationEventScalarFieldEnum = {
   createdAt: 'createdAt',
   deliveredAt: 'deliveredAt',
   deliveryStatus: 'deliveryStatus'
+};
+
+exports.Prisma.CustomerPhoneScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  phoneE164: 'phoneE164',
+  kind: 'kind',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CustomerAddressScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  label: 'label',
+  value: 'value',
+  isDefault: 'isDefault',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CustomerClassificationScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CustomerPromotionScalarFieldEnum = {
+  id: 'id',
+  sourceCustomerId: 'sourceCustomerId',
+  targetCustomerId: 'targetCustomerId',
+  orderIds: 'orderIds',
+  reason: 'reason',
+  performedById: 'performedById',
+  performedAt: 'performedAt',
+  reversedAt: 'reversedAt',
+  reversedById: 'reversedById'
 };
 
 exports.Prisma.UserScalarFieldEnum = {
@@ -304,6 +349,10 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
+};
+
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -379,6 +428,10 @@ exports.Prisma.ModelName = {
   WorkItemTransition: 'WorkItemTransition',
   PhaseTiming: 'PhaseTiming',
   NotificationEvent: 'NotificationEvent',
+  CustomerPhone: 'CustomerPhone',
+  CustomerAddress: 'CustomerAddress',
+  CustomerClassification: 'CustomerClassification',
+  CustomerPromotion: 'CustomerPromotion',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
