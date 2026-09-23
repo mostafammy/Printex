@@ -204,18 +204,18 @@ regardless of how long the pause lasted.
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Implement `startProduction(actor, workItemId)` in `src/server/production/timer.ts`
+- [x] T018 [US3] Implement `startProduction(actor, workItemId)` in `src/server/production/timer.ts`
   per contracts/production.md: `authorize`, `db.$transaction`:
   `transitionWorkItem(tx, { workItemId, to: "IN_PRODUCTION", actor })`, open a `PhaseTiming` row
   (`phase: "IN_PRODUCTION", kind: "ACTIVE", startedAt: now`)
-- [ ] T019 [US3] Implement `pauseProduction(actor, workItemId)` in the same file: closes the open
+- [x] T019 [US3] Implement `pauseProduction(actor, workItemId)` in the same file: closes the open
   `ACTIVE` `PhaseTiming` row (`endedAt: now`); no state transition
-- [ ] T020 [US3] Implement `resumeProduction(actor, workItemId)` in the same file: refuses with
+- [x] T020 [US3] Implement `resumeProduction(actor, workItemId)` in the same file: refuses with
   `DomainProductionError("PENDING_FILE_REVISION")` while `WorkItem.pendingFileRevisionAt` is
   non-null (research.md §4 — depends on T037 landing the field-setting side, but the check itself
   can land now against a field that is simply always null until US7 exists); otherwise opens a new
   `ACTIVE` `PhaseTiming` row
-- [ ] T021 [US3] Export `startProduction`, `pauseProduction`, `resumeProduction` from
+- [x] T021 [US3] Export `startProduction`, `pauseProduction`, `resumeProduction` from
   `src/server/production/index.ts`; wire timer controls into the job card page
 
 **Checkpoint**: User Stories 1, 2, AND 3 should all work independently.
