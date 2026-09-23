@@ -394,11 +394,21 @@ confirm the job card shows an alert and the timer cannot resume until acknowledg
 - [x] T043 [P] Add the `/production` queue page in `src/app/(shell)/production/page.tsx` rendering
   `getOperatorQueue`'s rows (urgent-first, revised-file badge per US7); add a `production` nav
   entry gated to `PRODUCTION_OPERATOR`/`ADMIN_OWNER` (mirrors 013's `review` nav entry)
-- [ ] T044 Run `pnpm check` (lint + typecheck) across the new `src/server/production/**` module,
+- [x] T044 Run `pnpm check` (lint + typecheck) across the new `src/server/production/**` module,
   the `edges.ts` change, and every edited file; fix any violation
-- [ ] T045 Run the full `pnpm test` suite; confirm every pre-existing 001/002/011/012/013 test
+- [x] T045 Run the full `pnpm test` suite; confirm every pre-existing 001/002/011/012/013 test
   still passes unmodified and every new `tests/{unit,contract,integration}/production/**` test
-  passes once T002 unblocks the DB-dependent ones (unit tests T007/T024 pass regardless of T002)
+  passes once T002 unblocks the DB-dependent ones (unit tests T007/T024 pass regardless of T002).
+  All new 014 tests (52/52) pass. Fixed a test-only FK-ordering bug in
+  `tests/contract/production/workload.test.ts` (created Order before its
+  referenced User). Found a PRE-EXISTING, unrelated failure in 013's
+  `getReviewQueue` (`src/server/review/queue.ts`): its `Promise.all` fires one
+  concurrent `db.return.count` per WAITING_REVIEW row with no batching; 340
+  stale WAITING_REVIEW rows have accumulated in the shared test DB, which
+  exceeds the Postgres pooler's connection limit and fails
+  `tests/contract/review/queue.test.ts` / `tests/integration/review/queue.test.ts`.
+  Not touched by 014 — flagged to the team rather than fixed here (013 code,
+  shared-DB data cleanup needs authorization) — see Linear/GitHub comment.
 - [ ] T046 Manual quickstart QA — DB-dependent, blocked on T002 like every prior feature's own
   final task: walk through quickstart.md's Scenarios 1–8 end-to-end against a running dev server
 

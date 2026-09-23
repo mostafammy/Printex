@@ -39,6 +39,17 @@ beforeAll(async () => {
 });
 
 async function seedWorkItem(departmentId: string, state: "READY_FOR_PRODUCTION" | "IN_PRODUCTION") {
+  const creatorId = unique("test-workload-creator");
+  await testDb.user.create({
+    data: {
+      id: creatorId,
+      name: creatorId,
+      email: `${creatorId}@local.invalid`,
+      username: creatorId,
+      isActive: true,
+      failedLoginAttempts: 0,
+    },
+  });
   const order = await testDb.order.create({
     data: {
       number: Number(process.hrtime.bigint() % 1_000_000_000n),
@@ -46,17 +57,7 @@ async function seedWorkItem(departmentId: string, state: "READY_FOR_PRODUCTION" 
       channel: "WALK_IN",
       priority: "NORMAL",
       mode: "SEPARATE",
-      createdById: unique("test-workload-creator"),
-    },
-  });
-  await testDb.user.create({
-    data: {
-      id: order.createdById,
-      name: order.createdById,
-      email: `${order.createdById}@local.invalid`,
-      username: order.createdById,
-      isActive: true,
-      failedLoginAttempts: 0,
+      createdById: creatorId,
     },
   });
   return testDb.workItem.create({ data: { orderId: order.id, state, departmentId } });
