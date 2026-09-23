@@ -6,6 +6,10 @@ export { DomainDesignerError } from "./errors";
 export { suggestDesigner } from "./suggestion";
 export type { DesignerLoadCandidate } from "./suggestion";
 
+// US1 / US2 — src/server/designers/assignment.ts
+export { getEligibleDesigners, assignDesigner, WorkItemTransitionError } from "./assignment";
+export type { EligibleDesigner } from "./assignment";
+
 // US3 — src/server/designers/queue.ts, src/server/designers/timer.ts
 // (contracts/designer-assignment.md).
 export { getMyQueue } from "./queue";

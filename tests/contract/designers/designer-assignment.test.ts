@@ -3,16 +3,19 @@
 //
 // Populated incrementally as each user story lands (matching
 // src/server/designers/index.ts's own barrel growth). Currently covers:
+// - User Story 1 (getEligibleDesigners/assignDesigner initial — T010)
+// - User Story 2 (assignDesigner reassignment — T016)
 // - User Story 3 (getMyQueue/startTimer/pauseTimer/phaseDurations — T021)
 // - User Story 4 (uploadDesignVersion/markDesignComplete — T030)
-// Other Authorization-table rows (getEligibleDesigners, assignDesigner,
-// getDesignerWorkload) belong to other tasks/phases and are covered by
-// their own test files.
+// The remaining Authorization-table row (getDesignerWorkload) belongs to
+// Polish and is covered by its own test file.
 
 import { Readable } from "node:stream";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testDb } from "../../helpers/testDb";
 import {
+  getEligibleDesigners,
+  assignDesigner,
   getMyQueue,
   startTimer,
   pauseTimer,
@@ -224,5 +227,100 @@ describe("designer-assignment contract: markDesignComplete", () => {
     await expect(markDesignComplete(otherActor, workItem.id)).rejects.toMatchObject({
       code: "NOT_ASSIGNEE",
     });
+  });
+});
+
+async function seedWorkItem(state: "NEW" | "ASSIGNED" = "NEW", assigneeId?: string) {
+  const order = await testDb.order.create({
+    data: {
+      customerId,
+      channel: "WALK_IN",
+      priority: "NORMAL",
+      mode: "SEPARATE",
+      createdById: designerActor.userId,
+    },
+  });
+  return testDb.workItem.create({ data: { orderId: order.id, state, assigneeId } });
+}
+
+describe("designer-assignment contract: getEligibleDesigners / assignDesigner", () => {
+  it("getEligibleDesigners requires workitem.assign_designer (FORBIDDEN without it)", async () => {
+    const actor = await createActor([]);
+    const workItem = await seedWorkItem();
+
+    await expect(getEligibleDesigners(actor, workItem.id)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("getEligibleDesigners succeeds for a holder of workitem.assign_designer and matches the frozen EligibleDesigner shape", async () => {
+    const actor = await createActor(["workitem.assign_designer"]);
+    const designer = await createActor(["design.work"]);
+    const workItem = await seedWorkItem();
+
+    const eligible = await getEligibleDesigners(actor, workItem.id);
+
+    const row = eligible.find((d) => d.userId === designer.userId);
+    expect(row).toBeDefined();
+    // Frozen EligibleDesigner shape (data-model.md) — assert field presence
+    // and type, not exact values (workload figures vary with seeded data).
+    expect(typeof row?.userId).toBe("string");
+    expect(typeof row?.name).toBe("string");
+    expect(typeof row?.activeWorkItemCount).toBe("number");
+    expect(typeof row?.queueSize).toBe("number");
+    expect(typeof row?.estimatedWaitMinutes).toBe("number");
+    expect(typeof row?.pastJobsForCustomer).toBe("number");
+    expect(typeof row?.isSuggested).toBe("boolean");
+  });
+
+  it("assignDesigner's initial-assignment branch requires workitem.assign_designer (FORBIDDEN without it)", async () => {
+    const actor = await createActor([]);
+    const designer = await createActor(["design.work"]);
+    const workItem = await seedWorkItem();
+
+    await expect(assignDesigner(actor, workItem.id, designer.userId)).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+
+    const unchanged = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
+    expect(unchanged.state).toBe("NEW");
+    expect(unchanged.assigneeId).toBeNull();
+  });
+
+  it("a holder of workitem.assign_designer can perform the initial-assignment branch (NEW → ASSIGNED)", async () => {
+    const actor = await createActor(["workitem.assign_designer"]);
+    const designer = await createActor(["design.work"]);
+    const workItem = await seedWorkItem();
+
+    await assignDesigner(actor, workItem.id, designer.userId);
+
+    const updated = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
+    expect(updated.state).toBe("ASSIGNED");
+    expect(updated.assigneeId).toBe(designer.userId);
+  });
+
+  it("assignDesigner's reassignment branch is gated by the SAME permission — no separate reassignment permission (FR-005a)", async () => {
+    const actor = await createActor([]);
+    const designerA = await createActor(["design.work"]);
+    const designerB = await createActor(["design.work"]);
+    const workItem = await seedWorkItem("ASSIGNED", designerA.userId);
+
+    await expect(assignDesigner(actor, workItem.id, designerB.userId, "reason")).rejects.toBeInstanceOf(
+      ForbiddenError,
+    );
+
+    const unchanged = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
+    expect(unchanged.assigneeId).toBe(designerA.userId);
+  });
+
+  it("a holder of workitem.assign_designer can perform the reassignment branch given a reason", async () => {
+    const actor = await createActor(["workitem.assign_designer"]);
+    const designerA = await createActor(["design.work"]);
+    const designerB = await createActor(["design.work"]);
+    const workItem = await seedWorkItem("ASSIGNED", designerA.userId);
+
+    await assignDesigner(actor, workItem.id, designerB.userId, "rebalance");
+
+    const updated = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
+    expect(updated.assigneeId).toBe(designerB.userId);
+    expect(updated.state).toBe("ASSIGNED");
   });
 });

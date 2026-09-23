@@ -16,6 +16,8 @@ import {
   DomainOrderError,
   WorkItemTransitionError,
 } from "~/server/orders";
+import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
+import type { EligibleDesigner } from "~/server/designers";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -44,6 +46,10 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 
 const PRE_DESIGN_EDITABLE = new Set(["NEW", "ASSIGNED"]);
+
+// contracts/designer-assignment.md `getEligibleDesigners`/`assignDesigner`
+// step 2 — the only states a Work Item may be (re)assigned a designer from.
+const DESIGNER_ASSIGNABLE_STATES = new Set(["NEW", "ASSIGNED", "REWORK_REQUIRED", "IN_DESIGN"]);
 
 function formStr(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
@@ -138,6 +144,26 @@ async function editWorkItemAction(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
+async function assignDesignerAction(formData: FormData) {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const workItemId = formStr(formData.get("workItemId"));
+  const designerId = formStr(formData.get("designerId"));
+  const reason = formStr(formData.get("reason")).trim();
+  if (!workItemId || !designerId) return;
+  try {
+    await assignDesigner(actor, workItemId, designerId, reason || undefined);
+  } catch (caught) {
+    // REASON_REQUIRED (missing reason on a reassignment), NOT_ASSIGNABLE
+    // (state changed since the page rendered) etc. — surfaced by re-rendering
+    // the dialog below, same convention as cancelWorkItemAction/addWorkItemAction.
+    if (caught instanceof DomainDesignerError) return;
+    throw caught;
+  }
+  revalidatePath(`/orders/${orderId}`);
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default async function OrderDetailPage({
@@ -159,6 +185,24 @@ export default async function OrderDetailPage({
     (creationEvent.after as Record<string, unknown>).source === "quick_create";
 
   const incompleteItems = detail.workItems.filter((wi) => missingFields(wi).length > 0);
+
+  // Designer assignment dialog data (US1/US2, contracts/designer-assignment.md).
+  const canAssignDesigner = actor.permissions.has("workitem.assign_designer");
+
+  const assigneeRows = await db.workItem.findMany({
+    where: { orderId },
+    select: { id: true, assigneeId: true, assignee: { select: { name: true } } },
+  });
+  const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
+
+  const eligibleDesignersByWorkItem = new Map<string, EligibleDesigner[]>();
+  if (canAssignDesigner) {
+    for (const wi of detail.workItems) {
+      if (DESIGNER_ASSIGNABLE_STATES.has(wi.state)) {
+        eligibleDesignersByWorkItem.set(wi.id, await getEligibleDesigners(actor, wi.id));
+      }
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -223,7 +267,10 @@ export default async function OrderDetailPage({
 
       {/* Work Item cards */}
       <section className="flex flex-col gap-4">
-        {detail.workItems.map((wi) => (
+        {detail.workItems.map((wi) => {
+          const assigneeInfo = assigneeById.get(wi.id);
+          const hasAssignee = Boolean(assigneeInfo?.assigneeId);
+          return (
           <div key={wi.id} className="rounded-lg border border-border bg-card p-6">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-medium">
@@ -269,8 +316,93 @@ export default async function OrderDetailPage({
                 <span className="text-xs text-muted-foreground">{S.pastEditWindowNote}</span>
               )}
             </div>
+
+            {/* Designer assignment / reassignment (US1/US2) */}
+            {assigneeInfo?.assignee?.name && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {S.currentDesignerLabel}: <span className="font-medium">{assigneeInfo.assignee.name}</span>
+              </p>
+            )}
+
+            {canAssignDesigner && DESIGNER_ASSIGNABLE_STATES.has(wi.state) && (
+              <details className="mt-3 rounded-md border border-border p-3">
+                <summary className="cursor-pointer text-sm font-medium text-primary">
+                  {hasAssignee ? S.reassignDesignerButton : S.assignDesignerButton}
+                </summary>
+
+                <form action={assignDesignerAction} className="mt-3 flex flex-col gap-3">
+                  <input type="hidden" name="workItemId" value={wi.id} />
+                  <input type="hidden" name="orderId" value={orderId} />
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-xs text-muted-foreground">
+                          <th className="p-2"></th>
+                          <th className="p-2 text-start">{S.designerNameHeader}</th>
+                          <th className="p-2 text-start">{S.designerActiveItemsHeader}</th>
+                          <th className="p-2 text-start">{S.designerEstWaitHeader}</th>
+                          <th className="p-2 text-start">{S.designerPastJobsHeader}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(eligibleDesignersByWorkItem.get(wi.id) ?? []).map((d) => (
+                          <tr
+                            key={d.userId}
+                            className={
+                              "border-b border-border last:border-0" +
+                              (d.isSuggested ? " bg-emerald-50 dark:bg-emerald-900/20" : "")
+                            }
+                          >
+                            <td className="p-2">
+                              <input
+                                type="radio"
+                                name="designerId"
+                                value={d.userId}
+                                defaultChecked={d.isSuggested}
+                                required
+                              />
+                            </td>
+                            <td className="p-2 font-medium">
+                              {d.name}
+                              {d.isSuggested && (
+                                <span className="ms-2 rounded-full bg-emerald-600 px-2 py-0.5 text-xs text-white">
+                                  {S.suggestedDesignerBadge}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-2">{d.activeWorkItemCount}</td>
+                            <td className="p-2">
+                              {d.estimatedWaitMinutes} {S.minutesShortLabel}
+                            </td>
+                            <td className="p-2">{d.pastJobsForCustomer}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {(eligibleDesignersByWorkItem.get(wi.id) ?? []).length === 0 && (
+                      <p className="p-2 text-sm text-muted-foreground">{S.noEligibleDesignersNote}</p>
+                    )}
+                  </div>
+
+                  {hasAssignee && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-muted-foreground">{S.reassignReasonLabel}</label>
+                      <input name="reason" type="text" required className={inputCls} />
+                    </div>
+                  )}
+
+                  <div>
+                    <Button type="submit" variant="default" size="sm">
+                      {hasAssignee ? S.confirmReassignButton : S.confirmAssignButton}
+                    </Button>
+                  </div>
+                </form>
+              </details>
+            )}
           </div>
-        ))}
+          );
+        })}
       </section>
 
       {/* Add Work Item */}
@@ -330,9 +462,9 @@ export default async function OrderDetailPage({
         )}
       </section>
 
-      {/* Out-of-scope placeholders (FR-009a) */}
+      {/* Out-of-scope placeholders (FR-009a) — designer assignment now lives
+          in the Work Item cards above (012-designer-assignment-timers). */}
       <section className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
-        <p>{S.placeholderDesignerAssignment}</p>
         <p>{S.placeholderPricing}</p>
         <p>{S.placeholderPayments}</p>
         <p>{S.placeholderFiles}</p>
