@@ -39,7 +39,7 @@ These operations are server-authoritative. Each fallible operation validates inp
 
 ## Promotion
 
-- Creates a real target customer from supplied required details.
+- Creates a real target customer from supplied required details; the promotion request MUST include a reason, and that reason MUST be included in the promotion audit record.
 - Accepts an explicit list of selected Cash Customer Order IDs.
 - Re-links only selected orders in one audited operation.
-- Admin can reverse the promotion; reversal is itself audited and conflict-checked. It succeeds only if every selected Order still belongs to the promoted customer; otherwise the entire reversal is rejected and no Order changes.
+- Admin can reverse the promotion; the reversal request MUST include a reason, and that reason MUST be included in the reversal audit record. Reversal is audited and conflict-checked. It succeeds only if every selected Order still belongs to the promoted customer; otherwise the entire reversal is rejected and no Order changes.
