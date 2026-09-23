@@ -65,7 +65,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # prisma/seed.ts relies on Node's built-in TypeScript stripping
+          # (Node 22.6+, see that file's own comment) to run via plain
+          # `node prisma/seed.ts` with no ts-node/tsx loader — Node 20
+          # fails with ERR_UNKNOWN_FILE_EXTENSION on the bare .ts file.
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
