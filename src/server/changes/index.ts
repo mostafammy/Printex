@@ -63,3 +63,26 @@ export type {
 // Phase 3: txScope runner for non-aspect callers
 export { runInTxScope } from "./txScope";
 export type { TxScopeOptions } from "./txScope";
+
+// Phase 4: User Story 2 effects and editSpec
+export {
+  sendBackForCustomerChangeInTx,
+} from "./effects";
+export type {
+  SendBackCtx,
+  SendBackForCustomerChangeInput,
+} from "./effects";
+
+export {
+  editSpec,
+  editSpecInputSchema,
+} from "./editSpec";
+export type {
+  EditSpecInput,
+  EditSpecResult,
+} from "./editSpec";
+
+export {
+  effectiveDepartmentId,
+  usersWithPermission,
+} from "./recipients";

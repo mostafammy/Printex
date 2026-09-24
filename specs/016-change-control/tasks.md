@@ -279,14 +279,14 @@ DIRECT states and refuses with the distinct code otherwise.
 
 ### Tests for User Story 2
 
-- [ ] T032 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "policy by
+- [x] T032 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "policy by
   state": table-driven over all 15 states using factory Work Items, as RECEPTION.
   - The 9 DIRECT states create a version plus a `spec.edited` audit with before and after
     (US2-1). The before/after contains only the changed fields.
   - `PRODUCTION_COMPLETED`, `READY_FOR_COLLECTION`, `DELIVERED`, and `COMPLETED` →
     `ADMIN_OVERRIDE_REQUIRED` (US2-4).
   - `CANCELLED` → `WORK_ITEM_LOCKED`.
-- [ ] T033 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "permission and
+- [x] T033 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "permission and
   concurrency":
   - `HEAD_DESIGNER`, `DESIGNER`, `PRODUCTION_OPERATOR`, and `ACCOUNTING` actors are refused as
     forbidden in a DIRECT state and in `IN_PRODUCTION` (US2-5).
@@ -294,7 +294,7 @@ DIRECT states and refuses with the distinct code otherwise.
   - A no-op patch → `NO_CHANGES`.
   - Two `editSpec` calls from the same version run with `Promise.all` → exactly one succeeds and
     the other gets `STALE_SPEC_VERSION`, with no lost update (US2-6).
-- [ ] T034 [P] [US2] **Acceptance criterion 1.** Integration test
+- [x] T034 [P] [US2] **Acceptance criterion 1.** Integration test
   `tests/integration/changes/editSpec.test.ts`, "IN_PRODUCTION refused server-side". Call
   `editSpec` directly, not via UI, on an `IN_PRODUCTION` item. It returns `CHANGE_REQUEST_REQUIRED`,
   and the following are all unchanged by count/value: `SpecVersion` count, `AuditEvent` count for
@@ -302,7 +302,7 @@ DIRECT states and refuses with the distinct code otherwise.
   call count. Assert the public call returns `{ ok: false, error: { code:
   "CHANGE_REQUEST_REQUIRED" } }` (the `AspectResult` the Server Action receives) and never throws (US2-3, FR-010, SC-003). Also assert 011's `editWorkItem` refuses the same item
   (`PAST_EDIT_WINDOW`).
-- [ ] T035 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "redesign":
+- [x] T035 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "redesign":
   - `APPROVED`/`WAITING_PRICING`/`READY_FOR_PRODUCTION` with `requiresDesign` and no
     `designChoice` → `REDESIGN_CHOICE_REQUIRED`.
   - `REDESIGN` → the state is `REWORK_REQUIRED`, the `WorkItemTransition` has `rejectionCategory:
@@ -316,18 +316,18 @@ DIRECT states and refuses with the distinct code otherwise.
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] Implement `sendBackForCustomerChangeInTx` in `src/server/changes/effects.ts`,
+- [x] T036 [US2] Implement `sendBackForCustomerChangeInTx` in `src/server/changes/effects.ts`,
   including the local effective-department helper, per research §8:
   1. `ctx.transition` to `REWORK_REQUIRED` with `CUSTOMER_CHANGE`
   2. `createReturnInTx` from `~/server/review`
   3. `notify` with `work_item.customer_change_returned`
   4. return `{ returnId }`
-- [ ] T037 [US2] Implement `editSpec` in `src/server/changes/editSpec.ts` with `defineCommand` (from
+- [x] T037 [US2] Implement `editSpec` in `src/server/changes/editSpec.ts` with `defineCommand` (from
   `./aspect`; the queries in this module use `defineQuery`),
   per contracts/change-control.md. The policy check comes before any write. Then the redesign
   choice, `applySpecChangeInTx`, the redesign effect or `customer_modification` notify, and the
   WAITING_REVIEW reviewer notify. Export it from the barrel.
-- [ ] T038 [US2] Add a Server Action and an edit-spec form on
+- [x] T038 [US2] Add a Server Action and an edit-spec form on
   `src/app/(shell)/orders/[orderId]/page.tsx`:
   - The form is driven by `specEditPolicy`: an edit form for DIRECT (with the redesign/keep radio
     when `REQUIRED`), a "request change" button for CHANGE_REQUEST, and read-only otherwise.

@@ -19,7 +19,13 @@ import {
 import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
 import type { EligibleDesigner } from "~/server/designers";
 import { Button } from "~/components/ui/button";
-import { SpecHistory } from "~/components/changes";
+import { editSpec } from "~/server/changes";
+import {
+  SpecHistory,
+  EditSpecForm,
+  getChangeErrorMessage,
+  type EditSpecActionResult,
+} from "~/components/changes";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -165,6 +171,95 @@ async function assignDesignerAction(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
+async function editSpecAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const workItemId = formStr(formData.get("workItemId"));
+  const expectedVersion = Number(formData.get("expectedVersion"));
+
+  if (!workItemId || !orderId || !Number.isFinite(expectedVersion)) {
+    return { ok: false, error: getChangeErrorMessage("VALIDATION") };
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (formData.has("quantity")) {
+    const q = formData.get("quantity");
+    if (typeof q === "string" && q.trim() !== "") {
+      patch.quantity = Number(q);
+    }
+  }
+  if (formData.has("widthValue")) {
+    const w = formData.get("widthValue");
+    if (typeof w === "string" && w.trim() !== "") {
+      patch.widthValue = w.trim();
+    }
+  }
+  if (formData.has("heightValue")) {
+    const h = formData.get("heightValue");
+    if (typeof h === "string" && h.trim() !== "") {
+      patch.heightValue = h.trim();
+    }
+  }
+  if (formData.has("dimensionUnit")) {
+    const u = formData.get("dimensionUnit");
+    if (typeof u === "string" && u.trim() !== "") {
+      patch.dimensionUnit = u.trim();
+    }
+  }
+  if (formData.has("material")) {
+    const m = formData.get("material");
+    if (typeof m === "string") {
+      patch.material = m.trim() === "" ? null : m.trim();
+    }
+  }
+  if (formData.has("description")) {
+    const d = formData.get("description");
+    if (typeof d === "string") {
+      patch.description = d.trim() === "" ? null : d.trim();
+    }
+  }
+  if (formData.has("finishNotes")) {
+    const f = formData.get("finishNotes");
+    if (typeof f === "string") {
+      patch.finishNotes = f.trim() === "" ? null : f.trim();
+    }
+  }
+
+  const reasonRaw = formData.get("reason");
+  const reason =
+    typeof reasonRaw === "string" && reasonRaw.trim() !== "" ? reasonRaw.trim() : undefined;
+
+  const choiceRaw = formData.get("designChoice");
+  const designChoice =
+    choiceRaw === "REDESIGN" || choiceRaw === "KEEP_DESIGN" ? choiceRaw : undefined;
+
+  const originDeptRaw = formData.get("originDepartmentId");
+  const originDepartmentId =
+    typeof originDeptRaw === "string" && originDeptRaw.trim() !== ""
+      ? originDeptRaw.trim()
+      : undefined;
+
+  const result = await editSpec(actor, {
+    workItemId,
+    expectedVersion,
+    patch,
+    reason,
+    designChoice,
+    originDepartmentId,
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  }
+
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default async function OrderDetailPage({
@@ -215,6 +310,25 @@ export default async function OrderDetailPage({
       }
     }
   }
+
+  const workItemIds = detail.workItems.map((wi) => wi.id);
+  const workItemExtraRows = await db.workItem.findMany({
+    where: { id: { in: workItemIds } },
+    select: {
+      id: true,
+      requiresDesign: true,
+      departmentId: true,
+      material: true,
+      finishNotes: true,
+      productType: { select: { defaultDepartmentId: true } },
+      currentSpecVersion: { select: { version: true } },
+    },
+  });
+  const workItemExtraById = new Map(workItemExtraRows.map((r) => [r.id, r]));
+
+  const departments = await db.department.findMany({
+    select: { id: true, name: true },
+  });
 
   return (
     <div className="flex flex-col gap-8">
@@ -420,6 +534,38 @@ export default async function OrderDetailPage({
                 </form>
               </details>
             )}
+
+            {(() => {
+              const extra = workItemExtraById.get(wi.id);
+              const expectedVersion = extra?.currentSpecVersion?.version ?? 1;
+              const effectiveDeptId =
+                extra?.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
+              const canEditSpec = actor.permissions.has("order.edit");
+
+              return (
+                <EditSpecForm
+                  workItemId={wi.id}
+                  orderId={orderId}
+                  state={wi.state}
+                  requiresDesign={extra?.requiresDesign ?? false}
+                  expectedVersion={expectedVersion}
+                  canEdit={canEditSpec}
+                  currentSpec={{
+                    description: wi.description,
+                    quantity: wi.quantity,
+                    widthValue: wi.widthValue as number | string | null,
+                    heightValue: wi.heightValue as number | string | null,
+                    dimensionUnit: wi.dimensionUnit,
+                    material: extra?.material,
+                    finishNotes: extra?.finishNotes,
+                    productTypeId: wi.productTypeId,
+                  }}
+                  departments={departments}
+                  effectiveDepartmentId={effectiveDeptId}
+                  action={editSpecAction}
+                />
+              );
+            })()}
 
             <SpecHistory actor={actor} workItemId={wi.id} />
           </div>
