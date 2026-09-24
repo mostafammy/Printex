@@ -60,8 +60,8 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/quote.test.ts` proves default list, customer fixed price, percentage discount, expired rule, tier boundaries, and full breakdown.
 
 - [X] T013 [P] [US1] Implement `src/server/pricing/quote.ts` to load 011 WorkItem/ProductType and 010 Customer data, resolve active price configuration by date, and return `QuoteResult` from `contracts/pricing-service.md` without writing.
-- [ ] T014 [US1] Add `tests/integration/pricing/quote.test.ts` for ABC at 90 EGP/m, other customers at 100 EGP/m, expired-rule fallback, quantities 9/10/50, and tax-inclusive whole-EGP output.
-- [ ] T015 [US1] Add `tests/contract/pricing/quote-breakdown.test.ts` asserting every breakdown field is present when applicable and Decimal values cross the boundary as canonical strings.
+- [X] T014 [US1] Add `tests/integration/pricing/quote.test.ts` for ABC at 90 EGP/m, other customers at 100 EGP/m, expired-rule fallback, quantities 9/10/50, and tax-inclusive whole-EGP output.
+- [X] T015 [US1] Add `tests/contract/pricing/quote-breakdown.test.ts` asserting every breakdown field is present when applicable and Decimal values cross the boundary as canonical strings.
 
 ## Phase 4: User Story 2 - Set variable prices safely (P1)
 
@@ -71,8 +71,8 @@ All stories -> Polish and consistency review
 
 - [X] T016 [P] [US2] Implement `src/server/pricing/authorization.ts` with operation-to-permission mapping and server-side actor checks.
 - [X] T017 [US2] Implement `src/server/pricing/prices.ts` with `setPrice`, append-only WorkItemPrice insertion, current status update, spec-version association, and audit ordering from `contracts/authorization-audit.md`.
-- [ ] T018 [US2] Add `tests/integration/pricing/set-price.test.ts` proving Reception can apply FIXED, cannot set VARIABLE, authorized users can set VARIABLE, unauthorized overrides fail, reasons are mandatory, and failed operations write neither price nor audit.
-- [ ] T019 [US2] Add `tests/contract/pricing/price-history-append-only.test.ts` proving prior amounts/sources/reasons remain unchanged after later price decisions.
+- [X] T018 [US2] Add `tests/integration/pricing/set-price.test.ts` proving Reception can apply FIXED, cannot set VARIABLE, authorized users can set VARIABLE, unauthorized overrides fail, reasons are mandatory, and failed operations write neither price nor audit.
+- [X] T019 [US2] Add `tests/contract/pricing/price-history-append-only.test.ts` proving prior amounts/sources/reasons remain unchanged after later price decisions.
 
 ## Phase 5: User Story 3 - Preserve price decisions and status (P1)
 
@@ -80,7 +80,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/history-status.test.ts` applies multiple decisions, changes status, and verifies history and pending timestamps.
 
-- [ ] T020 [P] [US3] Complete the `status(workItemId)` and `pendingSince(workItemId)` query functions in `src/server/pricing/status.ts` with current-spec validity checks, building on T012's foundational status persistence and binding.
+- [X] T020 [P] [US3] Complete the `status(workItemId)` and `pendingSince(workItemId)` query functions in `src/server/pricing/status.ts` with current-spec validity checks, building on T012's foundational status persistence and binding.
 - [X] T021 [US3] Implement `src/server/pricing/history.ts` for current/history queries, breakdown retrieval, source/actor/reason display data, and disputed state handling.
 - [ ] T022 [US3] Add `tests/integration/pricing/history-status.test.ts` proving independent status during IN_PRODUCTION, DISPUTED unresolved behavior, waitingSince persistence, and readable history.
 - [ ] T023 [US3] Add `src/server/pricing/change-listener.ts` registering `pricing.reset` with 016; use the supplied transaction, clear current price, set PENDING, and audit the reset.
@@ -92,7 +92,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/delivery-gate.test.ts` starts production with PENDING pricing, rejects delivery, then prices the item and permits the existing delivery transition.
 
-- [ ] T025 [US4] Complete the `PricingGatePort` provider in `src/server/pricing/delivery-port.ts` with batched committed reads, current-spec validation, PENDING/DISPUTED mapping, responsible users, and no workflow writes.
+- [X] T025 [US4] Complete the `PricingGatePort` provider in `src/server/pricing/delivery-port.ts` with batched committed reads, current-spec validation, PENDING/DISPUTED mapping, responsible users, and no workflow writes.
 - [ ] T026 [US4] Add `tests/integration/pricing/delivery-gate.test.ts` for one pending item, all priced items, disputed items, urgent jobs, missing provider fail-closed behavior, and production-before-pricing.
 - [ ] T027 [US4] Add `tests/contract/pricing/delivery-port.test.ts` asserting 051 binds 015's port and does not register a duplicate `READY_FOR_COLLECTION -> DELIVERED` guard.
 
