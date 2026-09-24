@@ -9,11 +9,6 @@ import { db } from "~/server/db";
 import type { PricingGatePort, PricingGateStatus, PricingResponsible } from "./ports";
 import { findValidCurrentPriceIds, resolveResponsiblePricingUsers } from "./status";
 
-const fallbackResponsible: PricingResponsible = {
-  label: "Pricing review required",
-  userIds: [],
-};
-
 function pendingStatus(
   waitingSince: Date | null,
   responsible: PricingResponsible,

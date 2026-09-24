@@ -93,8 +93,8 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/delivery-gate.test.ts` starts production with PENDING pricing, rejects delivery, then prices the item and permits the existing delivery transition.
 
 - [X] T025 [US4] Complete the `PricingGatePort` provider in `src/server/pricing/delivery-port.ts` with batched committed reads, current-spec validation, PENDING/DISPUTED mapping, responsible users, and no workflow writes.
-- [ ] T026 [US4] Add `tests/integration/pricing/delivery-gate.test.ts` for one pending item, all priced items, disputed items, urgent jobs, missing provider fail-closed behavior, and production-before-pricing.
-- [ ] T027 [US4] Add `tests/contract/pricing/delivery-port.test.ts` asserting 051 binds 015's port and does not register a duplicate `READY_FOR_COLLECTION -> DELIVERED` guard.
+- [X] T026 [US4] Add `tests/integration/pricing/delivery-gate.test.ts` for one pending item, all priced items, disputed items, urgent jobs, missing provider fail-closed behavior, and production-before-pricing.
+- [X] T027 [US4] Add `tests/contract/pricing/delivery-port.test.ts` asserting 051 binds 015's port and does not register a duplicate `READY_FOR_COLLECTION -> DELIVERED` guard.
 
 ## Phase 7: User Story 5 - Pricing queue (P1)
 

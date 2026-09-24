@@ -163,14 +163,15 @@ export async function resolveResponsiblePricingUsers(
     },
     select: { id: true, name: true },
     orderBy: { name: "asc" },
-    take: 20,
   });
 
   if (users.length === 0) {
     return { label: "Pricing review required", userIds: [] };
   }
+  const names = users.slice(0, 5).map((user) => user.name);
+  const overflow = users.length > names.length ? ` (+${users.length - names.length} more)` : "";
   return {
-    label: users.map((user) => user.name).join(", "),
+    label: `${names.join(", ")}${overflow}`,
     userIds: users.map((user) => user.id),
   };
 }
