@@ -114,7 +114,7 @@ export class AttachmentService {
       entityId,
       fileName,
       kind: normalizedKind,
-      createdById: actor.userId,
+      createdById: actor.id ?? actor.userId,
       fileSize: size,
       mimeType,
     });
@@ -153,14 +153,14 @@ export class AttachmentService {
         entityId,
         originalName: fileName,
         kind: normalizedKind,
-        createdById: actor.userId,
+        createdById: actor.id ?? actor.userId,
         status: "ACTIVE",
       },
     });
 
     // Audit record
     await audit.record(db, {
-      actorId: actor.userId,
+      actorId: actor.id ?? actor.userId,
       action: "CREATE",
       entityType: "ATTACHMENT",
       entityId: attachment.id,
@@ -241,7 +241,7 @@ export class AttachmentService {
     });
 
     await audit.record(prisma, {
-      actorId: actor.userId,
+      actorId: actor.id ?? actor.userId,
       action: "VOID",
       entityType: "ATTACHMENT",
       entityId: attachmentId,
@@ -273,7 +273,7 @@ export class AttachmentService {
     });
 
     await audit.record(prisma, {
-      actorId: actor.userId,
+      actorId: actor.id ?? actor.userId,
       action: "ARCHIVE",
       entityType: "ATTACHMENT",
       entityId: attachmentId,

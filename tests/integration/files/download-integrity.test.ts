@@ -4,6 +4,7 @@ import { Readable } from "stream";
 import { describe, it, expect } from "vitest";
 import { createReadStream, unlinkSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
+import { tmpdir } from "os";
 
 describe("Download integrity and checksum tests", () => {
   describe("verifyStreamIntegrity", () => {
@@ -59,8 +60,7 @@ describe("Download integrity and checksum tests", () => {
 
     it("detects tampered file on disk", async () => {
       // Create a temp file with known content
-      const testDir = "/tmp/download-integrity-test";
-      const testFile = join("/tmp", `tamper-test-${Date.now()}.bin`);
+      const testFile = join(tmpdir(), `tamper-test-${Date.now()}.bin`);
 
       const originalData = new Uint8Array(1024).fill(0x41);
       writeFileSync(testFile, Buffer.from(originalData));
@@ -91,25 +91,26 @@ describe("Download integrity and checksum tests", () => {
 
     it("detects partial file corruption", async () => {
       const originalData = new Uint8Array(2048).fill(0x41);
-      writeFileSync("/tmp/partial-corrupt.bin", Buffer.from(originalData));
+      const partialFile = join(tmpdir(), "partial-corrupt.bin");
+      writeFileSync(partialFile, Buffer.from(originalData));
 
       const crypto = await import("crypto");
       const correctHash = crypto.createHash("sha256").update(originalData).digest("hex");
 
       // Truncate file (simulate partial download/corruption)
       const fs = await import("fs");
-      const handle = fs.openSync("/tmp/partial-corrupt.bin", "r+");
+      const handle = fs.openSync(partialFile, "r+");
       fs.ftruncateSync(handle, 1024); // Truncate to half
       fs.closeSync(handle);
 
-      const corruptedStream = Readable.toWeb(createReadStream("/tmp/partial-corrupt.bin")) as ReadableStream;
+      const corruptedStream = Readable.toWeb(createReadStream(partialFile)) as ReadableStream;
 
       await expect(
         verifyStreamIntegrity(corruptedStream, correctHash, originalData.length)
       ).rejects.toThrow(/Size mismatch|Checksum mismatch/);
 
       // Cleanup
-      try { unlinkSync("/tmp/partial-corrupt.bin"); } catch {}
+      try { unlinkSync(partialFile); } catch {}
     });
 
     it("rejects zero-byte disclosure on denial", async () => {

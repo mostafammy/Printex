@@ -108,7 +108,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
 
     return fileVersions.filter((v) => {
       const cat = v.fileAsset?.category ?? v.category;
-      return cat === selectedCategory;
+      return !cat || cat === selectedCategory;
     });
   }, [fileVersions, selectedCategory]);
 

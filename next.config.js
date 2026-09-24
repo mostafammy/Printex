@@ -5,6 +5,15 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+	webpack(config) {
+		config.resolve.extensionAlias = {
+			...config.resolve.extensionAlias,
+			".js": [".js", ".ts", ".tsx"],
+			".jsx": [".jsx", ".js", ".tsx", ".ts"],
+		};
+		return config;
+	},
+};
 
 export default config;

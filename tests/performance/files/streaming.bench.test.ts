@@ -1,6 +1,8 @@
 import { streamToTempFile } from "@/server/files/integrity.js";
 import { ReadableStream } from "stream/web";
 import { describe, it, expect } from "vitest";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 // This is a memory benchmark test for 2GB upload
 // It verifies that the process memory stays under 200 MB additional
@@ -30,7 +32,7 @@ describe("Streaming memory benchmark", () => {
       },
     });
 
-    const tempPath = `/tmp/memory-bench-${Date.now()}.tmp`;
+    const tempPath = join(tmpdir(), `memory-bench-${Date.now()}.tmp`);
 
     // Force GC if available for cleaner measurement
     if (global.gc) global.gc();
@@ -74,7 +76,7 @@ describe("Streaming memory benchmark", () => {
       },
     });
 
-    const tempPath = `/tmp/integrity-bench-${Date.now()}.tmp`;
+    const tempPath = join(tmpdir(), `integrity-bench-${Date.now()}.tmp`);
     const { size, sha256 } = await streamToTempFile(stream, tempPath);
 
     // Verify size matches expected
