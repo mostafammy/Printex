@@ -2,16 +2,17 @@
 // Core business logic: upload, list, approve, lifecycle, attachments
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { PrismaClient, Prisma } from "@prisma/client";
+import { type Prisma } from "../../../generated/prisma/index.js";
 import type { Actor } from "@/server/auth/getActor.js";
 import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
 import { streamToTempFile, withRetry, verifyStreamIntegrity } from "./integrity.js";
-import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode, type } from "./schemas.js";
+import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode } from "./schemas.js";
 import { canDownloadFileVersion, canListFileVersions, canPerformLifecycleAction, canApproveFileVersion } from "./authorization.js";
-import { createPreviewGrant, verifyPreviewGrant, type SignedPreviewGrant } from "./signed-preview.js";
+import { createPreviewGrant, verifyPreviewGrant, encodeGrant, type SignedPreviewGrant } from "./signed-preview.js";
 import { audit } from "@/server/auth/audit.js";
-
-const prisma = new PrismaClient();
+import { db as prisma } from "@/server/db.js";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 export interface UploadInput {
   workItemId: string;
@@ -96,7 +97,7 @@ export class FileService {
     const nextVersion = (maxVersion?.versionNumber ?? 0) + 1;
 
     // Create temp file path
-    const tempPath = `/tmp/upload-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const tempPath = join(tmpdir(), `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
     // Stream to temp file with SHA-256 and size
     const { size, sha256 } = await streamToTempFile(stream, tempPath);
@@ -336,7 +337,7 @@ export class FileService {
     const { entityType, entityId, stream, fileName, kind, actor } = input;
 
     // Stream to temp and compute integrity
-    const tempPath = `/tmp/attach-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const tempPath = join(tmpdir(), `attach-${Date.now()}-${Math.random().toString(36).slice(2)}`);
     const { size, sha256 } = await streamToTempFile(stream, tempPath);
     const mimeType = this.getMimeType(fileName);
 
