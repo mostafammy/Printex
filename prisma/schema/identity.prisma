@@ -61,6 +61,13 @@ model User {
   returnsAssignedToMe    Return[]          @relation("ReturnAssignedTo")
   vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
 
+  // --- Reverse relations to change-control.prisma (016-change-control) ---
+  specVersionsCreated        SpecVersion[]      @relation("SpecVersionCreatedBy")
+  changeRequestsRequested    ChangeRequest[]    @relation("ChangeRequestRequestedBy")
+  changeRequestsDecided      ChangeRequest[]    @relation("ChangeRequestDecidedBy")
+  changeRequestsAcknowledged ChangeRequest[]    @relation("ChangeRequestAcknowledgedBy")
+  lateCancellations          LateCancellation[] @relation("LateCancellationCreatedBy")
+
   @@unique([email])
   @@map("user")
 }

@@ -181,6 +181,17 @@ model WorkItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// --- 016-change-control ------------------------------------------------
+  /// Current SpecVersion. Nullable only for the circular insert and the
+  /// window before backfill (research.md §14); non-null for every Work Item
+  /// after backfill (verified by query + contract test).
+  currentSpecVersionId String?        @unique
+  currentSpecVersion   SpecVersion?   @relation("WorkItemCurrentSpecVersion", fields: [currentSpecVersionId], references: [id])
+  specVersions         SpecVersion[]  @relation("WorkItemSpecVersions")
+  changeRequests       ChangeRequest[]
+  lateCancellation     LateCancellation?
+  /// --- end 016-change-control ---------------------------------------------
+
   transitions             WorkItemTransition[]
   phaseTimings            PhaseTiming[]
   designVersions          DesignVersion[]
@@ -205,7 +216,8 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems WorkItem[]
+  workItems    WorkItem[]
+  specVersions SpecVersion[] @relation("SpecVersionProductType")
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).
@@ -304,7 +316,8 @@ model Return {
   designVersion      DesignVersion?     @relation(fields: [designVersionId], references: [id])
   createdAt          DateTime           @default(now())
 
-  attachments ReturnAttachment[]
+  attachments   ReturnAttachment[]
+  changeRequest ChangeRequest?
 
   @@index([workItemId, createdAt])
 }

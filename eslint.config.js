@@ -215,21 +215,46 @@ export default tseslint.config(
     },
   },
   {
+    // Nothing outside `src/server/changes/**` (and tests/**, same exemption
+    // as orders/designers/review/production above) may deep-import its
+    // internals — the only legal public surface for application code is the
+    // barrel export at `src/server/changes/index.ts`
+    // (specs/016-change-control/contracts/change-control.md).
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/changes/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/changes/**", "!~/server/changes", "!~/server/changes/index"],
+              message:
+                "Import from the public barrel `~/server/changes` (src/server/changes/index.ts) instead of reaching into its internals (specs/016-change-control/contracts/change-control.md).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
-    // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
-    // `src/server/core/storage/**`, which are Ports per contracts/storage.md
-    // and are allowed to throw/reject as their own contract; callers inside
-    // `core` catch and convert those rejections to `Result` at the call
-    // site, not the adapter itself.
+    // (plan.md §5.2, §5.3) — except:
+    // 1. `StorageAdapter` *implementations* under `src/server/core/storage/**`,
+    //    which are Ports per contracts/storage.md and are allowed to throw/reject
+    //    as their own contract; callers inside `core` catch and convert those
+    //    rejections to `Result` at the call site, not the adapter itself.
+    // 2. `src/server/core/aspects/**` (contracts/aspects.md §1) — transaction-boundary
+    //    adapter: must reject to roll back; public entry points still return a Result.
     files: ["src/server/core/**/*.ts", "src/server/core/**/*.tsx"],
-    ignores: ["src/server/core/storage/**"],
+    ignores: ["src/server/core/storage/**", "src/server/core/aspects/**"],
     rules: {
       "no-restricted-syntax": [
         "error",
         {
           selector: "ThrowStatement",
           message:
-            "src/server/core/** must not throw — return Result<T, DomainError> instead (plan.md §5.3). StorageAdapter implementations under src/server/core/storage/** are exempt.",
+            "src/server/core/** must not throw — return Result<T, DomainError> instead (plan.md §5.3). StorageAdapter implementations under src/server/core/storage/** and aspect engine adapters under src/server/core/aspects/** are exempt.",
         },
       ],
     },

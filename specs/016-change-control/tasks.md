@@ -49,7 +49,7 @@ Vitest collects only `tests/**/*.test.ts`, so there are no `.tsx` test files.
 **Purpose**: Land the schema, SQL, edges, permission key, and module scaffolding that every story
 builds on.
 
-- [ ] T001 Create `prisma/schema/change-control.prisma` exactly per data-model.md:
+- [x] T001 Create `prisma/schema/change-control.prisma` exactly per data-model.md:
   - enums `SpecVersionOrigin`, `ChangeRequestStatus`, `ChangeRequestOutcome`
   - models `SpecVersion` (`@@unique([workItemId, version])`), `ChangeRequest`
     (`@@index([workItemId, status])`, `@@index([status, createdAt])`), and `LateCancellation`
@@ -68,19 +68,19 @@ builds on.
     "Step 1"). If it warns, stop and investigate.
   - Whoever picks this up: (1) confirm with Fady, (2) run the commands, (3) run T004 and T005,
     (4) re-run the DB-dependent suites below.
-- [ ] T003 [P] **Cross-team (001, Fady).** Add `"change.approve"` to the `Permission` union and
+- [x] T003 [P] **Cross-team (001, Fady).** Add `"change.approve"` to the `Permission` union and
   `ALL_PERMISSIONS` in `src/server/auth/permissions.ts`, with a doc comment citing
   016 FR-013. Append it to the `HEAD_DESIGNER` and `ADMIN_OWNER` permission lists in
   `prisma/seed.ts`. Update `tests/contract/role-permission-matrix.test.ts` to assert that
   `HEAD_DESIGNER` and `ADMIN_OWNER` have it and that `RECEPTION`, `DESIGNER`,
   `PRODUCTION_OPERATOR`, `PRINT_RECEPTION_DELIVERY`, and `ACCOUNTING` do not.
-- [ ] T004 [P] Create `prisma/manual-sql/016-change-control-constraints.sql` (idempotent): the
+- [x] T004 [P] Create `prisma/manual-sql/016-change-control-constraints.sql` (idempotent): the
   partial unique index `ChangeRequest_one_pending_per_work_item`, and `REVOKE UPDATE, DELETE` on
   `"SpecVersion"` and `"LateCancellation"` (data-model.md "Step 2"). Use the header comment style
   of `audit-event-append-only.sql`, including the non-superuser prerequisite and "re-apply after
   every `db push`". Apply it with `pnpm exec prisma db execute --file … --schema prisma/schema`
   once T002 is unblocked.
-- [ ] T005 [P] Create `prisma/manual-sql/016-spec-version-backfill.sql` per data-model.md "Step 3":
+- [x] T005 [P] Create `prisma/manual-sql/016-spec-version-backfill.sql` per data-model.md "Step 3":
   - a single transaction
   - `INSERT … WHERE NOT EXISTS` with the deterministic id `'bf_' || id`
   - point every Work Item at its max version
@@ -90,13 +90,13 @@ builds on.
   Re-check every table and column name against the current `prisma/schema/*.prisma`
   (`AuditEvent` is `@@map("audit_event")`, and `attachmentIds` is a non-null `text[]`). Apply after
   T004.
-- [ ] T006 [P] Add the three edges to `src/server/core/workflow/edges.ts` per data-model.md
+- [x] T006 [P] Add the three edges to `src/server/core/workflow/edges.ts` per data-model.md
   "Workflow edges": `APPROVED`, `WAITING_PRICING`, and `READY_FOR_PRODUCTION` each gain
   `"REWORK_REQUIRED"`. Update the file's header comment to cite 016 research §7.
-- [ ] T007 [P] Add a `no-restricted-imports` rule for `src/server/changes/**` to
+- [x] T007 [P] Add a `no-restricted-imports` rule for `src/server/changes/**` to
   `eslint.config.js`, identical in shape to the `orders`/`designers`/`review`/`production` rules:
   only `~/server/changes` (the barrel) is importable from outside, and `tests/**` is exempted.
-- [ ] T008 [P] Create the barrel `src/server/changes/index.ts` as a placeholder (`export {}`),
+- [x] T008 [P] Create the barrel `src/server/changes/index.ts` as a placeholder (`export {}`),
   populated incrementally. Create `src/components/changes/index.ts` the same way.
 
 ---

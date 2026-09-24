@@ -16,7 +16,7 @@
 //       specs/001-identity-access-audit/contracts/auth.md §Actor
 
 /**
- * All 22 permission keys supported by this application (spec FR-010, PRD §26/§48).
+ * All 23 permission keys supported by this application (spec FR-010, PRD §26/§48; 016 FR-013).
  *
  * Every server action's authorization call must use one of these keys:
  *   authorize(actor, "order.create")  // compile-time typo-safe
@@ -36,6 +36,8 @@ export type Permission =
   // Design
   | "design.work"
   | "design.review"
+  // Order change control (016 FR-013: approve or reject change requests in production)
+  | "change.approve"
   // Production
   | "production.operate"
   // Collection / delivery
@@ -83,7 +85,7 @@ export type RoleKey =
   | "ADMIN_OWNER";
 
 /**
- * All 22 Permission keys as a runtime array, matching the type above exactly.
+ * All 23 Permission keys as a runtime array, matching the type above exactly.
  * Used by seed.ts and contract tests to iterate over the full permission set
  * without hardcoding the list a second time.
  *
@@ -99,6 +101,7 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   "workitem.assign_designer",
   "design.work",
   "design.review",
+  "change.approve",
   "production.operate",
   "collection.receive",
   "delivery.record",

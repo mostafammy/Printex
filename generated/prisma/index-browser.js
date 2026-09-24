@@ -121,6 +121,59 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
+exports.Prisma.SpecVersionScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  version: 'version',
+  origin: 'origin',
+  productTypeId: 'productTypeId',
+  description: 'description',
+  quantity: 'quantity',
+  widthValue: 'widthValue',
+  heightValue: 'heightValue',
+  dimensionUnit: 'dimensionUnit',
+  material: 'material',
+  finishNotes: 'finishNotes',
+  stateAtCreation: 'stateAtCreation',
+  reason: 'reason',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ChangeRequestScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  status: 'status',
+  baseSpecVersionId: 'baseSpecVersionId',
+  proposedPatch: 'proposedPatch',
+  requestReason: 'requestReason',
+  requestedById: 'requestedById',
+  createdAt: 'createdAt',
+  pausedRunningTimerAt: 'pausedRunningTimerAt',
+  isAdminOverride: 'isAdminOverride',
+  decidedById: 'decidedById',
+  decidedAt: 'decidedAt',
+  decisionNote: 'decisionNote',
+  outcome: 'outcome',
+  resultingSpecVersionId: 'resultingSpecVersionId',
+  returnId: 'returnId',
+  productionAcknowledgedAt: 'productionAcknowledgedAt',
+  productionAcknowledgedById: 'productionAcknowledgedById'
+};
+
+exports.Prisma.LateCancellationScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  stateAtCancellation: 'stateAtCancellation',
+  reason: 'reason',
+  costIncurred: 'costIncurred',
+  currency: 'currency',
+  producedQuantitySoFar: 'producedQuantitySoFar',
+  costNote: 'costNote',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.DepartmentScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -175,7 +228,8 @@ exports.Prisma.WorkItemScalarFieldEnum = {
   productionNotes: 'productionNotes',
   pendingFileRevisionAt: 'pendingFileRevisionAt',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  currentSpecVersionId: 'currentSpecVersionId'
 };
 
 exports.Prisma.ProductTypeScalarFieldEnum = {
@@ -417,12 +471,12 @@ exports.Prisma.SortOrder = {
   desc: 'desc'
 };
 
-exports.Prisma.NullableJsonNullValueInput = {
-  DbNull: Prisma.DbNull,
+exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
-exports.Prisma.JsonNullValueInput = {
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull
 };
 
@@ -441,22 +495,19 @@ exports.Prisma.JsonNullValueFilter = {
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
 };
-exports.OrderChannel = exports.$Enums.OrderChannel = {
-  WALK_IN: 'WALK_IN',
-  WHATSAPP: 'WHATSAPP',
-  PHONE: 'PHONE',
-  RETURNING: 'RETURNING',
-  DIRECT_TO_DESIGNER: 'DIRECT_TO_DESIGNER'
+exports.SpecVersionOrigin = exports.$Enums.SpecVersionOrigin = {
+  INITIAL: 'INITIAL',
+  BACKFILL: 'BACKFILL',
+  DIRECT_EDIT: 'DIRECT_EDIT',
+  CHANGE_REQUEST: 'CHANGE_REQUEST',
+  ADMIN_OVERRIDE: 'ADMIN_OVERRIDE'
 };
 
-exports.OrderPriority = exports.$Enums.OrderPriority = {
-  NORMAL: 'NORMAL',
-  URGENT: 'URGENT'
-};
-
-exports.OrderMode = exports.$Enums.OrderMode = {
-  GROUPED: 'GROUPED',
-  SEPARATE: 'SEPARATE'
+exports.WorkItemDimensionUnit = exports.$Enums.WorkItemDimensionUnit = {
+  MM: 'MM',
+  CM: 'CM',
+  M: 'M',
+  IN: 'IN'
 };
 
 exports.WorkItemState = exports.$Enums.WorkItemState = {
@@ -477,11 +528,35 @@ exports.WorkItemState = exports.$Enums.WorkItemState = {
   CANCELLED: 'CANCELLED'
 };
 
-exports.WorkItemDimensionUnit = exports.$Enums.WorkItemDimensionUnit = {
-  MM: 'MM',
-  CM: 'CM',
-  M: 'M',
-  IN: 'IN'
+exports.ChangeRequestStatus = exports.$Enums.ChangeRequestStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  WITHDRAWN: 'WITHDRAWN',
+  CLOSED_BY_CANCELLATION: 'CLOSED_BY_CANCELLATION'
+};
+
+exports.ChangeRequestOutcome = exports.$Enums.ChangeRequestOutcome = {
+  CONTINUE_PRODUCTION: 'CONTINUE_PRODUCTION',
+  REDESIGN: 'REDESIGN'
+};
+
+exports.OrderChannel = exports.$Enums.OrderChannel = {
+  WALK_IN: 'WALK_IN',
+  WHATSAPP: 'WHATSAPP',
+  PHONE: 'PHONE',
+  RETURNING: 'RETURNING',
+  DIRECT_TO_DESIGNER: 'DIRECT_TO_DESIGNER'
+};
+
+exports.OrderPriority = exports.$Enums.OrderPriority = {
+  NORMAL: 'NORMAL',
+  URGENT: 'URGENT'
+};
+
+exports.OrderMode = exports.$Enums.OrderMode = {
+  GROUPED: 'GROUPED',
+  SEPARATE: 'SEPARATE'
 };
 
 exports.RejectionCategory = exports.$Enums.RejectionCategory = {
@@ -507,6 +582,9 @@ exports.ReturnAttachmentKind = exports.$Enums.ReturnAttachmentKind = {
 };
 
 exports.Prisma.ModelName = {
+  SpecVersion: 'SpecVersion',
+  ChangeRequest: 'ChangeRequest',
+  LateCancellation: 'LateCancellation',
   Department: 'Department',
   Customer: 'Customer',
   Order: 'Order',

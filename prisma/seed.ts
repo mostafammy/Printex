@@ -79,7 +79,8 @@ const ROLE_SEED_DATA = [
     // 012 Clarifications (2026-09-23): a shop MAY opt HEAD_DESIGNER into
     // reassignment by adding "workitem.assign_designer" here — data-model.md
     // "Seed data addition". Not added by default; no default behavior change.
-    permissions: ["design.review"],
+    // 016 FR-013: change.approve added for change control approval.
+    permissions: ["design.review", "change.approve"],
   },
   {
     id: "seed_role_production_operator",
@@ -105,7 +106,7 @@ const ROLE_SEED_DATA = [
     id: "seed_role_admin_owner",
     key: "ADMIN_OWNER",
     name: "Admin/Owner",
-    // All 21 permission keys — Admin/Owner has full access.
+    // All 23 permission keys — Admin/Owner has full access (016 FR-013).
     permissions: [
       "order.create",
       "order.edit",
@@ -114,6 +115,7 @@ const ROLE_SEED_DATA = [
       "workitem.assign_designer",
       "design.work",
       "design.review",
+      "change.approve",
       "production.operate",
       "collection.receive",
       "delivery.record",
