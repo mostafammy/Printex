@@ -103,8 +103,8 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/queue.test.ts` creates pending items with different timestamps/priorities and verifies ordering, exclusion, age, and permission behavior.
 
 - [X] T028 [P] [US5] Implement `src/server/pricing/queue.ts` with cursor pagination, urgent-first ordering followed by oldest waiting timestamp within each priority group, responsible pricing user data, and server-time age formatting.
-- [ ] T029 [US5] Add `src/components/pricing/pricing-panel.tsx` implementing `<PricingPanel workItemId>` as display/action composition over server contracts; do not calculate prices in the component.
-- [ ] T030 [US5] Add `src/components/pricing/pricing-queue.tsx` and the pricing queue route under `src/app/(shell)/pricing/`, using RTL shell conventions and server authorization.
+- [X] T029 [US5] Add `src/components/pricing/pricing-panel.tsx` implementing `<PricingPanel workItemId>` as display/action composition over server contracts; do not calculate prices in the component.
+- [X] T030 [US5] Add `src/components/pricing/pricing-queue.tsx` and the pricing queue route under `src/app/(shell)/pricing/`, using RTL shell conventions and server authorization.
 - [ ] T031 [US5] Add `tests/integration/pricing/queue.test.ts` for all PENDING rows, urgent-first ordering with oldest-first ordering within each priority group, age labels, priced-row exclusion, and forbidden access.
 
 ## Phase 8: User Story 6 - Pricing-originated returns (P2)
