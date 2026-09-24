@@ -217,7 +217,7 @@ and `caddy/` through POSIX default ACLs (`setfacl -d -m g:printex-backup:rX`) an
 
 **Decision**:
 
-- Retention is 7/4/12 (ASSUMPTION, spec). On the LAN PC, a scheduled `restic forget --prune` runs
+- Retention is 7/4/12 (owner-confirmed, spec). On the LAN PC, a scheduled `restic forget --prune` runs
   Sundays at 05:00 local time.
 - Keys:
   - Each repository has its own password, generated with `openssl rand -base64 48` by

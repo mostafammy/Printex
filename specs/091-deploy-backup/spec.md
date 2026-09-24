@@ -27,9 +27,8 @@ and "Technology, Data & Security Constraints" (Secrets, Backups).
 
 ### Session 2026-09-24
 
-The owner answered eight decisions on 2026-09-24. They are marked **CONFIRMED by owner
-2026-09-24**. Every other answer is an **ASSUMPTION — pending owner confirmation**, with the
-rejected alternatives on the line after it.
+The owner confirmed every decision below on 2026-09-24. Each lists the rejected alternatives on
+the line after it.
 
 - Q: Which server hardware will be used? → A: Not decided yet. This spec defines a **minimum** and
   a **recommended** specification (FR-001), and hardware selection is an **open go-live item**
@@ -51,19 +50,19 @@ rejected alternatives on the line after it.
     everything forever (the USB drive and the cloud bill grow without bound).
 - Q: When does the nightly backup run? → A: 02:00 shop local time (Africa/Cairo), when the shop
   is closed. A missed or failed run must be reported by 08:00 the same morning, before staff
-  arrive (ASSUMPTION — pending owner confirmation).
+  arrive (CONFIRMED by owner 2026-09-24).
   - Rejected: running during working hours (slows the system while staff use it); several runs a
     day (RPO 24h is confirmed, so the extra load and complexity buy nothing the owner asked for).
 - Q: What does the 4-hour RTO clock cover? → A: From the moment a replacement machine that meets
   the minimum specification is on the bench with network and power, to the moment staff can log
   in and see last night's data. It includes installing the operating system. It excludes buying
-  or fetching hardware (ASSUMPTION — pending owner confirmation).
+  or fetching hardware (CONFIRMED by owner 2026-09-24).
   - Rejected: excluding OS installation (hides the slowest manual step); including hardware
     procurement (outside the team's control, and it cannot be drilled).
 - Q: How do staff devices reach the server by name? → A: `printex.local`, announced on the LAN by
   the server itself, with the server on a fixed (reserved) LAN address. A DNS entry on the shop
   router (`printex.lan`) is the fallback for devices that cannot resolve `.local` names
-  (ASSUMPTION — pending owner confirmation).
+  (CONFIRMED by owner 2026-09-24).
   - Rejected: typing an IP address (breaks HTTPS certificate names, and hard for staff); a
     public domain with a public certificate (needs internet to renew and exposes the name).
 - Q: How do staff browsers trust the LAN HTTPS certificate? → A: The server runs its own internal
@@ -75,14 +74,13 @@ rejected alternatives on the line after it.
 - Q: What protects the second-PC backup copy if the server itself is compromised (for example,
   ransomware)? → A: The second PC accepts new backups but does not let the server delete or
   rewrite old ones (append-only). Old restore points on that PC are cleaned up by the PC itself
-  on its own schedule (ASSUMPTION — pending owner confirmation).
+  on its own schedule (CONFIRMED by owner 2026-09-24).
   - Rejected: a plain shared folder (anything that can write to it from the server can also
     destroy it); no second copy on the LAN (the owner confirmed it).
 - Q: Who holds the keys needed to read the backups if the server is lost? → A: A **recovery kit**
   (the backup encryption passwords, the off-site account credentials, and the restore runbook)
   is printed, sealed, and kept by the owner away from the server, with a second sealed copy in a
-  second location the owner chooses. It is re-issued whenever a secret changes (ASSUMPTION —
-  pending owner confirmation).
+  second location the owner chooses. It is re-issued whenever a secret changes (CONFIRMED by owner 2026-09-24).
   - Rejected: keys stored only on the server (a lost server means unreadable backups); keys
     stored inside the backups (circular).
 - Q: How is the first Admin created, and what happens to the development seed? → A: A one-time
@@ -90,13 +88,13 @@ rejected alternatives on the line after it.
   refuses if an active Admin already exists. Production loads only reference data (roles and
   permissions, default departments, the Cash Customer, customer classifications). The
   development sample orders and the development Admin password are never loaded in production
-  (ASSUMPTION — pending owner confirmation).
+  (CONFIRMED by owner 2026-09-24).
   - Rejected: running the existing development seed in production (it creates an Admin with a
     published password and sample orders); creating the first Admin through a web page (an open
     "claim this server" page is a security hole until someone uses it).
 - Q: Which Admin users are told about backup and disk problems? → A: Every active user who holds
   the existing Admin configuration permission (`admin.config`). No names or role keys are
-  written into the rules (constitution VI) (ASSUMPTION — pending owner confirmation).
+  written into the rules (constitution VI) (CONFIRMED by owner 2026-09-24).
   - Rejected: a fixed person (breaks when staff change); a new "ops" role (more setup for a shop
     whose Admin/Owner already holds `admin.config`).
 - Q: How are application updates delivered to the server? → A: The project's CI builds the
@@ -653,9 +651,6 @@ pre-upgrade data, with no data lost.
 
 ## Assumptions
 
-- The clarification answers above marked ASSUMPTION are pending owner confirmation. The most
-  consequential are: the backup time window, the RTO clock definition, `printex.local` plus
-  router DNS, and the append-only second PC.
 - The shop LAN has a router the owner controls (for the address reservation, the DNS fallback
   name, and turning off port forwarding and UPnP), and the second PC is on the same LAN and on at
   night (or wakes for the backup).
@@ -680,5 +675,5 @@ pre-upgrade data, with no data lost.
 4. Reserve the server's LAN address and add the `printex.lan` name on the router; confirm port
    forwarding and UPnP are off.
 5. Receive, check and store the sealed recovery kit (two locations).
-6. Confirm the ASSUMPTION answers in Clarifications.
+6. ~~Confirm the clarification assumptions~~ (done: all confirmed by owner 2026-09-24).
 7. Sign off the go-live restore drill, offline drill, external port scan, and security review.

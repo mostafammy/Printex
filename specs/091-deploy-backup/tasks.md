@@ -468,8 +468,8 @@ evidence for the brief's acceptance criteria.
   server before go-live. Record it in `DRILL-LOG.md`.
 - [ ] T094 **UPS drill** (quickstart Scenario 15). Record it in `DRILL-LOG.md`.
 - [ ] T095 Onboard every staff device (quickstart Scenario 16), each ≤ 10 min (SC-009).
-- [ ] T096 [X-TEAM: owner] Close out spec.md "Open go-live items (owner)" 1–7 and confirm every
-  ASSUMPTION in Clarifications. Record this in Linear PRI-20.
+- [ ] T096 [X-TEAM: owner] Close out spec.md "Open go-live items (owner)" 1–7 (item 6, the clarification
+  assumptions, was confirmed on 2026-09-24). Record this in Linear PRI-20.
 - [ ] T097 Cross-team sign-off (Fady, Track B) before merge: T010/T015 (baseline), T023
   (permission), T034 (seed), T063/T064 (auth), T067 (054), T078 (053), and T056 (050 key rule).
 
