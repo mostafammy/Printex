@@ -122,7 +122,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/configuration.test.ts` creates, retires, and queries effective/historical configuration.
 
-- [ ] T034 [P] [US7] Implement `src/server/pricing/configuration.ts` for ProductPricingPolicy mode configuration, price-list/tier and customer-rule create/retire operations, overlap validation, `admin.config` authorization, and audit events.
+- [X] T034 [P] [US7] Implement `src/server/pricing/configuration.ts` for ProductPricingPolicy mode configuration, price-list/tier and customer-rule create/retire operations, overlap validation, `admin.config` authorization, and audit events.
 - [ ] T035 [US7] Add `src/app/(shell)/pricing/price-lists/page.tsx` and server actions for list/tier administration; never mutate historical commercial values.
 - [ ] T036 [US7] Add the customer profile special-pricing tab in the 010 customer route/component slot, reading 051 rules through the public barrel.
 - [ ] T037 [US7] Add `tests/integration/pricing/configuration.test.ts` for ProductPricingPolicy FIXED/VARIABLE changes, effective dates, tier overlap, rule precedence, retirement history, authorization, and audit.
