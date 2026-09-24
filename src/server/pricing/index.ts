@@ -27,3 +27,6 @@ export type { PricingStatusSnapshot, PricingStatusValue } from "./status";
 
 export { quote } from "./quote";
 export type { QuoteBreakdown, QuoteInput, QuoteResult } from "./quote";
+
+export { authorizePricingOperation, pricingPermissionFor } from "./authorization";
+export type { PricingOperation } from "./authorization";
