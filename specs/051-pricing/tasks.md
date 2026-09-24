@@ -70,7 +70,7 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/set-price.test.ts` calls the server service as Reception, a variable-pricing user, and an override user.
 
 - [X] T016 [P] [US2] Implement `src/server/pricing/authorization.ts` with operation-to-permission mapping and server-side actor checks.
-- [ ] T017 [US2] Implement `src/server/pricing/prices.ts` with `setPrice`, append-only WorkItemPrice insertion, current status update, spec-version association, and audit ordering from `contracts/authorization-audit.md`.
+- [X] T017 [US2] Implement `src/server/pricing/prices.ts` with `setPrice`, append-only WorkItemPrice insertion, current status update, spec-version association, and audit ordering from `contracts/authorization-audit.md`.
 - [ ] T018 [US2] Add `tests/integration/pricing/set-price.test.ts` proving Reception can apply FIXED, cannot set VARIABLE, authorized users can set VARIABLE, unauthorized overrides fail, reasons are mandatory, and failed operations write neither price nor audit.
 - [ ] T019 [US2] Add `tests/contract/pricing/price-history-append-only.test.ts` proving prior amounts/sources/reasons remain unchanged after later price decisions.
 

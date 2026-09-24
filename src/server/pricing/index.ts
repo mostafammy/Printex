@@ -30,3 +30,6 @@ export type { QuoteBreakdown, QuoteInput, QuoteResult } from "./quote";
 
 export { authorizePricingOperation, pricingPermissionFor } from "./authorization";
 export type { PricingOperation } from "./authorization";
+
+export { setPrice } from "./prices";
+export type { PriceSnapshot, SetPriceInput } from "./prices";
