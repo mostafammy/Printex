@@ -60,3 +60,6 @@ export type {
   SpecHistoryResult,
 } from "./versions";
 
+// Phase 3: txScope runner for non-aspect callers
+export { runInTxScope } from "./txScope";
+export type { TxScopeOptions } from "./txScope";

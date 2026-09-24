@@ -13,8 +13,8 @@ import {
   createInitialSpecVersionInTx,
   ensureCurrentSpecVersionInTx,
   applySpecChangeInTx,
+  runInTxScope,
 } from "~/server/changes";
-import type { TxScope } from "~/server/core";
 
 // ── addWorkItem (US7) ───────────────────────────────────────────────────────
 
@@ -26,9 +26,8 @@ export async function addWorkItem(
   authorize(actor, "order.create");
   const parsed = workItemCreateSchema.parse(input);
 
-  let workItemId!: string;
-
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  return await runInTxScope(db, async (scope) => {
+    const tx = scope.tx;
     const existing = await tx.workItem.findMany({ where: { orderId }, select: { state: true } });
 
     // Refused BEFORE any write when every sibling Work Item is finished
@@ -38,14 +37,11 @@ export async function addWorkItem(
     }
 
     const workItem = await tx.workItem.create({ data: { orderId, state: "NEW", ...parsed } });
-    workItemId = workItem.id;
 
-    const scope: TxScope = { tx, afterCommit: (fn) => void fn() };
     await createInitialSpecVersionInTx(scope, {
       workItemId: workItem.id,
       actorId: actor.userId,
     });
-
 
     await audit.record(tx, {
       action: "workitem.created",
@@ -54,9 +50,9 @@ export async function addWorkItem(
       actorId: actor.userId,
       after: { ...parsed, dueDate: parsed.dueDate?.toISOString(), orderId, addedToExistingOrder: true },
     });
-  });
 
-  return { workItemId };
+    return { workItemId: workItem.id };
+  });
 }
 
 // ── editWorkItem (US8) ──────────────────────────────────────────────────────
@@ -82,11 +78,10 @@ export async function editWorkItem(actor: Actor, workItemId: string, patch: Edit
   authorize(actor, "order.edit");
   const parsed = editWorkItemSchema.parse(patch);
 
-  const afterCommitHooks: (() => Promise<void>)[] = [];
-  let closed = false;
-
-  try {
-    await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  await runInTxScope(
+    db,
+    async (scope) => {
+      const tx = scope.tx;
       await tx.$queryRaw`SELECT 1 FROM "WorkItem" WHERE id = ${workItemId} FOR UPDATE`;
       const existing = await tx.workItem.findUniqueOrThrow({ where: { id: workItemId } });
 
@@ -96,16 +91,6 @@ export async function editWorkItem(actor: Actor, workItemId: string, patch: Edit
           "This item has entered design; use 016's change process instead.",
         );
       }
-
-      const scope: TxScope = {
-        tx,
-        afterCommit: (hook) => {
-          if (closed) {
-            throw new Error("Cannot register afterCommit hook after transaction has settled");
-          }
-          afterCommitHooks.push(hook);
-        },
-      };
 
       const { dueDate, ...specPatch } = parsed;
 
@@ -150,17 +135,7 @@ export async function editWorkItem(actor: Actor, workItemId: string, patch: Edit
         before,
         after: { ...parsed, dueDate: parsed.dueDate === undefined ? undefined : parsed.dueDate?.toISOString() ?? null },
       });
-    });
-  } finally {
-    closed = true;
-  }
-
-  for (const hook of afterCommitHooks) {
-    try {
-      await hook();
-    } catch (err) {
-      console.error("[editWorkItem] afterCommit hook failed", err);
-    }
-  }
+    },
+    { timeout: 15000 },
+  );
 }
-

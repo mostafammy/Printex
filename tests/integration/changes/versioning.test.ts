@@ -11,8 +11,8 @@ import {
   applySpecChangeInTx,
   createInitialSpecVersionInTx,
   getSpecHistory,
+  runInTxScope,
 } from "~/server/changes";
-
 import { toSpecSnapshot } from "~/server/changes/specFields";
 import { __resetSpecChangeListenersForTests } from "~/server/changes/events";
 import type { Actor } from "~/server/auth";
@@ -237,9 +237,9 @@ describe("016 Specification Versioning (integration, T022)", () => {
 
     // Call applySpecChangeInTx: self-heals v1 (BACKFILL) then creates v2 (DIRECT_EDIT)
     const actor = makeActor(userId);
-    const applied = await testDb.$transaction(async (tx) => {
+    const applied = await runInTxScope(testDb, async (scope) => {
       return applySpecChangeInTx(
-        { tx, afterCommit: (fn) => void fn() },
+        scope,
         {
           workItemId: unversionedItem.id,
           actorId: userId,
@@ -325,8 +325,7 @@ describe("016 Specification Versioning (integration, T022)", () => {
     });
 
     // Seed v1 for both
-    await testDb.$transaction(async (tx) => {
-      const scope = { tx, afterCommit: (fn: () => Promise<void>) => void fn() };
+    await runInTxScope(testDb, async (scope) => {
       await createInitialSpecVersionInTx(scope, {
         workItemId: itemA.id,
         actorId: userId,

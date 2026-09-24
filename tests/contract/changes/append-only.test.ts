@@ -124,7 +124,7 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
 
   it("guarantees src/server/changes/** contains no specVersion or lateCancellation update/delete calls", () => {
     const changesDir = path.resolve(process.cwd(), "src/server/changes");
-    const files = fs.readdirSync(changesDir, { recursive: true }) as string[];
+    const files = fs.readdirSync(changesDir, { recursive: true, encoding: "utf8" });
 
     expect(files.length).toBeGreaterThan(0);
 
@@ -140,9 +140,10 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
       const stat = fs.statSync(fullPath);
       if (!stat.isFile()) continue;
       const content = fs.readFileSync(fullPath, "utf-8");
+      const codeOnly = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "");
 
       for (const pattern of forbiddenPatterns) {
-        const matches = content.match(pattern);
+        const matches = codeOnly.match(pattern);
         expect(
           matches,
           `File ${file} must not call specVersion or lateCancellation update/delete (append-only contract)`,

@@ -188,6 +188,16 @@ describe("011 editWorkItem delegation to change control (integration, T025)", ()
     });
     expect(versions).toHaveLength(3);
     expect(versions.map((v) => v.version)).toEqual([1, 2, 3]);
+
+    const updatedWorkItem = await testDb.workItem.findUniqueOrThrow({
+      where: { id: workItemId },
+    });
+    const latestVersion = versions[2]!;
+    expect(latestVersion.quantity).toBe(updatedWorkItem.quantity);
+
+    const v2 = versions[1]!;
+    const v3 = versions[2]!;
+    expect(new Set([v2.quantity, v3.quantity])).toEqual(new Set([600, 700]));
   });
 
   it("011's unchanged save (same values) produces no version and no notification row, but still writes workitem.edited (m8)", async () => {
@@ -212,7 +222,6 @@ describe("011 editWorkItem delegation to change control (integration, T025)", ()
 
     // Save with the exact same values
     await editWorkItem(actor, workItemId, { quantity: 500, material: "Vinyl" });
-
 
     // No new SpecVersion created
     const afterVersions = await testDb.specVersion.findMany({ where: { workItemId } });

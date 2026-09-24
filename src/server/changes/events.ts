@@ -12,7 +12,6 @@ import {
 import type { SpecField } from "./specFields";
 import { effectiveDepartmentId } from "./recipients";
 
-
 export const SPEC_CHANGED = "work_item.spec_changed" as const;
 
 export type SpecChangedEvent = {
@@ -108,7 +107,6 @@ export async function emitSpecChangedInTx(
   const recipientDepartmentIds: string[] = effDeptId
     ? [effDeptId]
     : [];
-
 
   await notify(tx, {
     type: SPEC_CHANGED,

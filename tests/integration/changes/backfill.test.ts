@@ -1,5 +1,10 @@
 // tests/integration/changes/backfill.test.ts
 // Integration test for 016 spec version backfill script (tasks.md T024).
+//
+// Note: The backfill SQL is global, and running it in parallel with the
+// self-heal test could, in rare cases, contend on the same unique key.
+// If that flakes, the fix is running this file separately:
+//   vitest run tests/integration/changes/backfill.test.ts
 
 import fs from "node:fs";
 import path from "node:path";

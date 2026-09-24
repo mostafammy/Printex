@@ -38,7 +38,6 @@ export type ApplySpecChangeInput = {
   ifUnchanged: "fail" | "skip";
 };
 
-
 export type AppliedSpecChange = {
   previous: SpecVersionView;
   current: SpecVersionView;
@@ -99,7 +98,6 @@ export async function createInitialSpecVersionInTx(
 ): Promise<SpecVersionView> {
   const tx = scope.tx;
   const workItem = await tx.workItem.findUnique({
-
     where: { id: input.workItemId },
     select: {
       id: true,
@@ -162,7 +160,6 @@ export async function createInitialSpecVersionInTx(
 }
 
 /**
- * Ensures the Work Item points to its current specification version.
  * If currentSpecVersionId is null, creates a BACKFILL v1 (createdById: null)
  * from current columns and sets the pointer. Idempotent within a transaction.
  */
@@ -244,10 +241,9 @@ export async function ensureCurrentSpecVersionInTx(
   return toSpecVersionView(v1);
 }
 
-
 /**
  * The single writer of the Work Item spec mirror columns (FR-010).
- * Append-only: never calls specVersion.update or specVersion.delete.
+ * Append-only: never updates or deletes SpecVersion rows.
  */
 export async function applySpecChangeInTx(
   scope: TxScope,
@@ -305,7 +301,6 @@ export async function applySpecChangeInTx(
     });
   }
   const parsedPatch = parseResult.data;
-
 
   if (parsedPatch.productTypeId) {
     const pt = await tx.productType.findUnique({
@@ -535,7 +530,6 @@ export const getSpecHistory = defineQuery({
         changes,
       });
     }
-
 
     return {
       versions,

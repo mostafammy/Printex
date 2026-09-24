@@ -2,7 +2,6 @@
 // contracts/order-entry.md, plan.md §5.3.
 
 import { z } from "zod";
-import type { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
@@ -12,10 +11,11 @@ import {
   orderModeValues,
   workItemCreateSchema,
 } from "./validation";
-import { createInitialSpecVersionInTx } from "~/server/changes";
-import type { TxScope } from "~/server/core";
+import {
+  createInitialSpecVersionInTx,
+  runInTxScope,
+} from "~/server/changes";
 export type { WorkItemCreateInput } from "./validation";
-
 
 // ── quickCreateOrder (US1) ─────────────────────────────────────────────────
 
@@ -35,11 +35,8 @@ export async function quickCreateOrder(
   authorize(actor, "order.create");
   const parsed = quickCreateSchema.parse(input);
 
-  let orderId!: string;
-  let orderNumber!: number;
-  let workItemId!: string;
-
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  return await runInTxScope(db, async (scope) => {
+    const tx = scope.tx;
     const order = await tx.order.create({
       data: {
         customerId: parsed.customerId,
@@ -49,8 +46,6 @@ export async function quickCreateOrder(
         createdById: actor.userId,
       },
     });
-    orderId = order.id;
-    orderNumber = order.number;
 
     const workItem = await tx.workItem.create({
       data: {
@@ -61,14 +56,11 @@ export async function quickCreateOrder(
         requiresReview: true,
       },
     });
-    workItemId = workItem.id;
 
-    const scope: TxScope = { tx, afterCommit: (fn) => void fn() };
     await createInitialSpecVersionInTx(scope, {
       workItemId: workItem.id,
       actorId: actor.userId,
     });
-
 
     await audit.record(tx, {
       action: "order.created",
@@ -90,9 +82,9 @@ export async function quickCreateOrder(
       actorId: actor.userId,
       after: { description: parsed.description, orderId: order.id },
     });
-  });
 
-  return { orderId, orderNumber, workItemId };
+    return { orderId: order.id, orderNumber: order.number, workItemId: workItem.id };
+  });
 }
 
 // ── createOrder (US2) ───────────────────────────────────────────────────────
@@ -115,11 +107,8 @@ export async function createOrder(
   authorize(actor, "order.create");
   const parsed = createOrderSchema.parse(input);
 
-  let orderId!: string;
-  let orderNumber!: number;
-  const workItemIds: string[] = [];
-
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  return await runInTxScope(db, async (scope) => {
+    const tx = scope.tx;
     const order = await tx.order.create({
       data: {
         customerId: parsed.customerId,
@@ -130,8 +119,6 @@ export async function createOrder(
         createdById: actor.userId,
       },
     });
-    orderId = order.id;
-    orderNumber = order.number;
 
     await audit.record(tx, {
       action: "order.created",
@@ -147,18 +134,17 @@ export async function createOrder(
       },
     });
 
-    const itemScope: TxScope = { tx, afterCommit: (fn) => void fn() };
+    const workItemIds: string[] = [];
     for (const item of parsed.workItems) {
       const workItem = await tx.workItem.create({
         data: { orderId: order.id, state: "NEW", ...item },
       });
       workItemIds.push(workItem.id);
 
-      await createInitialSpecVersionInTx(itemScope, {
+      await createInitialSpecVersionInTx(scope, {
         workItemId: workItem.id,
         actorId: actor.userId,
       });
-
 
       await audit.record(tx, {
         action: "workitem.created",
@@ -168,7 +154,7 @@ export async function createOrder(
         after: { ...item, dueDate: item.dueDate?.toISOString(), orderId: order.id },
       });
     }
-  });
 
-  return { orderId, orderNumber, workItemIds };
+    return { orderId: order.id, orderNumber: order.number, workItemIds };
+  });
 }
