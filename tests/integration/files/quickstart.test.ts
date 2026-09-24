@@ -165,16 +165,17 @@ describe("Quickstart Acceptance (T037)", () => {
 
   // Scenario 6: Signed/internal links — grant expiry
   it("signed links: preview grant expires after configured duration", async () => {
-    const { createPreviewGrant, verifyPreviewGrant } = await import(
+    const { createPreviewGrant, encodeGrant, decodeAndVerifyGrant } = await import(
       "@/server/files/signed-preview.js"
     );
 
     const grant = createPreviewGrant("version-123", "actor-456", "preview");
-    const token = typeof grant === "string" ? grant : JSON.stringify(grant);
+    const token = encodeGrant(grant);
 
     // Valid grant should verify
-    const verified = verifyPreviewGrant(token);
+    const verified = decodeAndVerifyGrant(token);
     expect(verified).toBeDefined();
+    expect(verified.v).toBe("version-123");
   });
 
   // Scenario 7: Lifecycle and audit — void/archive require reason

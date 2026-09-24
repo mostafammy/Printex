@@ -25,8 +25,8 @@
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, unlink, access, rename } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { mkdir, unlink, access, link } from "node:fs/promises";
+import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { PassThrough } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
@@ -44,7 +44,8 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
    */
   private resolvePath(key: string): string {
     const resolved = resolve(this.root, key);
-    if (!resolved.startsWith(this.root)) {
+    const rel = relative(this.root, resolved);
+    if (isAbsolute(rel) || rel.startsWith("..") || rel !== rel.replace(/\.\./g, "")) {
       throw new Error(`Path traversal attempt rejected for key: "${key}"`);
     }
     return resolved;
@@ -87,8 +88,9 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     try {
       await pipeline(body, measure, createWriteStream(tempPath));
 
-      // Atomic rename to final path
-      await rename(tempPath, target);
+      // Atomic link + unlink — link fails with EEXIST atomically
+      await link(tempPath, target);
+      await unlink(tempPath);
     } catch (caught) {
       // Clean up temp file on error
       try {
@@ -121,8 +123,8 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
 
   /**
    * Get with checksum verification.
-   * Computes streaming SHA-256 and verifies against stored checksum before yielding bytes.
-   * Throws on mismatch.
+   * Hashes while streaming via a Transform — verified bytes are the same
+   * bytes yielded to the caller. Throws on mismatch at EOF (flush).
    */
   async getWithVerification(
     key: string,
@@ -130,38 +132,49 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     expectedSize: number
   ): Promise<NodeJS.ReadableStream> {
     const target = this.resolvePath(key);
-
     await access(target);
 
-    // Read file and compute hash to verify before returning
-    const { createHash } = await import("node:crypto");
+    const fileStream = createReadStream(target);
     const hash = createHash("sha256");
-    let size = 0;
+    let totalSize = 0;
 
-    await new Promise<void>((resolve, reject) => {
-      const stream = createReadStream(target);
-      stream.on("data", (chunk: Buffer) => {
-        size += chunk.length;
-        hash.update(chunk);
-      });
-      stream.on("end", () => resolve());
-      stream.on("error", reject);
+    // Transform that hashes and counts bytes inline
+    const verify = new PassThrough();
+    verify.on("data", (chunk: Buffer) => {
+      totalSize += chunk.length;
+      hash.update(chunk);
     });
 
-    const actualSha = hash.digest("hex");
-    if (actualSha !== expectedSha256) {
-      throw new Error(
-        `Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`
-      );
-    }
-    if (size !== expectedSize) {
-      throw new Error(
-        `Size mismatch: expected ${expectedSize}, got ${size}`
-      );
-    }
+    // Pipe through the verify transform; errors from the hash check
+    // will propagate to the caller via the stream error event
+    const origPipe = fileStream.pipe.bind(fileStream);
+    fileStream.pipe = ((dest: NodeJS.WritableStream, options?: { end?: boolean }) => {
+      origPipe(dest, { end: false });
+      // When the source ends, verify hash before ending the transform
+      fileStream.on("end", () => {
+        const actualSha = hash.digest("hex");
+        if (actualSha !== expectedSha256) {
+          verify.destroy(new Error(
+            `Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`
+          ));
+          return;
+        }
+        if (totalSize !== expectedSize) {
+          verify.destroy(new Error(
+            `Size mismatch: expected ${expectedSize}, got ${totalSize}`
+          ));
+          return;
+        }
+        verify.end();
+      });
+      fileStream.on("error", (err) => verify.destroy(err));
+      return dest;
+    }) as any;
 
-    // Return a fresh stream for the caller
-    return createReadStream(target);
+    // Kick off the pipe
+    fileStream.pipe(verify);
+
+    return verify;
   }
 }
 

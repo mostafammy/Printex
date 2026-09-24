@@ -4,8 +4,8 @@
 import { getActor } from "@/server/auth/getActor.js";
 import { fileService, authorizeFileDownload } from "@/server/files/index.js";
 import { verifyStreamIntegrity } from "@/server/files/integrity.js";
+import { mapFileError } from "@/server/files/errors.js";
 import { NextResponse } from "next/server";
-import { createReadStream } from "fs";
 import { Readable } from "stream";
 
 export const runtime = "nodejs";
@@ -50,48 +50,20 @@ export async function GET(
     );
 
     // Convert Node stream to Web stream
-    const webStream = new ReadableStream({
-      start(controller) {
-        stream.on("data", (chunk: Buffer) => controller.enqueue(chunk));
-        stream.on("end", () => controller.close());
-        stream.on("error", (err) => controller.error(err));
-      },
-    });
+    const webStream = Readable.toWeb(stream) as ReadableStream;
 
     // Return streaming response
     return new NextResponse(webStream, {
       headers: {
         "Content-Type": fileVersion.fileObject.mimeType,
         "Content-Length": fileObject.sizeBytes.toString(),
-        "Content-Disposition": `attachment; filename="${encodeURIComponent(fileVersion.originalName)}"`,
+        "Content-Disposition": `attachment; filename="${fileVersion.originalName.replace(/[^\x20-\x7E]|["\\]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(fileVersion.originalName)}`,
         "X-File-Version": fileVersion.versionNumber.toString(),
         "X-File-Checksum": fileVersion.fileObject.sha256,
       },
     });
 
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === "PREVIEW_GRANT_EXPIRED" || error.message === "PREVIEW_GRANT_TAMPERED") {
-        return NextResponse.json({ error: "EXPIRED_GRANT" }, { status: 403 });
-      }
-      if (error.message === "FORBIDDEN" || error.message.includes("Insufficient permissions")) {
-        return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-      }
-      if (error.message.includes("Checksum mismatch") || error.message.includes("Size mismatch")) {
-        return NextResponse.json(
-          { error: "CHECKSUM_MISMATCH", message: "File integrity verification failed" },
-          { status: 500 }
-        );
-      }
-      if (error.message.includes("not found")) {
-        return NextResponse.json({ error: "NOT_FOUND" }, { status: 404 });
-      }
-    }
-
-    console.error("Download error:", error);
-    return NextResponse.json(
-      { error: "INTERNAL_ERROR", message: "Download failed" },
-      { status: 500 }
-    );
+    return mapFileError(error);
   }
 }

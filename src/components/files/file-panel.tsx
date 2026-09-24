@@ -54,12 +54,13 @@ const DEFAULT_CATEGORIES = [
   "SUPPORTING",
 ];
 
-function formatFileSize(bytes?: number): string {
+function formatFileSize(bytes?: number | bigint): string {
   if (bytes === undefined || bytes === null) return "0 B";
-  if (bytes >= 1024 * 1024 * 1024) return `${Math.round(bytes / (1024 * 1024 * 1024))} GB`;
-  if (bytes >= 1024 * 1024) return `${Math.round(bytes / (1024 * 1024))} MB`;
-  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
-  return `${bytes} B`;
+  const n = typeof bytes === "bigint" ? Number(bytes) : bytes;
+  if (n >= 1024 * 1024 * 1024) return `${Math.round(n / (1024 * 1024 * 1024))} GB`;
+  if (n >= 1024 * 1024) return `${Math.round(n / (1024 * 1024))} MB`;
+  if (n >= 1024) return `${Math.round(n / 1024)} KB`;
+  return `${n} B`;
 }
 
 function formatDate(dateInput?: string | Date): string {
@@ -102,33 +103,13 @@ export const FilePanel: React.FC<FilePanelProps> = ({
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
-  // Memoize filtered versions based on selected tab
+  // Memoize filtered versions based on selected tab — use only authoritative category
   const filteredVersions = useMemo(() => {
     if (fileVersions.length === 0) return [];
 
     return fileVersions.filter((v) => {
-      if (v.fileAsset?.category) return v.fileAsset.category === selectedCategory;
-      if (v.category) return v.category === selectedCategory;
-
-      const nameLower = v.originalName.toLowerCase();
-      const noteLower = (v.note ?? "").toLowerCase();
-
-      switch (selectedCategory) {
-        case "REVIEW_PROOF":
-          return nameLower.includes("proof") || noteLower.includes("review");
-        case "APPROVED":
-          return v.approved;
-        case "ORIGINAL":
-          return nameLower.includes("original");
-        case "DESIGN_VERSIONS":
-          return !nameLower.includes("proof") && !nameLower.includes("original") && !nameLower.includes("production");
-        case "PRODUCTION":
-          return nameLower.includes("prod");
-        case "SUPPORTING":
-          return nameLower.includes("support");
-        default:
-          return true;
-      }
+      const cat = v.fileAsset?.category ?? v.category;
+      return cat === selectedCategory;
     });
   }, [fileVersions, selectedCategory]);
 
@@ -220,8 +201,8 @@ export const FilePanel: React.FC<FilePanelProps> = ({
     );
   }
 
-  const pdfVersion = fileVersions.find((v) => v.fileObject?.mimeType === "application/pdf" || v.originalName.toLowerCase().endsWith(".pdf"));
-  const nonPreviewVersion = fileVersions.find((v) => !isPreviewable(v.fileObject?.mimeType, v.originalName));
+  const pdfVersion = filteredVersions.find((v) => v.fileObject?.mimeType === "application/pdf" || v.originalName.toLowerCase().endsWith(".pdf"));
+  const nonPreviewVersion = filteredVersions.find((v) => !isPreviewable(v.fileObject?.mimeType, v.originalName));
 
   return (
     <div data-testid="file-panel" dir="rtl" className="w-full border rounded-lg bg-card text-card-foreground p-4 space-y-4">
@@ -291,12 +272,9 @@ export const FilePanel: React.FC<FilePanelProps> = ({
               </thead>
               <tbody>
                 {filteredVersions.map((v) => {
-                  const uploaderName = v.versionNumber === 1
-                    ? (v.uploadedBy?.name ?? v.uploadedById ?? "System")
-                    : (v.uploadedById ?? v.uploadedBy?.name ?? "System");
+                  const uploaderName = v.uploadedBy?.name ?? v.uploadedById ?? "System";
                   const sizeText = formatFileSize(v.fileObject?.sizeBytes);
                   const rawMime = v.fileObject?.mimeType ?? "application/octet-stream";
-                  const mimeText = v.versionNumber === 1 ? rawMime : (rawMime.length > 20 ? (rawMime.split("/")[1] ?? rawMime) : rawMime);
                   const checksumText = formatChecksum(v.fileObject?.sha256);
                   const approvedText = v.approved ? "Yes" : "No";
 
@@ -323,8 +301,8 @@ export const FilePanel: React.FC<FilePanelProps> = ({
                         </span>
                       </td>
                       <td className="p-2 font-mono text-xs">{sizeText}</td>
-                      <td className="p-2 font-mono text-xs max-w-[150px] truncate" title={mimeText}>
-                        {mimeText}
+                      <td className="p-2 font-mono text-xs max-w-[150px] truncate" title={rawMime}>
+                        {rawMime}
                       </td>
                       <td className="p-2 font-mono text-xs">{checksumText}</td>
                       <td className="p-2 font-medium">{approvedText}</td>

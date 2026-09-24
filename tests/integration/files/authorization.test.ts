@@ -1,5 +1,4 @@
 import { fileService } from "@/server/files/index.js";
-import { createTestStream } from "@/tests/fixtures/files.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { prisma } from "@/server/db/client.js";
 
@@ -20,7 +19,7 @@ describe("Authorization matrix tests", () => {
     });
     const admin = await prisma.user.findFirst({
       where: { roles: { some: { role: { key: "ADMIN_OWNER" } } } },
-    );
+    });
     const otherDeptOperator = await prisma.user.findFirst({
       where: { roles: { some: { role: { key: "PRODUCTION_OPERATOR" } } } },
     });
@@ -156,13 +155,6 @@ describe("Authorization matrix tests", () => {
   });
 
   it("denies other-department production operator from downloading Approved/Production files", async () => {
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new Uint8Array(1024).fill(0x41));
-        controller.close();
-      },
-    });
-
     const fileVersion = await fileService.upload({
       workItemId: testWorkItemId,
       category: "APPROVED",
@@ -177,19 +169,16 @@ describe("Authorization matrix tests", () => {
     });
 
     // Other department operator should be denied
-    try {
-      await fileService.getDownloadUrl(
+    await expect(
+      fileService.getDownloadUrl(
         fileVersion.id,
         {
           id: otherDeptOperatorId,
           permissions: new Set(["production.operate"]),
           departmentIds: ["other-dept-id"],
         } as any,
-      );
-      expect.fail("Should have thrown FORBIDDEN");
-    } catch (error) {
-      expect(error).toBeDefined();
-    }
+      ),
+    ).rejects.toThrow("FORBIDDEN");
   });
 
   it("denies production operator from downloading Design Versions files", async () => {
@@ -207,29 +196,19 @@ describe("Authorization matrix tests", () => {
     });
 
     // Production operator should not be able to download DESIGN_VERSIONS
-    try {
-      await fileService.getDownloadUrl(
+    await expect(
+      fileService.getDownloadUrl(
         fileVersion.id,
         {
           id: productionOperatorId,
           permissions: new Set(["production.operate"]),
           departmentIds: ["same-dept-id"],
         } as any,
-      );
-      expect.fail("Should have thrown FORBIDDEN");
-    } catch (error) {
-      expect(error).toBeDefined();
-    }
+      ),
+    ).rejects.toThrow("FORBIDDEN");
   });
 
   it("denies unauthorized users from downloading", async () => {
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new Uint8Array(1024).fill(0x41));
-        controller.close();
-      },
-    });
-
     const fileVersion = await fileService.upload({
       workItemId: testWorkItemId,
       category: "APPROVED",
@@ -244,19 +223,16 @@ describe("Authorization matrix tests", () => {
     });
 
     // Random user with no permissions
-    try {
-      await fileService.getDownloadUrl(
+    await expect(
+      fileService.getDownloadUrl(
         fileVersion.id,
         {
           id: "random-user",
           permissions: new Set(),
           departmentIds: [],
         } as any,
-      );
-      expect.fail("Should have thrown FORBIDDEN");
-    } catch (error) {
-      expect(error).toBeDefined();
-    }
+      ),
+    ).rejects.toThrow("FORBIDDEN");
   });
 
   it("allows Admin to list all versions", async () => {

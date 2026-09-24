@@ -60,7 +60,7 @@ export async function POST(request: Request) {
       stream: stream as any,
       fileName: validated.fileName,
       note: validated.note,
-      actor: { id: actor.id, permissions: new Set(), departmentIds: [] } as any,
+      actor: actor as any,
     });
 
     return NextResponse.json({

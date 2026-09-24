@@ -99,91 +99,125 @@ export class FileService {
     // Create temp file path
     const tempPath = join(tmpdir(), `upload-${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
-    // Stream to temp file with SHA-256 and size
-    const { size, sha256 } = await streamToTempFile(stream, tempPath);
+    try {
+      // Stream to temp file with SHA-256 and size
+      const { size, sha256 } = await streamToTempFile(stream, tempPath);
 
-    // Get MIME type from file name or stream metadata
-    const mimeType = this.getMimeType(input.fileName);
+      // Get MIME type from file name or stream metadata
+      const mimeType = this.getMimeType(input.fileName);
 
-    // Validate upload
-    const validated = validateUploadInput({
-      workItemId,
-      category,
-      fileName: input.fileName,
-      note: input.note,
-      actorId: actor.id,
-    }, size, mimeType);
+      // Validate upload
+      const validated = validateUploadInput({
+        workItemId,
+        category,
+        fileName: input.fileName,
+        note: input.note,
+        actorId: actor.id,
+      }, size, mimeType);
 
-    // Deduplicate FileObject by SHA-256
-    let fileObject = await prisma.fileObject.findUnique({
-      where: { sha256 },
-    });
-
-    if (!fileObject) {
-      // Generate storage key: use SHA-256 prefix for sharding
+      // Deduplicate FileObject by SHA-256 — upsert to handle concurrent uploads
       const storageKey = `${sha256.slice(0, 2)}/${sha256.slice(2, 4)}/${sha256}`;
+      let fileObject;
+      let isNewObject = false;
 
-      // Move temp file to permanent location via StorageAdapter
-      // For now, we'll use the storage adapter to put the file
-      const { createReadStream } = await import("fs");
-      const fileStream = createReadStream(tempPath);
-      await this.storage.put(sha256, fileStream as any);
+      try {
+        fileObject = await prisma.fileObject.create({
+          data: {
+            storageKey,
+            sizeBytes: size,
+            sha256,
+            mimeType,
+          },
+        });
+        isNewObject = true;
+      } catch (e: any) {
+        if (e?.code === "P2002") {
+          // Concurrent upload already created this FileObject
+          fileObject = await prisma.fileObject.findUnique({ where: { sha256 } });
+          if (!fileObject) throw e;
+        } else {
+          throw e;
+        }
+      }
 
-      fileObject = await prisma.fileObject.create({
-        data: {
-          storageKey: sha256,
-          sizeBytes: size,
-          sha256,
-          mimeType,
+      // Move temp file to permanent storage only if we created a new object
+      if (isNewObject) {
+        const { createReadStream } = await import("fs");
+        const fileStream = createReadStream(tempPath);
+        await this.storage.put(storageKey, fileStream as any);
+      }
+
+      // Atomic: supersede prior ACTIVE versions + create new version in transaction
+      const result = await prisma.$transaction(async (tx) => {
+        // Select ACTIVE version IDs for audit
+        const priorActive = await tx.fileVersion.findMany({
+          where: { fileAssetId: fileAsset!.id, status: "ACTIVE" },
+          select: { id: true, status: true },
+        });
+
+        // Supersede prior versions
+        if (priorActive.length > 0) {
+          await tx.fileVersion.updateMany({
+            where: { fileAssetId: fileAsset!.id, status: "ACTIVE" },
+            data: { status: "SUPERSEDED" },
+          });
+        }
+
+        // Create new FileVersion
+        const fileVersion = await tx.fileVersion.create({
+          data: {
+            fileAssetId: fileAsset!.id,
+            fileObjectId: fileObject!.id,
+            versionNumber: nextVersion,
+            originalName: input.fileName,
+            uploadedById: actor.id,
+            note: input.note ?? null,
+            status: "ACTIVE",
+            approved: false,
+          },
+          include: { fileObject: true },
+        });
+
+        return { fileVersion, priorActive };
+      });
+
+      // Audit the upload
+      await audit.record({
+        actorId: actor.id,
+        action: "CREATE",
+        entity: "FILE_VERSION",
+        entityId: result.fileVersion.id,
+        afterValues: {
+          versionNumber: result.fileVersion.versionNumber,
+          fileName: result.fileVersion.originalName,
+          status: result.fileVersion.status,
+          fileAssetId: fileAsset.id,
+          fileObjectId: fileObject.id,
+          sizeBytes: fileObject.sizeBytes,
+          sha256: fileObject.sha256,
         },
       });
+
+      // Audit each superseded version
+      for (const prior of result.priorActive) {
+        await audit.record({
+          actorId: actor.id,
+          action: "SUPERSEDE",
+          entity: "FILE_VERSION",
+          entityId: prior.id,
+          beforeValues: { status: prior.status },
+          afterValues: { status: "SUPERSEDED" },
+        });
+      }
+
+      return this.toOutput(result.fileVersion);
+    } finally {
+      // Always clean up temp file
+      try {
+        const { unlinkSync } = await import("fs");
+        unlinkSync(tempPath);
+      } catch {}
     }
-
-    // Clean up temp file
-    try {
-      const { unlinkSync } = await import("fs");
-      unlinkSync(tempPath);
-    } catch {}
-
-    // Mark prior ACTIVE version as SUPERSEDED
-    await prisma.fileVersion.updateMany({
-      where: { fileAssetId: fileAsset.id, status: "ACTIVE" },
-      data: { status: "SUPERSEDED" },
-    });
-
-    // Create new FileVersion
-    const fileVersion = await prisma.fileVersion.create({
-      data: {
-        fileAssetId: fileAsset.id,
-        fileObjectId: fileObject.id,
-        versionNumber: nextVersion,
-        originalName: input.fileName,
-        uploadedById: actor.id,
-        note: input.note ?? null,
-        status: "ACTIVE",
-        approved: false,
-      },
-      include: { fileObject: true },
-    });
-
-    // Audit the upload
-    await audit.record({
-      actorId: actor.id,
-      action: "CREATE",
-      entity: "FILE_VERSION",
-      entityId: fileVersion.id,
-      afterValues: {
-        versionNumber: fileVersion.versionNumber,
-        fileName: fileVersion.originalName,
-        status: fileVersion.status,
-        fileAssetId: fileAsset.id,
-        fileObjectId: fileObject.id,
-        sizeBytes: fileObject.sizeBytes,
-        sha256: fileObject.sha256,
-      },
-    });
-
-    return this.toOutput(fileVersion);
   }
 
   /**
@@ -201,8 +235,7 @@ export class FileService {
     }
     if (status) {
       where.status = status;
-    }
-    if (!includeArchived) {
+    } else if (!includeArchived) {
       where.status = { not: "ARCHIVED" };
     }
 
@@ -271,7 +304,11 @@ export class FileService {
    * Void a file version.
    */
   async voidVersion(versionId: string, actor: Actor, reason: string): Promise<void> {
-    const allowed = await canPerformLifecycleAction({ actor, fileVersionId: versionId, action: "VOID" });
+    if (!reason || !reason.trim()) {
+      throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to void a file version");
+    }
+
+    const allowed = await canPerformLifecycleAction(actor, versionId, "VOID");
     if (!allowed.allowed) {
       throw new Error("FORBIDDEN");
     }
@@ -299,7 +336,11 @@ export class FileService {
    * Archive a file version.
    */
   async archiveVersion(versionId: string, actor: Actor, reason: string): Promise<void> {
-    const allowed = await canPerformLifecycleAction({ actor, fileVersionId: versionId, action: "ARCHIVE" });
+    if (!reason || !reason.trim()) {
+      throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to archive a file version");
+    }
+
+    const allowed = await canPerformLifecycleAction(actor, versionId, "ARCHIVE");
     if (!allowed.allowed) {
       throw new Error("FORBIDDEN");
     }
@@ -338,40 +379,48 @@ export class FileService {
 
     // Stream to temp and compute integrity
     const tempPath = join(tmpdir(), `attach-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    const { size, sha256 } = await streamToTempFile(stream, tempPath);
-    const mimeType = this.getMimeType(fileName);
 
-    // Validate
-    validateAttachmentInput({
-      entityType,
-      entityId,
-      fileName,
-      kind,
-      createdById: actor.id,
-      fileSize: size,
-      mimeType,
-    });
-
-    // Deduplicate FileObject
-    let fileObject = await prisma.fileObject.findUnique({ where: { sha256 } });
-
-    if (!fileObject) {
-      const { createReadStream } = await import("fs");
-      const fileStream = createReadStream(tempPath);
-      await this.storage.put(sha256, fileStream as any);
-
-      fileObject = await prisma.fileObject.create({
-        data: { storageKey: sha256, sizeBytes: size, sha256, mimeType },
-      });
-    }
-
-    // Clean up temp
     try {
-      const { unlinkSync } = await import("fs");
-      unlinkSync(tempPath);
-    } catch {}
+      const { size, sha256 } = await streamToTempFile(stream, tempPath);
+      const mimeType = this.getMimeType(fileName);
 
-    // Create Attachment
+      // Validate
+      validateAttachmentInput({
+        entityType,
+        entityId,
+        fileName,
+        kind,
+        createdById: actor.id,
+        fileSize: size,
+        mimeType,
+      });
+
+      // Deduplicate FileObject — upsert to handle concurrent uploads
+      const storageKey = `${sha256.slice(0, 2)}/${sha256.slice(2, 4)}/${sha256}`;
+      let fileObject;
+      let isNewObject = false;
+
+      try {
+        fileObject = await prisma.fileObject.create({
+          data: { storageKey, sizeBytes: size, sha256, mimeType },
+        });
+        isNewObject = true;
+      } catch (e: any) {
+        if (e?.code === "P2002") {
+          fileObject = await prisma.fileObject.findUnique({ where: { sha256 } });
+          if (!fileObject) throw e;
+        } else {
+          throw e;
+        }
+      }
+
+      if (isNewObject) {
+        const { createReadStream } = await import("fs");
+        const fileStream = createReadStream(tempPath);
+        await this.storage.put(storageKey, fileStream as any);
+      }
+
+      // Create Attachment
     const attachment = await prisma.attachment.create({
       data: {
         fileObjectId: fileObject.id,
@@ -399,6 +448,12 @@ export class FileService {
     });
 
     return attachment.id;
+    } finally {
+      try {
+        const { unlinkSync } = await import("fs");
+        unlinkSync(tempPath);
+      } catch {}
+    }
   }
 
   /**
@@ -450,8 +505,8 @@ export class FileService {
     return ext && map[ext] ? map[ext] : "application/octet-stream";
   }
 
-  private async authorizeApprove(actor: any, versionId: string) {
-    const allowed = await canApproveFileVersion({ actor, fileVersionId: versionId } as any);
+  private async authorizeApprove(actor: Actor, versionId: string) {
+    const allowed = await canApproveFileVersion(actor, versionId);
     if (!allowed.allowed) throw new Error("FORBIDDEN");
   }
 }

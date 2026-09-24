@@ -4,9 +4,10 @@
 
 import { unlink, readdir, stat } from "fs/promises";
 import { join } from "path";
+import { tmpdir } from "os";
 import { prisma } from "@/server/db/client.js";
 
-const TEMP_DIR = "/tmp"; // Or configurable temp directory
+const TEMP_DIR = tmpdir();
 const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour
 
 export interface SweepResult {
@@ -80,29 +81,37 @@ export async function cleanupTempFile(fileName: string, tempDir = TEMP_DIR): Pro
 /**
  * Scheduled sweeper - call this from a cron job or scheduler.
  * Runs every hour.
+ * Uses a valid system actor ID (first admin user) for audit trail.
  */
 export async function runScheduledSweep(): Promise<void> {
   const result = await sweepTempObjects();
 
-  // Optionally log to database for audit trail
+  // Log to database for audit trail using a valid system actor
   try {
-    await prisma.fileAuditEvent.create({
-      data: {
-        actorId: "system-sweeper",
-        action: "UPDATE",
-        entity: "FILE_OBJECT",
-        entityId: "temp-sweep",
-        afterValues: {
-          scanned: result.scanned,
-          deleted: result.deleted,
-          freedBytes: result.freedBytes,
-          errors: result.errors,
-        },
-        reason: "Hourly temp object cleanup",
-      },
+    const systemUser = await prisma.user.findFirst({
+      where: { roles: { some: { role: { key: "ADMIN_OWNER" } } } },
+      select: { id: true },
     });
+
+    if (systemUser) {
+      await prisma.fileAuditEvent.create({
+        data: {
+          actorId: systemUser.id,
+          action: "UPDATE",
+          entity: "FILE_OBJECT",
+          entityId: "temp-sweep",
+          afterValues: {
+            scanned: result.scanned,
+            deleted: result.deleted,
+            freedBytes: result.freedBytes,
+            errors: result.errors,
+          },
+          reason: "Hourly temp object cleanup",
+        },
+      });
+    }
   } catch {
-    // Ignore audit errors
+    // Ignore audit errors — sweeper should not fail
   }
 }
 

@@ -48,7 +48,7 @@ model FileObject {
   /// Opaque hash/ID-based key; never customer/folder naming. Unique.
   storageKey   String   @unique
   /// Required, 0–5 GB inclusive.
-  sizeBytes    Int
+  sizeBytes    BigInt
   /// Required 64-hex checksum; unique for deduplication.
   sha256       String   @unique
   /// Required; validated against configured allowlist.
@@ -148,7 +148,7 @@ model FileConfig {
   /// Required array of MIME type patterns; validated on write.
   mimeAllowlist     Json
   /// Required, 1–10 GB inclusive.
-  maxFileSizeBytes  Int
+  maxFileSizeBytes  BigInt
   /// Required array of { name: string, code: string }; managed by Admin UI.
   departments       Json
   /// Required, 60–3600.

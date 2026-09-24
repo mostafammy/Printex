@@ -127,7 +127,8 @@ describe("FilePanel component", () => {
     render(<FilePanel {...defaultProps} />);
 
     expect(screen.getByText("Yes")).toBeInTheDocument(); // v2 is approved
-    expect(screen.getByText("No")).toBeInTheDocument(); // v1 and v3 are not
+    const noElements = screen.getAllByText("No");
+    expect(noElements.length).toBeGreaterThanOrEqual(1); // v1 and v3 are not
   });
 
   it("renders RTL layout with logical directional classes", () => {

@@ -10,6 +10,7 @@ export function mapFileError(error: unknown): NextResponse {
       [FileErrorCode.VALIDATION_ERROR]: 400,
       [FileErrorCode.FORBIDDEN]: 403,
       [FileErrorCode.NOT_FOUND]: 404,
+      [FileErrorCode.FILE_NOT_FOUND]: 404,
       [FileErrorCode.CHECKSUM_MISMATCH]: 500,
       [FileErrorCode.EXPIRED_GRANT]: 403,
       [FileErrorCode.INCOMPLETE_UPLOAD]: 400,

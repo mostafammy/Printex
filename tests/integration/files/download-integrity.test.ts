@@ -1,5 +1,6 @@
 import { verifyStreamIntegrity } from "@/server/files/integrity.js";
 import { ReadableStream } from "stream/web";
+import { Readable } from "stream";
 import { describe, it, expect } from "vitest";
 import { createReadStream, unlinkSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
@@ -69,7 +70,7 @@ describe("Download integrity and checksum tests", () => {
       const correctHash = crypto.createHash("sha256").update(originalData).digest("hex");
 
       // Verify original passes
-      const originalStream = createReadStream(testFile);
+      const originalStream = Readable.toWeb(createReadStream(testFile)) as ReadableStream;
       await expect(
         verifyStreamIntegrity(originalStream, correctHash, originalData.length)
       ).resolves.not.toThrow();
@@ -79,7 +80,7 @@ describe("Download integrity and checksum tests", () => {
       writeFileSync(testFile, Buffer.from(tamperedData));
 
       // Tampered file should fail verification
-      const tamperedStream = createReadStream(testFile);
+      const tamperedStream = Readable.toWeb(createReadStream(testFile)) as ReadableStream;
       await expect(
         verifyStreamIntegrity(tamperedStream, correctHash, originalData.length)
       ).rejects.toThrow("Checksum mismatch");
@@ -101,7 +102,7 @@ describe("Download integrity and checksum tests", () => {
       fs.truncateSync(handle, 1024); // Truncate to half
       fs.closeSync(handle);
 
-      const corruptedStream = createReadStream("/tmp/partial-corrupt.bin");
+      const corruptedStream = Readable.toWeb(createReadStream("/tmp/partial-corrupt.bin")) as ReadableStream;
 
       await expect(
         verifyStreamIntegrity(corruptedStream, correctHash, originalData.length)

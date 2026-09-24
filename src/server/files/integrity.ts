@@ -53,15 +53,19 @@ export async function streamToTempFile(
     },
   });
 
-  // Wrap with timeout enforcement
+  // Wrap with timeout enforcement — inactivity timer that resets per chunk
+  let inactivityTimer: ReturnType<typeof setTimeout>;
+  const timeoutMs = options.timeoutMs ?? 30_000;
   const timeoutStream = new TransformStream<Uint8Array, Uint8Array>({
-    async transform(chunk, controller) {
-      // Each chunk must pass through within timeoutMs
-      await Promise.race([
-        new Promise<void>((resolve) => setTimeout(resolve, timeoutMs)),
-        Promise.resolve(),
-      ]);
+    transform(chunk, controller) {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => {
+        controller.error(new Error(`Upload timed out after ${timeoutMs}ms of inactivity`));
+      }, timeoutMs);
       controller.enqueue(chunk);
+    },
+    flush() {
+      clearTimeout(inactivityTimer);
     },
   });
 

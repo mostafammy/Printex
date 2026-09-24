@@ -56,7 +56,7 @@ describe("Lifecycle and audit tests", () => {
       const audit = await prisma.fileAuditEvent.findFirst({
         where: { entityId: fileVersion.id, action: "VOID" },
       });
-      expect(audit).toBeDefined();
+      expect(audit).not.toBeNull();
       expect(audit?.beforeValues).toEqual(expect.objectContaining({ status: "ACTIVE" }));
       expect(audit?.afterValues).toEqual(expect.objectContaining({ status: "VOID" }));
       expect(audit?.reason).toBe("Design rejected by client");
@@ -130,7 +130,7 @@ describe("Lifecycle and audit tests", () => {
       const audit = await prisma.fileAuditEvent.findFirst({
         where: { entityId: fileVersion.id, action: "ARCHIVE" },
       });
-      expect(audit).toBeDefined();
+      expect(audit).not.toBeNull();
       expect(audit?.beforeValues).toEqual(expect.objectContaining({ status: "ACTIVE" }));
       expect(audit?.afterValues).toEqual(expect.objectContaining({ status: "ARCHIVED" }));
       expect(audit?.reason).toBe("Project completed");
@@ -228,7 +228,7 @@ describe("Lifecycle and audit tests", () => {
       const audit = await prisma.fileAuditEvent.findFirst({
         where: { entityId: fileVersion.id, action: "APPROVE" },
       });
-      expect(audit).toBeDefined();
+      expect(audit).not.toBeNull();
       expect(audit?.beforeValues).toEqual(expect.objectContaining({ approved: false }));
       expect(audit?.afterValues).toEqual(expect.objectContaining({ approved: true }));
     });

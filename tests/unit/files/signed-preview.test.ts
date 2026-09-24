@@ -1,5 +1,5 @@
 import { createPreviewGrant, verifyPreviewGrant, encodeGrant, decodeAndVerifyGrant, createPreviewUrl, createDownloadUrl } from "@/server/files/signed-preview.js";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 describe("Signed preview grants", () => {
   describe("createPreviewGrant", () => {
@@ -47,19 +47,22 @@ describe("Signed preview grants", () => {
     });
 
     it("throws on expired grant", () => {
-      const grant = createPreviewGrant("version-123", "actor-456", "preview", 1); // 1ms expiry
+      vi.useFakeTimers();
+      const grant = createPreviewGrant("version-123", "actor-456", "preview", 1000); // 1s expiry
 
-      // Wait for expiry
-      setTimeout(() => {}, 10);
+      // Advance past expiry
+      vi.advanceTimersByTime(1100);
 
       expect(() => verifyPreviewGrant(grant)).toThrow("PREVIEW_GRANT_EXPIRED");
+      vi.useRealTimers();
     });
 
     it("throws on tampered signature", () => {
       const grant = createPreviewGrant("version-123", "actor-456", "preview");
 
-      // Tamper with signature
-      const tamperedGrant = { ...grant, signature: grant.signature.slice(0, -1) + "X" };
+      // Tamper with signature — modify middle character
+      const si = Math.floor(grant.signature.length / 2);
+      const tamperedGrant = { ...grant, signature: grant.signature.slice(0, si) + (grant.signature[si] === "A" ? "B" : "A") + grant.signature.slice(si + 1) };
 
       expect(() => verifyPreviewGrant(tamperedGrant)).toThrow("PREVIEW_GRANT_TAMPERED");
     });
@@ -102,10 +105,11 @@ describe("Signed preview grants", () => {
       // Manually create grant with wrong purpose
       const tamperedGrant = {
         ...grant,
-        purpose: "malicious",
+        purpose: "malicious" as any,
       };
 
-      expect(() => verifyPreviewGrant(tamperedGrant)).toThrow("PREVIEW_GRANT_INVALID_PURPOSE");
+      // Changing purpose invalidates the signature → PREVIEW_GRANT_TAMPERED
+      expect(() => verifyPreviewGrant(tamperedGrant)).toThrow("PREVIEW_GRANT_TAMPERED");
     });
 
     it("rejects malformed grant", () => {
@@ -139,20 +143,23 @@ describe("Signed preview grants", () => {
       const grant = createPreviewGrant("version-123", "actor-456", "preview");
       const token = encodeGrant(grant);
 
-      // Tamper with token
-      const tamperedToken = token.slice(0, -1) + "X";
+      // Tamper with token — modify middle character to avoid padding issues
+      const i = Math.floor(token.length / 2);
+      const tamperedToken = token.slice(0, i) + (token[i] === "A" ? "B" : "A") + token.slice(i + 1);
 
       expect(() => decodeAndVerifyGrant(tamperedToken)).toThrow("PREVIEW_GRANT_TAMPERED");
     });
 
     it("rejects expired token", () => {
-      const grant = createPreviewGrant("version-123", "actor-456", "preview", 1);
+      vi.useFakeTimers();
+      const grant = createPreviewGrant("version-123", "actor-456", "preview", 1000);
 
-      setTimeout(() => {}, 10);
+      vi.advanceTimersByTime(1100);
 
       const token = encodeGrant(grant);
 
       expect(() => decodeAndVerifyGrant(token)).toThrow("PREVIEW_GRANT_EXPIRED");
+      vi.useRealTimers();
     });
 
     it("rejects malformed token", () => {

@@ -4,6 +4,7 @@
 import { getActor } from "@/server/auth/getActor.js";
 import { fileService, authorizeFileDownload } from "@/server/files/index.js";
 import { verifyPreviewGrant, decodeAndVerifyGrant } from "@/server/files/signed-preview.js";
+import { mapFileError } from "@/server/files/errors.js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -38,7 +39,7 @@ export async function GET(
     }
 
     // Verify version matches
-    if (payload.v !== versionId) {
+    if (payload.v !== versionId || payload.s !== "preview") {
       return NextResponse.json({ error: "VERSION_MISMATCH" }, { status: 403 });
     }
 
@@ -84,21 +85,6 @@ export async function GET(
     });
 
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === "PREVIEW_GRANT_EXPIRED") {
-        return NextResponse.json({ error: "EXPIRED_GRANT" }, { status: 403 });
-      }
-      if (error.message === "PREVIEW_GRANT_TAMPERED") {
-        return NextResponse.json({ error: "INVALID_GRANT" }, { status: 403 });
-      }
-      if (error.message === "FORBIDDEN") {
-        return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
-      }
-    }
-    console.error("Preview error:", error);
-    return NextResponse.json(
-      { error: "INTERNAL_ERROR", message: "Preview failed" },
-      { status: 500 }
-    );
+    return mapFileError(error);
   }
 }
