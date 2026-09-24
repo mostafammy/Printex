@@ -50,8 +50,8 @@ function makeActor(userId: string): Actor {
 describe("016 changes aspect binding (integration, T017)", () => {
   it('maps a guard failure with guardCode "CHANGE_HOLD" to { ok: false, error: { code: "CHANGE_HOLD" } }', async () => {
     // Assumes per-file test isolation; registerGuard mutates the in-memory shared guard registry.
-    // Use an edge (DELIVERED -> COMPLETED) that no other feature guards.
-    registerGuard({ from: "DELIVERED", to: "COMPLETED" }, async () =>
+    // Use an edge (ASSIGNED -> IN_DESIGN) that is unguarded anywhere.
+    registerGuard({ from: "ASSIGNED", to: "IN_DESIGN" }, async () =>
       err({
         code: "CHANGE_HOLD",
         message: "Item is held for change control",
@@ -65,7 +65,7 @@ describe("016 changes aspect binding (integration, T017)", () => {
       run: async (ctx) => {
         await ctx.transition({
           workItemId: ctx.input.workItemId,
-          to: "COMPLETED",
+          to: "IN_DESIGN",
           reason: "Testing guard failure mapping",
         });
         return {
@@ -84,7 +84,7 @@ describe("016 changes aspect binding (integration, T017)", () => {
     const userId = await seedUser();
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
-    const workItemId = await seedWorkItem({ orderId, state: "DELIVERED" });
+    const workItemId = await seedWorkItem({ orderId, state: "ASSIGNED" });
     const actor = makeActor(userId);
 
     const result = await dummyCommand(actor, { workItemId });

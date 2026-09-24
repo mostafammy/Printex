@@ -11,13 +11,17 @@
 
 import { z } from "zod";
 import type { DomainError } from "../errors";
-import type { AspectBaseError, ModuleErrorShape } from "./types";
+import type {
+  AspectBaseError,
+  ModuleBindingOptions,
+  ModuleErrorShape,
+} from "./types";
 
 /**
  * Thrown internally to abort a transaction and return a typed domain failure.
  * Never leaks past the public command/query boundary.
  */
-export class AspectDomainError<E extends ModuleErrorShape> extends Error {
+export class AspectDomainError<E extends ModuleErrorShape = ModuleErrorShape> extends Error {
   readonly error: AspectBaseError | E;
 
   constructor(error: AspectBaseError | E) {
@@ -63,10 +67,10 @@ export class AspectMisuseError extends Error {
   }
 }
 
-export interface ErrorMappingOptions<E extends ModuleErrorShape> {
-  readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
-  readonly mapUniqueViolation?: (target: readonly string[]) => E | undefined;
-}
+export type ErrorMappingOptions<E extends ModuleErrorShape> = Pick<
+  ModuleBindingOptions<E>,
+  "mapGuardFailure" | "mapUniqueViolation"
+>;
 
 /**
  * Centralized error mapping function (contracts/aspects.md §3.2).
@@ -171,17 +175,18 @@ export function mapAspectError<E extends ModuleErrorShape>(
         ? [rawTarget]
         : [];
 
-    const mapped = opts.mapUniqueViolation?.(target);
+    const rawModelName = caught.meta?.modelName;
+    const modelName =
+      typeof rawModelName === "string" ? rawModelName : undefined;
+
+    const mapped = opts.mapUniqueViolation?.(target, modelName);
     if (mapped) {
       return mapped;
     }
 
-    const modelName =
-      typeof caught.meta?.modelName === "string" ? caught.meta.modelName : "";
-
     return {
       code: "CONFLICT",
-      entity: modelName,
+      entity: modelName ?? "",
       id: "",
     };
   }

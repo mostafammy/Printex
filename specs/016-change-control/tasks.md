@@ -75,8 +75,10 @@ builds on.
   `HEAD_DESIGNER` and `ADMIN_OWNER` have it and that `RECEPTION`, `DESIGNER`,
   `PRODUCTION_OPERATOR`, `PRINT_RECEPTION_DELIVERY`, and `ACCOUNTING` do not.
 - [x] T004 [P] Create `prisma/manual-sql/016-change-control-constraints.sql` (idempotent): the
-  partial unique index `ChangeRequest_one_pending_per_work_item`, and `REVOKE UPDATE, DELETE` on
-  `"SpecVersion"` and `"LateCancellation"` (data-model.md "Step 2"). Use the header comment style
+  partial unique index `ChangeRequest_one_pending_per_work_item`, `REVOKE DELETE` plus the
+  `spec_version_forbid_update` BEFORE UPDATE trigger on `"SpecVersion"` (an FK target, so REVOKE
+  UPDATE would break FK locking), and `REVOKE UPDATE, DELETE` on `"LateCancellation"`
+  (data-model.md "Step 2"). Use the header comment style
   of `audit-event-append-only.sql`, including the non-superuser prerequisite and "re-apply after
   every `db push`". Apply it with `pnpm exec prisma db execute --file … --schema prisma/schema`
   once T002 is unblocked.

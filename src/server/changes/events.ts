@@ -54,6 +54,10 @@ export function __resetSpecChangeListenersForTests(): void {
   listeners.clear();
 }
 
+function isAspectDomainError(err: unknown): err is AspectDomainError {
+  return err instanceof AspectDomainError;
+}
+
 /**
  * Emits a SPEC_CHANGED event inside the caller's transaction.
  * 1. Runs registered listeners sequentially in registration order.
@@ -67,8 +71,8 @@ export async function emitSpecChangedInTx(
     try {
       await listener(tx, event);
     } catch (err) {
-      if (err instanceof AspectDomainError) {
-        const code = (err.error as { code?: string })?.code;
+      if (isAspectDomainError(err)) {
+        const code = err.error.code;
         if (code !== "SPEC_CHANGE_VETOED") {
           throw new AspectMisuseError(`listener ${name} raised foreign code ${code}`);
         }

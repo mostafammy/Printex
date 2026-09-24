@@ -28,6 +28,20 @@ export type AspectBaseError =
 
 export type ModuleErrorShape = { readonly code: string };
 
+export type MapUniqueViolation<E extends ModuleErrorShape = ModuleErrorShape> = (
+  target: readonly string[],
+  modelName: string | undefined,
+) => E | undefined;
+
+export interface ModuleBindingOptions<E extends ModuleErrorShape = ModuleErrorShape> {
+  /** Module name, used in misuse errors and logs. */
+  readonly module: string;
+  /** Maps a transitionWorkItem GUARD_FAILED guardCode to a module error. undefined → base GUARD_FAILED. */
+  readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
+  /** Maps a Prisma P2002 unique violation to a module error. undefined → base CONFLICT. */
+  readonly mapUniqueViolation?: MapUniqueViolation<E>;
+}
+
 export type AspectResult<T, E extends ModuleErrorShape> =
   | { readonly ok: true; readonly data: T }
   | { readonly ok: false; readonly error: AspectBaseError | E };

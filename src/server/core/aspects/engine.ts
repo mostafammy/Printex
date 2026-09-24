@@ -23,6 +23,7 @@ import type {
   CommandCtx,
   DefineCommand,
   DefineQuery,
+  ModuleBindingOptions,
   ModuleErrorShape,
   PermissionSpec,
   Tx,
@@ -35,6 +36,12 @@ import {
 } from "./errors";
 import { transitionOrThrow } from "./transition";
 import { toCoreActor } from "./actor";
+
+type RunOutcome<O, NoChange extends boolean> = NoChange extends true
+  ?
+      | { readonly value: O; readonly audit: readonly [AuditEntry, ...AuditEntry[]] }
+      | { readonly value: O; readonly noChange: true }
+  : { readonly value: O; readonly audit: readonly [AuditEntry, ...AuditEntry[]] };
 
 function toPermissionList<P extends string>(
   resolved: P | readonly [P, ...P[]],
@@ -127,24 +134,13 @@ type CommandTarget<
 export function createAspects<A extends { userId: string }, P extends string>(
   deps: AspectDeps<A, P>,
 ): {
-  forModule<E extends ModuleErrorShape>(opts: {
-    /** Module name, used in misuse errors and logs. */
-    readonly module: string;
-    /** Maps a transitionWorkItem GUARD_FAILED guardCode to a module error. undefined → base GUARD_FAILED. */
-    readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
-    /** Maps a Prisma P2002 unique violation to a module error. undefined → base CONFLICT. */
-    readonly mapUniqueViolation?: (target: readonly string[]) => E | undefined;
-  }): {
+  forModule<E extends ModuleErrorShape>(opts: ModuleBindingOptions<E>): {
     defineCommand: DefineCommand<A, P, E>;
     defineQuery: DefineQuery<A, P, E>;
   };
 } {
   return {
-    forModule<E extends ModuleErrorShape>(opts: {
-      readonly module: string;
-      readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
-      readonly mapUniqueViolation?: (target: readonly string[]) => E | undefined;
-    }) {
+    forModule<E extends ModuleErrorShape>(opts: ModuleBindingOptions<E>) {
       const defineCommand: DefineCommand<A, P, E> = <
         S extends z.ZodType<unknown, z.ZodTypeDef, unknown>,
         O,
@@ -156,11 +152,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
         readonly permission: PermissionSpec<P, z.output<S>>;
         readonly prepare?: (c: { actor: A; input: z.output<S> }) => Promise<Prep>;
         readonly authorize?: (c: CommandCtx<A, P, z.output<S>, Prep>) => Promise<void> | void;
-        readonly run: (c: CommandCtx<A, P, z.output<S>, Prep>) => Promise<
-          NoChange extends true
-            ? { readonly value: O; readonly audit: readonly [AuditEntry, ...AuditEntry[]] } | { readonly value: O; readonly noChange: true }
-            : { readonly value: O; readonly audit: readonly [AuditEntry, ...AuditEntry[]] }
-        >;
+        readonly run: (c: CommandCtx<A, P, z.output<S>, Prep>) => Promise<RunOutcome<O, NoChange>>;
         readonly allowNoChange?: NoChange;
         readonly txOptions?: { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel };
       }) => {
@@ -183,7 +175,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
             let closed = false;
 
             // 4. Open transaction with txOptions
-            let outcome;
+            let outcome: RunOutcome<O, NoChange>;
             try {
               outcome = await deps.transaction(async (tx) => {
                 const ctx: CommandCtx<A, P, z.output<S>, Prep> = {

@@ -19,6 +19,7 @@ import {
   transitionOrThrow,
   type AspectDeps,
   type AuditEntry,
+  type TransitionOrThrowInput,
   type Tx,
 } from "~/server/core";
 import type { DomainError } from "~/server/core/errors";
@@ -740,7 +741,7 @@ describe("Aspect Engine — afterCommit Hooks (§3.1, §7)", () => {
       module: "test-module",
     });
 
-    let leakedCtx: any;
+    let leakedCtx: { afterCommit: (h: () => Promise<void>) => void } | undefined;
 
     const command = aspects.defineCommand({
       action: "order.leak_ctx",
@@ -759,7 +760,7 @@ describe("Aspect Engine — afterCommit Hooks (§3.1, §7)", () => {
     expect(res.ok).toBe(true);
 
     expect(() => {
-      leakedCtx.afterCommit(async () => {});
+      leakedCtx?.afterCommit(async () => {});
     }).toThrowError(AspectMisuseError);
   });
 });
@@ -1207,6 +1208,44 @@ describe("Aspect Engine — Error Mapping Table (§3.2, §7)", () => {
     });
   });
 
+  it("Row 8c: passes modelName to mapUniqueViolation", async () => {
+    let capturedTarget: readonly string[] | undefined;
+    let capturedModel: string | undefined;
+
+    const fakes = createFakeDeps();
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+      mapUniqueViolation: (target, modelName) => {
+        capturedTarget = target;
+        capturedModel = modelName;
+        if (modelName === "SpecialModel" && target.includes("code")) {
+          return { code: "DUPLICATE_CODE" };
+        }
+        return undefined;
+      },
+    });
+
+    const cmd = aspects.defineCommand({
+      action: "test.p2002_model_name",
+      input: z.object({}),
+      permission: "order.edit",
+      run: async () => {
+        throw {
+          code: "P2002",
+          meta: { target: ["code"], modelName: "SpecialModel" },
+        };
+      },
+    });
+
+    const res = await cmd(makeActor(), {});
+    expect(capturedTarget).toEqual(["code"]);
+    expect(capturedModel).toBe("SpecialModel");
+    expect(res).toEqual({
+      ok: false,
+      error: { code: "DUPLICATE_CODE" },
+    });
+  });
+
   it("Row 9: re-throws unknown errors and rolls back transaction", async () => {
     const fakes = createFakeDeps();
     const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
@@ -1354,7 +1393,7 @@ describe("transitionOrThrow (§3.3)", () => {
   });
 
   it("proves from comes from the locked $queryRaw read", async () => {
-    const queryRawMock = vi.fn().mockResolvedValue([{ state: "ASSIGNED" }]);
+    const queryRawMock = vi.fn().mockResolvedValue([{ state: "IN_DESIGN" }]);
     const fakeTx = {
       $queryRaw: queryRawMock,
       workItem: {
@@ -1393,11 +1432,10 @@ describe("transitionOrThrow (§3.3)", () => {
     });
 
     expect(queryRawMock).toHaveBeenCalled();
-    const queryRawCall = queryRawMock.mock.calls[0];
-    expect(queryRawCall).toBeDefined();
-    expect(queryRawCall![0].join("")).toContain('SELECT "state" FROM "WorkItem" WHERE "id" =');
-    expect(queryRawCall![0].join("")).toContain("FOR UPDATE");
-    expect(outcome.from).toBe("ASSIGNED");
+    const [strings] = queryRawMock.mock.calls[0] ?? [];
+    expect(String(strings)).toContain('SELECT "state" FROM "WorkItem" WHERE "id" =');
+    expect(String(strings)).toContain("FOR UPDATE");
+    expect(outcome.from).toBe("IN_DESIGN");
     expect(outcome.to).toBe("IN_DESIGN");
   });
 
@@ -1428,7 +1466,8 @@ describe("transitionOrThrow (§3.3)", () => {
         workItemId: "wi-10",
         to: "ASSIGNED",
         actor: { userId: "user-trans" },
-        meta: "not-an-object" as any,
+        // Deliberate invalid runtime value for negative test
+        meta: "not-an-object" as unknown as TransitionOrThrowInput["meta"],
       }),
     ).rejects.toThrowError(AspectMisuseError);
 
@@ -1437,7 +1476,8 @@ describe("transitionOrThrow (§3.3)", () => {
         workItemId: "wi-10",
         to: "ASSIGNED",
         actor: { userId: "user-trans" },
-        meta: [1, 2, 3] as any,
+        // Deliberate invalid runtime value for negative test
+        meta: [1, 2, 3] as unknown as TransitionOrThrowInput["meta"],
       }),
     ).rejects.toThrowError(AspectMisuseError);
   });

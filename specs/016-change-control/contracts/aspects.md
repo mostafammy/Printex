@@ -125,7 +125,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
     /** Maps a transitionWorkItem GUARD_FAILED guardCode to a module error. undefined → base GUARD_FAILED. */
     readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
     /** Maps a Prisma P2002 unique violation to a module error. undefined → base CONFLICT. */
-    readonly mapUniqueViolation?: (target: readonly string[]) => E | undefined;
+    readonly mapUniqueViolation?: (target: readonly string[], modelName: string | undefined) => E | undefined;
   }): {
     defineCommand: DefineCommand<A, P, E>;
     defineQuery: DefineQuery<A, P, E>;
@@ -204,7 +204,7 @@ A **query** runs step 1, then step 2, then `authorize`, then `run` on `deps.read
 | `TransitionFailure` with `INVALID_TRANSITION` and `details.expectedFrom` (optimistic-concurrency miss) | `CONFLICT { entity: "WorkItem", id }` |
 | `TransitionFailure` with `INVALID_TRANSITION` and no `expectedFrom` | `INVALID_STATE { workItemIds: [id], expected: [] }` |
 | `TransitionFailure` with `GUARD_FAILED` and `details.guardCode = g` | `mapGuardFailure(g, details) ?? GUARD_FAILED { guardCode: g, message }` |
-| Prisma error with `code === "P2002"` (checked structurally) | `mapUniqueViolation(meta.target) ?? CONFLICT { entity: modelName, id: "" }` |
+| Prisma error with `code === "P2002"` (checked structurally) | `mapUniqueViolation(meta.target, meta.modelName) ?? CONFLICT { entity: modelName, id: "" }` |
 | `AspectMisuseError`, anything else | re-thrown |
 
 ```ts

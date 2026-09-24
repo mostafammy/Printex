@@ -15,17 +15,24 @@ export const { defineCommand, defineQuery } = aspects.forModule<ChangeError>({
     }
     return undefined;
   },
-  mapUniqueViolation: (target: readonly string[]) => {
+  mapUniqueViolation: (target: readonly string[], modelName: string | undefined) => {
     // SpecVersion @@unique([workItemId, version])
     if (
-      (target.includes("workItemId") && target.includes("version")) ||
+      (modelName === "SpecVersion" &&
+        target.includes("workItemId") &&
+        target.includes("version")) ||
       target.some((t) => t.includes("SpecVersion_workItemId_version"))
     ) {
       return { code: "STALE_SPEC_VERSION" };
     }
     // Partial unique index ChangeRequest_one_pending_per_work_item on (workItemId) WHERE status = 'PENDING'
+    const isPendingModel =
+      modelName === undefined ||
+      modelName === "ChangeRequest" ||
+      modelName === "LateCancellation";
+
     if (
-      target.includes("workItemId") ||
+      (isPendingModel && target.includes("workItemId")) ||
       target.some((t) => t.includes("ChangeRequest_one_pending") || t.includes("one_pending"))
     ) {
       return { code: "CHANGE_REQUEST_PENDING" };
