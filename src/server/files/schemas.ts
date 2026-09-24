@@ -1,26 +1,61 @@
 import { z } from "zod";
-import { FileCategory, FileLifecycleStatus, AttachmentKind } from "@prisma/client";
 import { getFilesConfig, isMimeAllowed } from "./config.js";
 
-// Re-export enums for convenience
-export { FileCategory, FileLifecycleStatus, AttachmentKind };
+export const FileCategory = {
+  ORIGINAL: "ORIGINAL",
+  DESIGN_VERSIONS: "DESIGN_VERSIONS",
+  REVIEW_PROOF: "REVIEW_PROOF",
+  APPROVED: "APPROVED",
+  PRODUCTION: "PRODUCTION",
+  SUPPORTING: "SUPPORTING",
+} as const;
+export type FileCategory = (typeof FileCategory)[keyof typeof FileCategory];
+
+export const FileLifecycleStatus = {
+  ACTIVE: "ACTIVE",
+  SUPERSEDED: "SUPERSEDED",
+  VOID: "VOID",
+  ARCHIVED: "ARCHIVED",
+  CORRUPTED: "CORRUPTED",
+} as const;
+export type FileLifecycleStatus = (typeof FileLifecycleStatus)[keyof typeof FileLifecycleStatus];
+
+export const AttachmentKind = {
+  VOICE_NOTE: "VOICE_NOTE",
+  IMAGE: "IMAGE",
+  FILE: "FILE",
+} as const;
+export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind];
 
 // Category schema
-export const fileCategorySchema = z.nativeEnum(FileCategory);
+export const fileCategorySchema = z.enum([
+  "ORIGINAL",
+  "DESIGN_VERSIONS",
+  "REVIEW_PROOF",
+  "APPROVED",
+  "PRODUCTION",
+  "SUPPORTING",
+]);
 
 // Status schema
-export const fileLifecycleStatusSchema = z.nativeEnum(FileLifecycleStatus);
+export const fileLifecycleStatusSchema = z.enum([
+  "ACTIVE",
+  "SUPERSEDED",
+  "VOID",
+  "ARCHIVED",
+  "CORRUPTED",
+]);
 
 // Attachment kind schema
-export const attachmentKindSchema = z.nativeEnum(AttachmentKind);
+export const attachmentKindSchema = z.enum(["VOICE_NOTE", "IMAGE", "FILE"]);
 
 // Upload input schema
 export const uploadInputSchema = z.object({
-  workItemId: z.string().cuid(),
+  workItemId: z.string().min(1),
   category: fileCategorySchema,
   fileName: z.string().min(1).max(255).regex(/^[^<>:"/\\|?*\x00-\x1F]+$/, "Invalid filename"),
   note: z.string().max(1000).optional(),
-  actorId: z.string().cuid(),
+  actorId: z.string().min(1),
 });
 
 // Upload validation with MIME/size check
@@ -42,21 +77,21 @@ export function validateUploadInput(input: z.infer<typeof uploadInputSchema>, fi
 
 // Lifecycle action input
 export const lifecycleActionSchema = z.object({
-  versionId: z.string().cuid(),
-  actorId: z.string().cuid(),
+  versionId: z.string().min(1),
+  actorId: z.string().min(1),
   reason: z.string().min(1).max(500),
 });
 
 // Mark approved input
 export const markApprovedInputSchema = z.object({
-  versionId: z.string().cuid(),
-  actorId: z.string().cuid(),
+  versionId: z.string().min(1),
+  actorId: z.string().min(1),
 });
 
 // Download URL input
 export const downloadUrlInputSchema = z.object({
-  versionId: z.string().cuid(),
-  actorId: z.string().cuid(),
+  versionId: z.string().min(1),
+  actorId: z.string().min(1),
 });
 
 // Attachment input
@@ -65,7 +100,7 @@ export const attachmentInputSchema = z.object({
   entityId: z.string().min(1).max(100),
   fileName: z.string().min(1).max(255).regex(/^[^<>:"/\\|?*\x00-\x1F]+$/, "Invalid filename"),
   kind: attachmentKindSchema,
-  createdById: z.string().cuid(),
+  createdById: z.string().min(1),
   fileSize: z.number().int().positive(),
   mimeType: z.string(),
 });
@@ -88,7 +123,7 @@ export function validateAttachmentInput(input: z.infer<typeof attachmentInputSch
 
 // List versions query
 export const listVersionsQuerySchema = z.object({
-  workItemId: z.string().cuid(),
+  workItemId: z.string().min(1),
   category: fileCategorySchema.optional(),
   status: fileLifecycleStatusSchema.optional(),
   includeArchived: z.boolean().default(false),
@@ -99,6 +134,7 @@ export const FileErrorCode = {
   VALIDATION_ERROR: "VALIDATION_ERROR",
   FORBIDDEN: "FORBIDDEN",
   NOT_FOUND: "NOT_FOUND",
+  FILE_NOT_FOUND: "FILE_NOT_FOUND",
   CHECKSUM_MISMATCH: "CHECKSUM_MISMATCH",
   EXPIRED_GRANT: "EXPIRED_GRANT",
   INCOMPLETE_UPLOAD: "INCOMPLETE_UPLOAD",
