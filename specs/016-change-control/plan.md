@@ -223,7 +223,7 @@ prisma/
     └── 016-change-control-constraints.sql# partial unique index + REVOKE UPDATE/DELETE
 
 eslint.config.js                          # + barrel-only rule for ~/server/changes/**;
-                                          #   SHARED rule (c) exemption for src/server/core/aspects/** (if absent)
+                                          #   SHARED rule (c) exemption for src/server/core/aspects/** (if absent; owner-confirmed 2026-09-24)
 
 tests/
 ├── unit/core/aspects.test.ts             # SHARED engine tests (contracts/aspects.md §7) — create if absent

@@ -28,7 +28,7 @@ the line after it. Nothing downstream should be treated as final until the owner
 
 - Q: Who confirms (approves) a customer change request on a Work Item already in production? →
   A: A holder of a new `change.approve` permission, seeded to Head Designer and Admin/Owner.
-  Reception records the request but cannot approve it (ASSUMPTION — pending owner confirmation).
+  Reception records the request but cannot approve it (CONFIRMED by owner 2026-09-24).
   - Rejected: Reception confirms its own request (no second person checks it, and the original
     incident was an unchecked verbal change taken at reception); Owner only (a bottleneck in a
     small shop, and the Owner still gets approval through the Admin/Owner seed); Production
@@ -50,7 +50,7 @@ the line after it. Nothing downstream should be treated as final until the owner
   request is decided, nobody can resume, complete, or send back that Work Item. If the request is
   approved with "continue production", the operator must also acknowledge the revised
   instruction before resuming. This matches the client-confirmed "freeze the job on machine floor
-  screens" journey (Printex.md Journey 5) (ASSUMPTION — pending owner confirmation).
+  screens" journey (Printex.md Journey 5) (CONFIRMED by owner 2026-09-24).
   - Rejected: no pause, operator only notified (the operator can keep running obsolete plates,
     which is the exact failure being prevented); pause but still allow completion (a job could be
     completed against the superseded spec); a manual hold toggle (relies on someone remembering
