@@ -312,5 +312,28 @@
     "reviewRejectImageLabel": "صورة (اختياري)",
     "reviewRejectFileLabel": "ملف (اختياري)",
     "reviewRejectButton": "رفض وإعادة للتصميم"
+  },
+  "changes": {
+    "history": {
+      "heading": "سجل المواصفات",
+      "empty": "لا يوجد سجل مواصفات بعد",
+      "noHistoryBeforeNow": "لا يوجد سجل مسجل قبل هذه النقطة",
+      "version": "النسخة",
+      "author": "بواسطة",
+      "time": "الوقت",
+      "origin": "المصدر",
+      "stateAtCreation": "الحالة",
+      "reason": "السبب",
+      "current": "الحالية",
+      "unattributed": "—"
+    },
+    "origin": {
+      "INITIAL": "إنشاء أولي",
+      "BACKFILL": "ترحيل سابق",
+      "DIRECT_EDIT": "تعديل مباشر",
+      "CHANGE_REQUEST": "طلب تغيير",
+      "ADMIN_OVERRIDE": "تجاوز إداري"
+    }
   }
 }
+

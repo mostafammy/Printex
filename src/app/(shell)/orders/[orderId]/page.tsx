@@ -19,6 +19,7 @@ import {
 import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
 import type { EligibleDesigner } from "~/server/designers";
 import { Button } from "~/components/ui/button";
+import { SpecHistory } from "~/components/changes";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -419,6 +420,8 @@ export default async function OrderDetailPage({
                 </form>
               </details>
             )}
+
+            <SpecHistory workItemId={wi.id} />
           </div>
           );
         })}

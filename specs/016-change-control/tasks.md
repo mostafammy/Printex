@@ -201,7 +201,7 @@ exactly one v1 each, idempotently.
 
 ### Tests for User Story 1
 
-- [ ] T022 [P] [US1] Integration test `tests/integration/changes/versioning.test.ts`:
+- [x] T022 [P] [US1] Integration test `tests/integration/changes/versioning.test.ts`:
   - `quickCreateOrder`, `createOrder` (2 items), and `addWorkItem` each create v1 `INITIAL` with
     the entered values, `stateAtCreation`, `createdById`, and the pointer set, plus a
     `spec_version.created` audit (US1-1, FR-001).
@@ -212,13 +212,13 @@ exactly one v1 each, idempotently.
   - After v2, `getSpecHistory` returns v1 (500) and v2 (800) (US1-2).
   - For every command in this file, assert the invariant "WorkItem mirror columns ==
     `toSpecSnapshot(currentSpecVersion)`" (FR-003).
-- [ ] T023 [P] [US1] Contract test `tests/contract/changes/append-only.test.ts`, mirroring
+- [x] T023 [P] [US1] Contract test `tests/contract/changes/append-only.test.ts`, mirroring
   `tests/contract/audit-append-only.test.ts`: raw `UPDATE` and `DELETE` on `"SpecVersion"` and
   `"LateCancellation"` fail with a permission error once T004 is applied (US1-4, FR-004).
   - Also assert that `src/server/changes/**` contains no `specVersion.update`,
     `specVersion.delete`, or `lateCancellation.update`/`delete` calls (source grep in the test,
     same technique as 002's `externalGuard.test.ts`).
-- [ ] T024 [P] [US1] Integration test `tests/integration/changes/backfill.test.ts`:
+- [x] T024 [P] [US1] Integration test `tests/integration/changes/backfill.test.ts`:
   - Create 3 factory Work Items without versions (one with Decimal dimensions, one with nulls).
   - Execute `prisma/manual-sql/016-spec-version-backfill.sql` through `db.$executeRawUnsafe`,
     reading the file and splitting on the documented statement separator.
@@ -227,7 +227,7 @@ exactly one v1 each, idempotently.
   - Assert the Step 4 verification queries return zero rows.
   - A second run inserts zero versions (idempotent, US1-3).
   - Pre-existing `workitem.edited` audit rows are untouched.
-- [ ] T025 [P] [US1] Integration test `tests/integration/changes/editWorkItemDelegation.test.ts`:
+- [x] T025 [P] [US1] Integration test `tests/integration/changes/editWorkItemDelegation.test.ts`:
   - 011's `editWorkItem` in `NEW` now creates a `DIRECT_EDIT` version and still writes
     `workitem.edited`.
   - A dueDate-only patch creates **no** version and emits no `SPEC_CHANGED`, but is still
@@ -237,29 +237,29 @@ exactly one v1 each, idempotently.
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] Implement `createInitialSpecVersionInTx` and `ensureCurrentSpecVersionInTx` in
+- [x] T026 [US1] Implement `createInitialSpecVersionInTx` and `ensureCurrentSpecVersionInTx` in
   `src/server/changes/versions.ts` per contracts/change-control.md.
-- [ ] T027 [US1] Implement `applySpecChangeInTx` in `src/server/changes/versions.ts`. The steps are
+- [x] T027 [US1] Implement `applySpecChangeInTx` in `src/server/changes/versions.ts`. The steps are
   a row lock via `tx.$queryRaw` `SELECT … FOR UPDATE`, then ensure, expected-version check,
   `productTypeId` existence, diff/`NO_CHANGES`, insert `n + 1`, update the mirror and pointer,
   audit `spec_version.created`, and `emitSpecChangedInTx`. This is the only writer of the spec
   columns (FR-010).
-- [ ] T028 [US1] In `src/server/orders/create.ts` (`quickCreateOrder`, `createOrder`) and
+- [x] T028 [US1] In `src/server/orders/create.ts` (`quickCreateOrder`, `createOrder`) and
   `src/server/orders/workItems.ts` (`addWorkItem`), call `createInitialSpecVersionInTx(tx, {
   workItemId, actorId })` right after each `tx.workItem.create`, imported from the
   `~/server/changes` barrel.
-- [ ] T029 [US1] In `src/server/orders/workItems.ts` `editWorkItem`:
+- [x] T029 [US1] In `src/server/orders/workItems.ts` `editWorkItem`:
   - Split the patch into spec fields and `dueDate`.
   - Route the spec fields through `applySpecChangeInTx({ tx, afterCommit }, { origin:
     "DIRECT_EDIT", expected: { version: current }, ifUnchanged: "skip" })`, so an unchanged or
     due-date-only save stays a non-error (contracts/change-control.md).
   - Keep `dueDate` as a plain audited update.
   - Keep the `PAST_EDIT_WINDOW` refusal and the `workitem.edited` audit exactly as they are.
-- [ ] T030 [US1] Implement `getSpecHistory` in `src/server/changes/versions.ts` with `defineQuery`
+- [x] T030 [US1] Implement `getSpecHistory` in `src/server/changes/versions.ts` with `defineQuery`
   (any-of `PermissionSpec` plus a department-scope `authorize` hook, contracts/change-control.md): one query with
   `include: { createdBy }`, consecutive diffs computed in memory, the `noHistoryBeforeNow` flag,
   and the permission rule from data-model.md "Permission model". Export it from the barrel.
-- [ ] T031 [US1] Add `src/components/changes/spec-history.tsx`, a Server Component listing the
+- [x] T031 [US1] Add `src/components/changes/spec-history.tsx`, a Server Component listing the
   versions (number, origin label, author or "—", time, reason). Render it per Work Item on
   `src/app/(shell)/orders/[orderId]/page.tsx`. Add `changes.history.*` and
   `changes.origin.*` keys to `src/messages/ar.json`.

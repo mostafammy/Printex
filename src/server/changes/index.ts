@@ -46,3 +46,17 @@ export {
   setDirectCostPort,
 } from "./ports";
 export type { LateCancellationCost, DirectCostPort } from "./ports";
+
+// Phase 3: specification versioning
+export {
+  createInitialSpecVersionInTx,
+  ensureCurrentSpecVersionInTx,
+  applySpecChangeInTx,
+  getSpecHistory,
+} from "./versions";
+export type {
+  ApplySpecChangeInput,
+  AppliedSpecChange,
+  SpecHistoryResult,
+} from "./versions";
+

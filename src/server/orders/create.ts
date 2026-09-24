@@ -12,6 +12,7 @@ import {
   orderModeValues,
   workItemCreateSchema,
 } from "./validation";
+import { createInitialSpecVersionInTx } from "~/server/changes";
 export type { WorkItemCreateInput } from "./validation";
 
 // ── quickCreateOrder (US1) ─────────────────────────────────────────────────
@@ -59,6 +60,11 @@ export async function quickCreateOrder(
       },
     });
     workItemId = workItem.id;
+
+    await createInitialSpecVersionInTx(tx, {
+      workItemId: workItem.id,
+      actorId: actor.userId,
+    });
 
     await audit.record(tx, {
       action: "order.created",
@@ -142,6 +148,11 @@ export async function createOrder(
         data: { orderId: order.id, state: "NEW", ...item },
       });
       workItemIds.push(workItem.id);
+
+      await createInitialSpecVersionInTx(tx, {
+        workItemId: workItem.id,
+        actorId: actor.userId,
+      });
 
       await audit.record(tx, {
         action: "workitem.created",

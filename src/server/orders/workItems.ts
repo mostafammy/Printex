@@ -9,6 +9,11 @@ import { DomainOrderError } from "./errors";
 import { isOrderFinished, PRE_DESIGN_EDITABLE_STATES } from "./completeness";
 import { workItemCreateSchema, dimensionUnitValues } from "./validation";
 import type { WorkItemCreateInput } from "./validation";
+import {
+  createInitialSpecVersionInTx,
+  ensureCurrentSpecVersionInTx,
+  applySpecChangeInTx,
+} from "~/server/changes";
 
 // ── addWorkItem (US7) ───────────────────────────────────────────────────────
 
@@ -33,6 +38,11 @@ export async function addWorkItem(
 
     const workItem = await tx.workItem.create({ data: { orderId, state: "NEW", ...parsed } });
     workItemId = workItem.id;
+
+    await createInitialSpecVersionInTx(tx, {
+      workItemId: workItem.id,
+      actorId: actor.userId,
+    });
 
     await audit.record(tx, {
       action: "workitem.created",
@@ -79,7 +89,33 @@ export async function editWorkItem(actor: Actor, workItemId: string, patch: Edit
       );
     }
 
-    await tx.workItem.update({ where: { id: workItemId }, data: parsed });
+    const { dueDate, ...specPatch } = parsed;
+
+    if (Object.keys(specPatch).length > 0) {
+      const currentVersion = await ensureCurrentSpecVersionInTx(
+        { tx, afterCommit: (h) => void h() },
+        workItemId,
+      );
+      await applySpecChangeInTx(
+        { tx, afterCommit: (h) => void h() },
+        {
+          workItemId,
+          actorId: actor.userId,
+          origin: "DIRECT_EDIT",
+          patch: specPatch,
+          expected: { version: currentVersion.version },
+          reason: null,
+          ifUnchanged: "skip",
+        },
+      );
+    }
+
+    if (dueDate !== undefined) {
+      await tx.workItem.update({
+        where: { id: workItemId },
+        data: { dueDate },
+      });
+    }
 
     const patchKeys = Object.keys(parsed) as Array<keyof typeof parsed>;
     const before: Record<string, unknown> = {};

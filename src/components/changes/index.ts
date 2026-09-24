@@ -1,4 +1,4 @@
 // Barrel for src/components/changes/**
 // Populated incrementally as components land.
 
-export {};
+export { SpecHistory } from "./spec-history";
