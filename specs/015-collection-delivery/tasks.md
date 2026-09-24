@@ -254,7 +254,9 @@ Items, grouped, urgent-first then longest-waiting, paginated (FR-001, FR-002, FR
   threshold) → exactly one `discrepancy.major` `NotificationEvent`; a receipt with 9 non-accepted →
   none; lines covering 4 of 6 damaged
   → `UNCLASSIFIED_QUANTITY`; `WorkItem.quantity = null` → expected = `producedQuantity` and
-  `expectedFromProduced = true`; attachments with unbound port → `ATTACHMENTS_UNAVAILABLE`; with a stub port the returned `attachmentId`s are on the audit row; an actor without
+  `expectedFromProduced = true`; attachments with unbound port → `ATTACHMENTS_UNAVAILABLE`; 11 files, or files whose aggregate exceeds 100 MB
+  (stub counts streamed bytes) → `VALIDATION` (path `files`), nothing written, the stub stops staging at the
+  cap; with a stub port the returned `attachmentId`s are on the audit row; an actor without
   `collection.receive` sending files → `FORBIDDEN` and the stub's `stage` is never called; two concurrent `receiveProduction`
   calls (`Promise.all`) → exactly one succeeds, the other `CONFLICT`/`INVALID_STATE`; a raw SQL
   insert of a mismatching receipt fails the DB `CHECK` (skip with a clear message if T002/T003 not
@@ -313,8 +315,8 @@ balance shown; partial rules (FR-022..FR-027, constitution II).
   client-supplied — the input schema has no quantity field), `receivedByPhone` normalized,
   `delivery.recorded` audit row; stub whose status flips `RESOLVED` (pre-check) → `PENDING` (guard)
   → whole hand-over rolled back, `PRICING_UNRESOLVED`; grouped Order delivering 2 of 3 without
-  `partialConfirmed`+reason → `PARTIAL_REASON_REQUIRED`, with them → success, `isPartial: true`, 3rd
-  still ready; separate Order 1 of 2 → success, `isPartial: true`, no reason needed; delivering an
+  `partialConfirmed`+reason → `PARTIAL_REASON_REQUIRED`, with them → success, `isPartial: true`, 3rd still ready; grouped partial with `partialConfirmed` but a blank
+  reason → `PARTIAL_REASON_REQUIRED`; separate Order 1 of 2 → success, `isPartial: true`, no reason needed; delivering an
   already-`DELIVERED` Work Item → `INVALID_STATE`; two concurrent deliveries of the same Work Item →
   one wins; `deliveredAt` in the future → `VALIDATION`; `handedOverById` omitted → the recording user,
   another active user → stored, unknown/inactive user → `NOT_FOUND`; delivery sheet with finance stub `remaining
@@ -480,26 +482,28 @@ post-commit (FR-028..FR-030).
 - [ ] T055 [P] [US7] Contract test in `tests/contract/collection/guards.test.ts` (closure half):
   direct `transitionWorkItem(DELIVERED → COMPLETED)` with an open discrepancy, or unresolved
   pricing, or finance `remaining > 0 && !creditApproved`, or finance unbound → `GUARD_FAILED`,
-  `details.guardCode === "CLOSURE_CONDITIONS_UNMET"`, state unchanged; all conditions met →
-  succeeds; `tryFinancialClosure` FORBIDDEN for an actor with none of `delivery.record`,
+  `details.guardCode === "CLOSURE_CONDITIONS_UNMET"`, state unchanged; **all conditions met but called directly**
+  (no `meta.closureRunId`, or a forged unregistered one) → still `GUARD_FAILED` /
+  `CLOSURE_CONDITIONS_UNMET`; the same Order closed via `tryFinancialClosure` → succeeds; `tryFinancialClosure` FORBIDDEN for an actor with none of `delivery.record`,
   `collection.receive`, `payment.record` (in `permissions.test.ts`)
 - [ ] T056 [P] [US7] Integration test `tests/integration/collection/closure.test.ts`: each closure
   condition unmet in isolation → `{ closed: false, unmet: [that condition] }`, no writes; all met →
   every `DELIVERED` Work Item `COMPLETED` in one call, one `order.financially_closed` audit row,
-  cancelled items untouched; second call → `{ closed: true }` with no new rows; `recordDelivery`
-  of the last Work Item with settled stub finance closes the Order via `afterCommit` and returns
-  `closure.closed === true`; `resolveDiscrepancy` of the last open discrepancy on a fully delivered,
+  cancelled items untouched; second call → `{ closed: true }` with no new rows; `recordDelivery` of the last Work Item with settled stub finance closes the Order via `afterCommit`
+  (asserted from DB state: all items `COMPLETED`; the result has only `deliveryId`/`isPartial`); a closure
+  hook failure is logged and the delivery still returns `ok`; `resolveDiscrepancy` of the last open discrepancy on a fully delivered,
   settled Order closes it
 
 ### Implementation for User Story 7
 
-- [ ] T057 [US7] Implement `closureGuard` in `src/server/collection/guards.ts`, and register it inside
+- [ ] T057 [US7] Implement `closureGuard` in `src/server/collection/guards.ts` (requires a registered
+  `meta.closureRunId` from the module-private `activeClosureRuns` set **and** empty `closureConditions`), and register it inside
   `registerCollectionGuards()` via `registerGuard({ from: "DELIVERED", to: "COMPLETED" }, …)`
-- [ ] T058 [US7] Implement `evaluateClosure(orderId)` and `tryFinancialClosure` (`defineCommand`,
-  `allowNoChange: true`, any-of `permission`) in `src/server/collection/closure.ts`; export from the
+- [ ] T058 [US7] Implement `evaluateClosure(orderId)` and `tryFinancialClosure` (`defineCommand`, `allowNoChange: true`, any-of `permission`; owns the module-private `activeClosureRuns`
+  set, and adds/removes `closureRunId` around its transitions) in `src/server/collection/closure.ts`; export from the
   barrel (the entry point 052 calls, contracts/ports.md §2)
 - [ ] T059 [US7] Add `afterCommit: () => tryFinancialClosure(actor, orderId)` to `recordDelivery`
-  (T037) and `resolveDiscrepancy` (T048), returning the closure outcome from `recordDelivery`
+  (T037) and `resolveDiscrepancy` (T048). The outcome is logged only and never returned
 - [ ] T060 [US7] Show closure status (unmet conditions in Arabic) and a "close order" button on
   the delivery sheet; `tryFinancialClosureAction` in `actions.ts`
 

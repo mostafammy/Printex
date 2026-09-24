@@ -176,15 +176,19 @@ gate; it is the reason closure runs post-commit (§5).
 to `COMPLETED` in one transaction with one `order.financially_closed` audit event (plus the
 per-transition `WorkItemTransition` rows core writes). A second guard,
 `registerGuard({ from: "DELIVERED", to: "COMPLETED" }, closureGuard)`, re-evaluates the same
-predicate so no other path can complete early (FR-030). `recordDelivery` and `resolveDiscrepancy`
+predicate. It also rejects any transition that does not carry a `meta.closureRunId` currently registered in
+the module-private `activeClosureRuns` set, which only `tryFinancialClosure` populates for the duration of
+its transaction. So no other path can complete early, or complete a single Work Item on its own, even when
+the conditions happen to hold (FR-028, FR-030). `recordDelivery` and `resolveDiscrepancy`
 call `tryFinancialClosure` from their `afterCommit` hook; 052 calls it after its payment commits;
 the delivery sheet has a manual "close order" button.
 
 **Rationale**: Finance is order-level (brief: `finance.orderSummary`), so closure must be
 order-level. Because guards read committed data only (§4 limitation), evaluating closure inside the
 triggering transaction would read stale discrepancy/payment state; post-commit evaluation is
-idempotent and safe to repeat. Closure failure after a successful delivery is not an error — the
-result reports unmet conditions.
+idempotent and safe to repeat. Closure failure after a successful delivery is not an error. The
+hook's outcome is logged only (the delivery result carries no closure field), and the delivery sheet shows
+the unmet conditions.
 
 **Alternatives considered**: Closing each Work Item independently — rejected: balance is
 order-level. Closing inside the delivery transaction — rejected: stale reads via guard. A scheduled

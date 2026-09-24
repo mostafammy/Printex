@@ -57,8 +57,15 @@ test (tasks.md).
 
 ## Scenario 4 — Partial delivery rules (US3)
 
+Rule (owner-confirmed):
+- **Separate mode**: any subset of ready Work Items may be handed over, and no reason is needed.
+- **Grouped mode**: handing over a subset requires the explicit "partial" flag **and** a non-empty reason.
+
+In both modes each Work Item is handed over once, with its full accepted quantity.
+
 1. Grouped Order with three ready items: deliver two without the partial flag. Expect:
-   `PARTIAL_REASON_REQUIRED`. Tick "partial" with a reason → succeeds, third stays ready.
+   `PARTIAL_REASON_REQUIRED`. Tick "partial" but leave the reason blank → `PARTIAL_REASON_REQUIRED`. Tick
+   "partial" with a reason → succeeds, and the third item stays ready.
 2. Separate Order: deliver one of two ready items. Expect: success, recorded `isPartial: true`, no
    reason asked.
 

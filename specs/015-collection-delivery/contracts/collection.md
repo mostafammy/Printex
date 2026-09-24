@@ -76,6 +76,14 @@ type DiscrepancyAttachmentUpload = { lineIndex: number; kind: "voice" | "image" 
 - `permission: "collection.receive"` is checked first; only then are files staged through
   `DiscrepancyAttachmentPort.stage()` in `prepare`, **before** the transaction
   (`ATTACHMENTS_UNAVAILABLE` if the port is unbound and `files` is non-empty).
+- **Staging limits** (these apply to this command and to `recordDiscrepancy`; 050's per-file limits still apply
+  on top): at most **10 files** per command, and at most **100 MB aggregate** staged bytes per command.
+  - The count is checked before any stage call.
+  - Bytes are counted while streaming, and staging stops as soon as the cap is exceeded.
+  - Breaching either limit → `VALIDATION` (issue path `files`), and nothing is written.
+  - Bytes that were staged but never committed are reclaimed by 050 (contracts/ports.md §3 "Orphans").
+  - The limits are an ASSUMPTION pending owner confirmation. Discrepancy evidence is voice notes and photos,
+    not print files.
 - Transaction: `lockOrder`; load Work Item (+ productType, siblings' states, policy);
   state MUST be `PRODUCTION_COMPLETED`; compute expected;
   `validateReceiptCounts()` (quantities.ts) → `QUANTITY_MISMATCH` / `UNCLASSIFIED_QUANTITY`;
@@ -95,7 +103,8 @@ type DiscrepancyAttachmentUpload = { lineIndex: number; kind: "voice" | "image" 
 
 - Zod: `{ workItemId, type: DiscrepancyType, quantity: int > 0, causeId, responsibleUserId?,
   responsibleDepartmentId?, notes? }`.
-- `permission: "collection.receive"`; in the transaction `lockOrder`; rules from data-model.md "Validation
+- `permission: "collection.receive"`; attachments staged in `prepare` under the same staging limits as
+  `receiveProduction`; in the transaction `lockOrder`; rules from data-model.md "Validation
   rules" (types by state, `EXCEEDS_AVAILABLE`, `ORDER_CLOSED`).
 - `READY_FOR_COLLECTION`: create receipt revision n+1 (`accepted -= q`, `bucket(type) += q`), then
   the `Discrepancy` with `receiptId` = new revision; `isMajor` check.
@@ -152,7 +161,7 @@ const resolveDiscrepancyInput = z.discriminatedUnion("kind", [
   1 `discrepancy.findMany` (select id, quantity) for open quantities; 1 batched pricing-port call;
   1 finance-port call; 1 `delivery.findMany` for history.
 
-### `recordDelivery(actor, input: RecordDeliveryInput): Promise<CollectionResult<{ deliveryId: string; isPartial: boolean; closure: { closed: boolean; unmet: ClosureCondition[] } }>>`
+### `recordDelivery(actor, input: RecordDeliveryInput): Promise<CollectionResult<{ deliveryId: string; isPartial: boolean }>>`
 
 ```ts
 const recordDeliveryInput = z.object({
@@ -179,7 +188,9 @@ const recordDeliveryInput = z.object({
   rolls back the whole hand-over and maps to `PRICING_UNRESOLVED`.
 - Audit: `delivery.recorded` (after = lines, receiver, handedOverById, deliveredAt, isPartial,
   partialReason).
-- `afterCommit`: `tryFinancialClosure(actor, orderId)`; its outcome is returned as `closure`.
+- `afterCommit`: `tryFinancialClosure(actor, orderId)`. It runs after commit, and its outcome is logged only,
+  never returned (aspects.md §3.1 step 9: hooks cannot change the result). The UI reads the closure status
+  from `getDeliverySheet`.
 - `priority` is never read.
 
 ## Financial closure
@@ -192,8 +203,9 @@ const recordDeliveryInput = z.object({
   `defineCommand({ allowNoChange: true })`, research.md §1; it writes nothing on that path, asserted
   in unit tests); evaluate
   `closureConditions`; if unmet → `{ closed: false, unmet }` (no write, `noChange`); else
-  `transitionOrThrow(DELIVERED → COMPLETED)` for every `DELIVERED` Work Item (closure guard
-  re-checks) and audit `order.financially_closed` (after = work item ids, finance summary as
+  generate `closureRunId = randomUUID()`, add it to the module-private (not exported)
+  `activeClosureRuns` set, `transitionOrThrow(DELIVERED → COMPLETED, meta: { closureRunId })` for every
+  `DELIVERED` Work Item (closure guard re-checks), and remove the id in `finally` and audit `order.financially_closed` (after = work item ids, finance summary as
   strings).
 - `ClosureCondition`: `"NOT_ALL_DELIVERED" | "PRICING_UNRESOLVED" | "OPEN_DISCREPANCIES" |
   "UNPAID_BALANCE" | "FINANCE_UNAVAILABLE"`.
@@ -240,7 +252,7 @@ const recordDeliveryInput = z.object({
 | Edge | Guard | Failure `error.code` (→ `details.guardCode`) |
 |---|---|---|
 | `READY_FOR_COLLECTION → DELIVERED` | `deliveryPricingGuard` — `PricingGatePort` status for `ctx.workItem.id` must be `RESOLVED`/`NOT_REQUIRED` | `PRICING_UNRESOLVED` |
-| `DELIVERED → COMPLETED` | `closureGuard` — `closureConditions` for `ctx.workItem.orderId` must be empty | `CLOSURE_CONDITIONS_UNMET` |
+| `DELIVERED → COMPLETED` | `closureGuard` — the transition MUST carry `meta.closureRunId` that is currently registered in the module-private `activeClosureRuns` set (populated only by `tryFinancialClosure`) **and** `closureConditions` for `ctx.workItem.orderId` must be empty. Empty conditions alone never authorize the transition | `CLOSURE_CONDITIONS_UNMET` |
 
 Guards are side-effect-free and never read `Order.priority`. They are registered by the idempotent
 `registerCollectionGuards()`, exported from the barrel, which is called both at barrel import and from the

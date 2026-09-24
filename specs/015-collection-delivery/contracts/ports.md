@@ -90,7 +90,7 @@ export function bindDiscrepancyAttachmentPort(port: DiscrepancyAttachmentPort): 
 |---|---|
 | Default (unbound) | `available: false`; UI hides attachment inputs; `files` non-empty → `ATTACHMENTS_UNAVAILABLE` |
 | Shape vs 050 today | 050's `attachments.attach(tx, { entityType, entityId, stream, fileName, kind })` streams inside `tx`; 012/013 deliberately write bytes before the tx. Ask 050 to expose stage/commit (or accept that 015's adapter stages via 050's storage and commits via `attach` metadata) |
-| Orphans | staged-but-never-committed bytes (tx rolled back) are 050's cleanup concern |
+| Orphans | 050 MUST reclaim staged bytes that are never committed, **within a bounded interval** (proposal: 24 h after `stage`). This covers a transaction rollback, a commit failure, a request aborted mid-stream, and a later staging-limit breach in the same command. Uncommitted staged bytes are never readable. 015 caps staging at 10 files and 100 MB aggregate per command (contracts/collection.md `receiveProduction`) |
 | Authorization | entity ownership authorization stays with 015 (050 contract: "Entity ownership authorization remains with the consuming feature"); reads of discrepancy attachments require `collection.receive`, `delivery.record` or `audit.view` |
 | Audit | 015 puts the returned `attachmentId`s into `AuditEvent.attachmentIds` of `discrepancy.recorded` |
 
