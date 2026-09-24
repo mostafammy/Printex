@@ -98,15 +98,23 @@ function calculateBillableQuantity(input: QuoteCalculationInput): {
   totalArea: Prisma.Decimal | null;
 } {
   const quantity = new Prisma.Decimal(input.quantity);
-  if (input.unit !== "SQUARE_METER") {
+  if (input.unit !== "SQUARE_METER" && input.unit !== "LINEAR_METER") {
     return { billableQuantity: quantity, areaPerPiece: null, totalArea: null };
   }
 
-  if (!input.width || !input.height || !input.dimensionUnit) {
-    throw new DomainPricingError("INVALID_DIMENSIONS", "Area pricing requires width, height, and unit");
+  if (!input.width || !input.dimensionUnit) {
+    throw new DomainPricingError("INVALID_DIMENSIONS", "Dimensional pricing requires a positive width and unit");
   }
 
   const widthMeters = toMeters(input.width, input.dimensionUnit);
+  if (input.unit === "LINEAR_METER") {
+    return { billableQuantity: widthMeters.mul(quantity), areaPerPiece: null, totalArea: null };
+  }
+
+  if (!input.height) {
+    throw new DomainPricingError("INVALID_DIMENSIONS", "Area pricing requires a positive height");
+  }
+
   const heightMeters = toMeters(input.height, input.dimensionUnit);
   const areaPerPiece = widthMeters.mul(heightMeters);
   return {

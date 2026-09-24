@@ -24,3 +24,6 @@ export {
 export type { PricingGatePort, PricingGateStatus, PricingResponsible } from "./ports";
 
 export type { PricingStatusSnapshot, PricingStatusValue } from "./status";
+
+export { quote } from "./quote";
+export type { QuoteBreakdown, QuoteInput, QuoteResult } from "./quote";

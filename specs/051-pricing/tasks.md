@@ -59,7 +59,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/quote.test.ts` proves default list, customer fixed price, percentage discount, expired rule, tier boundaries, and full breakdown.
 
-- [ ] T013 [P] [US1] Implement `src/server/pricing/quote.ts` to load 011 WorkItem/ProductType and 010 Customer data, resolve active price configuration by date, and return `QuoteResult` from `contracts/pricing-service.md` without writing.
+- [X] T013 [P] [US1] Implement `src/server/pricing/quote.ts` to load 011 WorkItem/ProductType and 010 Customer data, resolve active price configuration by date, and return `QuoteResult` from `contracts/pricing-service.md` without writing.
 - [ ] T014 [US1] Add `tests/integration/pricing/quote.test.ts` for ABC at 90 EGP/m, other customers at 100 EGP/m, expired-rule fallback, quantities 9/10/50, and tax-inclusive whole-EGP output.
 - [ ] T015 [US1] Add `tests/contract/pricing/quote-breakdown.test.ts` asserting every breakdown field is present when applicable and Decimal values cross the boundary as canonical strings.
 

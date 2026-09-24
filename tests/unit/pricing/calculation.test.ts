@@ -47,6 +47,8 @@ describe("pricing calculation", () => {
     const result = calculateQuote({
       unit: "LINEAR_METER",
       quantity: 3,
+      width: new Prisma.Decimal("1"),
+      dimensionUnit: "M",
       tier: tiers[0],
       customerAdjustment: {
         kind: "FIXED",
