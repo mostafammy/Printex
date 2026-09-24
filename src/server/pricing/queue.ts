@@ -32,6 +32,12 @@ export async function getPricingQueue(
   authorizePricingOperation(actor, "APPLY_QUOTE");
   const limit = Math.min(Math.max(input.limit ?? 50, 1), 100);
   const now = input.now ?? new Date();
+
+  // Fetch the complete pending candidate set before applying business order.
+  // Prisma cursor pagination cannot express the required two-key order
+  // (priority DESC, waitingSince ASC) as a single cursor because priority is
+  // owned by the related Order. Sorting after the committed read keeps the
+  // server contract deterministic; the cursor is applied after that sort.
   const statuses = await db.pricingStatus.findMany({
     where: { status: "PENDING" },
     select: {
@@ -45,9 +51,6 @@ export async function getPricingQueue(
         },
       },
     },
-    orderBy: [{ waitingSince: "asc" }, { workItemId: "asc" }],
-    take: limit + 1,
-    ...(input.cursor ? { cursor: { workItemId: input.cursor }, skip: 1 } : {}),
   });
 
   const ordered = statuses.sort((left, right) => {
@@ -56,7 +59,12 @@ export async function getPricingQueue(
     const timeDifference = (left.waitingSince?.getTime() ?? now.getTime()) - (right.waitingSince?.getTime() ?? now.getTime());
     return timeDifference || left.workItemId.localeCompare(right.workItemId);
   });
-  const page = ordered.slice(0, limit);
+
+  const cursorIndex = input.cursor
+    ? ordered.findIndex((row) => row.workItemId === input.cursor)
+    : -1;
+  const afterCursor = cursorIndex >= 0 ? ordered.slice(cursorIndex + 1) : ordered;
+  const page = afterCursor.slice(0, limit);
 
   return {
     rows: page.map((row) => ({
@@ -70,7 +78,7 @@ export async function getPricingQueue(
       ageLabel: formatQueueAge(row.waitingSince ?? now, now),
       dueDate: row.workItem.dueDate,
     })),
-    nextCursor: ordered.length > limit ? page.at(-1)?.workItemId ?? null : null,
+    nextCursor: afterCursor.length > limit ? page.at(-1)?.workItemId ?? null : null,
   };
 }
 
