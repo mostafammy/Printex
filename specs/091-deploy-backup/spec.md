@@ -27,7 +27,7 @@ and "Technology, Data & Security Constraints" (Secrets, Backups).
 
 ### Session 2026-09-24
 
-The owner answered four decisions on 2026-09-24. They are marked **CONFIRMED by owner
+The owner answered eight decisions on 2026-09-24. They are marked **CONFIRMED by owner
 2026-09-24**. Every other answer is an **ASSUMPTION — pending owner confirmation**, with the
 rejected alternatives on the line after it.
 
@@ -46,7 +46,7 @@ rejected alternatives on the line after it.
   on-battery for too long or low battery, and comes back automatically when power returns
   (CONFIRMED by owner 2026-09-24).
 - Q: How long are backups kept? → A: 7 daily, 4 weekly, and 12 monthly restore points on every
-  destination (ASSUMPTION — pending owner confirmation).
+  destination (CONFIRMED by owner 2026-09-24).
   - Rejected: 30 daily only (no protection against a problem noticed after a month); keeping
     everything forever (the USB drive and the cloud bill grow without bound).
 - Q: When does the nightly backup run? → A: 02:00 shop local time (Africa/Cairo), when the shop
@@ -68,7 +68,7 @@ rejected alternatives on the line after it.
     public domain with a public certificate (needs internet to renew and exposes the name).
 - Q: How do staff browsers trust the LAN HTTPS certificate? → A: The server runs its own internal
   certificate authority. Its root certificate is installed once on every staff device during
-  onboarding (ASSUMPTION — pending owner confirmation).
+  onboarding (CONFIRMED by owner 2026-09-24).
   - Rejected: plain HTTP on the LAN (session cookies and passwords sent in clear, contrary to PRD
     §54); a self-signed certificate per server with browser warnings clicked through (teaches
     staff to ignore warnings).
@@ -102,13 +102,13 @@ rejected alternatives on the line after it.
 - Q: How are application updates delivered to the server? → A: The project's CI builds the
   application image, and the server pulls that exact image by its content fingerprint when an
   upgrade is run. If the internet is down on upgrade day, the same image can be carried over on a
-  USB stick (ASSUMPTION — pending owner confirmation).
+  USB stick (CONFIRMED by owner 2026-09-24).
   - Rejected: building on the server (needs the full toolchain and internet on the production
     machine, and the result is not the image CI tested); automatic updates (upgrades must happen
     only in a planned window with a fresh backup).
 - Q: Does the GitHub sign-in button stay? → A: No. Production uses username-and-password sign-in
   only. The GitHub provider needs the internet and is removed from, or disabled in, production
-  (ASSUMPTION — pending owner confirmation; the change touches 001, owned by Fady).
+  (CONFIRMED by owner 2026-09-24; the change touches 001, owned by Fady).
   - Rejected: keeping GitHub sign-in as an option (it fails with the internet unplugged, and it
     requires GitHub secrets on an offline server).
 
@@ -655,7 +655,7 @@ pre-upgrade data, with no data lost.
 
 - The clarification answers above marked ASSUMPTION are pending owner confirmation. The most
   consequential are: the backup time window, the RTO clock definition, `printex.local` plus
-  router DNS, the append-only second PC, and removing GitHub sign-in.
+  router DNS, and the append-only second PC.
 - The shop LAN has a router the owner controls (for the address reservation, the DNS fallback
   name, and turning off port forwarding and UPnP), and the second PC is on the same LAN and on at
   night (or wakes for the backup).
