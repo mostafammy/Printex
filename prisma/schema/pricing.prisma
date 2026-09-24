@@ -117,7 +117,7 @@ model PricingStatus {
   workItemId      String             @id
   workItem        WorkItem           @relation(fields: [workItemId], references: [id])
   status          PricingStatusValue @default(PENDING)
-  waitingSince    DateTime           @default(now())
+  waitingSince    DateTime?
   disputeReason   String?
   currentPriceId  String?
   updatedById     String?

@@ -48422,7 +48422,7 @@ export namespace Prisma {
   export type PricingStatusGroupByOutputType = {
     workItemId: string
     status: $Enums.PricingStatusValue
-    waitingSince: Date
+    waitingSince: Date | null
     disputeReason: string | null
     currentPriceId: string | null
     updatedById: string | null
@@ -48515,7 +48515,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       workItemId: string
       status: $Enums.PricingStatusValue
-      waitingSince: Date
+      waitingSince: Date | null
       disputeReason: string | null
       currentPriceId: string | null
       updatedById: string | null
@@ -53237,7 +53237,7 @@ export namespace Prisma {
     NOT?: PricingStatusWhereInput | PricingStatusWhereInput[]
     workItemId?: StringFilter<"PricingStatus"> | string
     status?: EnumPricingStatusValueFilter<"PricingStatus"> | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFilter<"PricingStatus"> | Date | string
+    waitingSince?: DateTimeNullableFilter<"PricingStatus"> | Date | string | null
     disputeReason?: StringNullableFilter<"PricingStatus"> | string | null
     currentPriceId?: StringNullableFilter<"PricingStatus"> | string | null
     updatedById?: StringNullableFilter<"PricingStatus"> | string | null
@@ -53249,7 +53249,7 @@ export namespace Prisma {
   export type PricingStatusOrderByWithRelationInput = {
     workItemId?: SortOrder
     status?: SortOrder
-    waitingSince?: SortOrder
+    waitingSince?: SortOrderInput | SortOrder
     disputeReason?: SortOrderInput | SortOrder
     currentPriceId?: SortOrderInput | SortOrder
     updatedById?: SortOrderInput | SortOrder
@@ -53264,7 +53264,7 @@ export namespace Prisma {
     OR?: PricingStatusWhereInput[]
     NOT?: PricingStatusWhereInput | PricingStatusWhereInput[]
     status?: EnumPricingStatusValueFilter<"PricingStatus"> | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFilter<"PricingStatus"> | Date | string
+    waitingSince?: DateTimeNullableFilter<"PricingStatus"> | Date | string | null
     disputeReason?: StringNullableFilter<"PricingStatus"> | string | null
     currentPriceId?: StringNullableFilter<"PricingStatus"> | string | null
     updatedById?: StringNullableFilter<"PricingStatus"> | string | null
@@ -53276,7 +53276,7 @@ export namespace Prisma {
   export type PricingStatusOrderByWithAggregationInput = {
     workItemId?: SortOrder
     status?: SortOrder
-    waitingSince?: SortOrder
+    waitingSince?: SortOrderInput | SortOrder
     disputeReason?: SortOrderInput | SortOrder
     currentPriceId?: SortOrderInput | SortOrder
     updatedById?: SortOrderInput | SortOrder
@@ -53292,7 +53292,7 @@ export namespace Prisma {
     NOT?: PricingStatusScalarWhereWithAggregatesInput | PricingStatusScalarWhereWithAggregatesInput[]
     workItemId?: StringWithAggregatesFilter<"PricingStatus"> | string
     status?: EnumPricingStatusValueWithAggregatesFilter<"PricingStatus"> | $Enums.PricingStatusValue
-    waitingSince?: DateTimeWithAggregatesFilter<"PricingStatus"> | Date | string
+    waitingSince?: DateTimeNullableWithAggregatesFilter<"PricingStatus"> | Date | string | null
     disputeReason?: StringNullableWithAggregatesFilter<"PricingStatus"> | string | null
     currentPriceId?: StringNullableWithAggregatesFilter<"PricingStatus"> | string | null
     updatedById?: StringNullableWithAggregatesFilter<"PricingStatus"> | string | null
@@ -56356,7 +56356,7 @@ export namespace Prisma {
 
   export type PricingStatusCreateInput = {
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedAt?: Date | string
@@ -56367,7 +56367,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedCreateInput = {
     workItemId: string
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedById?: string | null
@@ -56376,7 +56376,7 @@ export namespace Prisma {
 
   export type PricingStatusUpdateInput = {
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -56387,7 +56387,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedUpdateInput = {
     workItemId?: StringFieldUpdateOperationsInput | string
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedById?: NullableStringFieldUpdateOperationsInput | string | null
@@ -56397,7 +56397,7 @@ export namespace Prisma {
   export type PricingStatusCreateManyInput = {
     workItemId: string
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedById?: string | null
@@ -56406,7 +56406,7 @@ export namespace Prisma {
 
   export type PricingStatusUpdateManyMutationInput = {
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -56415,7 +56415,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedUpdateManyInput = {
     workItemId?: StringFieldUpdateOperationsInput | string
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedById?: NullableStringFieldUpdateOperationsInput | string | null
@@ -64404,7 +64404,7 @@ export namespace Prisma {
 
   export type PricingStatusCreateWithoutWorkItemInput = {
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedAt?: Date | string
@@ -64413,7 +64413,7 @@ export namespace Prisma {
 
   export type PricingStatusUncheckedCreateWithoutWorkItemInput = {
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedById?: string | null
@@ -64833,7 +64833,7 @@ export namespace Prisma {
 
   export type PricingStatusUpdateWithoutWorkItemInput = {
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -64842,7 +64842,7 @@ export namespace Prisma {
 
   export type PricingStatusUncheckedUpdateWithoutWorkItemInput = {
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedById?: NullableStringFieldUpdateOperationsInput | string | null
@@ -69784,7 +69784,7 @@ export namespace Prisma {
 
   export type PricingStatusCreateWithoutUpdatedByInput = {
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedAt?: Date | string
@@ -69794,7 +69794,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedCreateWithoutUpdatedByInput = {
     workItemId: string
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedAt?: Date | string
@@ -70326,7 +70326,7 @@ export namespace Prisma {
     NOT?: PricingStatusScalarWhereInput | PricingStatusScalarWhereInput[]
     workItemId?: StringFilter<"PricingStatus"> | string
     status?: EnumPricingStatusValueFilter<"PricingStatus"> | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFilter<"PricingStatus"> | Date | string
+    waitingSince?: DateTimeNullableFilter<"PricingStatus"> | Date | string | null
     disputeReason?: StringNullableFilter<"PricingStatus"> | string | null
     currentPriceId?: StringNullableFilter<"PricingStatus"> | string | null
     updatedById?: StringNullableFilter<"PricingStatus"> | string | null
@@ -74995,7 +74995,7 @@ export namespace Prisma {
   export type PricingStatusCreateManyUpdatedByInput = {
     workItemId: string
     status?: $Enums.PricingStatusValue
-    waitingSince?: Date | string
+    waitingSince?: Date | string | null
     disputeReason?: string | null
     currentPriceId?: string | null
     updatedAt?: Date | string
@@ -75828,7 +75828,7 @@ export namespace Prisma {
 
   export type PricingStatusUpdateWithoutUpdatedByInput = {
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -75838,7 +75838,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedUpdateWithoutUpdatedByInput = {
     workItemId?: StringFieldUpdateOperationsInput | string
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -75847,7 +75847,7 @@ export namespace Prisma {
   export type PricingStatusUncheckedUpdateManyWithoutUpdatedByInput = {
     workItemId?: StringFieldUpdateOperationsInput | string
     status?: EnumPricingStatusValueFieldUpdateOperationsInput | $Enums.PricingStatusValue
-    waitingSince?: DateTimeFieldUpdateOperationsInput | Date | string
+    waitingSince?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     disputeReason?: NullableStringFieldUpdateOperationsInput | string | null
     currentPriceId?: NullableStringFieldUpdateOperationsInput | string | null
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

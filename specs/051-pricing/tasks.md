@@ -49,7 +49,7 @@ All stories -> Polish and consistency review
 - [X] T009 [P] Implement `src/server/pricing/calculation.ts` with pure Decimal unit conversion, area/linear calculation, tier matching, customer-rule arithmetic, tax-inclusive semantics, and nearest-whole-EGP final rounding.
 - [X] T010 [P] Add `tests/unit/pricing/calculation.test.ts` covering cm/m conversion, all five units, area multiplication, invalid dimensions, Decimal precision, and final rounding.
 - [X] T011 [P] Add `tests/unit/pricing/tiers-and-dates.test.ts` covering inclusive 9/10/50 boundaries, effective-from/to semantics, expired rules, overlapping configuration rejection, and deterministic equal-precedence failure.
-- [ ] T012 Implement `src/server/pricing/ports.ts` and the foundational persistence/binding pieces in `src/server/pricing/status.ts` for independent PricingStatus, pendingSince, responsible-user resolution, and fail-closed PricingGatePort defaults. Query functions are completed in T020.
+- [X] T012 Implement `src/server/pricing/ports.ts` and the foundational persistence/binding pieces in `src/server/pricing/status.ts` for independent PricingStatus, pendingSince, responsible-user resolution, and fail-closed PricingGatePort defaults. Query functions are completed in T020.
 
 **Checkpoint**: Foundation is ready when pure calculations, schema validation, permissions, and the fail-closed port compile and pass their focused tests. No user-story implementation starts before this checkpoint.
 
