@@ -71,6 +71,11 @@ export async function sendBackToDesign(
       throw new WorkItemTransitionError(transitionResult.error);
     }
 
+    await tx.workItem.update({
+      where: { id: workItemId },
+      data: { pendingFileRevisionAt: null },
+    });
+
     const { returnId } = await createReturnInTx(tx, actor, workItemId, {
       category: "PRODUCTION_ISSUE",
       originDepartmentId: departmentId,
