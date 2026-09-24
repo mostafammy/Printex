@@ -46,7 +46,7 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
     // BEFORE UPDATE trigger spec_version_forbid_update raises exception
     await expect(
       testDb.$executeRaw`UPDATE "SpecVersion" SET reason = 'tampered' WHERE id = ${specVersionId}`,
-    ).rejects.toThrow(/append-only|forbidden|privilege/i);
+    ).rejects.toThrow(/SpecVersion is append-only/);
   });
 
   it("raw DELETE on SpecVersion is rejected by Postgres permission error", async () => {
@@ -71,7 +71,7 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
     // REVOKE DELETE ON "SpecVersion" FROM CURRENT_USER
     await expect(
       testDb.$executeRaw`DELETE FROM "SpecVersion" WHERE id = ${specVersionId}`,
-    ).rejects.toThrow(/permission denied|privilege/i);
+    ).rejects.toThrow(/permission denied/);
   });
 
   it("raw UPDATE on LateCancellation is rejected by Postgres permission error", async () => {
@@ -95,7 +95,7 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
     // REVOKE UPDATE, DELETE ON "LateCancellation" FROM CURRENT_USER
     await expect(
       testDb.$executeRaw`UPDATE "LateCancellation" SET "costNote" = 'tampered' WHERE id = ${lateCancellationId}`,
-    ).rejects.toThrow(/permission denied|privilege/i);
+    ).rejects.toThrow(/permission denied/);
   });
 
   it("raw DELETE on LateCancellation is rejected by Postgres permission error", async () => {
@@ -119,23 +119,27 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
     // REVOKE UPDATE, DELETE ON "LateCancellation" FROM CURRENT_USER
     await expect(
       testDb.$executeRaw`DELETE FROM "LateCancellation" WHERE id = ${lateCancellationId}`,
-    ).rejects.toThrow(/permission denied|privilege/i);
+    ).rejects.toThrow(/permission denied/);
   });
 
   it("guarantees src/server/changes/** contains no specVersion or lateCancellation update/delete calls", () => {
     const changesDir = path.resolve(process.cwd(), "src/server/changes");
-    const files = fs.readdirSync(changesDir);
+    const files = fs.readdirSync(changesDir, { recursive: true }) as string[];
 
     expect(files.length).toBeGreaterThan(0);
 
     const forbiddenPatterns = [
-      /specVersion\.(update|updateMany|delete|deleteMany)\b/,
-      /lateCancellation\.(update|updateMany|delete|deleteMany)\b/,
+      /specVersion\.(update|updateMany|upsert|delete|deleteMany)\b/,
+      /lateCancellation\.(update|updateMany|upsert|delete|deleteMany)\b/,
+      /(UPDATE|DELETE FROM)\s+"(SpecVersion|LateCancellation)"/i,
     ];
 
     for (const file of files) {
       if (!file.endsWith(".ts")) continue;
-      const content = fs.readFileSync(path.join(changesDir, file), "utf-8");
+      const fullPath = path.join(changesDir, file);
+      const stat = fs.statSync(fullPath);
+      if (!stat.isFile()) continue;
+      const content = fs.readFileSync(fullPath, "utf-8");
 
       for (const pattern of forbiddenPatterns) {
         const matches = content.match(pattern);
@@ -146,4 +150,5 @@ describe("016 SpecVersion & LateCancellation append-only (database contract, T02
       }
     }
   });
+
 });

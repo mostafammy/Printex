@@ -245,9 +245,10 @@ exactly one v1 each, idempotently.
   audit `spec_version.created`, and `emitSpecChangedInTx`. This is the only writer of the spec
   columns (FR-010).
 - [x] T028 [US1] In `src/server/orders/create.ts` (`quickCreateOrder`, `createOrder`) and
-  `src/server/orders/workItems.ts` (`addWorkItem`), call `createInitialSpecVersionInTx(tx, {
+  `src/server/orders/workItems.ts` (`addWorkItem`), call `createInitialSpecVersionInTx(scope, {
   workItemId, actorId })` right after each `tx.workItem.create`, imported from the
   `~/server/changes` barrel.
+
 - [x] T029 [US1] In `src/server/orders/workItems.ts` `editWorkItem`:
   - Split the patch into spec fields and `dueDate`.
   - Route the spec fields through `applySpecChangeInTx({ tx, afterCommit }, { origin:

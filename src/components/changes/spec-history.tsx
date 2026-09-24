@@ -1,15 +1,21 @@
 // spec-history.tsx — Server Component displaying a Work Item's specification history.
 // tasks.md T031, contracts/change-control.md §getSpecHistory.
 
-import { getActor } from "~/server/auth";
+import type { SpecVersionOrigin } from "../../../generated/prisma";
+import type { Actor } from "~/server/auth";
 import { getSpecHistory } from "~/server/changes";
 import ar from "~/messages/ar.json";
 
 const H = ar.changes.history;
-const O = ar.changes.origin;
+const O: Record<SpecVersionOrigin, string> = ar.changes.origin;
 
-export async function SpecHistory({ workItemId }: { workItemId: string }) {
-  const actor = await getActor();
+export async function SpecHistory({
+  actor,
+  workItemId,
+}: {
+  actor: Actor;
+  workItemId: string;
+}) {
   const result = await getSpecHistory(actor, { workItemId });
 
   if (!result.ok) {
@@ -35,9 +41,9 @@ export async function SpecHistory({ workItemId }: { workItemId: string }) {
 
         {versions.map((v, idx) => {
           const isCurrent = idx === versions.length - 1;
-          const originLabel = O[v.origin] ?? v.origin;
+          const originLabel = O[v.origin];
           const authorName = v.createdBy?.name ?? H.unattributed;
-          const formattedTime = new Date(v.createdAt).toLocaleString("ar-EG", {
+          const formattedTime = v.createdAt.toLocaleString("ar-EG", {
             dateStyle: "short",
             timeStyle: "short",
           });
@@ -63,9 +69,12 @@ export async function SpecHistory({ workItemId }: { workItemId: string }) {
                   )}
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <span>{v.stateAtCreation}</span>
-                  <span>•</span>
-                  <span>{formattedTime}</span>
+                  <span>
+                    {H.stateAtCreation}: {v.stateAtCreation}
+                  </span>
+                  <span>
+                    {H.time}: {formattedTime}
+                  </span>
                 </div>
               </div>
 
@@ -86,3 +95,4 @@ export async function SpecHistory({ workItemId }: { workItemId: string }) {
     </details>
   );
 }
+

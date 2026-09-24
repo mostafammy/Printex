@@ -421,7 +421,7 @@ export default async function OrderDetailPage({
               </details>
             )}
 
-            <SpecHistory workItemId={wi.id} />
+            <SpecHistory actor={actor} workItemId={wi.id} />
           </div>
           );
         })}

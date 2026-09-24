@@ -382,7 +382,7 @@ describe("versions.ts pure unit tests", () => {
     });
 
     it("ensureCurrentSpecVersionInTx backfills unversioned items with BACKFILL and null createdById", async () => {
-      const { scope, getWorkItem, specVersions } = createMockTx({
+      const { scope, getWorkItem, specVersions, audits } = createMockTx({
         workItem: { quantity: 450 },
       });
 
@@ -396,11 +396,42 @@ describe("versions.ts pure unit tests", () => {
       expect(view.snapshot.quantity).toBe(450);
       expect(getWorkItem().currentSpecVersionId).toBe(view.id);
       expect(specVersions).toHaveLength(1);
+      expect(audits).toHaveLength(1);
+      expect(audits[0]!.action).toBe("spec_version.created");
+      expect(audits[0]!.entityType).toBe("SpecVersion");
+      expect(audits[0]!.actorId).toBeUndefined();
 
-      // Second call returns existing (idempotent)
+      // Second call returns existing (idempotent, no extra audit)
       const view2 = await ensureCurrentSpecVersionInTx(scope, "wi-1");
       expect(view2.id).toBe(view.id);
       expect(specVersions).toHaveLength(1);
+      expect(audits).toHaveLength(1);
+    });
+
+    it("returns VALIDATION when patch fails schema validation (m3)", async () => {
+      const { scope } = createMockTx({
+        currentSpecVersion: { version: 1, quantity: 500 },
+      });
+
+      await expect(
+        applySpecChangeInTx(scope, {
+          workItemId: "wi-1",
+          actorId: "actor-1",
+          origin: "DIRECT_EDIT",
+          patch: { quantity: -10 },
+          expected: { version: 1 },
+          reason: null,
+          ifUnchanged: "fail",
+        }),
+      ).rejects.toMatchObject({
+        error: {
+          code: "VALIDATION",
+          issues: expect.arrayContaining([
+            expect.objectContaining({ path: "quantity" }),
+          ]),
+        },
+      });
     });
   });
+
 });

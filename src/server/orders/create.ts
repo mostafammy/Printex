@@ -13,7 +13,9 @@ import {
   workItemCreateSchema,
 } from "./validation";
 import { createInitialSpecVersionInTx } from "~/server/changes";
+import type { TxScope } from "~/server/core";
 export type { WorkItemCreateInput } from "./validation";
+
 
 // ── quickCreateOrder (US1) ─────────────────────────────────────────────────
 
@@ -61,10 +63,12 @@ export async function quickCreateOrder(
     });
     workItemId = workItem.id;
 
-    await createInitialSpecVersionInTx(tx, {
+    const scope: TxScope = { tx, afterCommit: (fn) => void fn() };
+    await createInitialSpecVersionInTx(scope, {
       workItemId: workItem.id,
       actorId: actor.userId,
     });
+
 
     await audit.record(tx, {
       action: "order.created",
@@ -143,16 +147,18 @@ export async function createOrder(
       },
     });
 
+    const itemScope: TxScope = { tx, afterCommit: (fn) => void fn() };
     for (const item of parsed.workItems) {
       const workItem = await tx.workItem.create({
         data: { orderId: order.id, state: "NEW", ...item },
       });
       workItemIds.push(workItem.id);
 
-      await createInitialSpecVersionInTx(tx, {
+      await createInitialSpecVersionInTx(itemScope, {
         workItemId: workItem.id,
         actorId: actor.userId,
       });
+
 
       await audit.record(tx, {
         action: "workitem.created",

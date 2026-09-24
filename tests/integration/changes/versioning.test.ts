@@ -9,8 +9,10 @@ import { quickCreateOrder, createOrder } from "~/server/orders/create";
 import { addWorkItem } from "~/server/orders/workItems";
 import {
   applySpecChangeInTx,
+  createInitialSpecVersionInTx,
   getSpecHistory,
 } from "~/server/changes";
+
 import { toSpecSnapshot } from "~/server/changes/specFields";
 import { __resetSpecChangeListenersForTests } from "~/server/changes/events";
 import type { Actor } from "~/server/auth";
@@ -289,4 +291,69 @@ describe("016 Specification Versioning (integration, T022)", () => {
 
     await assertMirrorMatchesCurrentVersion(unversionedItem.id);
   });
+
+  it("getSpecHistory authorize: user with only production.operate is allowed in their own department and gets FORBIDDEN out of it (m8)", async () => {
+    const userId = await seedUser();
+    const customerId = await seedCustomer();
+    const orderId = await seedOrder({ customerId, createdById: userId });
+
+    const deptA = await testDb.department.create({
+      data: { name: `DeptA_${Date.now()}_${process.hrtime.bigint()}` },
+    });
+    const deptB = await testDb.department.create({
+      data: { name: `DeptB_${Date.now()}_${process.hrtime.bigint()}` },
+    });
+
+    const itemA = await testDb.workItem.create({
+      data: {
+        orderId,
+        state: "IN_PRODUCTION",
+        description: "Department A Item",
+        quantity: 100,
+        departmentId: deptA.id,
+      },
+    });
+
+    const itemB = await testDb.workItem.create({
+      data: {
+        orderId,
+        state: "IN_PRODUCTION",
+        description: "Department B Item",
+        quantity: 200,
+        departmentId: deptB.id,
+      },
+    });
+
+    // Seed v1 for both
+    await testDb.$transaction(async (tx) => {
+      const scope = { tx, afterCommit: (fn: () => Promise<void>) => void fn() };
+      await createInitialSpecVersionInTx(scope, {
+        workItemId: itemA.id,
+        actorId: userId,
+      });
+      await createInitialSpecVersionInTx(scope, {
+        workItemId: itemB.id,
+        actorId: userId,
+      });
+    });
+
+    const operatorInDeptA: Actor = {
+      userId,
+      roles: ["PRODUCTION_OPERATOR"],
+      permissions: new Set(["production.operate"]),
+      departmentIds: [deptA.id],
+    };
+
+    // Allowed in own department
+    const resA = await getSpecHistory(operatorInDeptA, { workItemId: itemA.id });
+    expect(resA.ok).toBe(true);
+
+    // FORBIDDEN out of it
+    const resB = await getSpecHistory(operatorInDeptA, { workItemId: itemB.id });
+    expect(resB.ok).toBe(false);
+    if (!resB.ok) {
+      expect(resB.error.code).toBe("FORBIDDEN");
+    }
+  });
 });
+

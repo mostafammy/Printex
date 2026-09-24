@@ -10,6 +10,8 @@ import {
   type WorkItemState,
 } from "~/server/core";
 import type { SpecField } from "./specFields";
+import { effectiveDepartmentId } from "./recipients";
+
 
 export const SPEC_CHANGED = "work_item.spec_changed" as const;
 
@@ -100,13 +102,13 @@ export async function emitSpecChangedInTx(
   }
 
   const assigneeId = item.assigneeId ?? undefined;
-  const effectiveDepartmentId =
-    item.departmentId ?? item.productType?.defaultDepartmentId ?? undefined;
+  const effDeptId = effectiveDepartmentId(item) ?? undefined;
 
   const recipientUserIds: string[] = assigneeId ? [assigneeId] : [];
-  const recipientDepartmentIds: string[] = effectiveDepartmentId
-    ? [effectiveDepartmentId]
+  const recipientDepartmentIds: string[] = effDeptId
+    ? [effDeptId]
     : [];
+
 
   await notify(tx, {
     type: SPEC_CHANGED,

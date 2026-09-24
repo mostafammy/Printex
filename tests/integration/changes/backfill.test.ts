@@ -22,19 +22,19 @@ async function runBackfillScript(): Promise<void> {
   // Only take the migration transaction block (before Step 4 verification comments)
   const migrationBlock = fileContent.split(/--\s*Step 4/i)[0]!;
 
-  // Split on statement terminator, strip comments and transaction keywords
+  // Split on statement terminator, strip comment lines and transaction keywords
   const statements = migrationBlock
     .split(";")
-    .map((s) => s.trim())
-    .filter((s) => {
-      const upper = s.toUpperCase();
-      return (
-        s.length > 0 &&
-        upper !== "BEGIN" &&
-        upper !== "COMMIT" &&
-        !upper.startsWith("--")
-      );
-    });
+    .map((s) =>
+      s
+        .split("\n")
+        .filter((l) => !l.trim().startsWith("--"))
+        .join("\n")
+        .trim(),
+    )
+    .filter((s) => s.length > 0 && !/^(BEGIN|COMMIT)$/i.test(s));
+
+  expect(statements).toHaveLength(3);
 
   for (const stmt of statements) {
     if (stmt.length > 0) {
@@ -42,6 +42,7 @@ async function runBackfillScript(): Promise<void> {
     }
   }
 }
+
 
 describe("016 SpecVersion backfill (integration, T024)", () => {
   it("backfills unversioned Work Items idempotently preserving updatedAt and pre-existing audits", async () => {
@@ -173,7 +174,17 @@ describe("016 SpecVersion backfill (integration, T024)", () => {
     `;
     expect(mismatchedItems).toHaveLength(0);
 
+    // (c) exactly N backfilled-or-initial v1 rows, scoped to the test's ids:
+    const v1Count = await testDb.specVersion.count({
+      where: {
+        workItemId: { in: itemIds },
+        version: 1,
+      },
+    });
+    expect(v1Count).toBe(itemIds.length);
+
     // 5. A second run inserts zero versions (idempotent, US1-3)
+
     await runBackfillScript();
 
     for (const id of itemIds) {

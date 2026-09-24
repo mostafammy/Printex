@@ -133,9 +133,10 @@ type ApplySpecChangeInput = {
   workItemId: string;
   actorId: string;
   origin: "DIRECT_EDIT" | "CHANGE_REQUEST" | "ADMIN_OVERRIDE";
-  patch: SpecPatch;
+  patch: SpecPatchInput; // validated inside via specPatchSchema
   expected: { version: number } | { specVersionId: string }; // editSpec/override | CR base
   reason: string | null;
+  changeRequestId?: string | null; // associated ChangeRequest id when origin is CHANGE_REQUEST or an in-production override
   /** "fail" (016 commands): an empty diff → NO_CHANGES. "skip" (011 editWorkItem): return null, write nothing. */
   ifUnchanged: "fail" | "skip";
 };
@@ -144,7 +145,8 @@ type AppliedSpecChange = {
 };
 ```
 
-It is the **only** writer of the Work Item spec columns (FR-010). The steps, in order:
+It is the **only** writer of the Work Item spec columns (FR-010). Before applying, `applySpecChangeInTx` validates the patch with `specPatchSchema.safeParse` and returns `VALIDATION` on schema violations. The steps, in order:
+
 
 1. Take a row lock on the Work Item (`SELECT … FOR UPDATE`).
 2. Run `ensureCurrentSpecVersionInTx`.

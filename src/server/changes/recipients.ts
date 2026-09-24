@@ -39,3 +39,15 @@ export async function usersWithPermission(
 
   return users.map((u) => u.id);
 }
+
+/**
+ * Changes-local helper: resolves the effective department for a Work Item,
+ * mirroring src/server/production/department.ts.
+ */
+export function effectiveDepartmentId(item: {
+  departmentId: string | null;
+  productType?: { defaultDepartmentId: string | null } | null;
+}): string | null {
+  return item.departmentId ?? item.productType?.defaultDepartmentId ?? null;
+}
+

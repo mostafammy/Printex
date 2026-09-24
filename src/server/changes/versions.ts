@@ -20,23 +20,24 @@ import {
   mergeSpecPatch,
   specPatchSchema,
   toSpecSnapshot,
-  type SpecPatch,
   type SpecPatchInput,
   type SpecSnapshot,
   type SpecVersionView,
 } from "./specFields";
+import { effectiveDepartmentId } from "./recipients";
 
 export type ApplySpecChangeInput = {
   workItemId: string;
   actorId: string;
   origin: "DIRECT_EDIT" | "CHANGE_REQUEST" | "ADMIN_OVERRIDE";
-  patch: SpecPatch | SpecPatchInput;
+  patch: SpecPatchInput;
   expected: { version: number } | { specVersionId: string };
   reason: string | null;
   changeRequestId?: string | null;
   /** "fail" (016 commands): an empty diff → NO_CHANGES. "skip" (011 editWorkItem): return null, write nothing. */
   ifUnchanged: "fail" | "skip";
 };
+
 
 export type AppliedSpecChange = {
   previous: SpecVersionView;
@@ -88,22 +89,17 @@ export function toSpecVersionView(
   };
 }
 
-function toTx(
-  scope: TxScope | Prisma.TransactionClient,
-): Prisma.TransactionClient {
-  return "tx" in scope ? scope.tx : scope;
-}
-
 /**
  * Creates v1 (INITIAL) for a freshly created Work Item.
  * Audits spec_version.created. Does not emit SPEC_CHANGED (FR-021: "after v1").
  */
 export async function createInitialSpecVersionInTx(
-  scope: TxScope | Prisma.TransactionClient,
+  scope: TxScope,
   input: { workItemId: string; actorId: string },
 ): Promise<SpecVersionView> {
-  const tx = toTx(scope);
+  const tx = scope.tx;
   const workItem = await tx.workItem.findUnique({
+
     where: { id: input.workItemId },
     select: {
       id: true,
@@ -171,10 +167,10 @@ export async function createInitialSpecVersionInTx(
  * from current columns and sets the pointer. Idempotent within a transaction.
  */
 export async function ensureCurrentSpecVersionInTx(
-  scope: TxScope | Prisma.TransactionClient,
+  scope: TxScope,
   workItemId: string,
 ): Promise<SpecVersionView> {
-  const tx = toTx(scope);
+  const tx = scope.tx;
   const item = await tx.workItem.findUnique({
     where: { id: workItemId },
     include: {
@@ -237,18 +233,27 @@ export async function ensureCurrentSpecVersionInTx(
     data: { currentSpecVersionId: v1.id },
   });
 
+  await audit.record(tx, {
+    action: "spec_version.created",
+    entityType: "SpecVersion",
+    entityId: v1.id,
+    after: toSpecSnapshot(v1),
+    reason: v1.reason ?? undefined,
+  });
+
   return toSpecVersionView(v1);
 }
+
 
 /**
  * The single writer of the Work Item spec mirror columns (FR-010).
  * Append-only: never calls specVersion.update or specVersion.delete.
  */
 export async function applySpecChangeInTx(
-  scope: TxScope | Prisma.TransactionClient,
+  scope: TxScope,
   input: ApplySpecChangeInput,
 ): Promise<AppliedSpecChange | null> {
-  const tx = toTx(scope);
+  const tx = scope.tx;
 
   // 1. Take a row lock on the Work Item (SELECT … FOR UPDATE)
   const rows = await tx.$queryRaw<
@@ -256,14 +261,14 @@ export async function applySpecChangeInTx(
   >`
     SELECT id, "orderId", state FROM "WorkItem" WHERE id = ${input.workItemId} FOR UPDATE
   `;
-  if (!rows || rows.length === 0) {
+  const [workItem] = rows;
+  if (!workItem) {
     return fail({
       code: "NOT_FOUND",
       entity: "WorkItem",
       id: input.workItemId,
     });
   }
-  const workItem = rows[0]!;
 
   // 2. Run ensureCurrentSpecVersionInTx
   const currentVersionView = await ensureCurrentSpecVersionInTx(
@@ -289,7 +294,18 @@ export async function applySpecChangeInTx(
   }
 
   // 4. Parse & validate patch, and validate productTypeId existence
-  const parsedPatch = specPatchSchema.parse(input.patch);
+  const parseResult = specPatchSchema.safeParse(input.patch);
+  if (!parseResult.success) {
+    return fail({
+      code: "VALIDATION",
+      issues: parseResult.error.issues.map((i) => ({
+        path: i.path.join("."),
+        message: i.message,
+      })),
+    });
+  }
+  const parsedPatch = parseResult.data;
+
 
   if (parsedPatch.productTypeId) {
     const pt = await tx.productType.findUnique({
@@ -460,9 +476,8 @@ export const getSpecHistory = defineQuery({
         id: input.workItemId,
       });
     }
-    const effectiveDepartmentId =
-      item.departmentId ?? item.productType?.defaultDepartmentId ?? undefined;
-    check("production.operate", { departmentId: effectiveDepartmentId });
+    const effDeptId = effectiveDepartmentId(item) ?? undefined;
+    check("production.operate", { departmentId: effDeptId });
   },
   run: async ({ client, input }): Promise<SpecHistoryResult> => {
     const item = await client.workItem.findUnique({
@@ -509,9 +524,10 @@ export const getSpecHistory = defineQuery({
       to: number;
       changes: readonly SpecFieldChange[];
     }[] = [];
-    for (let i = 0; i < versions.length - 1; i++) {
-      const fromV = versions[i]!;
-      const toV = versions[i + 1]!;
+    for (let i = 1; i < versions.length; i++) {
+      const fromV = versions[i - 1];
+      const toV = versions[i];
+      if (!fromV || !toV) continue;
       const changes = diffSpecSnapshots(fromV.snapshot, toV.snapshot);
       diffs.push({
         from: fromV.version,
@@ -519,6 +535,7 @@ export const getSpecHistory = defineQuery({
         changes,
       });
     }
+
 
     return {
       versions,
