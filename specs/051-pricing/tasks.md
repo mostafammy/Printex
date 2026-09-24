@@ -82,9 +82,9 @@ All stories -> Polish and consistency review
 
 - [X] T020 [P] [US3] Complete the `status(workItemId)` and `pendingSince(workItemId)` query functions in `src/server/pricing/status.ts` with current-spec validity checks, building on T012's foundational status persistence and binding.
 - [X] T021 [US3] Implement `src/server/pricing/history.ts` for current/history queries, breakdown retrieval, source/actor/reason display data, and disputed state handling.
-- [ ] T022 [US3] Add `tests/integration/pricing/history-status.test.ts` proving independent status during IN_PRODUCTION, DISPUTED unresolved behavior, waitingSince persistence, and readable history.
-- [ ] T023 [US3] Add `src/server/pricing/change-listener.ts` registering `pricing.reset` with 016; use the supplied transaction, clear current price, set PENDING, and audit the reset.
-- [ ] T024 [US3] Add `tests/contract/pricing/spec-change-reset.test.ts` proving successful reset, unchanged historical prices, no nested transaction/external I/O, and rollback when the listener fails.
+- [X] T022 [US3] Add `tests/integration/pricing/history-status.test.ts` proving independent status during IN_PRODUCTION, DISPUTED unresolved behavior, waitingSince persistence, and readable history.
+- [X] T023 [US3] Add `src/server/pricing/change-listener.ts` registering `pricing.reset` with 016; use the supplied transaction, clear current price, set PENDING, and audit the reset. (016's `registerSpecChangeListener` does not exist in this tree yet — the listener and `registerPricingResetListener` are exported from the pricing barrel for the boot path to bind with one line; proven with a contract test double per quickstart prerequisites.)
+- [X] T024 [US3] Add `tests/contract/pricing/spec-change-reset.test.ts` proving successful reset, unchanged historical prices, no nested transaction/external I/O, and rollback when the listener fails.
 
 ## Phase 6: User Story 4 - Block unresolved delivery (P1)
 

@@ -30,6 +30,12 @@ export type { PricingGatePort, PricingGateStatus, PricingResponsible } from "./p
 
 export type { PricingStatusSnapshot, PricingStatusValue } from "./status";
 export { pendingSince, status } from "./status";
+export {
+  PRICING_RESET_LISTENER_NAME,
+  pricingResetListener,
+  registerPricingResetListener,
+} from "./change-listener";
+export type { SpecChangedEvent, SpecChangeListener } from "./change-listener";
 export { getCurrentPrice, getPriceHistory } from "./history";
 export { pricingGateProvider } from "./delivery-port";
 export { formatQueueAge, getPricingQueue } from "./queue";
