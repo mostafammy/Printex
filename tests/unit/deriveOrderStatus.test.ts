@@ -34,11 +34,21 @@ describe("deriveOrderStatus", () => {
     );
   });
 
-  // --- COMPLETED: requires EVERY Work Item to be COMPLETED -----------------
+  // --- COMPLETED: requires EVERY non-cancelled Work Item to be COMPLETED ---
   it("returns COMPLETED when all Work Items are COMPLETED", () => {
     expect(deriveOrderStatus(items("COMPLETED", "COMPLETED"))).toBe(
       "COMPLETED",
     );
+  });
+
+  it("returns COMPLETED when non-cancelled Work Items are COMPLETED (mixed with CANCELLED)", () => {
+    expect(
+      deriveOrderStatus([
+        { state: "CANCELLED" },
+        { state: "COMPLETED" },
+        { state: "COMPLETED" },
+      ]),
+    ).toBe("COMPLETED");
   });
 
   it("does NOT return COMPLETED when only some Work Items are COMPLETED (falls to DELIVERED)", () => {
@@ -47,7 +57,7 @@ describe("deriveOrderStatus", () => {
     );
   });
 
-  // --- DELIVERED: requires EVERY Work Item to be DELIVERED or COMPLETED ----
+  // --- DELIVERED: requires EVERY non-cancelled Work Item to be DELIVERED or COMPLETED ----
   it("returns DELIVERED when all Work Items are DELIVERED", () => {
     expect(deriveOrderStatus(items("DELIVERED", "DELIVERED"))).toBe(
       "DELIVERED",
@@ -58,6 +68,26 @@ describe("deriveOrderStatus", () => {
     expect(deriveOrderStatus(items("DELIVERED", "COMPLETED"))).toBe(
       "DELIVERED",
     );
+  });
+
+  it("returns DELIVERED when non-cancelled Work Items are all DELIVERED (mixed with CANCELLED)", () => {
+    expect(
+      deriveOrderStatus([
+        { state: "CANCELLED" },
+        { state: "DELIVERED" },
+        { state: "DELIVERED" },
+      ]),
+    ).toBe("DELIVERED");
+  });
+
+  it("returns DELIVERED when non-cancelled Work Items are a mix of DELIVERED and COMPLETED (mixed with CANCELLED)", () => {
+    expect(
+      deriveOrderStatus([
+        { state: "CANCELLED" },
+        { state: "DELIVERED" },
+        { state: "COMPLETED" },
+      ]),
+    ).toBe("DELIVERED");
   });
 
   it("does NOT return DELIVERED when a Work Item is behind DELIVERED/COMPLETED", () => {
@@ -131,5 +161,33 @@ describe("deriveOrderStatus", () => {
     expect(
       deriveOrderStatus(items("DELIVERED", "IN_PRODUCTION")),
     ).toBe("PARTIALLY_READY");
+  });
+
+  // --- Regression: all-cancelled and pre-production -------------------------
+  it("preserves CANCELLED for all-cancelled Work Items (regression)", () => {
+    expect(deriveOrderStatus(items("CANCELLED"))).toBe("CANCELLED");
+    expect(deriveOrderStatus(items("CANCELLED", "CANCELLED"))).toBe(
+      "CANCELLED",
+    );
+    expect(
+      deriveOrderStatus([
+        { state: "CANCELLED" },
+        { state: "CANCELLED" },
+        { state: "CANCELLED" },
+      ]),
+    ).toBe("CANCELLED");
+  });
+
+  it("preserves NOT_STARTED for all pre-production Work Items (regression)", () => {
+    expect(deriveOrderStatus(items("NEW"))).toBe("NOT_STARTED");
+    expect(deriveOrderStatus(items("ASSIGNED"))).toBe("NOT_STARTED");
+    expect(deriveOrderStatus(items("NEW", "ASSIGNED"))).toBe("NOT_STARTED");
+    expect(
+      deriveOrderStatus([
+        { state: "NEW" },
+        { state: "ASSIGNED" },
+        { state: "NEW" },
+      ]),
+    ).toBe("NOT_STARTED");
   });
 });
