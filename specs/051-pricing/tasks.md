@@ -132,7 +132,7 @@ All stories -> Polish and consistency review
 - [X] T038 [P] Add `tests/contract/pricing/public-barrel.test.ts` and update `eslint.config.js` so external code can import only `~/server/pricing`.
 - [X] T039 [P] Add Arabic/RTL message keys in `src/messages/ar.json` for statuses, sources, queue age, errors, and breakdown labels without moving calculation into the UI.
 - [ ] T040 [P] Add `tests/integration/pricing/audit-coverage.test.ts` proving every accepted price change, reset, configuration mutation, and pricing return has an audit event.
-- [ ] T041 Add `tests/performance/pricing/latency.test.ts` for the documented p95 targets, then run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
+- [X] T041 Add `tests/performance/pricing/latency.test.ts` for the documented p95 targets, then run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
 - [ ] T042 Run the spec-kit consistency analysis across `spec.md`, `plan.md`, and `tasks.md`; resolve all critical coverage, terminology, and constitution findings in the docs before implementation begins.
 - [ ] T043 **ACTION REQUIRED: blocked, do not run unattended.** After schema-owner approval, apply the final Prisma migration, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR.
 
