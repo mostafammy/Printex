@@ -8,11 +8,11 @@
 import type { JsonValue } from "../json";
 import type { WorkItemState } from "../workflow/states";
 import type { RejectionCategory } from "../workflow/rejectionCategory";
-import type { Actor as CoreActor } from "../actor";
-import { asUserId, asWorkItemId } from "../ids";
+import { asWorkItemId } from "../ids";
 import { transitionWorkItem } from "../workflow/transition";
-import { TransitionFailure } from "./errors";
+import { AspectMisuseError, TransitionFailure } from "./errors";
 import type { Tx } from "./types";
+import { toCoreActor } from "./actor";
 
 export interface TransitionOrThrowInput {
   readonly workItemId: string;
@@ -28,6 +28,15 @@ export interface TransitionOutcome {
   readonly to: WorkItemState;
 }
 
+function isPlainObject(v: unknown): v is Readonly<Record<string, JsonValue>> {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    !Array.isArray(v) &&
+    (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null)
+  );
+}
+
 /**
  * Transitions a WorkItem state inside the provided transaction client.
  *
@@ -38,38 +47,16 @@ export async function transitionOrThrow(
   tx: Tx,
   input: TransitionOrThrowInput,
 ): Promise<TransitionOutcome> {
-  // Read current state to accurately construct the return outcome.
-  let from: WorkItemState | undefined;
-  try {
-    const current = await tx.workItem.findUnique({
-      where: { id: input.workItemId },
-      select: { state: true },
-    });
-    if (current) {
-      from = current.state;
-    }
-  } catch {
-    // If findUnique fails here, transitionWorkItem below will run its own check
-    // and produce the appropriate DomainError.
+  // Read current state with row lock to accurately construct outcome without READ COMMITTED race
+  const locked = await tx.$queryRaw<{ state: WorkItemState }[]>`SELECT "state" FROM "WorkItem" WHERE "id" = ${input.workItemId} FOR UPDATE`;
+  const from = locked[0]?.state;
+
+  const coreActor = toCoreActor(input.actor);
+
+  if (input.meta !== undefined && !isPlainObject(input.meta)) {
+    throw new AspectMisuseError("transitionOrThrow meta must be a JSON object");
   }
-
-  const coreActor: CoreActor = {
-    userId: asUserId(input.actor.userId),
-    roles:
-      "roles" in input.actor && Array.isArray((input.actor as { roles?: unknown }).roles)
-        ? (input.actor as { roles: readonly string[] }).roles
-        : [],
-    departmentIds:
-      "departmentIds" in input.actor &&
-      Array.isArray((input.actor as { departmentIds?: unknown }).departmentIds)
-        ? (input.actor as { departmentIds: readonly string[] }).departmentIds
-        : [],
-  };
-
-  const meta =
-    input.meta && typeof input.meta === "object" && !Array.isArray(input.meta)
-      ? (input.meta as Readonly<Record<string, JsonValue>>)
-      : undefined;
+  const meta = input.meta;
 
   const result = await transitionWorkItem(tx, {
     workItemId: asWorkItemId(input.workItemId),
@@ -84,8 +71,14 @@ export async function transitionOrThrow(
     throw new TransitionFailure(input.workItemId, result.error);
   }
 
+  if (from === undefined) {
+    throw new AspectMisuseError(
+      "transitionOrThrow: WorkItem state was unexpectedly missing after successful transition",
+    );
+  }
+
   return {
-    from: from ?? input.to,
+    from,
     to: input.to,
   };
 }

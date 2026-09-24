@@ -16,6 +16,7 @@ export type {
   SpecField,
   SpecSnapshot,
   SpecPatch,
+  SpecPatchInput,
   SpecVersionView,
   SpecColumns,
 } from "./specFields";
@@ -32,14 +33,10 @@ export type { SpecEditPolicy, RedesignChoice } from "./policy";
 export { diffSpecSnapshots } from "./diff";
 export type { SpecFieldChange } from "./diff";
 
-// Phase 2: aspect-oriented commands/queries
-export { defineCommand, defineQuery } from "./aspect";
-
 // Phase 2: SPEC_CHANGED event and listener registry
 export {
   SPEC_CHANGED,
   registerSpecChangeListener,
-  emitSpecChangedInTx,
 } from "./events";
 export type { SpecChangedEvent, SpecChangeListener } from "./events";
 
@@ -47,9 +44,5 @@ export type { SpecChangedEvent, SpecChangeListener } from "./events";
 export {
   noopDirectCostPort,
   setDirectCostPort,
-  getDirectCostPort,
 } from "./ports";
 export type { LateCancellationCost, DirectCostPort } from "./ports";
-
-// Phase 2: recipients
-export { usersWithPermission } from "./recipients";

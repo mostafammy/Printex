@@ -16,7 +16,6 @@
 import type { Prisma } from "../../../../generated/prisma";
 import type { z } from "zod";
 import type { Actor as CoreActor } from "../actor";
-import { asUserId } from "../ids";
 import type {
   AspectDeps,
   AspectResult,
@@ -35,26 +34,7 @@ import {
   mapAspectError,
 } from "./errors";
 import { transitionOrThrow } from "./transition";
-
-/**
- * Builds a CoreActor from the caller's actor with branded UserId.
- */
-function toCoreActor<A extends { userId: string }>(actor: A): CoreActor {
-  const roles =
-    "roles" in actor && Array.isArray((actor as { roles?: unknown }).roles)
-      ? (actor as { roles: readonly string[] }).roles
-      : [];
-  const departmentIds =
-    "departmentIds" in actor &&
-    Array.isArray((actor as { departmentIds?: unknown }).departmentIds)
-      ? (actor as { departmentIds: readonly string[] }).departmentIds
-      : [];
-  return {
-    userId: asUserId(actor.userId),
-    roles,
-    departmentIds,
-  };
-}
+import { toCoreActor } from "./actor";
 
 function toPermissionList<P extends string>(
   resolved: P | readonly [P, ...P[]],
@@ -85,7 +65,8 @@ function checkStaticPermission<A extends { userId: string }, P extends string, I
       deps.checkPermission(actor, perm);
       granted = true;
       break;
-    } catch {
+    } catch (e) {
+      if (!deps.isForbidden(e)) throw e;
       // Permission denied for this key; try remaining any-of keys.
     }
   }
@@ -137,7 +118,7 @@ type CommandTarget<
   Prep,
 > = {
   (actor: A, raw: z.input<S>): Promise<AspectResult<O, E>>;
-  inTx: Prep extends undefined ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
+  inTx: [Prep] extends [undefined] ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
 };
 
 /**
@@ -193,46 +174,58 @@ export function createAspects<A extends { userId: string }, P extends string>(
             checkStaticPermission(deps, actor, def.permission, parsedInput);
 
             // 3. Prepare (pre-transaction I/O) — runs only after static permission passes
+            // Unavoidable cast: TS cannot narrow Prep to undefined when def.prepare is omitted.
             const prepared = def.prepare
               ? await def.prepare({ actor, input: parsedInput })
               : (undefined as Prep);
 
             const afterCommitHooks: (() => Promise<void>)[] = [];
+            let closed = false;
 
             // 4. Open transaction with txOptions
-            const outcome = await deps.transaction(async (tx) => {
-              const ctx: CommandCtx<A, P, z.output<S>, Prep> = {
-                tx,
-                afterCommit: (hook) => {
-                  afterCommitHooks.push(hook);
-                },
-                actor,
-                coreActor: toCoreActor(actor),
-                input: parsedInput,
-                prepared,
-                check: (permission, scope) => deps.checkPermission(actor, permission, scope),
-                transition: (i) => transitionOrThrow(tx, { ...i, actor }),
-              };
+            let outcome;
+            try {
+              outcome = await deps.transaction(async (tx) => {
+                const ctx: CommandCtx<A, P, z.output<S>, Prep> = {
+                  tx,
+                  afterCommit: (hook) => {
+                    if (closed) {
+                      throw new AspectMisuseError(
+                        "Cannot register afterCommit hook after transaction has settled",
+                      );
+                    }
+                    afterCommitHooks.push(hook);
+                  },
+                  actor,
+                  coreActor: toCoreActor(actor),
+                  input: parsedInput,
+                  prepared,
+                  check: (permission, scope) => deps.checkPermission(actor, permission, scope),
+                  transition: (i) => transitionOrThrow(tx, { ...i, actor }),
+                };
 
-              // 5. Authorize hook (entity-scoped checks inside same tx)
-              if (def.authorize) {
-                await def.authorize(ctx);
-              }
+                // 5. Authorize hook (entity-scoped checks inside same tx)
+                if (def.authorize) {
+                  await def.authorize(ctx);
+                }
 
-              // 6. Run command logic
-              const runOutcome = await def.run(ctx);
+                // 6. Run command logic
+                const runOutcome = await def.run(ctx);
 
-              // 7. Audit recording in same tx
-              await recordAuditEntries(
-                deps.recordAudit,
-                tx,
-                actor,
-                runOutcome,
-                def.allowNoChange,
-              );
+                // 7. Audit recording in same tx
+                await recordAuditEntries(
+                  deps.recordAudit,
+                  tx,
+                  actor,
+                  runOutcome,
+                  def.allowNoChange,
+                );
 
-              return runOutcome;
-            }, def.txOptions);
+                return runOutcome;
+              }, def.txOptions);
+            } finally {
+              closed = true;
+            }
 
             // 8. Commit: transaction has completed successfully here
 
@@ -241,7 +234,11 @@ export function createAspects<A extends { userId: string }, P extends string>(
               try {
                 await hook();
               } catch (hookError) {
-                deps.onAfterCommitError(hookError, { action: def.action });
+                try {
+                  deps.onAfterCommitError(hookError, { action: def.action });
+                } catch {
+                  // The reporter must not affect a committed result
+                }
               }
             }
 
@@ -274,6 +271,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
               actor,
               coreActor: toCoreActor(actor),
               input: parsedInput,
+              // Unavoidable cast: inTx disallows prepare so Prep is always undefined, but CommandCtx requires Prep.
               prepared: undefined as Prep,
               check: (permission, scopeParams) =>
                 deps.checkPermission(actor, permission, scopeParams),
@@ -310,6 +308,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
 
         // Attach inTx function to the command closure
         const commandWithInTx = Object.assign(execute, { inTx: inTxFn });
+        // Unavoidable cast: Object.assign cannot infer the conditional inTx type on CommandTarget.
         return commandWithInTx as CommandTarget<A, S, O, E, Prep>;
       };
 
@@ -363,7 +362,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
 
             let result: O;
             if (def.consistent) {
-              result = await deps.transaction(executeQuery);
+              result = await deps.transaction(executeQuery, { isolationLevel: "RepeatableRead" });
             } else {
               result = await executeQuery(deps.reader);
             }

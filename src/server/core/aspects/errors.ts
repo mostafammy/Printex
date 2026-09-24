@@ -80,14 +80,8 @@ export function mapAspectError<E extends ModuleErrorShape>(
   isForbidden: (e: unknown) => boolean,
 ): AspectBaseError | E {
   // 1. ZodError → VALIDATION { issues }
-  if (
-    caught instanceof z.ZodError ||
-    (caught instanceof Error &&
-      caught.name === "ZodError" &&
-      "issues" in caught &&
-      Array.isArray((caught as { issues: unknown }).issues))
-  ) {
-    const issues = (caught as z.ZodError).issues.map((i) => ({
+  if (caught instanceof z.ZodError) {
+    const issues = caught.issues.map((i) => ({
       path: i.path.join("."),
       message: i.message,
     }));

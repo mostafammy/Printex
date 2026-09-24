@@ -50,10 +50,10 @@ const dimensionUnitEnum = z.enum(["MM", "CM", "M", "IN"]);
 
 const stringFieldSchema = z
   .string()
+  .trim()
   .max(2000, "String length must not exceed 2000 characters")
   .transform((val) => {
-    const trimmed = val.trim();
-    return trimmed === "" ? null : trimmed;
+    return val === "" ? null : val;
   })
   .nullable();
 
@@ -151,7 +151,13 @@ const decimalFieldSchema = z
     return new Prisma.Decimal(trimmed).toString();
   });
 
-export const specPatchSchema: z.ZodType<SpecPatch, z.ZodTypeDef, unknown> = z
+export type SpecPatchInput = {
+  [K in keyof SpecSnapshot]?: K extends "widthValue" | "heightValue"
+    ? number | string | null
+    : SpecSnapshot[K];
+};
+
+export const specPatchSchema: z.ZodType<SpecPatch, z.ZodTypeDef, SpecPatchInput> = z
   .object({
     productTypeId: stringFieldSchema.optional(),
     description: stringFieldSchema.optional(),
@@ -190,11 +196,7 @@ export function toSpecSnapshot(row: SpecColumns): SpecSnapshot {
     const str = typeof v === "object" && "toString" in v ? v.toString() : String(v);
     const trimmed = str.trim();
     if (trimmed === "") return null;
-    try {
-      return new Prisma.Decimal(trimmed).toString();
-    } catch {
-      return null;
-    }
+    return new Prisma.Decimal(trimmed).toString();
   };
 
   const normString = (s: string | null): string | null => {

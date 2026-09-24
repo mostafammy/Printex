@@ -2,7 +2,13 @@
 // contracts/events-and-ports.md §1 (specs/016-change-control/contracts/events-and-ports.md).
 
 import type { Prisma } from "../../../generated/prisma";
-import { notify, type WorkItemState } from "~/server/core";
+import {
+  notify,
+  fail,
+  AspectDomainError,
+  AspectMisuseError,
+  type WorkItemState,
+} from "~/server/core";
 import type { SpecField } from "./specFields";
 
 export const SPEC_CHANGED = "work_item.spec_changed" as const;
@@ -57,8 +63,19 @@ export async function emitSpecChangedInTx(
   tx: Prisma.TransactionClient,
   event: SpecChangedEvent,
 ): Promise<void> {
-  for (const listener of listeners.values()) {
-    await listener(tx, event);
+  for (const [name, listener] of listeners.entries()) {
+    try {
+      await listener(tx, event);
+    } catch (err) {
+      if (err instanceof AspectDomainError) {
+        const code = (err.error as { code?: string })?.code;
+        if (code !== "SPEC_CHANGE_VETOED") {
+          throw new AspectMisuseError(`listener ${name} raised foreign code ${code}`);
+        }
+        throw err;
+      }
+      throw err;
+    }
   }
 
   const item = await tx.workItem.findUnique({
@@ -70,9 +87,17 @@ export async function emitSpecChangedInTx(
     },
   });
 
-  const assigneeId = item?.assigneeId ?? undefined;
+  if (!item) {
+    return fail({
+      code: "NOT_FOUND",
+      entity: "WorkItem",
+      id: event.workItemId,
+    });
+  }
+
+  const assigneeId = item.assigneeId ?? undefined;
   const effectiveDepartmentId =
-    item?.departmentId ?? item?.productType?.defaultDepartmentId ?? undefined;
+    item.departmentId ?? item.productType?.defaultDepartmentId ?? undefined;
 
   const recipientUserIds: string[] = assigneeId ? [assigneeId] : [];
   const recipientDepartmentIds: string[] = effectiveDepartmentId

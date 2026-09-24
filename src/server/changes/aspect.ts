@@ -2,7 +2,6 @@
 // contracts/aspects.md §5, research.md §11 (specs/016-change-control/contracts/aspects.md).
 
 import { aspects } from "~/server/aspects";
-import type { AspectResult } from "~/server/core";
 import type { ChangeError } from "./errors";
 
 export const { defineCommand, defineQuery } = aspects.forModule<ChangeError>({
@@ -18,7 +17,10 @@ export const { defineCommand, defineQuery } = aspects.forModule<ChangeError>({
   },
   mapUniqueViolation: (target: readonly string[]) => {
     // SpecVersion @@unique([workItemId, version])
-    if (target.includes("version")) {
+    if (
+      (target.includes("workItemId") && target.includes("version")) ||
+      target.some((t) => t.includes("SpecVersion_workItemId_version"))
+    ) {
       return { code: "STALE_SPEC_VERSION" };
     }
     // Partial unique index ChangeRequest_one_pending_per_work_item on (workItemId) WHERE status = 'PENDING'
@@ -32,4 +34,4 @@ export const { defineCommand, defineQuery } = aspects.forModule<ChangeError>({
   },
 });
 
-export type ChangeResult<T> = AspectResult<T, ChangeError>;
+export type { ChangeResult } from "./errors";

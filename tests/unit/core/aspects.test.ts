@@ -9,6 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma";
 import {
   createAspects,
   AspectDomainError,
@@ -48,6 +49,9 @@ function createFakeDeps() {
   const steps: string[] = [];
   const recordedAudits: Array<{ tx: Tx; entry: AuditEntry & { actorId: string } }> = [];
   const afterCommitErrors: Array<{ error: unknown; meta: { action: string } }> = [];
+  const recordedTxOptions: Array<
+    { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel } | undefined
+  > = [];
   let txOpen = false;
   let txCommitted = false;
   let txRolledBack = false;
@@ -56,7 +60,11 @@ function createFakeDeps() {
   const fakeReader = { id: "fake-reader-client" } as unknown as Tx;
 
   const deps: AspectDeps<TestActor, string> = {
-    transaction: async <T>(fn: (tx: Tx) => Promise<T>): Promise<T> => {
+    transaction: async <T>(
+      fn: (tx: Tx) => Promise<T>,
+      opts?: { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel },
+    ): Promise<T> => {
+      recordedTxOptions.push(opts);
       steps.push("tx:open");
       txOpen = true;
       try {
@@ -73,28 +81,36 @@ function createFakeDeps() {
       }
     },
     reader: fakeReader,
-    checkPermission: (actor, permission, scope) => {
-      steps.push(`perm:check:${permission}`);
-      if (!actor.permissions?.has(permission)) {
-        const err = new Error("FORBIDDEN");
-        err.name = "ForbiddenError";
-        throw err;
-      }
-      if (scope?.departmentId && !actor.departmentIds?.includes(scope.departmentId)) {
-        const err = new Error("FORBIDDEN");
-        err.name = "ForbiddenError";
-        throw err;
-      }
-    },
+    checkPermission: (actor, permission, scope) => checkPermissionFn(actor, permission, scope),
     isForbidden: (e) => e instanceof Error && e.name === "ForbiddenError",
     recordAudit: async (tx, entry) => {
       steps.push(`audit:${entry.action}`);
       recordedAudits.push({ tx, entry });
     },
-    onAfterCommitError: (e, meta) => {
-      steps.push(`afterCommitError:${meta.action}`);
-      afterCommitErrors.push({ error: e, meta });
-    },
+    onAfterCommitError: (e, meta) => onAfterCommitErrorFn(e, meta),
+  };
+
+  let checkPermissionFn = (
+    actor: TestActor,
+    permission: string,
+    scope?: { departmentId?: string },
+  ) => {
+    steps.push(`perm:check:${permission}`);
+    if (!actor.permissions?.has(permission)) {
+      const err = new Error("FORBIDDEN");
+      err.name = "ForbiddenError";
+      throw err;
+    }
+    if (scope?.departmentId && !actor.departmentIds?.includes(scope.departmentId)) {
+      const err = new Error("FORBIDDEN");
+      err.name = "ForbiddenError";
+      throw err;
+    }
+  };
+
+  let onAfterCommitErrorFn = (e: unknown, meta: { action: string }) => {
+    steps.push(`afterCommitError:${meta.action}`);
+    afterCommitErrors.push({ error: e, meta });
   };
 
   return {
@@ -102,6 +118,16 @@ function createFakeDeps() {
     steps,
     recordedAudits,
     afterCommitErrors,
+    recordedTxOptions,
+    getLastTxOptions: () => recordedTxOptions[recordedTxOptions.length - 1],
+    setCheckPermission: (
+      fn: (actor: TestActor, permission: string, scope?: { departmentId?: string }) => void,
+    ) => {
+      checkPermissionFn = fn;
+    },
+    setOnAfterCommitError: (fn: (e: unknown, meta: { action: string }) => void) => {
+      onAfterCommitErrorFn = fn;
+    },
     fakeTx,
     fakeReader,
     getTxOpen: () => txOpen,
@@ -266,6 +292,43 @@ describe("Aspect Engine — Pipeline Order and Guarantees (§3.1, §7)", () => {
     expect(fakes.getTxCommitted()).toBe(false);
     expect(fakes.getTxRolledBack()).toBe(false);
   });
+
+  it("rejects command promise with TypeError when checkPermission throws TypeError, without calling prepare or transaction", async () => {
+    const fakes = createFakeDeps();
+    const typeError = new TypeError("Unexpected type error in permission check");
+    fakes.setCheckPermission(() => {
+      fakes.steps.push("perm:check:throw_typeerror");
+      throw typeError;
+    });
+
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+    });
+
+    const command = aspects.defineCommand({
+      action: "test.perm_error",
+      input: z.object({ code: z.string() }),
+      permission: "admin.super",
+      prepare: async () => {
+        fakes.steps.push("prepare");
+        return undefined;
+      },
+      run: async () => {
+        fakes.steps.push("run");
+        return {
+          value: true,
+          audit: [{ action: "test.perm_error", entityType: "X", entityId: "1" }],
+        };
+      },
+    });
+
+    await expect(command(makeActor(), { code: "abc" })).rejects.toThrow(typeError);
+
+    // Prepare and transaction were never called
+    expect(fakes.steps).toEqual(["perm:check:throw_typeerror"]);
+    expect(fakes.getTxOpen()).toBe(false);
+    expect(fakes.getTxCommitted()).toBe(false);
+  });
 });
 
 describe("Aspect Engine — PermissionSpec Variations (§2, §7)", () => {
@@ -394,6 +457,47 @@ describe("Aspect Engine — Entity-scoped Authorization in Tx (§3.1, §7)", () 
     expect(fakes.steps).not.toContain("run");
     expect(fakes.getTxCommitted()).toBe(false);
     expect(fakes.getTxRolledBack()).toBe(true);
+  });
+
+  it("passes the same transaction to authorize, run, and audit recording on success", async () => {
+    const fakes = createFakeDeps();
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+    });
+
+    let authorizeTx: Tx | undefined;
+    let runTx: Tx | undefined;
+
+    const command = aspects.defineCommand({
+      action: "test.entity_auth_success",
+      input: z.object({ targetDept: z.string() }),
+      permission: "order.edit",
+      authorize: (ctx) => {
+        authorizeTx = ctx.tx;
+        expect(ctx.tx).toBe(fakes.fakeTx);
+        ctx.check("order.edit", { departmentId: ctx.input.targetDept });
+      },
+      run: async (ctx) => {
+        runTx = ctx.tx;
+        expect(ctx.tx).toBe(fakes.fakeTx);
+        return {
+          value: "auth-success",
+          audit: [{ action: "audit.auth_success", entityType: "Order", entityId: "order-1" }],
+        };
+      },
+    });
+
+    const actor = makeActor({
+      permissions: new Set(["order.edit"]),
+      departmentIds: ["dept-1"],
+    });
+
+    const res = await command(actor, { targetDept: "dept-1" });
+    expect(res).toEqual({ ok: true, data: "auth-success" });
+    expect(authorizeTx).toBe(fakes.fakeTx);
+    expect(runTx).toBe(fakes.fakeTx);
+    expect(fakes.recordedAudits).toHaveLength(1);
+    expect(fakes.recordedAudits[0]?.tx).toBe(fakes.fakeTx);
   });
 
   it("constructs CoreActor with branded UserId and attaches to CommandCtx", async () => {
@@ -590,6 +694,74 @@ describe("Aspect Engine — afterCommit Hooks (§3.1, §7)", () => {
     expect(fakes.afterCommitErrors[0]?.error).toBe(hookError);
     expect(fakes.afterCommitErrors[0]?.meta.action).toBe("order.with_failing_hook");
   });
+
+  it("runs hook 2 when hook 1 throws (in order), and ignores throwing error reporter without turning result into exception", async () => {
+    const fakes = createFakeDeps();
+    fakes.setOnAfterCommitError(() => {
+      fakes.steps.push("reporter:threw");
+      throw new Error("Reporter explosion");
+    });
+
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+    });
+
+    const executionOrder: string[] = [];
+
+    const command = aspects.defineCommand({
+      action: "order.throwing_hooks",
+      input: z.object({}),
+      permission: "order.edit",
+      run: async (ctx) => {
+        ctx.afterCommit(async () => {
+          executionOrder.push("hook-1");
+          throw new Error("Hook 1 failed");
+        });
+        ctx.afterCommit(async () => {
+          executionOrder.push("hook-2");
+        });
+        return {
+          value: { status: "committed" },
+          audit: [{ action: "a", entityType: "E", entityId: "1" }],
+        };
+      },
+    });
+
+    const res = await command(makeActor(), {});
+
+    expect(res).toEqual({ ok: true, data: { status: "committed" } });
+    expect(executionOrder).toEqual(["hook-1", "hook-2"]);
+    expect(fakes.steps).toContain("reporter:threw");
+  });
+
+  it("throws AspectMisuseError if ctx.afterCommit is called after transaction has settled", async () => {
+    const fakes = createFakeDeps();
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+    });
+
+    let leakedCtx: any;
+
+    const command = aspects.defineCommand({
+      action: "order.leak_ctx",
+      input: z.object({}),
+      permission: "order.edit",
+      run: async (ctx) => {
+        leakedCtx = ctx;
+        return {
+          value: { id: "ok" },
+          audit: [{ action: "a", entityType: "E", entityId: "1" }],
+        };
+      },
+    });
+
+    const res = await command(makeActor(), {});
+    expect(res.ok).toBe(true);
+
+    expect(() => {
+      leakedCtx.afterCommit(async () => {});
+    }).toThrowError(AspectMisuseError);
+  });
 });
 
 describe("Aspect Engine — .inTx Composition (§3.1, §7)", () => {
@@ -662,11 +834,15 @@ describe("Aspect Engine — .inTx Composition (§3.1, §7)", () => {
       module: "test-module",
     });
 
+    let childHookRan = false;
     const childFailing = aspects.defineCommand({
       action: "child.fail",
       input: z.object({}),
       permission: "order.edit",
-      run: async () => {
+      run: async (ctx) => {
+        ctx.afterCommit(async () => {
+          childHookRan = true;
+        });
         return fail<TestModuleError>({ code: "ITEM_LOCKED" });
       },
     });
@@ -690,6 +866,8 @@ describe("Aspect Engine — .inTx Composition (§3.1, §7)", () => {
       ok: false,
       error: { code: "ITEM_LOCKED" },
     });
+    expect(childHookRan).toBe(false);
+    expect(fakes.recordedAudits).toHaveLength(0);
     expect(fakes.getTxRolledBack()).toBe(true);
   });
 
@@ -721,6 +899,28 @@ describe("Aspect Engine — .inTx Composition (§3.1, §7)", () => {
     // Assert that runtime invocation also throws AspectMisuseError.
     const inTxCallable = (commandWithPrepare as unknown as { inTx: (s: unknown, a: unknown, i: unknown) => Promise<unknown> }).inTx;
     await expect(inTxCallable(fakeScope, makeActor(), {})).rejects.toThrowError(AspectMisuseError);
+  });
+
+  it("passes txOptions through to deps.transaction", async () => {
+    const fakes = createFakeDeps();
+    const aspects = createAspects<TestActor, string>(fakes.deps).forModule<TestModuleError>({
+      module: "test-module",
+    });
+
+    const command = aspects.defineCommand({
+      action: "test.tx_options",
+      input: z.object({}),
+      permission: "order.edit",
+      txOptions: { timeout: 12345, isolationLevel: "Serializable" },
+      run: async () => ({
+        value: "ok",
+        audit: [{ action: "a", entityType: "E", entityId: "1" }],
+      }),
+    });
+
+    const res = await command(makeActor(), {});
+    expect(res).toEqual({ ok: true, data: "ok" });
+    expect(fakes.getLastTxOptions()).toEqual({ timeout: 12345, isolationLevel: "Serializable" });
   });
 });
 
@@ -1083,6 +1283,7 @@ describe("Aspect Engine — Query Pipeline (§3.1, §7)", () => {
 
     expect(res).toEqual({ ok: true, data: "consistent-read" });
     expect(fakes.steps).toEqual(["perm:check:order.view", "tx:open", "tx:commit"]);
+    expect(fakes.getLastTxOptions()).toEqual({ isolationLevel: "RepeatableRead" });
   });
 
   it("maps query domain errors via fail() and re-throws unknown errors", async () => {
@@ -1110,6 +1311,7 @@ describe("Aspect Engine — Query Pipeline (§3.1, §7)", () => {
 describe("transitionOrThrow (§3.3)", () => {
   it("converts actor to coreActor, calls transitionWorkItem, and returns TransitionOutcome on success", async () => {
     const fakeTx = {
+      $queryRaw: vi.fn().mockResolvedValue([{ state: "NEW" }]),
       workItem: {
         findUnique: vi.fn().mockResolvedValue({ id: "wi-10", state: "NEW" }),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -1151,8 +1353,57 @@ describe("transitionOrThrow (§3.3)", () => {
     });
   });
 
+  it("proves from comes from the locked $queryRaw read", async () => {
+    const queryRawMock = vi.fn().mockResolvedValue([{ state: "ASSIGNED" }]);
+    const fakeTx = {
+      $queryRaw: queryRawMock,
+      workItem: {
+        findUnique: vi.fn().mockResolvedValue({ id: "wi-10", state: "ASSIGNED" }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findUniqueOrThrow: vi.fn().mockResolvedValue({
+          id: "wi-10",
+          orderId: "ord-1",
+          productTypeId: null,
+          departmentId: null,
+          state: "IN_DESIGN",
+          requiresDesign: false,
+          requiresReview: false,
+          assigneeId: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        }),
+      },
+      phaseTiming: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({}),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      workItemTransition: {
+        create: vi.fn().mockResolvedValue({}),
+      },
+      notificationEvent: {
+        create: vi.fn().mockResolvedValue({}),
+      },
+    } as unknown as Tx;
+
+    const outcome = await transitionOrThrow(fakeTx, {
+      workItemId: "wi-10",
+      to: "IN_DESIGN",
+      actor: { userId: "user-trans" },
+    });
+
+    expect(queryRawMock).toHaveBeenCalled();
+    const queryRawCall = queryRawMock.mock.calls[0];
+    expect(queryRawCall).toBeDefined();
+    expect(queryRawCall![0].join("")).toContain('SELECT "state" FROM "WorkItem" WHERE "id" =');
+    expect(queryRawCall![0].join("")).toContain("FOR UPDATE");
+    expect(outcome.from).toBe("ASSIGNED");
+    expect(outcome.to).toBe("IN_DESIGN");
+  });
+
   it("throws TransitionFailure when transitionWorkItem returns domain error", async () => {
     const fakeTx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
       workItem: {
         findUnique: vi.fn().mockResolvedValue(null), // WorkItem does not exist
       },
@@ -1165,6 +1416,30 @@ describe("transitionOrThrow (§3.3)", () => {
         actor: { userId: "user-trans" },
       }),
     ).rejects.toThrowError(TransitionFailure);
+  });
+
+  it("throws AspectMisuseError when meta is not a plain object", async () => {
+    const fakeTx = {
+      $queryRaw: vi.fn().mockResolvedValue([{ state: "NEW" }]),
+    } as unknown as Tx;
+
+    await expect(
+      transitionOrThrow(fakeTx, {
+        workItemId: "wi-10",
+        to: "ASSIGNED",
+        actor: { userId: "user-trans" },
+        meta: "not-an-object" as any,
+      }),
+    ).rejects.toThrowError(AspectMisuseError);
+
+    await expect(
+      transitionOrThrow(fakeTx, {
+        workItemId: "wi-10",
+        to: "ASSIGNED",
+        actor: { userId: "user-trans" },
+        meta: [1, 2, 3] as any,
+      }),
+    ).rejects.toThrowError(AspectMisuseError);
   });
 });
 

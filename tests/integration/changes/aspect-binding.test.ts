@@ -3,6 +3,7 @@
 // contracts/aspects.md §5, research.md §11 (tasks.md T017).
 //
 // NOTE: Must NOT be run until T002 schema migration has been applied to the database.
+// It also requires prisma/manual-sql/016-change-control-constraints.sql.
 
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { z } from "zod";
@@ -48,7 +49,9 @@ function makeActor(userId: string): Actor {
 
 describe("016 changes aspect binding (integration, T017)", () => {
   it('maps a guard failure with guardCode "CHANGE_HOLD" to { ok: false, error: { code: "CHANGE_HOLD" } }', async () => {
-    registerGuard({ from: "NEW", to: "ASSIGNED" }, async () =>
+    // Assumes per-file test isolation; registerGuard mutates the in-memory shared guard registry.
+    // Use an edge (DELIVERED -> COMPLETED) that no other feature guards.
+    registerGuard({ from: "DELIVERED", to: "COMPLETED" }, async () =>
       err({
         code: "CHANGE_HOLD",
         message: "Item is held for change control",
@@ -62,7 +65,7 @@ describe("016 changes aspect binding (integration, T017)", () => {
       run: async (ctx) => {
         await ctx.transition({
           workItemId: ctx.input.workItemId,
-          to: "ASSIGNED",
+          to: "COMPLETED",
           reason: "Testing guard failure mapping",
         });
         return {
@@ -81,7 +84,7 @@ describe("016 changes aspect binding (integration, T017)", () => {
     const userId = await seedUser();
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
-    const workItemId = await seedWorkItem({ orderId, state: "NEW" });
+    const workItemId = await seedWorkItem({ orderId, state: "DELIVERED" });
     const actor = makeActor(userId);
 
     const result = await dummyCommand(actor, { workItemId });
@@ -381,5 +384,21 @@ describe("016 changes aspect binding (integration, T017)", () => {
       where: { workItemId, version: 99 },
     });
     expect(outerWrite).toHaveLength(0);
+
+    // Success path (shouldFailInner: false): both outer and inner writes commit
+    const successResult = await outerCommand(actor, {
+      workItemId,
+      shouldFailInner: false,
+    });
+
+    expect(successResult.ok).toBe(true);
+    if (successResult.ok) {
+      expect(successResult.data).toBe("outer-ok");
+    }
+
+    const committedWrite = await testDb.specVersion.findMany({
+      where: { workItemId, version: 99 },
+    });
+    expect(committedWrite).toHaveLength(1);
   });
 });

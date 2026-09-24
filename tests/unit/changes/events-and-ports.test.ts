@@ -14,7 +14,12 @@ import {
   __resetDirectCostPortForTests,
   type DirectCostPort,
 } from "~/server/changes/ports";
-import { notify } from "~/server/core";
+import {
+  notify,
+  fail,
+  AspectDomainError,
+  AspectMisuseError,
+} from "~/server/core";
 
 vi.mock("~/server/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("~/server/core")>();
@@ -106,7 +111,11 @@ describe("events and ports (T018, T019)", () => {
 
       const fakeTx = {
         workItem: {
-          findUnique: vi.fn().mockResolvedValue(null),
+          findUnique: vi.fn().mockResolvedValue({
+            assigneeId: null,
+            departmentId: null,
+            productType: null,
+          }),
         },
       } as unknown as Prisma.TransactionClient;
 
@@ -158,6 +167,112 @@ describe("events and ports (T018, T019)", () => {
       await expect(emitSpecChangedInTx(fakeTx, event)).rejects.toThrow(
         "listener failed",
       );
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("rejects with AspectDomainError when a listener throws SPEC_CHANGE_VETOED fail, and notify is not called", async () => {
+      registerSpecChangeListener("veto.listener", async () => {
+        fail({
+          code: "SPEC_CHANGE_VETOED",
+          listener: "veto.listener",
+          reason: "Production is currently locked",
+        });
+      });
+
+      const fakeTx = {
+        workItem: { findUnique: vi.fn() },
+      } as unknown as Prisma.TransactionClient;
+
+      const event: SpecChangedEvent = {
+        type: SPEC_CHANGED,
+        workItemId: "wi-123",
+        orderId: "ord-456",
+        fromVersion: 1,
+        toVersion: 2,
+        specVersionId: "spec-2",
+        origin: "DIRECT_EDIT",
+        changeRequestId: null,
+        changedFields: ["quantity"],
+        workItemState: "NEW",
+        actorId: "actor-1",
+        occurredAt: new Date(),
+      };
+
+      const promise = emitSpecChangedInTx(fakeTx, event);
+      await expect(promise).rejects.toThrowError(AspectDomainError);
+      await expect(promise).rejects.toMatchObject({
+        error: {
+          code: "SPEC_CHANGE_VETOED",
+          listener: "veto.listener",
+          reason: "Production is currently locked",
+        },
+      });
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("rethrows foreign AspectDomainError from listener as AspectMisuseError", async () => {
+      registerSpecChangeListener("bad.listener", async () => {
+        fail({
+          code: "FORBIDDEN",
+        });
+      });
+
+      const fakeTx = {
+        workItem: { findUnique: vi.fn() },
+      } as unknown as Prisma.TransactionClient;
+
+      const event: SpecChangedEvent = {
+        type: SPEC_CHANGED,
+        workItemId: "wi-123",
+        orderId: "ord-456",
+        fromVersion: 1,
+        toVersion: 2,
+        specVersionId: "spec-2",
+        origin: "DIRECT_EDIT",
+        changeRequestId: null,
+        changedFields: ["quantity"],
+        workItemState: "NEW",
+        actorId: "actor-1",
+        occurredAt: new Date(),
+      };
+
+      await expect(emitSpecChangedInTx(fakeTx, event)).rejects.toThrowError(
+        new AspectMisuseError("listener bad.listener raised foreign code FORBIDDEN"),
+      );
+      expect(notify).not.toHaveBeenCalled();
+    });
+
+    it("fails with NOT_FOUND AspectDomainError when WorkItem is not found, without calling notify", async () => {
+      const fakeTx = {
+        workItem: {
+          findUnique: vi.fn().mockResolvedValue(null),
+        },
+      } as unknown as Prisma.TransactionClient;
+
+      const event: SpecChangedEvent = {
+        type: SPEC_CHANGED,
+        workItemId: "wi-missing",
+        orderId: "ord-456",
+        fromVersion: 1,
+        toVersion: 2,
+        specVersionId: "spec-2",
+        origin: "DIRECT_EDIT",
+        changeRequestId: null,
+        changedFields: ["quantity"],
+        workItemState: "NEW",
+        actorId: "actor-1",
+        occurredAt: new Date(),
+      };
+
+      const promise = emitSpecChangedInTx(fakeTx, event);
+      await expect(promise).rejects.toThrowError(AspectDomainError);
+      await expect(promise).rejects.toMatchObject({
+        error: {
+          code: "NOT_FOUND",
+          entity: "WorkItem",
+          id: "wi-missing",
+        },
+      });
       expect(notify).not.toHaveBeenCalled();
     });
   });

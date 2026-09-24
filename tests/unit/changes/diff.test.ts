@@ -157,4 +157,19 @@ describe("diffSpecSnapshots (T015)", () => {
     expectTypeOf<QuantityChange["before"]>().toEqualTypeOf<number | null>();
     expectTypeOf<QuantityChange["after"]>().toEqualTypeOf<number | null>();
   });
+
+  it('diff: "1.50" → "2.00" gives before "1.5", after "2"', () => {
+    const before = makeSnapshot({ widthValue: "1.50" });
+    const after = makeSnapshot({ widthValue: "2.00" });
+
+    const diff = diffSpecSnapshots(before, after);
+    expect(diff).toEqual([
+      {
+        field: "widthValue",
+        kind: "CHANGED",
+        before: "1.5",
+        after: "2",
+      },
+    ]);
+  });
 });

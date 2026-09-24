@@ -146,7 +146,7 @@ type DefineCommand<A, P extends string, E extends ModuleErrorShape> = <
   /** Composition inside a caller's transaction. It throws AspectDomainError<E> so the caller rolls back.
    *  Exists only when the command has no `prepare` (conditional type), because pre-transaction I/O cannot run
    *  inside someone else's transaction. */
-  inTx: Prep extends undefined ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
+  inTx: [Prep] extends [undefined] ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
 };
 
 type DefineQuery<A, P extends string, E extends ModuleErrorShape> = <S extends z.ZodTypeAny, O>(def: {
@@ -155,7 +155,7 @@ type DefineQuery<A, P extends string, E extends ModuleErrorShape> = <S extends z
   readonly authorize?: (c: { client: Tx; actor: A; input: z.output<S>;
                              check: (p: P, scope?: { departmentId?: string }) => void }) => Promise<void> | void;
   readonly run: (c: { client: Tx; actor: A; coreActor: CoreActor; input: z.output<S> }) => Promise<O>;
-  /** true → run inside a read transaction for a consistent snapshot. */
+  /** true → run inside a read transaction for a consistent snapshot. `consistent: true` runs the query in a REPEATABLE READ read transaction. */
   readonly consistent?: boolean;
 }) => (actor: A, raw: z.input<S>) => Promise<AspectResult<O, E>>;
 ```
