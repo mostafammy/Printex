@@ -108,16 +108,16 @@ builds on.
 
 **⚠️ CRITICAL**: No user story implementation task may start until this phase is complete.
 
-- [ ] T009 [P] Implement `src/server/changes/errors.ts`: the `ChangeError` object union and
+- [x] T009 [P] Implement `src/server/changes/errors.ts`: the `ChangeError` object union and
   `ChangeResult<T> = AspectResult<T, ChangeError>`, exactly as in contracts/change-control.md
   "Errors". Refusals are raised with core's `fail()`. There is no error class,
   `WorkItemTransitionError`, or `ChangeActionResult` (superseded by the shared layer, research
   §11).
-- [ ] T010 [P] Implement `src/server/changes/specFields.ts`: `SPEC_FIELDS`, `SpecField`,
+- [x] T010 [P] Implement `src/server/changes/specFields.ts`: `SPEC_FIELDS`, `SpecField`,
   `SpecSnapshot`, `SpecPatch`, `specPatchSchema` (the Zod rules from data-model.md "Validation
   rules"), `toSpecSnapshot(row)`, and `mergeSpecPatch(base, patch)`. Decimals are normalized to
   canonical strings via `Prisma.Decimal`. No `any`.
-- [ ] T011 [P] Unit test `tests/unit/changes/specPatchSchema.test.ts`. The schema must refuse:
+- [x] T011 [P] Unit test `tests/unit/changes/specPatchSchema.test.ts`. The schema must refuse:
   - an empty patch
   - an unknown key
   - `quantity` 0, -1, or 1.5
@@ -125,23 +125,23 @@ builds on.
   - a string over 2000 characters
 
   It must accept `"1.50"` and `1.5` and normalize both to `"1.5"`, and turn `""` into `null`.
-- [ ] T012 [P] Implement `src/server/changes/policy.ts`:
+- [x] T012 [P] Implement `src/server/changes/policy.ts`:
   - `specEditPolicy(state)`: an exhaustive `switch` with `assertNever` from `~/server/core`
   - `redesignChoice(state, requiresDesign)`
   - `canRedesignOnApproval({ requiresDesign, assigneeId })`
 
   Implement these per data-model.md "Derived values".
-- [ ] T013 [P] Unit test `tests/unit/changes/policy.test.ts`: table-driven over **all 15**
+- [x] T013 [P] Unit test `tests/unit/changes/policy.test.ts`: table-driven over **all 15**
   `WORK_ITEM_STATES`, asserting the exact FR-006 mapping (9 DIRECT, 1 CHANGE_REQUEST, 4 ADMIN_ONLY,
   1 LOCKED). Assert that every state is classified, iterating `WORK_ITEM_STATES` so that a 16th
   state fails the test. Also assert the `redesignChoice` truth table.
-- [ ] T014 [P] Implement `src/server/changes/diff.ts` `diffSpecSnapshots` per
+- [x] T014 [P] Implement `src/server/changes/diff.ts` `diffSpecSnapshots` per
   contracts/spec-diff.md (pure, `SPEC_FIELDS` order, `ADDED`/`REMOVED`/`CHANGED` kinds).
-- [ ] T015 [P] Unit test `tests/unit/changes/diff.test.ts`: the table in contracts/spec-diff.md.
+- [x] T015 [P] Unit test `tests/unit/changes/diff.test.ts`: the table in contracts/spec-diff.md.
   This covers quantity only (US4-1), null → value (US4-2), 1.50 vs 1.5 (US4-3), value → null,
   multi-field order, identical, `productTypeId`, and `dimensionUnit`. Include a type-level assertion
   (`expectTypeOf`) that narrowing on `field === "quantity"` yields `number | null`.
-- [ ] T016 **Shared, with 015. If absent, create per contracts/aspects.md; otherwise reuse
+- [x] T016 **Shared, with 015. If absent, create per contracts/aspects.md; otherwise reuse
   unchanged.** Check first whether 015 has already landed them. The files are:
   - `src/server/core/aspects/{types,engine,errors,transition}.ts`
   - the barrel additions in `src/server/core/index.ts` (§6)
@@ -155,7 +155,7 @@ builds on.
   mapping `CHANGE_HOLD`/`LATE_CANCELLATION_REQUIRED` and `(workItemId, version)` →
   `STALE_SPEC_VERSION`, `workItemId` or the partial index name → `CHANGE_REQUEST_PENDING`
   (research §11 conflicts note 1). It exports `defineCommand`, `defineQuery`, and `ChangeResult`.
-- [ ] T017 **Shared, with 015. If absent, create per contracts/aspects.md §7; otherwise reuse
+- [x] T017 **Shared, with 015. If absent, create per contracts/aspects.md §7; otherwise reuse
   unchanged**: `tests/unit/core/aspects.test.ts`, the engine tests on in-memory fake deps. **Then**
   (016-owned) write the integration test `tests/integration/changes/aspect-binding.test.ts`, using
   a throwaway command built with the changes binding against the real DB:
@@ -168,18 +168,18 @@ builds on.
     re-thrown and both roll back
   - an in-transaction building block called via `.inTx`/`CommandCtx` rolls back the outer
     transaction
-- [ ] T018 [P] Implement `src/server/changes/events.ts`: `SPEC_CHANGED`, `SpecChangedEvent`,
+- [x] T018 [P] Implement `src/server/changes/events.ts`: `SPEC_CHANGED`, `SpecChangedEvent`,
   `SpecChangeListener`, `registerSpecChangeListener` (replace-by-name),
   `emitSpecChangedInTx` (sequential listeners with the caller's `tx`, then one `notify` outbox
   row), and the test-only `__resetSpecChangeListenersForTests`. Follow
   contracts/events-and-ports.md §1.
-- [ ] T019 [P] Implement `src/server/changes/ports.ts`: `LateCancellationCost`, `DirectCostPort`,
+- [x] T019 [P] Implement `src/server/changes/ports.ts`: `LateCancellationCost`, `DirectCostPort`,
   `noopDirectCostPort`, `setDirectCostPort`, `getDirectCostPort`, and the test-only
   `__resetDirectCostPortForTests`. Follow contracts/events-and-ports.md §2.
-- [ ] T020 [P] Implement `src/server/changes/recipients.ts` `usersWithPermission(tx, permission)`.
+- [x] T020 [P] Implement `src/server/changes/recipients.ts` `usersWithPermission(tx, permission)`.
   It is a single query covering role permissions and extra permissions, active users only
   (research §17).
-- [ ] T021 [P] Unit test `tests/unit/changes/edges.test.ts`: `ALLOWED_EDGES.APPROVED`,
+- [x] T021 [P] Unit test `tests/unit/changes/edges.test.ts`: `ALLOWED_EDGES.APPROVED`,
   `.WAITING_PRICING`, and `.READY_FOR_PRODUCTION` include `"REWORK_REQUIRED"`, and
   `.DESIGN_COMPLETED` does not (T006). The existing `tests/unit/workflow-edges.test.ts` matrix
   must still pass unmodified.

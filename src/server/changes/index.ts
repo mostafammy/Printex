@@ -2,4 +2,54 @@
 // (eslint.config.js module-boundary rule, specs/016-change-control/plan.md
 // "Structure Decision"). Populated incrementally as each task lands.
 
-export {};
+// Phase 2: errors and module result
+export type { ChangeError, ChangeResult } from "./errors";
+
+// Phase 2: spec fields, schemas, snapshots, and views
+export {
+  SPEC_FIELDS,
+  specPatchSchema,
+  toSpecSnapshot,
+  mergeSpecPatch,
+} from "./specFields";
+export type {
+  SpecField,
+  SpecSnapshot,
+  SpecPatch,
+  SpecVersionView,
+  SpecColumns,
+} from "./specFields";
+
+// Phase 2: policy
+export {
+  specEditPolicy,
+  redesignChoice,
+  canRedesignOnApproval,
+} from "./policy";
+export type { SpecEditPolicy, RedesignChoice } from "./policy";
+
+// Phase 2: specification diffing
+export { diffSpecSnapshots } from "./diff";
+export type { SpecFieldChange } from "./diff";
+
+// Phase 2: aspect-oriented commands/queries
+export { defineCommand, defineQuery } from "./aspect";
+
+// Phase 2: SPEC_CHANGED event and listener registry
+export {
+  SPEC_CHANGED,
+  registerSpecChangeListener,
+  emitSpecChangedInTx,
+} from "./events";
+export type { SpecChangedEvent, SpecChangeListener } from "./events";
+
+// Phase 2: cross-team ports
+export {
+  noopDirectCostPort,
+  setDirectCostPort,
+  getDirectCostPort,
+} from "./ports";
+export type { LateCancellationCost, DirectCostPort } from "./ports";
+
+// Phase 2: recipients
+export { usersWithPermission } from "./recipients";
