@@ -186,6 +186,7 @@ model WorkItem {
   designVersions          DesignVersion[]
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
+  fileAssets FileAsset[] @relation("FileAssetWorkItem")
 
   @@index([orderId, state])
 }
