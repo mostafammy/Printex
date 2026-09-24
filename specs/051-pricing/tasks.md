@@ -35,11 +35,11 @@ All stories -> Polish and consistency review
 
 ## Phase 1: Setup
 
-- [ ] T001 Create `prisma/schema/pricing.prisma` with `PricingUnit`, `PricingMode`, `PriceSource`, `PricingStatusValue`, `CustomerRuleKind`, and `PriceConfigStatus` enums plus PriceList, PriceTier, CustomerPricingRule, WorkItemPrice, and PricingStatus models exactly per `data-model.md`.
+- [ ] T001 Create `prisma/schema/pricing.prisma` with `PricingUnit`, `PricingMode`, `PriceSource`, `PricingStatusValue`, `CustomerRuleKind`, and `PriceConfigStatus` enums plus ProductPricingPolicy, PriceList, PriceTier, CustomerPricingRule, WorkItemPrice, and PricingStatus models exactly per `data-model.md`.
 - [ ] T002 Add required relations from `prisma/schema/core.prisma`, `prisma/schema/customer.prisma`, and `prisma/schema/identity.prisma` to the new pricing models without redefining ProductType or Customer ownership.
-- [ ] T003 [P] Add Decimal, effective-date, tier, pending-queue, and current-price indexes/constraints in `prisma/schema/pricing.prisma`; document any database-only non-overlap constraint that cannot be expressed by Prisma.
-- [ ] T004 **ACTION REQUIRED: blocked, do not run unattended.** Apply the additive pricing schema through the approved database workflow, run `pnpm exec prisma validate --schema prisma/schema`, and regenerate the client. Confirm with the schema owner before any shared-dev database push.
-- [ ] T005 [P] Create `prisma/manual-sql/051-pricing-constraints.sql` for append-only permissions and effective-date/tier constraints that require SQL; include re-apply-after-schema-push instructions.
+- [ ] T003 Add Decimal, effective-date, tier, pending-queue, and current-price indexes/constraints in `prisma/schema/pricing.prisma`; document any database-only non-overlap constraint that cannot be expressed by Prisma. Depends on T001.
+- [ ] T004 **ACTION REQUIRED: blocked, do not run unattended.** Create and apply the additive Prisma migration at `prisma/migrations/20260924170000_pricing/migration.sql` containing the pricing tables, indexes, constraints, ProductPricingPolicy, and append-only SQL required by `data-model.md`. Confirm with the schema owner before applying it to any shared database; do not substitute `db push`. Depends on T001-T003.
+- [ ] T005 Verify `prisma/migrations/20260924170000_pricing/migration.sql` replays successfully in a fresh database and preserves append-only permissions and effective-date/tier constraints. Depends on T004.
 - [ ] T006 [P] Add/coordinate pricing permission vocabulary in `src/server/auth/permissions.ts`, role seeds in `prisma/seed.ts`, and `tests/contract/role-permission-matrix.test.ts`; preserve `pricing.use_fixed`, `pricing.set_variable`, and `pricing.override` unless 001 approves a documented change.
 
 ## Phase 2: Foundational
@@ -49,7 +49,7 @@ All stories -> Polish and consistency review
 - [ ] T009 [P] Implement `src/server/pricing/calculation.ts` with pure Decimal unit conversion, area/linear calculation, tier matching, customer-rule arithmetic, tax-inclusive semantics, and nearest-whole-EGP final rounding.
 - [ ] T010 [P] Add `tests/unit/pricing/calculation.test.ts` covering cm/m conversion, all five units, area multiplication, invalid dimensions, Decimal precision, and final rounding.
 - [ ] T011 [P] Add `tests/unit/pricing/tiers-and-dates.test.ts` covering inclusive 9/10/50 boundaries, effective-from/to semantics, expired rules, overlapping configuration rejection, and deterministic equal-precedence failure.
-- [ ] T012 Implement `src/server/pricing/ports.ts` and `src/server/pricing/status.ts` for PricingGatePort binding, independent PricingStatus, pendingSince, responsible-user resolution, and fail-closed behavior.
+- [ ] T012 Implement `src/server/pricing/ports.ts` and the foundational persistence/binding pieces in `src/server/pricing/status.ts` for independent PricingStatus, pendingSince, responsible-user resolution, and fail-closed PricingGatePort defaults. Query functions are completed in T020.
 
 **Checkpoint**: Foundation is ready when pure calculations, schema validation, permissions, and the fail-closed port compile and pass their focused tests. No user-story implementation starts before this checkpoint.
 
@@ -80,7 +80,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/history-status.test.ts` applies multiple decisions, changes status, and verifies history and pending timestamps.
 
-- [ ] T020 [P] [US3] Implement `src/server/pricing/status.ts` query functions `status(workItemId)` and `pendingSince(workItemId)` with current-spec validity checks.
+- [ ] T020 [P] [US3] Complete the `status(workItemId)` and `pendingSince(workItemId)` query functions in `src/server/pricing/status.ts` with current-spec validity checks, building on T012's foundational status persistence and binding.
 - [ ] T021 [US3] Implement `src/server/pricing/history.ts` for current/history queries, breakdown retrieval, source/actor/reason display data, and disputed state handling.
 - [ ] T022 [US3] Add `tests/integration/pricing/history-status.test.ts` proving independent status during IN_PRODUCTION, DISPUTED unresolved behavior, waitingSince persistence, and readable history.
 - [ ] T023 [US3] Add `src/server/pricing/change-listener.ts` registering `pricing.reset` with 016; use the supplied transaction, clear current price, set PENDING, and audit the reset.
@@ -102,10 +102,10 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/queue.test.ts` creates pending items with different timestamps/priorities and verifies ordering, exclusion, age, and permission behavior.
 
-- [ ] T028 [P] [US5] Implement `src/server/pricing/queue.ts` with cursor pagination, configured oldest/urgent-first ordering, responsible pricing user data, and server-time age formatting.
+- [ ] T028 [P] [US5] Implement `src/server/pricing/queue.ts` with cursor pagination, urgent-first ordering followed by oldest waiting timestamp within each priority group, responsible pricing user data, and server-time age formatting.
 - [ ] T029 [US5] Add `src/components/pricing/pricing-panel.tsx` implementing `<PricingPanel workItemId>` as display/action composition over server contracts; do not calculate prices in the component.
 - [ ] T030 [US5] Add `src/components/pricing/pricing-queue.tsx` and the pricing queue route under `src/app/(shell)/pricing/`, using RTL shell conventions and server authorization.
-- [ ] T031 [US5] Add `tests/integration/pricing/queue.test.ts` for all PENDING rows, oldest/urgent-first ordering, age labels, priced-row exclusion, and forbidden access.
+- [ ] T031 [US5] Add `tests/integration/pricing/queue.test.ts` for all PENDING rows, urgent-first ordering with oldest-first ordering within each priority group, age labels, priced-row exclusion, and forbidden access.
 
 ## Phase 8: User Story 6 - Pricing-originated returns (P2)
 
@@ -122,23 +122,23 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/configuration.test.ts` creates, retires, and queries effective/historical configuration.
 
-- [ ] T034 [P] [US7] Implement `src/server/pricing/configuration.ts` for price-list/tier and customer-rule create/retire operations, overlap validation, `admin.config` authorization, and audit events.
+- [ ] T034 [P] [US7] Implement `src/server/pricing/configuration.ts` for ProductPricingPolicy mode configuration, price-list/tier and customer-rule create/retire operations, overlap validation, `admin.config` authorization, and audit events.
 - [ ] T035 [US7] Add `src/app/(shell)/pricing/price-lists/page.tsx` and server actions for list/tier administration; never mutate historical commercial values.
 - [ ] T036 [US7] Add the customer profile special-pricing tab in the 010 customer route/component slot, reading 051 rules through the public barrel.
-- [ ] T037 [US7] Add `tests/integration/pricing/configuration.test.ts` for effective dates, tier overlap, rule precedence, retirement history, authorization, and audit.
+- [ ] T037 [US7] Add `tests/integration/pricing/configuration.test.ts` for ProductPricingPolicy FIXED/VARIABLE changes, effective dates, tier overlap, rule precedence, retirement history, authorization, and audit.
 
 ## Phase 10: Polish and cross-cutting validation
 
 - [ ] T038 [P] Add `tests/contract/pricing/public-barrel.test.ts` and update `eslint.config.js` so external code can import only `~/server/pricing`.
 - [ ] T039 [P] Add Arabic/RTL message keys in `src/messages/ar.json` for statuses, sources, queue age, errors, and breakdown labels without moving calculation into the UI.
 - [ ] T040 [P] Add `tests/integration/pricing/audit-coverage.test.ts` proving every accepted price change, reset, configuration mutation, and pricing return has an audit event.
-- [ ] T041 Run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
+- [ ] T041 Add `tests/performance/pricing/latency.test.ts` for the documented p95 targets, then run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
 - [ ] T042 Run the spec-kit consistency analysis across `spec.md`, `plan.md`, and `tasks.md`; resolve all critical coverage, terminology, and constitution findings in the docs before implementation begins.
-- [ ] T043 **ACTION REQUIRED: blocked, do not run unattended.** After schema-owner approval, apply the final additive schema/manual SQL, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR.
+- [ ] T043 **ACTION REQUIRED: blocked, do not run unattended.** After schema-owner approval, apply the final Prisma migration, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR.
 
 ## Parallel opportunities
 
-- T003, T005, and T006 can proceed in parallel after the schema design is reviewed.
+- T006 can proceed in parallel with the schema setup after the permission vocabulary is agreed; T003 and T005 are sequential schema/migration tasks.
 - T008-T011 are parallel after the schema contract is frozen.
 - T013-T015, T016-T019, and T020-T024 can be split by service/test ownership after foundational work; US2 and US3 must complete before returns/configuration integration.
 - UI tasks T029-T030 and configuration UI T035-T036 can proceed in parallel with their server contracts.

@@ -11,6 +11,14 @@
 
 **Rejected**: Moving ProductType to 051. This would expand pricing beyond its business responsibility and break 011's existing consumer contract.
 
+## Decision 1a: Store authoritative pricing mode in 051
+
+**Decision**: 051 owns a `ProductPricingPolicy` row keyed by 011's ProductType ID. The row stores the authoritative `FIXED` or `VARIABLE` mode; ProductType remains the catalog owner and `pricingModeHint` remains a compatibility input only.
+
+**Rationale**: Pricing mode is pricing policy, not product identity. A dedicated relation lets Admin configure the mode without duplicating ProductType or treating an opaque hint as an authorization source.
+
+**Rejected**: Making `ProductType.pricingModeHint` authoritative. Its existing contract intentionally leaves the hint opaque, and using it as policy would couple pricing behavior to 011's descriptive catalog defaults.
+
 ## Decision 2: Use historical price rows, not mutable current values
 
 **Decision**: Price-list entries and customer rules are append-only commercial history with effective intervals. A correction creates a new row or closes an interval; it does not rewrite a price already used by a quote.

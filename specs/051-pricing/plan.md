@@ -12,7 +12,7 @@
 
 **Primary Dependencies**: Next.js 15 App Router, Prisma/PostgreSQL, Zod, Vitest, existing 001/002/010/011/013/015/016 contracts.
 
-**Storage**: PostgreSQL additive schema under `prisma/schema/`; Decimal-backed monetary fields; append-only commercial history and audit events.
+**Storage**: PostgreSQL additive schema under `prisma/schema/`, delivered through a Prisma migration; Decimal-backed monetary fields; append-only commercial history and audit events.
 
 **Module boundary**: New `src/server/pricing/` barrel is the only public import surface. Internal pricing calculation, configuration, status, ports, and guards/listener registration remain inside the module. UI surfaces live under existing shell/component conventions.
 
@@ -47,8 +47,8 @@
 1. `src/server/pricing/calculation.ts` contains pure Decimal unit/area/linear calculations and final rounding.
 2. `src/server/pricing/quote.ts` resolves active list/tier/customer rule and returns a breakdown without writing.
 3. `src/server/pricing/prices.ts` owns authorized price setting, append-only history, status changes, and audit transaction ordering.
-4. `src/server/pricing/status.ts` owns independent status, pending timestamp, and the batched 015 `PricingGatePort` provider.
-5. `src/server/pricing/queue.ts` owns server-side pending queue ordering and age projection.
+4. `src/server/pricing/status.ts` owns independent status and pending timestamp. `src/server/pricing/delivery-port.ts` owns the batched 015 `PricingGatePort` provider.
+5. `src/server/pricing/queue.ts` owns server-side pending queue ordering and age projection: urgent items first, then oldest waiting timestamp within each priority group.
 6. `src/server/pricing/returns.ts` composes 013's `createReturnInTx` for `PRICING_ISSUE` returns.
 7. `src/server/pricing/change-listener.ts` registers `pricing.reset` with 016 and uses the supplied transaction.
 8. `src/server/pricing/index.ts` exports the frozen public contract and performs guarded module-load bindings consistent with neighboring features.
@@ -88,7 +88,7 @@ src/server/pricing/                 # implementation planned by PRI-31
 src/components/pricing/             # PricingPanel and queue surfaces
 src/app/(shell)/pricing/             # queue/admin routes
 prisma/schema/pricing.prisma        # additive pricing schema
-prisma/manual-sql/051-pricing*.sql  # constraints/backfill where required
+prisma/migrations/20260924170000_pricing/ # Prisma migration with constraints/backfill SQL
 tests/{unit,contract,integration}/pricing/
 ```
 

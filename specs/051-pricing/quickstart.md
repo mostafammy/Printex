@@ -44,7 +44,7 @@ Quote a 2.5 m × 1.2 m banner quantity 3 using `SQUARE_METER`. Confirm total are
 
 ## Scenario 6: Queue and delay timestamp
 
-Create PENDING items with distinct `waitingSince` values and priorities. As a pricing user, load the queue and confirm all pending items appear, age is rendered from the server timestamp, and ordering follows the documented oldest/urgent-first policy. A non-pricing user is refused.
+Create PENDING items with distinct `waitingSince` values and priorities. As a pricing user, load the queue and confirm all pending items appear, age is rendered from the server timestamp, urgent items appear first, and each priority group is ordered oldest-first. A non-pricing user is refused.
 
 ## Scenario 7: Specification change reset
 

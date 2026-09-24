@@ -4,7 +4,7 @@
 
 The panel is a server-authoritative display and command surface. It receives a WorkItem ID and renders:
 
-- ProductType, quantity, dimensions, and pricing mode from 011.
+- ProductType identity, quantity, and dimensions from 011; authoritative pricing mode from 051's `ProductPricingPolicy`.
 - Current amount, currency EGP, status, waiting age, source, actor, timestamp, and reason.
 - Quote breakdown: unit, quantity, area, tier, list entry, customer rule, tax-inclusive amount, and rounding.
 - Append-only price history and dispute state.
@@ -36,7 +36,7 @@ export type PricingQueueRow = {
 };
 ```
 
-The server orders rows by the agreed deterministic oldest/urgent-first policy, calculates age from server time, and excludes PRICED rows. Unauthorized users receive `FORBIDDEN`.
+The server orders rows with urgent items first, then by oldest waiting timestamp within each priority group. It calculates age from server time and excludes PRICED rows. Unauthorized users receive `FORBIDDEN`.
 
 ## Admin surfaces
 

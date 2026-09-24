@@ -22,6 +22,7 @@ The following decisions were supplied for this specification:
 - V1 supports customer-by-product special pricing only. Order-level discounts are out of scope.
 - Pricing delay thresholds are configurable and exposed to 053; 051 does not hard-code a single alert duration.
 - Exact reprints require a current price. They do not silently inherit an old price.
+- The pricing queue puts urgent items first, then orders oldest waiting items first within each priority group.
 
 The following remain owner-data inputs, not invented defaults: real price lists and top-product units, whether any future tax policy changes, and the configured pricing-delay threshold used by 053.
 
@@ -91,7 +92,7 @@ The delivery workflow asks the pricing provider for every required Work Item. A 
 
 ### User Story 5 - Pricing staff can work an age-ordered queue (Priority: P1)
 
-Users authorized to price open a pricing queue containing all PENDING Work Items. The queue orders oldest waiting items first, then urgent work according to the agreed queue policy, and displays a human-readable age such as “Waiting since 2h 14m”. The queue links to the Work Item pricing panel.
+Users authorized to price open a pricing queue containing all PENDING Work Items. The queue puts urgent items first, then orders oldest waiting items first within each priority group, and displays a human-readable age such as “Waiting since 2h 14m”. The queue links to the Work Item pricing panel.
 
 **Why this priority**: Pending work must be actionable, not merely visible, while 053 needs a stable pending timestamp for delay alerts.
 
@@ -100,7 +101,7 @@ Users authorized to price open a pricing queue containing all PENDING Work Items
 **Acceptance Scenarios**:
 
 1. **Given** multiple PENDING Work Items, **when** a pricing user opens the queue, **then** every pending item appears with customer, ProductType, quantity, priority, responsible pricing role, and waiting age.
-2. **Given** pending items with different waiting timestamps and urgency, **when** the queue is loaded, **then** ordering follows the documented deterministic oldest/urgent-first policy.
+2. **Given** pending items with different waiting timestamps and urgency, **when** the queue is loaded, **then** urgent items appear first and each priority group is ordered by oldest waiting timestamp.
 3. **Given** a user without pricing permissions, **when** the user requests the queue, **then** the server refuses access.
 4. **Given** a pending item is priced, **when** the queue refreshes, **then** it no longer appears.
 
@@ -169,8 +170,9 @@ An authorized administrator maintains price-list entries and customer special-pr
 
 ## Key Entities
 
-- **PriceListEntry**: ProductType-linked unit price configuration with historical effective dates and quantity tiers.
-- **QuantityTier**: Inclusive minimum/maximum quantity range and Decimal base price within a PriceListEntry.
+- **ProductPricingPolicy**: 051-owned ProductType-linked policy that authoritatively selects `FIXED` or `VARIABLE` mode.
+- **PriceList**: ProductType-linked unit price configuration with historical effective dates and quantity tiers.
+- **PriceTier**: Inclusive minimum/maximum quantity range and Decimal base price within a PriceList.
 - **CustomerPricingRule**: Customer × ProductType fixed price or percentage discount with effective dates.
 - **WorkItemPrice**: Append-only price decision and calculation snapshot for one Work Item.
 - **PricingStatus**: Current independent status, pending timestamp, and optional dispute metadata for one Work Item.
@@ -196,14 +198,16 @@ An authorized administrator maintains price-list entries and customer special-pr
 - **SC-004**: Delivery of an order with one PENDING or DISPUTED required Work Item fails as `PRICING_UNRESOLVED` without changing workflow state.
 - **SC-005**: Production can start and continue while pricing is PENDING.
 - **SC-006**: Every accepted price change creates a readable history record and audit event with actor, timestamp, source, amount, and required reason.
-- **SC-007**: A pricing user can identify the oldest pending item and its waiting age from the pricing queue without opening each item.
+- **SC-007**: A pricing user can identify the oldest pending item within the highest-priority queue group and its waiting age without opening each item.
 - **SC-008**: A specification change resets pricing to PENDING in the same transaction and leaves the reset audit event visible.
 - **SC-009**: A pricing-originated return is distinguishable from design and production returns through the shared Return model.
 - **SC-010**: All monetary outputs are Decimal-backed and final quoted amounts are whole-EGP values; no floating-point amount is persisted.
+- **SC-011**: Under normal LAN operating conditions, a single Work Item quote completes within 250 ms at p95, the first pricing-queue page within 500 ms at p95, and a batched pricing-gate read for 100 Work Items within 500 ms at p95.
 
 ## Assumptions
 
 - 011's ProductType records include the product identity required for pricing attachment and remain stable historical references when deactivated.
+- 051's ProductPricingPolicy is the authoritative source for ProductType pricing mode; 011's `pricingModeHint` is not used as an authorization or pricing-policy decision.
 - Required Work Items for delivery are determined by 015's collection/delivery contract; 051 does not redefine order closure semantics.
 - A current price is required for every deliverable Work Item, including exact reprints.
 - Pricing users and permissions are configured through 001; 051 does not infer authority from UI roles alone.

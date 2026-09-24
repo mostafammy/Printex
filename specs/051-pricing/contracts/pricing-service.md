@@ -62,7 +62,7 @@ export type SetPriceInput =
   | { readonly workItemId: string; readonly kind: "OVERRIDE"; readonly amount: string; readonly reason: string };
 ```
 
-- `APPLY_QUOTE` requires `pricing.use_fixed` and a current FIXED ProductType mode.
+- `APPLY_QUOTE` requires `pricing.use_fixed` and a current `ProductPricingPolicy` with mode `FIXED`.
 - `VARIABLE` requires `pricing.set_variable`.
 - `OVERRIDE` requires `pricing.override` and a non-empty reason.
 - Every mutation runs authorization, validation, price append, status update, and audit in one transaction.

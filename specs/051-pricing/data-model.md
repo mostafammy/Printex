@@ -6,6 +6,16 @@
 
 ## Entities
 
+### ProductPricingPolicy
+
+| Field | Type | Rules |
+|---|---|---|
+| `productTypeId` | String | unique FK to 011 ProductType; 011 remains catalog owner |
+| `mode` | PricingMode | `FIXED` or `VARIABLE`; authoritative for pricing behavior |
+| `updatedById` / `updatedAt` | String / DateTime | required audit metadata |
+
+The policy is 051-owned configuration attached to ProductType. It does not copy ProductType identity or descriptive fields. A missing policy is a configuration error for new quotes, not an implicit authorization to set a manual price.
+
 ### PriceList
 
 | Field | Type | Rules |
@@ -133,5 +143,5 @@ All Decimal values are serialized as canonical decimal strings at API boundaries
 - Additive schema only: pricing tables, enums, indexes, and the pricing status relation.
 - Existing Work Items receive `PENDING` status with `waitingSince` equal to the migration/backfill timestamp unless an existing immutable price source is explicitly supplied by the schema owner.
 - No historical price is fabricated from current product data. Existing items remain undeliverable until explicitly priced or marked NOT_REQUIRED by the authoritative delivery contract.
-- Apply schema changes only after the shared database owner approves; document `db push`/migration ordering and verification in tasks.
+- Apply schema changes only after the shared database owner approves; ship them through a Prisma migration and document migration ordering and verification in tasks. `db push` is not a substitute for the migration.
 - Retain all audit records and never delete or rewrite existing WorkItem data.
