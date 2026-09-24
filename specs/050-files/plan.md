@@ -67,20 +67,21 @@ specs/050-files/
 ```text
 prisma/schema/
 ├── core.prisma                 # existing WorkItem relation only if needed
-└── files.prisma                # FileObject, FileAsset, FileVersion, Attachment
+└── files.prisma                # FileObject, FileAsset, FileVersion, Attachment, AuditEvent
 
 src/server/files/
 ├── index.ts                    # frozen public barrel
 ├── schemas.ts                 # upload/query/lifecycle validation
 ├── service.ts                  # upload/list/approval/lifecycle
 ├── authorization.ts            # role/assignment/department/status policy
-├── integrity.ts                # SHA-256 and stream verification
+├── integrity.ts                # SHA-256 and stream verification (bounded memory)
 ├── signed-preview.ts           # five-minute HMAC grants
 ├── attachments.ts              # generic attachment service
-└── preview.ts                  # image/PDF preview policy
+├── preview.ts                  # image/PDF preview policy
+└── observability.ts            # memory, upload duration, preview expiry diagnostics
 
 src/server/core/storage/
-└── local-disk.ts               # existing adapter implementation/extension
+└── local-disk.ts               # 050's production StorageAdapter implementation (opaque keys, verify-on-read)
 
 src/app/api/files/
 ├── upload/route.ts
@@ -128,3 +129,16 @@ No post-design violations.
 ## Complexity Tracking
 
 No constitution violations. No additional complexity justification required.
+
+## Configuration Schema
+
+MIME allowlist, max file size, and department definitions are stored in `config/050-files.yaml` (YAML, validated at startup). Schema:
+
+```yaml
+mimeAllowlist: string[] (default: ['application/pdf','image/*','application/postscript','application/vnd.adobe.photoshop','application/vnd.adobe.illustrator','image/tiff','audio/*'])
+maxFileSizeBytes: integer (default: 5_368_709_120 = 5 GB)
+departments: { name: string, code: string }[] (managed by Admin UI)
+previewExpirySeconds: integer (default: 300)
+```
+
+Runtime config loaded via `config/050-files.yaml`; overrides via env var `FILES_CONFIG_PATH`.

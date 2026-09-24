@@ -37,7 +37,7 @@ A staff member sees files appropriate to their role and department. Production c
 
 1. **Given** an authenticated authorized actor, **When** they request a file download, **Then** the application authenticates, authorizes against the Work Item/category/status, verifies integrity, and streams the bytes.
 2. **Given** a production operator from another department, **When** they request an Approved/Production file, **Then** the request is rejected with 403 and no bytes are disclosed.
-3. **Given** a preview request, **When** an authorized actor receives a signed URL, **Then** the URL expires after approximately five minutes and stops working afterward.
+3. **Given** a preview request, **When** an authorized actor receives a signed URL, **Then** the URL expires after 5 minutes (300 seconds) and stops working afterward.
 4. **Given** an unauthorized or missing file, **When** a request is made, **Then** the response does not reveal whether a protected file exists.
 
 ---
@@ -77,7 +77,7 @@ A staff member attaches a voice note, image, or file to a rejection, discrepancy
 
 - Upload interruption must leave no active FileVersion claiming bytes that were not completely stored.
 - A repeated upload with identical bytes follows the approved deduplication policy but never replaces a version record.
-- Unsupported MIME type, invalid filename, or oversized file is rejected before becoming visible as an active version.
+- Unsupported MIME type, invalid filename, or file exceeding 5 GB is rejected before becoming visible as an active version.
 - Version numbering remains monotonic per FileAsset under concurrent uploads.
 - A file whose checksum does not match its stored SHA-256 is unavailable until repaired or archived by an authorized Admin.
 - Categories are limited to Original, Design Versions, Review/Proof, Approved, Production, and Supporting.
@@ -95,22 +95,27 @@ A staff member attaches a voice note, image, or file to a rejection, discrepancy
 - **FR-004**: System MUST support exactly these Work Item categories: Original, Design Versions, Review/Proof, Approved, Production, and Supporting.
 - **FR-005**: Every upload MUST create a new FileVersion; no prior bytes or version record may be overwritten.
 - **FR-006**: The server MUST compute SHA-256 while receiving the stream and MUST persist the final checksum and byte size.
-- **FR-007**: Upload processing MUST stream to storage and MUST support PSD, AI, TIFF, PDF, and other approved large print files from hundreds of MB through several GB without loading the full file into process memory.
+- **FR-007**: Upload processing MUST stream to storage and MUST support PSD, AI, TIFF, PDF, and other approved large print files from hundreds of MB through 5 GB maximum without loading the full file into process memory.
 - **FR-008**: The local filesystem StorageAdapter MUST implement the 002 storage contract and store objects by opaque hash/ID-based paths, never customer names, Work Item names, or folders as business identifiers.
-- **FR-009**: The system MUST provide `files.upload(tx, input)`, `files.listVersions(workItemId, category?)`, `files.markApproved(tx, versionId, actor)`, and `files.getDownloadUrl(versionId, actor)` with the contract-defined behavior.
-- **FR-010**: Downloads MUST authenticate with `getActor`, authorize before access, verify SHA-256, and stream bytes through an application route.
-- **FR-011**: The system MUST provide short-lived signed preview URLs using an expiring token; a URL MUST stop authorizing access after approximately five minutes.
-- **FR-012**: Production operators MUST download only Approved or Production files for Work Items in their department; assigned designers MUST access files for assigned Work Items; Admin MUST access all files permitted by system policy.
-- **FR-013**: The system MUST provide image/PDF previews and an icon plus metadata for unsupported preview types.
+- **FR-009**: The system MUST provide `files.upload(tx, input)`, `files.listVersions(workItemId, category?)`, `files.markApproved(tx, versionId, actor)`, `files.getDownloadUrl(versionId, actor)`, `files.void(versionId, actor, reason)`, `files.archive(versionId, actor, reason)`, and `attachments.attach(tx, input)` with the contract-defined behavior.
+- **FR-010**: Downloads MUST authenticate with `getActor`, authorize before access, verify SHA-256, and stream bytes through an application route using 64KB chunks with 30s per-chunk timeout and 5min total stream timeout.
+- **FR-011**: The system MUST provide short-lived signed preview URLs using an expiring token; a URL MUST stop authorizing access after 5 minutes (300 seconds).
+- **FR-012**: Production operators MUST download only Approved or Production files for Work Items in their department; department scope is configurable data (not hardcoded enum). Assigned designers MUST access files for assigned Work Items; Admin MUST access all files permitted by system policy.
+- **FR-013**: The system MUST provide preview generation for image and PDF formats only; other formats show metadata and icon.
 - **FR-014**: `<FilePanel workItemId categories={[...]}>` MUST list versions with actor, time, note, status, download action, upload-new-version action, and void/archive actions requiring a reason.
 - **FR-015**: The system MUST support statuses ACTIVE, SUPERSEDED, VOID, and ARCHIVED; lifecycle operations MUST be audited and MUST never permanently delete bytes.
 - **FR-016**: Feature 013 MUST be able to call `markApproved(versionId, actor)`; 050 MUST enforce authorization and audit but MUST NOT decide which version is approved.
 - **FR-017**: The attachments contract MUST provide `attachments.attach(tx, input)` for voice, image, and file streams, with private storage and integrity metadata.
 - **FR-018**: Every file lifecycle mutation and approval MUST emit an append-only audit event with actor, action, entity, before/after values, and reason where required.
 - **FR-019**: All file and attachment entry points MUST authenticate and authorize server-side using feature 001 contracts and owning entity scope.
-- **FR-020**: The system MUST reject incomplete, oversized, unsupported, or checksum-invalid uploads without exposing an active version.
+- **FR-020**: The system MUST reject incomplete, files exceeding 5 GB, unsupported, or checksum-invalid uploads without exposing an active version. Temporary objects MUST be cleaned up within 1 hour of upload failure via a background sweeper; database transaction MUST ensure temp object removal on rollback.
 - **FR-021**: External share links are out of scope for V1; all file access MUST use authenticated application routes or short-lived authorized preview URLs, and permanent public URLs are prohibited.
-- **FR-022**: The system MUST expose stable contracts for 011, 012, 013, 014, 015, and 052 without implementing their owning workflows.
+- **FR-022**: The system MUST expose stable contracts for 011, 012, 013, 014, 015; future features when implemented.
+- **FR-023**: Version numbering MUST remain monotonic under concurrent uploads using database unique constraint on (fileAssetId, versionNumber) with application-level retry: max 3 attempts, exponential backoff 100ms/200ms/400ms, timeout 5s per attempt.
+- **FR-024**: Admin MUST be able to initiate checksum verification and repair via 091 backup; 091 MUST expose backup.restoreObject(storageKey, targetPath) and backup.verifyChecksum(storageKey) APIs; corrupted FileObject MUST be marked for re-upload with status CORRUPTED.
+- **FR-025**: Audit events MUST follow 001 audit.record contract: actor, action, entity, entityId, timestamp, beforeValues, afterValues, reason.
+- **FR-026**: V1 MUST NOT support resumable/chunked uploads; interrupted uploads MUST restart from beginning.
+- **FR-027**: Upload interruption cleanup: temporary objects and partial metadata MUST be removed; no active FileVersion MUST be created for incomplete uploads.
 
 ### Out of Scope
 
@@ -149,10 +154,11 @@ A staff member attaches a voice note, image, or file to a rejection, discrepancy
 - Uploads arrive directly from clients on the local LAN server; V1 streams them but does not require resumable/chunked transfer, so interrupted uploads are discarded and retried from the beginning.
 - Internal file links are included in V1, but every link resolves through the authenticated application and existing authorization rules; they are not public external share links.
 - Identical bytes MUST be deduplicated at the FileObject layer by SHA-256 while each logical upload still receives its own FileVersion record.
-- V1 previews are generated only for images and PDF; AI/PSD/CDR show metadata and an icon only.
+- V1 previews are generated only for image and PDF formats; other formats show metadata and an icon only.
 - The local filesystem root is private and configured outside source control; object paths use opaque IDs/hash prefixes.
 - Admin can access all file records; other access is constrained by Work Item assignment/department and category/status.
 - All timestamps are stored in UTC and rendered in the shop timezone.
+- Existing Work Items without FileAssets are migrated on first file access: a synthetic FileAsset per category is created with logicalName='Migrated', and existing network folder paths are recorded as legacy references in FileAsset.notes.
 
 ## Clarifications
 
@@ -171,3 +177,4 @@ A staff member attaches a voice note, image, or file to a rejection, discrepancy
 - Whether the proposed 5 GB maximum and configured MIME allowlist are acceptable.
 - Whether checksum deduplication should reuse FileObject bytes while preserving every FileVersion.
 - Whether AI/PSD/CDR previews remain metadata-only in V1.
+- **FR-028**: System MUST migrate legacy Work Items on first file access by creating synthetic FileAssets per category with logicalName='Migrated' and recording legacy network paths.

@@ -31,15 +31,19 @@ Called by feature 013. Validates actor and version/work-item scope, sets approve
 
 Returns an authenticated internal LAN application URL or short-lived preview URL. The download route re-checks actor authorization, verifies checksum, then streams bytes. No public external share URL exists in V1.
 
-## `files.void` / `files.archive`
+## `files.void(tx, versionId, actor, reason)`
 
-Require an explicit reason. Update lifecycle status, preserve metadata and bytes, and audit before/after/reason. Permanent deletion is unavailable.
+Require an explicit reason. Update lifecycle status to VOID, preserve metadata and bytes, and audit before/after/reason. Permanent deletion is unavailable.
+
+## `files.archive(tx, versionId, actor, reason)`
+
+Require an explicit reason. Update lifecycle status to ARCHIVED, preserve metadata and bytes, and audit before/after/reason. Permanent deletion is unavailable.
 
 ## Permission matrix
 
 - Admin: all authorized files.
 - Assigned designer: files for assigned Work Items.
-- Production operator: only Approved/Production category files for Work Items in their department.
+- Production operator: only Approved/Production category files for Work Items in their department; department scope is configurable data (not hardcoded enum).
 - Other users: denied unless owning feature grants an explicit scope.
 
 ## `attachments.attach(tx, input)`
