@@ -23,8 +23,7 @@ confirmed. Each lists the alternatives that were rejected.
   any subset of ready Work Items may be handed over; in grouped-mode orders a subset may be handed
   over only when the user explicitly marks the delivery as partial and gives a reason. A single Work
   Item is handed over exactly once, with its full accepted quantity; any outstanding quantity is
-  handed over later through its linked reprint Work Item (FR-017). (ASSUMPTION — pending owner
-  confirmation) Rejected: no partial delivery at all; quantity-level split deliveries of one Work
+  handed over later through its linked reprint Work Item (FR-017). (CONFIRMED by owner 2026-09-24) Rejected: no partial delivery at all; quantity-level split deliveries of one Work
   Item; partial delivery of grouped orders without a reason.
 - Q: What exactly is "financial closure" / when does a Work Item become `COMPLETED`? → A: Closure is
   evaluated per Order. An Order is financially closed — and all of its `DELIVERED` Work Items move

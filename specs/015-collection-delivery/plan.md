@@ -133,7 +133,7 @@ There are two deliberate deviations from 011–014's style. Neither is a constit
   justified in research.md §2. `.inTx` variants still throw so that a caller's transaction rolls back.
 - Cross-cutting concerns live in a shared layer, `src/server/core/aspects/` (contracts/aspects.md), rather than
   inline code. The engine is dependency-injected, so core still imports nothing from auth or db (eslint rule (a)
-  is unchanged). Rule (c) ("no throw in core") gets one exemption, `src/server/core/aspects/**`, on the same
+  is unchanged). Rule (c) ("no throw in core") gets one exemption (CONFIRMED by owner 2026-09-24), `src/server/core/aspects/**`, on the same
   grounds as the existing `core/storage/**` exemption: a transaction callback must reject in order to roll
   back. This is tasks.md T004.
 
