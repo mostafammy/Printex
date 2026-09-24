@@ -9,6 +9,7 @@ export function PricingQueue({ rows }: { readonly rows: readonly PricingQueueRow
       <table className="w-full text-sm">
         <thead className="bg-muted text-muted-foreground">
           <tr>
+            <th className="px-4 py-3 text-start font-medium">العميل</th>
             <th className="px-4 py-3 text-start font-medium">المنتج</th>
             <th className="px-4 py-3 text-start font-medium">الأولوية</th>
             <th className="px-4 py-3 text-start font-medium">مدة الانتظار</th>
@@ -18,11 +19,12 @@ export function PricingQueue({ rows }: { readonly rows: readonly PricingQueueRow
         <tbody className="divide-y divide-border">
           {rows.map((row) => (
             <tr key={row.workItemId} className="bg-card hover:bg-muted/30">
+              <td className="px-4 py-3 font-medium">{row.customerName}<div className="text-xs text-muted-foreground">#{row.orderNumber}</div></td>
               <td className="px-4 py-3 font-medium">{row.productName ?? "بدون نوع منتج"}</td>
               <td className="px-4 py-3">{row.priority === "URGENT" ? "عاجل" : "عادي"}</td>
               <td className="px-4 py-3" dir="ltr">{row.ageLabel}</td>
               <td className="px-4 py-3">
-                <Link href={`/orders/${row.workItemId}`} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
+                <Link href={`/orders/${row.orderId}`} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
                   فتح الصنف
                 </Link>
               </td>

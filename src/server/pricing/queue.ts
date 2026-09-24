@@ -10,6 +10,9 @@ export type PricingQueueInput = {
 
 export type PricingQueueRow = {
   readonly workItemId: string;
+  readonly orderId: string;
+  readonly orderNumber: number;
+  readonly customerName: string;
   readonly productName: string | null;
   readonly priority: "NORMAL" | "URGENT";
   readonly waitingSince: Date;
@@ -38,7 +41,7 @@ export async function getPricingQueue(
         select: {
           dueDate: true,
           productType: { select: { name: true } },
-          order: { select: { priority: true } },
+          order: { select: { id: true, number: true, priority: true, customer: { select: { name: true } } } },
         },
       },
     },
@@ -58,6 +61,9 @@ export async function getPricingQueue(
   return {
     rows: page.map((row) => ({
       workItemId: row.workItemId,
+      orderId: row.workItem.order.id,
+      orderNumber: row.workItem.order.number,
+      customerName: row.workItem.order.customer.name,
       productName: row.workItem.productType?.name ?? null,
       priority: row.workItem.order.priority,
       waitingSince: row.waitingSince ?? now,
