@@ -1,6 +1,8 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+// @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { FilePanel } from "@/components/files/file-panel";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 describe("FilePanel component", () => {
   const mockFileVersions = [
@@ -77,6 +79,10 @@ describe("FilePanel component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("renders six category tabs", () => {
