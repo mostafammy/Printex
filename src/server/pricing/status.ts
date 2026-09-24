@@ -1,5 +1,7 @@
 import type { Prisma } from "../../../generated/prisma";
+import { err, ok, type Result } from "~/server/core";
 import { db } from "~/server/db";
+import { DomainPricingError } from "./errors";
 
 export type PricingStatusValue = "PENDING" | "PRICED" | "DISPUTED";
 
@@ -61,4 +63,18 @@ export async function readPendingSince(workItemId: string): Promise<Date | null>
   });
 
   return pricingStatus?.status === "PENDING" ? pricingStatus.waitingSince : null;
+}
+
+export async function status(workItemId: string): Promise<Result<PricingStatusSnapshot, DomainPricingError>> {
+  const snapshot = await readPricingStatus(workItemId);
+  if (!snapshot) return err(new DomainPricingError("PRICE_NOT_FOUND", "Pricing status was not found"));
+
+  if (snapshot.status === "PRICED" && !snapshot.currentPriceId) {
+    return ok({ ...snapshot, status: "PENDING", waitingSince: snapshot.waitingSince ?? new Date() });
+  }
+  return ok(snapshot);
+}
+
+export async function pendingSince(workItemId: string): Promise<Result<Date | null, DomainPricingError>> {
+  return ok(await readPendingSince(workItemId));
 }

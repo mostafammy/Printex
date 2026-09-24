@@ -81,7 +81,7 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/history-status.test.ts` applies multiple decisions, changes status, and verifies history and pending timestamps.
 
 - [ ] T020 [P] [US3] Complete the `status(workItemId)` and `pendingSince(workItemId)` query functions in `src/server/pricing/status.ts` with current-spec validity checks, building on T012's foundational status persistence and binding.
-- [ ] T021 [US3] Implement `src/server/pricing/history.ts` for current/history queries, breakdown retrieval, source/actor/reason display data, and disputed state handling.
+- [X] T021 [US3] Implement `src/server/pricing/history.ts` for current/history queries, breakdown retrieval, source/actor/reason display data, and disputed state handling.
 - [ ] T022 [US3] Add `tests/integration/pricing/history-status.test.ts` proving independent status during IN_PRODUCTION, DISPUTED unresolved behavior, waitingSince persistence, and readable history.
 - [ ] T023 [US3] Add `src/server/pricing/change-listener.ts` registering `pricing.reset` with 016; use the supplied transaction, clear current price, set PENDING, and audit the reset.
 - [ ] T024 [US3] Add `tests/contract/pricing/spec-change-reset.test.ts` proving successful reset, unchanged historical prices, no nested transaction/external I/O, and rollback when the listener fails.
