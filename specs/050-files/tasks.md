@@ -93,13 +93,13 @@ description: "Task list template for feature implementation"
 
 ### Implementation
 
-- [ ] T029 [US3] Implement `files.listVersions`, `files.markApproved`, void/archive/supersede lifecycle operations in `src/server/files/service.ts` with atomic audit records.
-- [ ] T029b [P] [US3] Implement Admin checksum verify/repair API in `src/app/api/files/admin/verify/route.ts` calling 091 backup.restoreObject/verifyChecksum; mark FileObject CORRUPTED on failure.
-- [ ] T029c [P] [US3] Add 091 backup client in `src/server/files/backup-client.ts` with restoreObject and verifyChecksum methods.
-- [ ] T030 [US3] Add lifecycle route in `src/app/api/files/[versionId]/lifecycle/route.ts` with reason validation and server authorization.
-- [ ] T031 [US3] Implement `<FilePanel>` in `src/components/files/file-panel.tsx` with version list, upload/download/lifecycle controls, required reason field for void/archive actions, and RTL keyboard behavior.
-- [ ] T031b [P] [US3] Optimize FilePanel: virtualize version list with @tanstack/react-virtual, memoize category tabs, lazy-load FilePreview with React.lazy.
-- [ ] T032 [US3] Implement image/PDF preview and metadata/icon fallback in `src/components/files/file-preview.tsx` with RTL layout using logical properties (start/end), keyboard navigation.
+- [X] T029 [US3] Implement `files.listVersions`, `files.markApproved`, void/archive/supersede lifecycle operations in `src/server/files/service.ts` with atomic audit records.
+- [X] T029b [P] [US3] Implement Admin checksum verify/repair API in `src/app/api/files/admin/verify/route.ts` calling 091 backup.restoreObject/verifyChecksum; mark FileObject CORRUPTED on failure.
+- [X] T029c [P] [US3] Add 091 backup client in `src/server/files/backup-client.ts` with restoreObject and verifyChecksum methods.
+- [X] T030 [US3] Add lifecycle route in `src/app/api/files/[versionId]/lifecycle/route.ts` with reason validation and server authorization.
+- [X] T031 [US3] Implement `<FilePanel>` in `src/components/files/file-panel.tsx` with version list, upload/download/lifecycle controls, required reason field for void/archive actions, and RTL keyboard behavior.
+- [X] T031b [P] [US3] Optimize FilePanel: virtualize version list with @tanstack/react-virtual, memoize category tabs, lazy-load FilePreview with React.lazy.
+- [X] T032 [US3] Implement image/PDF preview and metadata/icon fallback in `src/components/files/file-preview.tsx` with RTL layout using logical properties (start/end), keyboard navigation.
 
 **Checkpoint**: Staff can manage history without destructive file operations.
 
@@ -111,24 +111,24 @@ description: "Task list template for feature implementation"
 
 ### Tests
 
-- [ ] T033 [P] [US4] Add attachment integration tests in `tests/integration/files/attachments.test.ts` for five target types and three kinds.
-- [ ] T034 [P] [US4] Add attachment authorization/lifecycle tests in `tests/integration/files/attachment-security.test.ts`.
+- [X] T033 [P] [US4] Add attachment integration tests in `tests/integration/files/attachments.test.ts` for five target types and three kinds.
+- [X] T034 [P] [US4] Add attachment authorization/lifecycle tests in `tests/integration/files/attachment-security.test.ts`.
 
 ### Implementation
 
-- [ ] T035 [US4] Implement `attachments.attach(tx, input)` and attachment listing in `src/server/files/attachments.ts` with shared FileObject deduplication and audit metadata.
-- [ ] T036 [US4] Add attachment upload/download route boundaries in `src/app/api/files/attachments/route.ts` using owning-feature authorization.
+- [X] T035 [US4] Implement `attachments.attach(tx, input)` and attachment listing in `src/server/files/attachments.ts` with shared FileObject deduplication and audit metadata.
+- [X] T036 [US4] Add attachment upload/download route boundaries in `src/app/api/files/attachments/route.ts` using owning-feature authorization.
 
 **Checkpoint**: Generic evidence attachments work without feature-specific storage code.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T037 [P] Add full quickstart acceptance coverage in `tests/integration/files/quickstart.test.ts`.
-- [ ] T038 [P] Add storage path traversal/private-root tests in `tests/contract/files/storage-contract.test.ts`.
-- [ ] T039 [P] Add memory, upload duration, and preview expiry diagnostics in `src/server/files/observability.ts`.
-- [ ] T040 [P] Review RTL/accessibility and logical directional classes in `src/components/files/`.
-- [ ] T041 Run `pnpm check`, `pnpm test`, Prisma migration validation, and `specs/050-files/quickstart.md`; record outcomes.
-- [ ] T042 Update `specs/050-files/contracts/files.md`, `specs/050-files/data-model.md`, and `specs/050-files/quickstart.md` if implementation changes published behavior.
+- [X] T037 [P] Add full quickstart acceptance coverage in `tests/integration/files/quickstart.test.ts`.
+- [X] T038 [P] Add storage path traversal/private-root tests in `tests/contract/files/storage-contract.test.ts`.
+- [X] T039 [P] Add memory, upload duration, and preview expiry diagnostics in `src/server/files/observability.ts`.
+- [X] T040 [P] Review RTL/accessibility and logical directional classes in `src/components/files/`.
+- [X] T041 Run `pnpm check`, `pnpm test`, Prisma migration validation, and `specs/050-files/quickstart.md`; record outcomes.
+- [X] T042 Update `specs/050-files/contracts/files.md`, `specs/050-files/data-model.md`, and `specs/050-files/quickstart.md` if implementation changes published behavior.
 
 ## Dependencies & Execution Order
 
