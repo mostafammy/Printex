@@ -113,7 +113,7 @@ All stories -> Polish and consistency review
 
 **Independent test**: `tests/integration/pricing/returns.test.ts` creates and reads a Pricing-originated `PRICING_ISSUE` return.
 
-- [ ] T032 [P] [US6] Implement `src/server/pricing/returns.ts` composing 013 `createReturnInTx` with Pricing origin, `PRICING_ISSUE`, required explanation, assignee, and no DesignVersion.
+- [X] T032 [P] [US6] Implement `src/server/pricing/returns.ts` composing 013 `createReturnInTx` with Pricing origin, `PRICING_ISSUE`, required explanation, assignee, and no DesignVersion.
 - [ ] T033 [US6] Add `tests/integration/pricing/returns.test.ts` proving category/origin, required explanation, actor/assignee/timestamp, authorization, and transaction rollback.
 
 ## Phase 9: User Story 7 - Admin price configuration (P2)

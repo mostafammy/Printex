@@ -34,6 +34,8 @@ export { getCurrentPrice, getPriceHistory } from "./history";
 export { pricingGateProvider } from "./delivery-port";
 export { formatQueueAge, getPricingQueue } from "./queue";
 export type { PricingQueueInput, PricingQueueResult, PricingQueueRow } from "./queue";
+export { createPricingReturn } from "./returns";
+export type { PricingReturnInput } from "./returns";
 
 export { quote } from "./quote";
 export type { QuoteBreakdown, QuoteInput, QuoteResult } from "./quote";
