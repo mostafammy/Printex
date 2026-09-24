@@ -24,7 +24,8 @@
 // contract, per contracts/storage.md.
 
 import { createHash } from "node:crypto";
-import { createReadStream, createWriteStream, mkdir, unlink, access } from "node:fs/promises";
+import { createReadStream, createWriteStream } from "node:fs";
+import { mkdir, unlink, access, rename } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { PassThrough } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -39,17 +40,14 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
   }
 
   /**
-   * Resolve opaque key to filesystem path using hash-based sharding:
-   * `${root}/${key[0..1]}/${key[2..3]}/${key}`
-   * This avoids having too many files in a single directory.
+   * Resolve key to filesystem path safely under root, preventing path traversal.
    */
   private resolvePath(key: string): string {
-    if (key.length < 4) {
-      throw new Error(`Invalid key: too short (minimum 4 characters)`);
+    const resolved = resolve(this.root, key);
+    if (!resolved.startsWith(this.root)) {
+      throw new Error(`Path traversal attempt rejected for key: "${key}"`);
     }
-    const shard1 = key.slice(0, 2);
-    const shard2 = key.slice(2, 4);
-    return join(this.root, shard1, shard2, key);
+    return resolved;
   }
 
   async exists(key: string): Promise<boolean> {
@@ -87,10 +85,9 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     const tempPath = `${target}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 9)}`;
 
     try {
-      await pipeline(body, measure, createWriteStream(tempPath, { flags: "wx" }));
+      await pipeline(body, measure, createWriteStream(tempPath));
 
       // Atomic rename to final path
-      const { rename } = await import("node:fs/promises");
       await rename(tempPath, target);
     } catch (caught) {
       // Clean up temp file on error
@@ -119,31 +116,7 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     // Resolve existence up front so a missing key rejects predictably
     await access(target);
 
-    // Create a stream that verifies checksum on the fly
-    const fileStream = createReadStream(target);
-
-    // Get stored checksum from metadata (we need to track this)
-    // For now, we'll compute on read and compare
-    // In production, checksum could be stored in extended attributes or sidecar file
-
-    const { verifyStreamIntegrity } = await import("@/server/files/integrity.js");
-
-    // Wrap the stream to verify checksum
-    const verifiedStream = new PassThrough();
-    const reader = fileStream.getReader();
-    const writer = verifiedStream.writable.getWriter();
-    const hash = createHash("sha256");
-    let totalSize = 0;
-
-    // We need to know the expected checksum and size
-    // This would typically come from a metadata store
-    // For now, we'll just stream and let the caller verify
-
-    // Simple approach: return the stream as-is, let caller verify
-    // But per contract, we should verify before yielding
-    // We'll implement verification in the caller (download route)
-
-    return fileStream;
+    return createReadStream(target);
   }
 
   /**
@@ -160,11 +133,32 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
 
     await access(target);
 
-    const fileStream = createReadStream(target);
-    const { verifyStreamIntegrity } = await import("@/server/files/integrity.js");
+    // Read file and compute hash to verify before returning
+    const { createHash } = await import("node:crypto");
+    const hash = createHash("sha256");
+    let size = 0;
 
-    // Verify the stream
-    await verifyStreamIntegrity(fileStream, expectedSha256, expectedSize);
+    await new Promise<void>((resolve, reject) => {
+      const stream = createReadStream(target);
+      stream.on("data", (chunk: Buffer) => {
+        size += chunk.length;
+        hash.update(chunk);
+      });
+      stream.on("end", () => resolve());
+      stream.on("error", reject);
+    });
+
+    const actualSha = hash.digest("hex");
+    if (actualSha !== expectedSha256) {
+      throw new Error(
+        `Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`
+      );
+    }
+    if (size !== expectedSize) {
+      throw new Error(
+        `Size mismatch: expected ${expectedSize}, got ${size}`
+      );
+    }
 
     // Return a fresh stream for the caller
     return createReadStream(target);
