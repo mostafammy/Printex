@@ -74,3 +74,21 @@ export type { Actor } from "./actor";
 // time; the underlying functions/types are unchanged, owned by 002).
 export { openSegment, closeOpenSegment, calculatePhaseDurationMs } from "./workflow/timing";
 export type { PhaseTimingKind, PhaseTimingSegment } from "./workflow/timing";
+
+// contracts: shared aspects (specs/015-collection-delivery/contracts/aspects.md)
+export type {
+  Tx,
+  AspectBaseError,
+  AspectResult,
+  ModuleErrorShape,
+  PermissionSpec,
+  AuditEntry,
+  RunOutcome,
+  TxScope,
+  CommandCtx,
+  AspectDeps,
+} from "./aspects/types";
+export { createAspects } from "./aspects/engine";
+export { AspectDomainError, TransitionFailure, AspectMisuseError, fail } from "./aspects/errors";
+export { transitionOrThrow } from "./aspects/transition";
+export type { TransitionOrThrowInput, TransitionOutcome } from "./aspects/transition";
