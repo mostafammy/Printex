@@ -313,6 +313,71 @@ exports.Prisma.CustomerPromotionScalarFieldEnum = {
   reversedById: 'reversedById'
 };
 
+exports.Prisma.FileObjectScalarFieldEnum = {
+  id: 'id',
+  storageKey: 'storageKey',
+  sizeBytes: 'sizeBytes',
+  sha256: 'sha256',
+  mimeType: 'mimeType',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileAssetScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  category: 'category',
+  logicalName: 'logicalName',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FileVersionScalarFieldEnum = {
+  id: 'id',
+  fileAssetId: 'fileAssetId',
+  fileObjectId: 'fileObjectId',
+  versionNumber: 'versionNumber',
+  originalName: 'originalName',
+  uploadedById: 'uploadedById',
+  note: 'note',
+  status: 'status',
+  approved: 'approved',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AttachmentScalarFieldEnum = {
+  id: 'id',
+  fileObjectId: 'fileObjectId',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  originalName: 'originalName',
+  kind: 'kind',
+  createdById: 'createdById',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileAuditEventScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  action: 'action',
+  entity: 'entity',
+  entityId: 'entityId',
+  beforeValues: 'beforeValues',
+  afterValues: 'afterValues',
+  reason: 'reason',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileConfigScalarFieldEnum = {
+  id: 'id',
+  mimeAllowlist: 'mimeAllowlist',
+  maxFileSizeBytes: 'maxFileSizeBytes',
+  departments: 'departments',
+  previewExpirySeconds: 'previewExpirySeconds',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -506,6 +571,46 @@ exports.ReturnAttachmentKind = exports.$Enums.ReturnAttachmentKind = {
   FILE: 'FILE'
 };
 
+exports.FileCategory = exports.$Enums.FileCategory = {
+  ORIGINAL: 'ORIGINAL',
+  DESIGN_VERSIONS: 'DESIGN_VERSIONS',
+  REVIEW_PROOF: 'REVIEW_PROOF',
+  APPROVED: 'APPROVED',
+  PRODUCTION: 'PRODUCTION',
+  SUPPORTING: 'SUPPORTING'
+};
+
+exports.FileLifecycleStatus = exports.$Enums.FileLifecycleStatus = {
+  ACTIVE: 'ACTIVE',
+  SUPERSEDED: 'SUPERSEDED',
+  VOID: 'VOID',
+  ARCHIVED: 'ARCHIVED',
+  CORRUPTED: 'CORRUPTED'
+};
+
+exports.AttachmentKind = exports.$Enums.AttachmentKind = {
+  VOICE_NOTE: 'VOICE_NOTE',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE'
+};
+
+exports.AuditAction = exports.$Enums.AuditAction = {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  STATUS_CHANGE: 'STATUS_CHANGE',
+  APPROVE: 'APPROVE',
+  VOID: 'VOID',
+  ARCHIVE: 'ARCHIVE',
+  SUPERSEDE: 'SUPERSEDE'
+};
+
+exports.AuditEntity = exports.$Enums.AuditEntity = {
+  FILE_OBJECT: 'FILE_OBJECT',
+  FILE_ASSET: 'FILE_ASSET',
+  FILE_VERSION: 'FILE_VERSION',
+  ATTACHMENT: 'ATTACHMENT'
+};
+
 exports.Prisma.ModelName = {
   Department: 'Department',
   Customer: 'Customer',
@@ -523,6 +628,12 @@ exports.Prisma.ModelName = {
   CustomerAddress: 'CustomerAddress',
   CustomerClassification: 'CustomerClassification',
   CustomerPromotion: 'CustomerPromotion',
+  FileObject: 'FileObject',
+  FileAsset: 'FileAsset',
+  FileVersion: 'FileVersion',
+  Attachment: 'Attachment',
+  FileAuditEvent: 'FileAuditEvent',
+  FileConfig: 'FileConfig',
   User: 'User',
   Session: 'Session',
   Account: 'Account',

@@ -102,6 +102,37 @@ export type CustomerClassification = $Result.DefaultSelection<Prisma.$CustomerCl
  */
 export type CustomerPromotion = $Result.DefaultSelection<Prisma.$CustomerPromotionPayload>
 /**
+ * Model FileObject
+ * Immutable physical bytes, deduplicated by checksum (constitution IV).
+ */
+export type FileObject = $Result.DefaultSelection<Prisma.$FileObjectPayload>
+/**
+ * Model FileAsset
+ * Logical file attached to one Work Item and category.
+ */
+export type FileAsset = $Result.DefaultSelection<Prisma.$FileAssetPayload>
+/**
+ * Model FileVersion
+ * Immutable upload metadata pointing to a FileObject.
+ */
+export type FileVersion = $Result.DefaultSelection<Prisma.$FileVersionPayload>
+/**
+ * Model Attachment
+ * Generic link to an operational entity (rejection, discrepancy, expense, audit event, message).
+ */
+export type Attachment = $Result.DefaultSelection<Prisma.$AttachmentPayload>
+/**
+ * Model FileAuditEvent
+ * Append-only audit trail for all file lifecycle mutations and approvals.
+ * Follows 001 audit.record contract.
+ */
+export type FileAuditEvent = $Result.DefaultSelection<Prisma.$FileAuditEventPayload>
+/**
+ * Model FileConfig
+ * Runtime configuration singleton loaded from config/050-files.yaml at startup.
+ */
+export type FileConfig = $Result.DefaultSelection<Prisma.$FileConfigPayload>
+/**
  * Model User
  * 
  */
@@ -261,6 +292,61 @@ export const ReturnAttachmentKind: {
 
 export type ReturnAttachmentKind = (typeof ReturnAttachmentKind)[keyof typeof ReturnAttachmentKind]
 
+
+export const FileCategory: {
+  ORIGINAL: 'ORIGINAL',
+  DESIGN_VERSIONS: 'DESIGN_VERSIONS',
+  REVIEW_PROOF: 'REVIEW_PROOF',
+  APPROVED: 'APPROVED',
+  PRODUCTION: 'PRODUCTION',
+  SUPPORTING: 'SUPPORTING'
+};
+
+export type FileCategory = (typeof FileCategory)[keyof typeof FileCategory]
+
+
+export const FileLifecycleStatus: {
+  ACTIVE: 'ACTIVE',
+  SUPERSEDED: 'SUPERSEDED',
+  VOID: 'VOID',
+  ARCHIVED: 'ARCHIVED',
+  CORRUPTED: 'CORRUPTED'
+};
+
+export type FileLifecycleStatus = (typeof FileLifecycleStatus)[keyof typeof FileLifecycleStatus]
+
+
+export const AttachmentKind: {
+  VOICE_NOTE: 'VOICE_NOTE',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE'
+};
+
+export type AttachmentKind = (typeof AttachmentKind)[keyof typeof AttachmentKind]
+
+
+export const AuditAction: {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  STATUS_CHANGE: 'STATUS_CHANGE',
+  APPROVE: 'APPROVE',
+  VOID: 'VOID',
+  ARCHIVE: 'ARCHIVE',
+  SUPERSEDE: 'SUPERSEDE'
+};
+
+export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction]
+
+
+export const AuditEntity: {
+  FILE_OBJECT: 'FILE_OBJECT',
+  FILE_ASSET: 'FILE_ASSET',
+  FILE_VERSION: 'FILE_VERSION',
+  ATTACHMENT: 'ATTACHMENT'
+};
+
+export type AuditEntity = (typeof AuditEntity)[keyof typeof AuditEntity]
+
 }
 
 export type WorkItemState = $Enums.WorkItemState
@@ -294,6 +380,26 @@ export const WorkItemDimensionUnit: typeof $Enums.WorkItemDimensionUnit
 export type ReturnAttachmentKind = $Enums.ReturnAttachmentKind
 
 export const ReturnAttachmentKind: typeof $Enums.ReturnAttachmentKind
+
+export type FileCategory = $Enums.FileCategory
+
+export const FileCategory: typeof $Enums.FileCategory
+
+export type FileLifecycleStatus = $Enums.FileLifecycleStatus
+
+export const FileLifecycleStatus: typeof $Enums.FileLifecycleStatus
+
+export type AttachmentKind = $Enums.AttachmentKind
+
+export const AttachmentKind: typeof $Enums.AttachmentKind
+
+export type AuditAction = $Enums.AuditAction
+
+export const AuditAction: typeof $Enums.AuditAction
+
+export type AuditEntity = $Enums.AuditEntity
+
+export const AuditEntity: typeof $Enums.AuditEntity
 
 /**
  * ##  Prisma Client ʲˢ
@@ -572,6 +678,66 @@ export class PrismaClient<
     * ```
     */
   get customerPromotion(): Prisma.CustomerPromotionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fileObject`: Exposes CRUD operations for the **FileObject** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FileObjects
+    * const fileObjects = await prisma.fileObject.findMany()
+    * ```
+    */
+  get fileObject(): Prisma.FileObjectDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fileAsset`: Exposes CRUD operations for the **FileAsset** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FileAssets
+    * const fileAssets = await prisma.fileAsset.findMany()
+    * ```
+    */
+  get fileAsset(): Prisma.FileAssetDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fileVersion`: Exposes CRUD operations for the **FileVersion** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FileVersions
+    * const fileVersions = await prisma.fileVersion.findMany()
+    * ```
+    */
+  get fileVersion(): Prisma.FileVersionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.attachment`: Exposes CRUD operations for the **Attachment** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Attachments
+    * const attachments = await prisma.attachment.findMany()
+    * ```
+    */
+  get attachment(): Prisma.AttachmentDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fileAuditEvent`: Exposes CRUD operations for the **FileAuditEvent** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FileAuditEvents
+    * const fileAuditEvents = await prisma.fileAuditEvent.findMany()
+    * ```
+    */
+  get fileAuditEvent(): Prisma.FileAuditEventDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.fileConfig`: Exposes CRUD operations for the **FileConfig** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FileConfigs
+    * const fileConfigs = await prisma.fileConfig.findMany()
+    * ```
+    */
+  get fileConfig(): Prisma.FileConfigDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.user`: Exposes CRUD operations for the **User** model.
@@ -1129,6 +1295,12 @@ export namespace Prisma {
     CustomerAddress: 'CustomerAddress',
     CustomerClassification: 'CustomerClassification',
     CustomerPromotion: 'CustomerPromotion',
+    FileObject: 'FileObject',
+    FileAsset: 'FileAsset',
+    FileVersion: 'FileVersion',
+    Attachment: 'Attachment',
+    FileAuditEvent: 'FileAuditEvent',
+    FileConfig: 'FileConfig',
     User: 'User',
     Session: 'Session',
     Account: 'Account',
@@ -1157,7 +1329,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
+      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2345,6 +2517,450 @@ export namespace Prisma {
           }
         }
       }
+      FileObject: {
+        payload: Prisma.$FileObjectPayload<ExtArgs>
+        fields: Prisma.FileObjectFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FileObjectFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FileObjectFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          findFirst: {
+            args: Prisma.FileObjectFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FileObjectFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          findMany: {
+            args: Prisma.FileObjectFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>[]
+          }
+          create: {
+            args: Prisma.FileObjectCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          createMany: {
+            args: Prisma.FileObjectCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FileObjectCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>[]
+          }
+          delete: {
+            args: Prisma.FileObjectDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          update: {
+            args: Prisma.FileObjectUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          deleteMany: {
+            args: Prisma.FileObjectDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FileObjectUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FileObjectUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>[]
+          }
+          upsert: {
+            args: Prisma.FileObjectUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileObjectPayload>
+          }
+          aggregate: {
+            args: Prisma.FileObjectAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFileObject>
+          }
+          groupBy: {
+            args: Prisma.FileObjectGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FileObjectGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FileObjectCountArgs<ExtArgs>
+            result: $Utils.Optional<FileObjectCountAggregateOutputType> | number
+          }
+        }
+      }
+      FileAsset: {
+        payload: Prisma.$FileAssetPayload<ExtArgs>
+        fields: Prisma.FileAssetFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FileAssetFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FileAssetFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          findFirst: {
+            args: Prisma.FileAssetFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FileAssetFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          findMany: {
+            args: Prisma.FileAssetFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>[]
+          }
+          create: {
+            args: Prisma.FileAssetCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          createMany: {
+            args: Prisma.FileAssetCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FileAssetCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>[]
+          }
+          delete: {
+            args: Prisma.FileAssetDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          update: {
+            args: Prisma.FileAssetUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          deleteMany: {
+            args: Prisma.FileAssetDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FileAssetUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FileAssetUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>[]
+          }
+          upsert: {
+            args: Prisma.FileAssetUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAssetPayload>
+          }
+          aggregate: {
+            args: Prisma.FileAssetAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFileAsset>
+          }
+          groupBy: {
+            args: Prisma.FileAssetGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FileAssetGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FileAssetCountArgs<ExtArgs>
+            result: $Utils.Optional<FileAssetCountAggregateOutputType> | number
+          }
+        }
+      }
+      FileVersion: {
+        payload: Prisma.$FileVersionPayload<ExtArgs>
+        fields: Prisma.FileVersionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FileVersionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FileVersionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          findFirst: {
+            args: Prisma.FileVersionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FileVersionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          findMany: {
+            args: Prisma.FileVersionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>[]
+          }
+          create: {
+            args: Prisma.FileVersionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          createMany: {
+            args: Prisma.FileVersionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FileVersionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>[]
+          }
+          delete: {
+            args: Prisma.FileVersionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          update: {
+            args: Prisma.FileVersionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          deleteMany: {
+            args: Prisma.FileVersionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FileVersionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FileVersionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>[]
+          }
+          upsert: {
+            args: Prisma.FileVersionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileVersionPayload>
+          }
+          aggregate: {
+            args: Prisma.FileVersionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFileVersion>
+          }
+          groupBy: {
+            args: Prisma.FileVersionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FileVersionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FileVersionCountArgs<ExtArgs>
+            result: $Utils.Optional<FileVersionCountAggregateOutputType> | number
+          }
+        }
+      }
+      Attachment: {
+        payload: Prisma.$AttachmentPayload<ExtArgs>
+        fields: Prisma.AttachmentFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AttachmentFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AttachmentFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          findFirst: {
+            args: Prisma.AttachmentFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AttachmentFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          findMany: {
+            args: Prisma.AttachmentFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>[]
+          }
+          create: {
+            args: Prisma.AttachmentCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          createMany: {
+            args: Prisma.AttachmentCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AttachmentCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>[]
+          }
+          delete: {
+            args: Prisma.AttachmentDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          update: {
+            args: Prisma.AttachmentUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          deleteMany: {
+            args: Prisma.AttachmentDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AttachmentUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AttachmentUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>[]
+          }
+          upsert: {
+            args: Prisma.AttachmentUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttachmentPayload>
+          }
+          aggregate: {
+            args: Prisma.AttachmentAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAttachment>
+          }
+          groupBy: {
+            args: Prisma.AttachmentGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AttachmentGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AttachmentCountArgs<ExtArgs>
+            result: $Utils.Optional<AttachmentCountAggregateOutputType> | number
+          }
+        }
+      }
+      FileAuditEvent: {
+        payload: Prisma.$FileAuditEventPayload<ExtArgs>
+        fields: Prisma.FileAuditEventFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FileAuditEventFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FileAuditEventFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          findFirst: {
+            args: Prisma.FileAuditEventFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FileAuditEventFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          findMany: {
+            args: Prisma.FileAuditEventFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>[]
+          }
+          create: {
+            args: Prisma.FileAuditEventCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          createMany: {
+            args: Prisma.FileAuditEventCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FileAuditEventCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>[]
+          }
+          delete: {
+            args: Prisma.FileAuditEventDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          update: {
+            args: Prisma.FileAuditEventUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          deleteMany: {
+            args: Prisma.FileAuditEventDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FileAuditEventUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FileAuditEventUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>[]
+          }
+          upsert: {
+            args: Prisma.FileAuditEventUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileAuditEventPayload>
+          }
+          aggregate: {
+            args: Prisma.FileAuditEventAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFileAuditEvent>
+          }
+          groupBy: {
+            args: Prisma.FileAuditEventGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FileAuditEventGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FileAuditEventCountArgs<ExtArgs>
+            result: $Utils.Optional<FileAuditEventCountAggregateOutputType> | number
+          }
+        }
+      }
+      FileConfig: {
+        payload: Prisma.$FileConfigPayload<ExtArgs>
+        fields: Prisma.FileConfigFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FileConfigFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FileConfigFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          findFirst: {
+            args: Prisma.FileConfigFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FileConfigFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          findMany: {
+            args: Prisma.FileConfigFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>[]
+          }
+          create: {
+            args: Prisma.FileConfigCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          createMany: {
+            args: Prisma.FileConfigCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FileConfigCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>[]
+          }
+          delete: {
+            args: Prisma.FileConfigDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          update: {
+            args: Prisma.FileConfigUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          deleteMany: {
+            args: Prisma.FileConfigDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FileConfigUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FileConfigUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>[]
+          }
+          upsert: {
+            args: Prisma.FileConfigUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FileConfigPayload>
+          }
+          aggregate: {
+            args: Prisma.FileConfigAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFileConfig>
+          }
+          groupBy: {
+            args: Prisma.FileConfigGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FileConfigGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FileConfigCountArgs<ExtArgs>
+            result: $Utils.Optional<FileConfigCountAggregateOutputType> | number
+          }
+        }
+      }
       User: {
         payload: Prisma.$UserPayload<ExtArgs>
         fields: Prisma.UserFieldRefs
@@ -3197,6 +3813,12 @@ export namespace Prisma {
     customerAddress?: CustomerAddressOmit
     customerClassification?: CustomerClassificationOmit
     customerPromotion?: CustomerPromotionOmit
+    fileObject?: FileObjectOmit
+    fileAsset?: FileAssetOmit
+    fileVersion?: FileVersionOmit
+    attachment?: AttachmentOmit
+    fileAuditEvent?: FileAuditEventOmit
+    fileConfig?: FileConfigOmit
     user?: UserOmit
     session?: SessionOmit
     account?: AccountOmit
@@ -3448,6 +4070,7 @@ export namespace Prisma {
     designVersions: number
     returns: number
     vendorProductionRecords: number
+    fileAssets: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3456,6 +4079,7 @@ export namespace Prisma {
     designVersions?: boolean | WorkItemCountOutputTypeCountDesignVersionsArgs
     returns?: boolean | WorkItemCountOutputTypeCountReturnsArgs
     vendorProductionRecords?: boolean | WorkItemCountOutputTypeCountVendorProductionRecordsArgs
+    fileAssets?: boolean | WorkItemCountOutputTypeCountFileAssetsArgs
   }
 
   // Custom InputTypes
@@ -3502,6 +4126,13 @@ export namespace Prisma {
    */
   export type WorkItemCountOutputTypeCountVendorProductionRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: VendorProductionRecordWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountFileAssetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileAssetWhereInput
   }
 
 
@@ -3630,6 +4261,77 @@ export namespace Prisma {
 
 
   /**
+   * Count Type FileObjectCountOutputType
+   */
+
+  export type FileObjectCountOutputType = {
+    fileVersions: number
+    attachments: number
+  }
+
+  export type FileObjectCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileVersions?: boolean | FileObjectCountOutputTypeCountFileVersionsArgs
+    attachments?: boolean | FileObjectCountOutputTypeCountAttachmentsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FileObjectCountOutputType without action
+   */
+  export type FileObjectCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObjectCountOutputType
+     */
+    select?: FileObjectCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FileObjectCountOutputType without action
+   */
+  export type FileObjectCountOutputTypeCountFileVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileVersionWhereInput
+  }
+
+  /**
+   * FileObjectCountOutputType without action
+   */
+  export type FileObjectCountOutputTypeCountAttachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttachmentWhereInput
+  }
+
+
+  /**
+   * Count Type FileAssetCountOutputType
+   */
+
+  export type FileAssetCountOutputType = {
+    fileVersions: number
+  }
+
+  export type FileAssetCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileVersions?: boolean | FileAssetCountOutputTypeCountFileVersionsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FileAssetCountOutputType without action
+   */
+  export type FileAssetCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAssetCountOutputType
+     */
+    select?: FileAssetCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FileAssetCountOutputType without action
+   */
+  export type FileAssetCountOutputTypeCountFileVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileVersionWhereInput
+  }
+
+
+  /**
    * Count Type UserCountOutputType
    */
 
@@ -3650,6 +4352,10 @@ export namespace Prisma {
     returnsRaised: number
     returnsAssignedToMe: number
     vendorProductionRecordsCreated: number
+    fileVersionsUploaded: number
+    attachments: number
+    fileAuditEvents: number
+    fileConfigsUpdated: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3669,6 +4375,10 @@ export namespace Prisma {
     returnsRaised?: boolean | UserCountOutputTypeCountReturnsRaisedArgs
     returnsAssignedToMe?: boolean | UserCountOutputTypeCountReturnsAssignedToMeArgs
     vendorProductionRecordsCreated?: boolean | UserCountOutputTypeCountVendorProductionRecordsCreatedArgs
+    fileVersionsUploaded?: boolean | UserCountOutputTypeCountFileVersionsUploadedArgs
+    attachments?: boolean | UserCountOutputTypeCountAttachmentsArgs
+    fileAuditEvents?: boolean | UserCountOutputTypeCountFileAuditEventsArgs
+    fileConfigsUpdated?: boolean | UserCountOutputTypeCountFileConfigsUpdatedArgs
   }
 
   // Custom InputTypes
@@ -3792,6 +4502,34 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountVendorProductionRecordsCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: VendorProductionRecordWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountFileVersionsUploadedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileVersionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAttachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttachmentWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountFileAuditEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileAuditEventWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountFileConfigsUpdatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileConfigWhereInput
   }
 
 
@@ -7817,6 +8555,7 @@ export namespace Prisma {
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     returns?: boolean | WorkItem$returnsArgs<ExtArgs>
     vendorProductionRecords?: boolean | WorkItem$vendorProductionRecordsArgs<ExtArgs>
+    fileAssets?: boolean | WorkItem$fileAssetsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -7911,6 +8650,7 @@ export namespace Prisma {
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
     returns?: boolean | WorkItem$returnsArgs<ExtArgs>
     vendorProductionRecords?: boolean | WorkItem$vendorProductionRecordsArgs<ExtArgs>
+    fileAssets?: boolean | WorkItem$fileAssetsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7938,6 +8678,7 @@ export namespace Prisma {
       designVersions: Prisma.$DesignVersionPayload<ExtArgs>[]
       returns: Prisma.$ReturnPayload<ExtArgs>[]
       vendorProductionRecords: Prisma.$VendorProductionRecordPayload<ExtArgs>[]
+      fileAssets: Prisma.$FileAssetPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8393,6 +9134,7 @@ export namespace Prisma {
     designVersions<T extends WorkItem$designVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$designVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     returns<T extends WorkItem$returnsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$returnsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     vendorProductionRecords<T extends WorkItem$vendorProductionRecordsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$vendorProductionRecordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fileAssets<T extends WorkItem$fileAssetsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$fileAssetsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9013,6 +9755,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.fileAssets
+   */
+  export type WorkItem$fileAssetsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    where?: FileAssetWhereInput
+    orderBy?: FileAssetOrderByWithRelationInput | FileAssetOrderByWithRelationInput[]
+    cursor?: FileAssetWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileAssetScalarFieldEnum | FileAssetScalarFieldEnum[]
   }
 
   /**
@@ -22537,6 +23303,6810 @@ export namespace Prisma {
 
 
   /**
+   * Model FileObject
+   */
+
+  export type AggregateFileObject = {
+    _count: FileObjectCountAggregateOutputType | null
+    _avg: FileObjectAvgAggregateOutputType | null
+    _sum: FileObjectSumAggregateOutputType | null
+    _min: FileObjectMinAggregateOutputType | null
+    _max: FileObjectMaxAggregateOutputType | null
+  }
+
+  export type FileObjectAvgAggregateOutputType = {
+    sizeBytes: number | null
+  }
+
+  export type FileObjectSumAggregateOutputType = {
+    sizeBytes: number | null
+  }
+
+  export type FileObjectMinAggregateOutputType = {
+    id: string | null
+    storageKey: string | null
+    sizeBytes: number | null
+    sha256: string | null
+    mimeType: string | null
+    createdAt: Date | null
+  }
+
+  export type FileObjectMaxAggregateOutputType = {
+    id: string | null
+    storageKey: string | null
+    sizeBytes: number | null
+    sha256: string | null
+    mimeType: string | null
+    createdAt: Date | null
+  }
+
+  export type FileObjectCountAggregateOutputType = {
+    id: number
+    storageKey: number
+    sizeBytes: number
+    sha256: number
+    mimeType: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type FileObjectAvgAggregateInputType = {
+    sizeBytes?: true
+  }
+
+  export type FileObjectSumAggregateInputType = {
+    sizeBytes?: true
+  }
+
+  export type FileObjectMinAggregateInputType = {
+    id?: true
+    storageKey?: true
+    sizeBytes?: true
+    sha256?: true
+    mimeType?: true
+    createdAt?: true
+  }
+
+  export type FileObjectMaxAggregateInputType = {
+    id?: true
+    storageKey?: true
+    sizeBytes?: true
+    sha256?: true
+    mimeType?: true
+    createdAt?: true
+  }
+
+  export type FileObjectCountAggregateInputType = {
+    id?: true
+    storageKey?: true
+    sizeBytes?: true
+    sha256?: true
+    mimeType?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type FileObjectAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileObject to aggregate.
+     */
+    where?: FileObjectWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileObjects to fetch.
+     */
+    orderBy?: FileObjectOrderByWithRelationInput | FileObjectOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FileObjectWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileObjects from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileObjects.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FileObjects
+    **/
+    _count?: true | FileObjectCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FileObjectAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FileObjectSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FileObjectMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FileObjectMaxAggregateInputType
+  }
+
+  export type GetFileObjectAggregateType<T extends FileObjectAggregateArgs> = {
+        [P in keyof T & keyof AggregateFileObject]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFileObject[P]>
+      : GetScalarType<T[P], AggregateFileObject[P]>
+  }
+
+
+
+
+  export type FileObjectGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileObjectWhereInput
+    orderBy?: FileObjectOrderByWithAggregationInput | FileObjectOrderByWithAggregationInput[]
+    by: FileObjectScalarFieldEnum[] | FileObjectScalarFieldEnum
+    having?: FileObjectScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FileObjectCountAggregateInputType | true
+    _avg?: FileObjectAvgAggregateInputType
+    _sum?: FileObjectSumAggregateInputType
+    _min?: FileObjectMinAggregateInputType
+    _max?: FileObjectMaxAggregateInputType
+  }
+
+  export type FileObjectGroupByOutputType = {
+    id: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt: Date
+    _count: FileObjectCountAggregateOutputType | null
+    _avg: FileObjectAvgAggregateOutputType | null
+    _sum: FileObjectSumAggregateOutputType | null
+    _min: FileObjectMinAggregateOutputType | null
+    _max: FileObjectMaxAggregateOutputType | null
+  }
+
+  type GetFileObjectGroupByPayload<T extends FileObjectGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FileObjectGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FileObjectGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FileObjectGroupByOutputType[P]>
+            : GetScalarType<T[P], FileObjectGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FileObjectSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    storageKey?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    mimeType?: boolean
+    createdAt?: boolean
+    fileVersions?: boolean | FileObject$fileVersionsArgs<ExtArgs>
+    attachments?: boolean | FileObject$attachmentsArgs<ExtArgs>
+    _count?: boolean | FileObjectCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileObject"]>
+
+  export type FileObjectSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    storageKey?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    mimeType?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["fileObject"]>
+
+  export type FileObjectSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    storageKey?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    mimeType?: boolean
+    createdAt?: boolean
+  }, ExtArgs["result"]["fileObject"]>
+
+  export type FileObjectSelectScalar = {
+    id?: boolean
+    storageKey?: boolean
+    sizeBytes?: boolean
+    sha256?: boolean
+    mimeType?: boolean
+    createdAt?: boolean
+  }
+
+  export type FileObjectOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "storageKey" | "sizeBytes" | "sha256" | "mimeType" | "createdAt", ExtArgs["result"]["fileObject"]>
+  export type FileObjectInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileVersions?: boolean | FileObject$fileVersionsArgs<ExtArgs>
+    attachments?: boolean | FileObject$attachmentsArgs<ExtArgs>
+    _count?: boolean | FileObjectCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type FileObjectIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type FileObjectIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $FileObjectPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FileObject"
+    objects: {
+      fileVersions: Prisma.$FileVersionPayload<ExtArgs>[]
+      attachments: Prisma.$AttachmentPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * Opaque hash/ID-based key; never customer/folder naming. Unique.
+       */
+      storageKey: string
+      /**
+       * Required, 0–5 GB inclusive.
+       */
+      sizeBytes: number
+      /**
+       * Required 64-hex checksum; unique for deduplication.
+       */
+      sha256: string
+      /**
+       * Required; validated against configured allowlist.
+       */
+      mimeType: string
+      createdAt: Date
+    }, ExtArgs["result"]["fileObject"]>
+    composites: {}
+  }
+
+  type FileObjectGetPayload<S extends boolean | null | undefined | FileObjectDefaultArgs> = $Result.GetResult<Prisma.$FileObjectPayload, S>
+
+  type FileObjectCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FileObjectFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FileObjectCountAggregateInputType | true
+    }
+
+  export interface FileObjectDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FileObject'], meta: { name: 'FileObject' } }
+    /**
+     * Find zero or one FileObject that matches the filter.
+     * @param {FileObjectFindUniqueArgs} args - Arguments to find a FileObject
+     * @example
+     * // Get one FileObject
+     * const fileObject = await prisma.fileObject.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FileObjectFindUniqueArgs>(args: SelectSubset<T, FileObjectFindUniqueArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FileObject that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FileObjectFindUniqueOrThrowArgs} args - Arguments to find a FileObject
+     * @example
+     * // Get one FileObject
+     * const fileObject = await prisma.fileObject.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FileObjectFindUniqueOrThrowArgs>(args: SelectSubset<T, FileObjectFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileObject that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectFindFirstArgs} args - Arguments to find a FileObject
+     * @example
+     * // Get one FileObject
+     * const fileObject = await prisma.fileObject.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FileObjectFindFirstArgs>(args?: SelectSubset<T, FileObjectFindFirstArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileObject that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectFindFirstOrThrowArgs} args - Arguments to find a FileObject
+     * @example
+     * // Get one FileObject
+     * const fileObject = await prisma.fileObject.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FileObjectFindFirstOrThrowArgs>(args?: SelectSubset<T, FileObjectFindFirstOrThrowArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FileObjects that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FileObjects
+     * const fileObjects = await prisma.fileObject.findMany()
+     * 
+     * // Get first 10 FileObjects
+     * const fileObjects = await prisma.fileObject.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fileObjectWithIdOnly = await prisma.fileObject.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FileObjectFindManyArgs>(args?: SelectSubset<T, FileObjectFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FileObject.
+     * @param {FileObjectCreateArgs} args - Arguments to create a FileObject.
+     * @example
+     * // Create one FileObject
+     * const FileObject = await prisma.fileObject.create({
+     *   data: {
+     *     // ... data to create a FileObject
+     *   }
+     * })
+     * 
+     */
+    create<T extends FileObjectCreateArgs>(args: SelectSubset<T, FileObjectCreateArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FileObjects.
+     * @param {FileObjectCreateManyArgs} args - Arguments to create many FileObjects.
+     * @example
+     * // Create many FileObjects
+     * const fileObject = await prisma.fileObject.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FileObjectCreateManyArgs>(args?: SelectSubset<T, FileObjectCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FileObjects and returns the data saved in the database.
+     * @param {FileObjectCreateManyAndReturnArgs} args - Arguments to create many FileObjects.
+     * @example
+     * // Create many FileObjects
+     * const fileObject = await prisma.fileObject.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FileObjects and only return the `id`
+     * const fileObjectWithIdOnly = await prisma.fileObject.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FileObjectCreateManyAndReturnArgs>(args?: SelectSubset<T, FileObjectCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FileObject.
+     * @param {FileObjectDeleteArgs} args - Arguments to delete one FileObject.
+     * @example
+     * // Delete one FileObject
+     * const FileObject = await prisma.fileObject.delete({
+     *   where: {
+     *     // ... filter to delete one FileObject
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FileObjectDeleteArgs>(args: SelectSubset<T, FileObjectDeleteArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FileObject.
+     * @param {FileObjectUpdateArgs} args - Arguments to update one FileObject.
+     * @example
+     * // Update one FileObject
+     * const fileObject = await prisma.fileObject.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FileObjectUpdateArgs>(args: SelectSubset<T, FileObjectUpdateArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FileObjects.
+     * @param {FileObjectDeleteManyArgs} args - Arguments to filter FileObjects to delete.
+     * @example
+     * // Delete a few FileObjects
+     * const { count } = await prisma.fileObject.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FileObjectDeleteManyArgs>(args?: SelectSubset<T, FileObjectDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileObjects.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FileObjects
+     * const fileObject = await prisma.fileObject.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FileObjectUpdateManyArgs>(args: SelectSubset<T, FileObjectUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileObjects and returns the data updated in the database.
+     * @param {FileObjectUpdateManyAndReturnArgs} args - Arguments to update many FileObjects.
+     * @example
+     * // Update many FileObjects
+     * const fileObject = await prisma.fileObject.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FileObjects and only return the `id`
+     * const fileObjectWithIdOnly = await prisma.fileObject.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FileObjectUpdateManyAndReturnArgs>(args: SelectSubset<T, FileObjectUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FileObject.
+     * @param {FileObjectUpsertArgs} args - Arguments to update or create a FileObject.
+     * @example
+     * // Update or create a FileObject
+     * const fileObject = await prisma.fileObject.upsert({
+     *   create: {
+     *     // ... data to create a FileObject
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FileObject we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FileObjectUpsertArgs>(args: SelectSubset<T, FileObjectUpsertArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FileObjects.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectCountArgs} args - Arguments to filter FileObjects to count.
+     * @example
+     * // Count the number of FileObjects
+     * const count = await prisma.fileObject.count({
+     *   where: {
+     *     // ... the filter for the FileObjects we want to count
+     *   }
+     * })
+    **/
+    count<T extends FileObjectCountArgs>(
+      args?: Subset<T, FileObjectCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FileObjectCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FileObject.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FileObjectAggregateArgs>(args: Subset<T, FileObjectAggregateArgs>): Prisma.PrismaPromise<GetFileObjectAggregateType<T>>
+
+    /**
+     * Group by FileObject.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileObjectGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FileObjectGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FileObjectGroupByArgs['orderBy'] }
+        : { orderBy?: FileObjectGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FileObjectGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFileObjectGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FileObject model
+   */
+  readonly fields: FileObjectFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FileObject.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FileObjectClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    fileVersions<T extends FileObject$fileVersionsArgs<ExtArgs> = {}>(args?: Subset<T, FileObject$fileVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    attachments<T extends FileObject$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, FileObject$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FileObject model
+   */
+  interface FileObjectFieldRefs {
+    readonly id: FieldRef<"FileObject", 'String'>
+    readonly storageKey: FieldRef<"FileObject", 'String'>
+    readonly sizeBytes: FieldRef<"FileObject", 'Int'>
+    readonly sha256: FieldRef<"FileObject", 'String'>
+    readonly mimeType: FieldRef<"FileObject", 'String'>
+    readonly createdAt: FieldRef<"FileObject", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FileObject findUnique
+   */
+  export type FileObjectFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter, which FileObject to fetch.
+     */
+    where: FileObjectWhereUniqueInput
+  }
+
+  /**
+   * FileObject findUniqueOrThrow
+   */
+  export type FileObjectFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter, which FileObject to fetch.
+     */
+    where: FileObjectWhereUniqueInput
+  }
+
+  /**
+   * FileObject findFirst
+   */
+  export type FileObjectFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter, which FileObject to fetch.
+     */
+    where?: FileObjectWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileObjects to fetch.
+     */
+    orderBy?: FileObjectOrderByWithRelationInput | FileObjectOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileObjects.
+     */
+    cursor?: FileObjectWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileObjects from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileObjects.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileObjects.
+     */
+    distinct?: FileObjectScalarFieldEnum | FileObjectScalarFieldEnum[]
+  }
+
+  /**
+   * FileObject findFirstOrThrow
+   */
+  export type FileObjectFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter, which FileObject to fetch.
+     */
+    where?: FileObjectWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileObjects to fetch.
+     */
+    orderBy?: FileObjectOrderByWithRelationInput | FileObjectOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileObjects.
+     */
+    cursor?: FileObjectWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileObjects from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileObjects.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileObjects.
+     */
+    distinct?: FileObjectScalarFieldEnum | FileObjectScalarFieldEnum[]
+  }
+
+  /**
+   * FileObject findMany
+   */
+  export type FileObjectFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter, which FileObjects to fetch.
+     */
+    where?: FileObjectWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileObjects to fetch.
+     */
+    orderBy?: FileObjectOrderByWithRelationInput | FileObjectOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FileObjects.
+     */
+    cursor?: FileObjectWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileObjects from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileObjects.
+     */
+    skip?: number
+    distinct?: FileObjectScalarFieldEnum | FileObjectScalarFieldEnum[]
+  }
+
+  /**
+   * FileObject create
+   */
+  export type FileObjectCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FileObject.
+     */
+    data: XOR<FileObjectCreateInput, FileObjectUncheckedCreateInput>
+  }
+
+  /**
+   * FileObject createMany
+   */
+  export type FileObjectCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FileObjects.
+     */
+    data: FileObjectCreateManyInput | FileObjectCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileObject createManyAndReturn
+   */
+  export type FileObjectCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * The data used to create many FileObjects.
+     */
+    data: FileObjectCreateManyInput | FileObjectCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileObject update
+   */
+  export type FileObjectUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FileObject.
+     */
+    data: XOR<FileObjectUpdateInput, FileObjectUncheckedUpdateInput>
+    /**
+     * Choose, which FileObject to update.
+     */
+    where: FileObjectWhereUniqueInput
+  }
+
+  /**
+   * FileObject updateMany
+   */
+  export type FileObjectUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FileObjects.
+     */
+    data: XOR<FileObjectUpdateManyMutationInput, FileObjectUncheckedUpdateManyInput>
+    /**
+     * Filter which FileObjects to update
+     */
+    where?: FileObjectWhereInput
+    /**
+     * Limit how many FileObjects to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileObject updateManyAndReturn
+   */
+  export type FileObjectUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * The data used to update FileObjects.
+     */
+    data: XOR<FileObjectUpdateManyMutationInput, FileObjectUncheckedUpdateManyInput>
+    /**
+     * Filter which FileObjects to update
+     */
+    where?: FileObjectWhereInput
+    /**
+     * Limit how many FileObjects to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileObject upsert
+   */
+  export type FileObjectUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FileObject to update in case it exists.
+     */
+    where: FileObjectWhereUniqueInput
+    /**
+     * In case the FileObject found by the `where` argument doesn't exist, create a new FileObject with this data.
+     */
+    create: XOR<FileObjectCreateInput, FileObjectUncheckedCreateInput>
+    /**
+     * In case the FileObject was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FileObjectUpdateInput, FileObjectUncheckedUpdateInput>
+  }
+
+  /**
+   * FileObject delete
+   */
+  export type FileObjectDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+    /**
+     * Filter which FileObject to delete.
+     */
+    where: FileObjectWhereUniqueInput
+  }
+
+  /**
+   * FileObject deleteMany
+   */
+  export type FileObjectDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileObjects to delete
+     */
+    where?: FileObjectWhereInput
+    /**
+     * Limit how many FileObjects to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileObject.fileVersions
+   */
+  export type FileObject$fileVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    where?: FileVersionWhereInput
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    cursor?: FileVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * FileObject.attachments
+   */
+  export type FileObject$attachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    where?: AttachmentWhereInput
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    cursor?: AttachmentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AttachmentScalarFieldEnum | AttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * FileObject without action
+   */
+  export type FileObjectDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileObject
+     */
+    select?: FileObjectSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileObject
+     */
+    omit?: FileObjectOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileObjectInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FileAsset
+   */
+
+  export type AggregateFileAsset = {
+    _count: FileAssetCountAggregateOutputType | null
+    _min: FileAssetMinAggregateOutputType | null
+    _max: FileAssetMaxAggregateOutputType | null
+  }
+
+  export type FileAssetMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    category: $Enums.FileCategory | null
+    logicalName: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FileAssetMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    category: $Enums.FileCategory | null
+    logicalName: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type FileAssetCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    category: number
+    logicalName: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type FileAssetMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    category?: true
+    logicalName?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FileAssetMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    category?: true
+    logicalName?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type FileAssetCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    category?: true
+    logicalName?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type FileAssetAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileAsset to aggregate.
+     */
+    where?: FileAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAssets to fetch.
+     */
+    orderBy?: FileAssetOrderByWithRelationInput | FileAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FileAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FileAssets
+    **/
+    _count?: true | FileAssetCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FileAssetMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FileAssetMaxAggregateInputType
+  }
+
+  export type GetFileAssetAggregateType<T extends FileAssetAggregateArgs> = {
+        [P in keyof T & keyof AggregateFileAsset]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFileAsset[P]>
+      : GetScalarType<T[P], AggregateFileAsset[P]>
+  }
+
+
+
+
+  export type FileAssetGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileAssetWhereInput
+    orderBy?: FileAssetOrderByWithAggregationInput | FileAssetOrderByWithAggregationInput[]
+    by: FileAssetScalarFieldEnum[] | FileAssetScalarFieldEnum
+    having?: FileAssetScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FileAssetCountAggregateInputType | true
+    _min?: FileAssetMinAggregateInputType
+    _max?: FileAssetMaxAggregateInputType
+  }
+
+  export type FileAssetGroupByOutputType = {
+    id: string
+    workItemId: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt: Date
+    updatedAt: Date
+    _count: FileAssetCountAggregateOutputType | null
+    _min: FileAssetMinAggregateOutputType | null
+    _max: FileAssetMaxAggregateOutputType | null
+  }
+
+  type GetFileAssetGroupByPayload<T extends FileAssetGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FileAssetGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FileAssetGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FileAssetGroupByOutputType[P]>
+            : GetScalarType<T[P], FileAssetGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FileAssetSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    category?: boolean
+    logicalName?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    fileVersions?: boolean | FileAsset$fileVersionsArgs<ExtArgs>
+    _count?: boolean | FileAssetCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAsset"]>
+
+  export type FileAssetSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    category?: boolean
+    logicalName?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAsset"]>
+
+  export type FileAssetSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    category?: boolean
+    logicalName?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAsset"]>
+
+  export type FileAssetSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    category?: boolean
+    logicalName?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type FileAssetOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "category" | "logicalName" | "createdAt" | "updatedAt", ExtArgs["result"]["fileAsset"]>
+  export type FileAssetInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    fileVersions?: boolean | FileAsset$fileVersionsArgs<ExtArgs>
+    _count?: boolean | FileAssetCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type FileAssetIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }
+  export type FileAssetIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }
+
+  export type $FileAssetPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FileAsset"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      fileVersions: Prisma.$FileVersionPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      category: $Enums.FileCategory
+      /**
+       * Display/grouping name; never storage identity.
+       */
+      logicalName: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["fileAsset"]>
+    composites: {}
+  }
+
+  type FileAssetGetPayload<S extends boolean | null | undefined | FileAssetDefaultArgs> = $Result.GetResult<Prisma.$FileAssetPayload, S>
+
+  type FileAssetCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FileAssetFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FileAssetCountAggregateInputType | true
+    }
+
+  export interface FileAssetDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FileAsset'], meta: { name: 'FileAsset' } }
+    /**
+     * Find zero or one FileAsset that matches the filter.
+     * @param {FileAssetFindUniqueArgs} args - Arguments to find a FileAsset
+     * @example
+     * // Get one FileAsset
+     * const fileAsset = await prisma.fileAsset.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FileAssetFindUniqueArgs>(args: SelectSubset<T, FileAssetFindUniqueArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FileAsset that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FileAssetFindUniqueOrThrowArgs} args - Arguments to find a FileAsset
+     * @example
+     * // Get one FileAsset
+     * const fileAsset = await prisma.fileAsset.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FileAssetFindUniqueOrThrowArgs>(args: SelectSubset<T, FileAssetFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileAsset that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetFindFirstArgs} args - Arguments to find a FileAsset
+     * @example
+     * // Get one FileAsset
+     * const fileAsset = await prisma.fileAsset.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FileAssetFindFirstArgs>(args?: SelectSubset<T, FileAssetFindFirstArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileAsset that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetFindFirstOrThrowArgs} args - Arguments to find a FileAsset
+     * @example
+     * // Get one FileAsset
+     * const fileAsset = await prisma.fileAsset.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FileAssetFindFirstOrThrowArgs>(args?: SelectSubset<T, FileAssetFindFirstOrThrowArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FileAssets that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FileAssets
+     * const fileAssets = await prisma.fileAsset.findMany()
+     * 
+     * // Get first 10 FileAssets
+     * const fileAssets = await prisma.fileAsset.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fileAssetWithIdOnly = await prisma.fileAsset.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FileAssetFindManyArgs>(args?: SelectSubset<T, FileAssetFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FileAsset.
+     * @param {FileAssetCreateArgs} args - Arguments to create a FileAsset.
+     * @example
+     * // Create one FileAsset
+     * const FileAsset = await prisma.fileAsset.create({
+     *   data: {
+     *     // ... data to create a FileAsset
+     *   }
+     * })
+     * 
+     */
+    create<T extends FileAssetCreateArgs>(args: SelectSubset<T, FileAssetCreateArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FileAssets.
+     * @param {FileAssetCreateManyArgs} args - Arguments to create many FileAssets.
+     * @example
+     * // Create many FileAssets
+     * const fileAsset = await prisma.fileAsset.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FileAssetCreateManyArgs>(args?: SelectSubset<T, FileAssetCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FileAssets and returns the data saved in the database.
+     * @param {FileAssetCreateManyAndReturnArgs} args - Arguments to create many FileAssets.
+     * @example
+     * // Create many FileAssets
+     * const fileAsset = await prisma.fileAsset.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FileAssets and only return the `id`
+     * const fileAssetWithIdOnly = await prisma.fileAsset.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FileAssetCreateManyAndReturnArgs>(args?: SelectSubset<T, FileAssetCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FileAsset.
+     * @param {FileAssetDeleteArgs} args - Arguments to delete one FileAsset.
+     * @example
+     * // Delete one FileAsset
+     * const FileAsset = await prisma.fileAsset.delete({
+     *   where: {
+     *     // ... filter to delete one FileAsset
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FileAssetDeleteArgs>(args: SelectSubset<T, FileAssetDeleteArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FileAsset.
+     * @param {FileAssetUpdateArgs} args - Arguments to update one FileAsset.
+     * @example
+     * // Update one FileAsset
+     * const fileAsset = await prisma.fileAsset.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FileAssetUpdateArgs>(args: SelectSubset<T, FileAssetUpdateArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FileAssets.
+     * @param {FileAssetDeleteManyArgs} args - Arguments to filter FileAssets to delete.
+     * @example
+     * // Delete a few FileAssets
+     * const { count } = await prisma.fileAsset.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FileAssetDeleteManyArgs>(args?: SelectSubset<T, FileAssetDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileAssets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FileAssets
+     * const fileAsset = await prisma.fileAsset.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FileAssetUpdateManyArgs>(args: SelectSubset<T, FileAssetUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileAssets and returns the data updated in the database.
+     * @param {FileAssetUpdateManyAndReturnArgs} args - Arguments to update many FileAssets.
+     * @example
+     * // Update many FileAssets
+     * const fileAsset = await prisma.fileAsset.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FileAssets and only return the `id`
+     * const fileAssetWithIdOnly = await prisma.fileAsset.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FileAssetUpdateManyAndReturnArgs>(args: SelectSubset<T, FileAssetUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FileAsset.
+     * @param {FileAssetUpsertArgs} args - Arguments to update or create a FileAsset.
+     * @example
+     * // Update or create a FileAsset
+     * const fileAsset = await prisma.fileAsset.upsert({
+     *   create: {
+     *     // ... data to create a FileAsset
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FileAsset we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FileAssetUpsertArgs>(args: SelectSubset<T, FileAssetUpsertArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FileAssets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetCountArgs} args - Arguments to filter FileAssets to count.
+     * @example
+     * // Count the number of FileAssets
+     * const count = await prisma.fileAsset.count({
+     *   where: {
+     *     // ... the filter for the FileAssets we want to count
+     *   }
+     * })
+    **/
+    count<T extends FileAssetCountArgs>(
+      args?: Subset<T, FileAssetCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FileAssetCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FileAsset.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FileAssetAggregateArgs>(args: Subset<T, FileAssetAggregateArgs>): Prisma.PrismaPromise<GetFileAssetAggregateType<T>>
+
+    /**
+     * Group by FileAsset.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAssetGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FileAssetGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FileAssetGroupByArgs['orderBy'] }
+        : { orderBy?: FileAssetGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FileAssetGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFileAssetGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FileAsset model
+   */
+  readonly fields: FileAssetFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FileAsset.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FileAssetClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    fileVersions<T extends FileAsset$fileVersionsArgs<ExtArgs> = {}>(args?: Subset<T, FileAsset$fileVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FileAsset model
+   */
+  interface FileAssetFieldRefs {
+    readonly id: FieldRef<"FileAsset", 'String'>
+    readonly workItemId: FieldRef<"FileAsset", 'String'>
+    readonly category: FieldRef<"FileAsset", 'FileCategory'>
+    readonly logicalName: FieldRef<"FileAsset", 'String'>
+    readonly createdAt: FieldRef<"FileAsset", 'DateTime'>
+    readonly updatedAt: FieldRef<"FileAsset", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FileAsset findUnique
+   */
+  export type FileAssetFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAsset to fetch.
+     */
+    where: FileAssetWhereUniqueInput
+  }
+
+  /**
+   * FileAsset findUniqueOrThrow
+   */
+  export type FileAssetFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAsset to fetch.
+     */
+    where: FileAssetWhereUniqueInput
+  }
+
+  /**
+   * FileAsset findFirst
+   */
+  export type FileAssetFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAsset to fetch.
+     */
+    where?: FileAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAssets to fetch.
+     */
+    orderBy?: FileAssetOrderByWithRelationInput | FileAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileAssets.
+     */
+    cursor?: FileAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileAssets.
+     */
+    distinct?: FileAssetScalarFieldEnum | FileAssetScalarFieldEnum[]
+  }
+
+  /**
+   * FileAsset findFirstOrThrow
+   */
+  export type FileAssetFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAsset to fetch.
+     */
+    where?: FileAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAssets to fetch.
+     */
+    orderBy?: FileAssetOrderByWithRelationInput | FileAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileAssets.
+     */
+    cursor?: FileAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAssets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileAssets.
+     */
+    distinct?: FileAssetScalarFieldEnum | FileAssetScalarFieldEnum[]
+  }
+
+  /**
+   * FileAsset findMany
+   */
+  export type FileAssetFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAssets to fetch.
+     */
+    where?: FileAssetWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAssets to fetch.
+     */
+    orderBy?: FileAssetOrderByWithRelationInput | FileAssetOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FileAssets.
+     */
+    cursor?: FileAssetWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAssets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAssets.
+     */
+    skip?: number
+    distinct?: FileAssetScalarFieldEnum | FileAssetScalarFieldEnum[]
+  }
+
+  /**
+   * FileAsset create
+   */
+  export type FileAssetCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FileAsset.
+     */
+    data: XOR<FileAssetCreateInput, FileAssetUncheckedCreateInput>
+  }
+
+  /**
+   * FileAsset createMany
+   */
+  export type FileAssetCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FileAssets.
+     */
+    data: FileAssetCreateManyInput | FileAssetCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileAsset createManyAndReturn
+   */
+  export type FileAssetCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * The data used to create many FileAssets.
+     */
+    data: FileAssetCreateManyInput | FileAssetCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileAsset update
+   */
+  export type FileAssetUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FileAsset.
+     */
+    data: XOR<FileAssetUpdateInput, FileAssetUncheckedUpdateInput>
+    /**
+     * Choose, which FileAsset to update.
+     */
+    where: FileAssetWhereUniqueInput
+  }
+
+  /**
+   * FileAsset updateMany
+   */
+  export type FileAssetUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FileAssets.
+     */
+    data: XOR<FileAssetUpdateManyMutationInput, FileAssetUncheckedUpdateManyInput>
+    /**
+     * Filter which FileAssets to update
+     */
+    where?: FileAssetWhereInput
+    /**
+     * Limit how many FileAssets to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileAsset updateManyAndReturn
+   */
+  export type FileAssetUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * The data used to update FileAssets.
+     */
+    data: XOR<FileAssetUpdateManyMutationInput, FileAssetUncheckedUpdateManyInput>
+    /**
+     * Filter which FileAssets to update
+     */
+    where?: FileAssetWhereInput
+    /**
+     * Limit how many FileAssets to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileAsset upsert
+   */
+  export type FileAssetUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FileAsset to update in case it exists.
+     */
+    where: FileAssetWhereUniqueInput
+    /**
+     * In case the FileAsset found by the `where` argument doesn't exist, create a new FileAsset with this data.
+     */
+    create: XOR<FileAssetCreateInput, FileAssetUncheckedCreateInput>
+    /**
+     * In case the FileAsset was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FileAssetUpdateInput, FileAssetUncheckedUpdateInput>
+  }
+
+  /**
+   * FileAsset delete
+   */
+  export type FileAssetDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+    /**
+     * Filter which FileAsset to delete.
+     */
+    where: FileAssetWhereUniqueInput
+  }
+
+  /**
+   * FileAsset deleteMany
+   */
+  export type FileAssetDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileAssets to delete
+     */
+    where?: FileAssetWhereInput
+    /**
+     * Limit how many FileAssets to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileAsset.fileVersions
+   */
+  export type FileAsset$fileVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    where?: FileVersionWhereInput
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    cursor?: FileVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * FileAsset without action
+   */
+  export type FileAssetDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAsset
+     */
+    select?: FileAssetSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAsset
+     */
+    omit?: FileAssetOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAssetInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FileVersion
+   */
+
+  export type AggregateFileVersion = {
+    _count: FileVersionCountAggregateOutputType | null
+    _avg: FileVersionAvgAggregateOutputType | null
+    _sum: FileVersionSumAggregateOutputType | null
+    _min: FileVersionMinAggregateOutputType | null
+    _max: FileVersionMaxAggregateOutputType | null
+  }
+
+  export type FileVersionAvgAggregateOutputType = {
+    versionNumber: number | null
+  }
+
+  export type FileVersionSumAggregateOutputType = {
+    versionNumber: number | null
+  }
+
+  export type FileVersionMinAggregateOutputType = {
+    id: string | null
+    fileAssetId: string | null
+    fileObjectId: string | null
+    versionNumber: number | null
+    originalName: string | null
+    uploadedById: string | null
+    note: string | null
+    status: $Enums.FileLifecycleStatus | null
+    approved: boolean | null
+    createdAt: Date | null
+  }
+
+  export type FileVersionMaxAggregateOutputType = {
+    id: string | null
+    fileAssetId: string | null
+    fileObjectId: string | null
+    versionNumber: number | null
+    originalName: string | null
+    uploadedById: string | null
+    note: string | null
+    status: $Enums.FileLifecycleStatus | null
+    approved: boolean | null
+    createdAt: Date | null
+  }
+
+  export type FileVersionCountAggregateOutputType = {
+    id: number
+    fileAssetId: number
+    fileObjectId: number
+    versionNumber: number
+    originalName: number
+    uploadedById: number
+    note: number
+    status: number
+    approved: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type FileVersionAvgAggregateInputType = {
+    versionNumber?: true
+  }
+
+  export type FileVersionSumAggregateInputType = {
+    versionNumber?: true
+  }
+
+  export type FileVersionMinAggregateInputType = {
+    id?: true
+    fileAssetId?: true
+    fileObjectId?: true
+    versionNumber?: true
+    originalName?: true
+    uploadedById?: true
+    note?: true
+    status?: true
+    approved?: true
+    createdAt?: true
+  }
+
+  export type FileVersionMaxAggregateInputType = {
+    id?: true
+    fileAssetId?: true
+    fileObjectId?: true
+    versionNumber?: true
+    originalName?: true
+    uploadedById?: true
+    note?: true
+    status?: true
+    approved?: true
+    createdAt?: true
+  }
+
+  export type FileVersionCountAggregateInputType = {
+    id?: true
+    fileAssetId?: true
+    fileObjectId?: true
+    versionNumber?: true
+    originalName?: true
+    uploadedById?: true
+    note?: true
+    status?: true
+    approved?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type FileVersionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileVersion to aggregate.
+     */
+    where?: FileVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileVersions to fetch.
+     */
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FileVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FileVersions
+    **/
+    _count?: true | FileVersionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FileVersionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FileVersionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FileVersionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FileVersionMaxAggregateInputType
+  }
+
+  export type GetFileVersionAggregateType<T extends FileVersionAggregateArgs> = {
+        [P in keyof T & keyof AggregateFileVersion]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFileVersion[P]>
+      : GetScalarType<T[P], AggregateFileVersion[P]>
+  }
+
+
+
+
+  export type FileVersionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileVersionWhereInput
+    orderBy?: FileVersionOrderByWithAggregationInput | FileVersionOrderByWithAggregationInput[]
+    by: FileVersionScalarFieldEnum[] | FileVersionScalarFieldEnum
+    having?: FileVersionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FileVersionCountAggregateInputType | true
+    _avg?: FileVersionAvgAggregateInputType
+    _sum?: FileVersionSumAggregateInputType
+    _min?: FileVersionMinAggregateInputType
+    _max?: FileVersionMaxAggregateInputType
+  }
+
+  export type FileVersionGroupByOutputType = {
+    id: string
+    fileAssetId: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note: string | null
+    status: $Enums.FileLifecycleStatus
+    approved: boolean
+    createdAt: Date
+    _count: FileVersionCountAggregateOutputType | null
+    _avg: FileVersionAvgAggregateOutputType | null
+    _sum: FileVersionSumAggregateOutputType | null
+    _min: FileVersionMinAggregateOutputType | null
+    _max: FileVersionMaxAggregateOutputType | null
+  }
+
+  type GetFileVersionGroupByPayload<T extends FileVersionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FileVersionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FileVersionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FileVersionGroupByOutputType[P]>
+            : GetScalarType<T[P], FileVersionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FileVersionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileAssetId?: boolean
+    fileObjectId?: boolean
+    versionNumber?: boolean
+    originalName?: boolean
+    uploadedById?: boolean
+    note?: boolean
+    status?: boolean
+    approved?: boolean
+    createdAt?: boolean
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileVersion"]>
+
+  export type FileVersionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileAssetId?: boolean
+    fileObjectId?: boolean
+    versionNumber?: boolean
+    originalName?: boolean
+    uploadedById?: boolean
+    note?: boolean
+    status?: boolean
+    approved?: boolean
+    createdAt?: boolean
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileVersion"]>
+
+  export type FileVersionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileAssetId?: boolean
+    fileObjectId?: boolean
+    versionNumber?: boolean
+    originalName?: boolean
+    uploadedById?: boolean
+    note?: boolean
+    status?: boolean
+    approved?: boolean
+    createdAt?: boolean
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileVersion"]>
+
+  export type FileVersionSelectScalar = {
+    id?: boolean
+    fileAssetId?: boolean
+    fileObjectId?: boolean
+    versionNumber?: boolean
+    originalName?: boolean
+    uploadedById?: boolean
+    note?: boolean
+    status?: boolean
+    approved?: boolean
+    createdAt?: boolean
+  }
+
+  export type FileVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fileAssetId" | "fileObjectId" | "versionNumber" | "originalName" | "uploadedById" | "note" | "status" | "approved" | "createdAt", ExtArgs["result"]["fileVersion"]>
+  export type FileVersionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileVersionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileVersionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileAsset?: boolean | FileAssetDefaultArgs<ExtArgs>
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    uploadedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $FileVersionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FileVersion"
+    objects: {
+      fileAsset: Prisma.$FileAssetPayload<ExtArgs>
+      fileObject: Prisma.$FileObjectPayload<ExtArgs>
+      uploadedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      fileAssetId: string
+      fileObjectId: string
+      /**
+       * Unique per FileAsset, starts at 1, monotonic under concurrency.
+       */
+      versionNumber: number
+      /**
+       * Display filename; validated, no path traversal.
+       */
+      originalName: string
+      uploadedById: string
+      /**
+       * Optional upload note.
+       */
+      note: string | null
+      status: $Enums.FileLifecycleStatus
+      /**
+       * Set only through markApproved; approval owner is 013.
+       */
+      approved: boolean
+      createdAt: Date
+    }, ExtArgs["result"]["fileVersion"]>
+    composites: {}
+  }
+
+  type FileVersionGetPayload<S extends boolean | null | undefined | FileVersionDefaultArgs> = $Result.GetResult<Prisma.$FileVersionPayload, S>
+
+  type FileVersionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FileVersionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FileVersionCountAggregateInputType | true
+    }
+
+  export interface FileVersionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FileVersion'], meta: { name: 'FileVersion' } }
+    /**
+     * Find zero or one FileVersion that matches the filter.
+     * @param {FileVersionFindUniqueArgs} args - Arguments to find a FileVersion
+     * @example
+     * // Get one FileVersion
+     * const fileVersion = await prisma.fileVersion.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FileVersionFindUniqueArgs>(args: SelectSubset<T, FileVersionFindUniqueArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FileVersion that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FileVersionFindUniqueOrThrowArgs} args - Arguments to find a FileVersion
+     * @example
+     * // Get one FileVersion
+     * const fileVersion = await prisma.fileVersion.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FileVersionFindUniqueOrThrowArgs>(args: SelectSubset<T, FileVersionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileVersion that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionFindFirstArgs} args - Arguments to find a FileVersion
+     * @example
+     * // Get one FileVersion
+     * const fileVersion = await prisma.fileVersion.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FileVersionFindFirstArgs>(args?: SelectSubset<T, FileVersionFindFirstArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileVersion that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionFindFirstOrThrowArgs} args - Arguments to find a FileVersion
+     * @example
+     * // Get one FileVersion
+     * const fileVersion = await prisma.fileVersion.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FileVersionFindFirstOrThrowArgs>(args?: SelectSubset<T, FileVersionFindFirstOrThrowArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FileVersions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FileVersions
+     * const fileVersions = await prisma.fileVersion.findMany()
+     * 
+     * // Get first 10 FileVersions
+     * const fileVersions = await prisma.fileVersion.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fileVersionWithIdOnly = await prisma.fileVersion.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FileVersionFindManyArgs>(args?: SelectSubset<T, FileVersionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FileVersion.
+     * @param {FileVersionCreateArgs} args - Arguments to create a FileVersion.
+     * @example
+     * // Create one FileVersion
+     * const FileVersion = await prisma.fileVersion.create({
+     *   data: {
+     *     // ... data to create a FileVersion
+     *   }
+     * })
+     * 
+     */
+    create<T extends FileVersionCreateArgs>(args: SelectSubset<T, FileVersionCreateArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FileVersions.
+     * @param {FileVersionCreateManyArgs} args - Arguments to create many FileVersions.
+     * @example
+     * // Create many FileVersions
+     * const fileVersion = await prisma.fileVersion.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FileVersionCreateManyArgs>(args?: SelectSubset<T, FileVersionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FileVersions and returns the data saved in the database.
+     * @param {FileVersionCreateManyAndReturnArgs} args - Arguments to create many FileVersions.
+     * @example
+     * // Create many FileVersions
+     * const fileVersion = await prisma.fileVersion.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FileVersions and only return the `id`
+     * const fileVersionWithIdOnly = await prisma.fileVersion.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FileVersionCreateManyAndReturnArgs>(args?: SelectSubset<T, FileVersionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FileVersion.
+     * @param {FileVersionDeleteArgs} args - Arguments to delete one FileVersion.
+     * @example
+     * // Delete one FileVersion
+     * const FileVersion = await prisma.fileVersion.delete({
+     *   where: {
+     *     // ... filter to delete one FileVersion
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FileVersionDeleteArgs>(args: SelectSubset<T, FileVersionDeleteArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FileVersion.
+     * @param {FileVersionUpdateArgs} args - Arguments to update one FileVersion.
+     * @example
+     * // Update one FileVersion
+     * const fileVersion = await prisma.fileVersion.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FileVersionUpdateArgs>(args: SelectSubset<T, FileVersionUpdateArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FileVersions.
+     * @param {FileVersionDeleteManyArgs} args - Arguments to filter FileVersions to delete.
+     * @example
+     * // Delete a few FileVersions
+     * const { count } = await prisma.fileVersion.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FileVersionDeleteManyArgs>(args?: SelectSubset<T, FileVersionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FileVersions
+     * const fileVersion = await prisma.fileVersion.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FileVersionUpdateManyArgs>(args: SelectSubset<T, FileVersionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileVersions and returns the data updated in the database.
+     * @param {FileVersionUpdateManyAndReturnArgs} args - Arguments to update many FileVersions.
+     * @example
+     * // Update many FileVersions
+     * const fileVersion = await prisma.fileVersion.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FileVersions and only return the `id`
+     * const fileVersionWithIdOnly = await prisma.fileVersion.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FileVersionUpdateManyAndReturnArgs>(args: SelectSubset<T, FileVersionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FileVersion.
+     * @param {FileVersionUpsertArgs} args - Arguments to update or create a FileVersion.
+     * @example
+     * // Update or create a FileVersion
+     * const fileVersion = await prisma.fileVersion.upsert({
+     *   create: {
+     *     // ... data to create a FileVersion
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FileVersion we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FileVersionUpsertArgs>(args: SelectSubset<T, FileVersionUpsertArgs<ExtArgs>>): Prisma__FileVersionClient<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FileVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionCountArgs} args - Arguments to filter FileVersions to count.
+     * @example
+     * // Count the number of FileVersions
+     * const count = await prisma.fileVersion.count({
+     *   where: {
+     *     // ... the filter for the FileVersions we want to count
+     *   }
+     * })
+    **/
+    count<T extends FileVersionCountArgs>(
+      args?: Subset<T, FileVersionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FileVersionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FileVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FileVersionAggregateArgs>(args: Subset<T, FileVersionAggregateArgs>): Prisma.PrismaPromise<GetFileVersionAggregateType<T>>
+
+    /**
+     * Group by FileVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileVersionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FileVersionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FileVersionGroupByArgs['orderBy'] }
+        : { orderBy?: FileVersionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FileVersionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFileVersionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FileVersion model
+   */
+  readonly fields: FileVersionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FileVersion.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FileVersionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    fileAsset<T extends FileAssetDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FileAssetDefaultArgs<ExtArgs>>): Prisma__FileAssetClient<$Result.GetResult<Prisma.$FileAssetPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    fileObject<T extends FileObjectDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FileObjectDefaultArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    uploadedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FileVersion model
+   */
+  interface FileVersionFieldRefs {
+    readonly id: FieldRef<"FileVersion", 'String'>
+    readonly fileAssetId: FieldRef<"FileVersion", 'String'>
+    readonly fileObjectId: FieldRef<"FileVersion", 'String'>
+    readonly versionNumber: FieldRef<"FileVersion", 'Int'>
+    readonly originalName: FieldRef<"FileVersion", 'String'>
+    readonly uploadedById: FieldRef<"FileVersion", 'String'>
+    readonly note: FieldRef<"FileVersion", 'String'>
+    readonly status: FieldRef<"FileVersion", 'FileLifecycleStatus'>
+    readonly approved: FieldRef<"FileVersion", 'Boolean'>
+    readonly createdAt: FieldRef<"FileVersion", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FileVersion findUnique
+   */
+  export type FileVersionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which FileVersion to fetch.
+     */
+    where: FileVersionWhereUniqueInput
+  }
+
+  /**
+   * FileVersion findUniqueOrThrow
+   */
+  export type FileVersionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which FileVersion to fetch.
+     */
+    where: FileVersionWhereUniqueInput
+  }
+
+  /**
+   * FileVersion findFirst
+   */
+  export type FileVersionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which FileVersion to fetch.
+     */
+    where?: FileVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileVersions to fetch.
+     */
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileVersions.
+     */
+    cursor?: FileVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileVersions.
+     */
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * FileVersion findFirstOrThrow
+   */
+  export type FileVersionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which FileVersion to fetch.
+     */
+    where?: FileVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileVersions to fetch.
+     */
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileVersions.
+     */
+    cursor?: FileVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileVersions.
+     */
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * FileVersion findMany
+   */
+  export type FileVersionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which FileVersions to fetch.
+     */
+    where?: FileVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileVersions to fetch.
+     */
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FileVersions.
+     */
+    cursor?: FileVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileVersions.
+     */
+    skip?: number
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * FileVersion create
+   */
+  export type FileVersionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FileVersion.
+     */
+    data: XOR<FileVersionCreateInput, FileVersionUncheckedCreateInput>
+  }
+
+  /**
+   * FileVersion createMany
+   */
+  export type FileVersionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FileVersions.
+     */
+    data: FileVersionCreateManyInput | FileVersionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileVersion createManyAndReturn
+   */
+  export type FileVersionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * The data used to create many FileVersions.
+     */
+    data: FileVersionCreateManyInput | FileVersionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileVersion update
+   */
+  export type FileVersionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FileVersion.
+     */
+    data: XOR<FileVersionUpdateInput, FileVersionUncheckedUpdateInput>
+    /**
+     * Choose, which FileVersion to update.
+     */
+    where: FileVersionWhereUniqueInput
+  }
+
+  /**
+   * FileVersion updateMany
+   */
+  export type FileVersionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FileVersions.
+     */
+    data: XOR<FileVersionUpdateManyMutationInput, FileVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which FileVersions to update
+     */
+    where?: FileVersionWhereInput
+    /**
+     * Limit how many FileVersions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileVersion updateManyAndReturn
+   */
+  export type FileVersionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * The data used to update FileVersions.
+     */
+    data: XOR<FileVersionUpdateManyMutationInput, FileVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which FileVersions to update
+     */
+    where?: FileVersionWhereInput
+    /**
+     * Limit how many FileVersions to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileVersion upsert
+   */
+  export type FileVersionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FileVersion to update in case it exists.
+     */
+    where: FileVersionWhereUniqueInput
+    /**
+     * In case the FileVersion found by the `where` argument doesn't exist, create a new FileVersion with this data.
+     */
+    create: XOR<FileVersionCreateInput, FileVersionUncheckedCreateInput>
+    /**
+     * In case the FileVersion was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FileVersionUpdateInput, FileVersionUncheckedUpdateInput>
+  }
+
+  /**
+   * FileVersion delete
+   */
+  export type FileVersionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    /**
+     * Filter which FileVersion to delete.
+     */
+    where: FileVersionWhereUniqueInput
+  }
+
+  /**
+   * FileVersion deleteMany
+   */
+  export type FileVersionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileVersions to delete
+     */
+    where?: FileVersionWhereInput
+    /**
+     * Limit how many FileVersions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileVersion without action
+   */
+  export type FileVersionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Attachment
+   */
+
+  export type AggregateAttachment = {
+    _count: AttachmentCountAggregateOutputType | null
+    _min: AttachmentMinAggregateOutputType | null
+    _max: AttachmentMaxAggregateOutputType | null
+  }
+
+  export type AttachmentMinAggregateOutputType = {
+    id: string | null
+    fileObjectId: string | null
+    entityType: string | null
+    entityId: string | null
+    originalName: string | null
+    kind: $Enums.AttachmentKind | null
+    createdById: string | null
+    status: $Enums.FileLifecycleStatus | null
+    createdAt: Date | null
+  }
+
+  export type AttachmentMaxAggregateOutputType = {
+    id: string | null
+    fileObjectId: string | null
+    entityType: string | null
+    entityId: string | null
+    originalName: string | null
+    kind: $Enums.AttachmentKind | null
+    createdById: string | null
+    status: $Enums.FileLifecycleStatus | null
+    createdAt: Date | null
+  }
+
+  export type AttachmentCountAggregateOutputType = {
+    id: number
+    fileObjectId: number
+    entityType: number
+    entityId: number
+    originalName: number
+    kind: number
+    createdById: number
+    status: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type AttachmentMinAggregateInputType = {
+    id?: true
+    fileObjectId?: true
+    entityType?: true
+    entityId?: true
+    originalName?: true
+    kind?: true
+    createdById?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type AttachmentMaxAggregateInputType = {
+    id?: true
+    fileObjectId?: true
+    entityType?: true
+    entityId?: true
+    originalName?: true
+    kind?: true
+    createdById?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type AttachmentCountAggregateInputType = {
+    id?: true
+    fileObjectId?: true
+    entityType?: true
+    entityId?: true
+    originalName?: true
+    kind?: true
+    createdById?: true
+    status?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type AttachmentAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Attachment to aggregate.
+     */
+    where?: AttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attachments to fetch.
+     */
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Attachments
+    **/
+    _count?: true | AttachmentCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AttachmentMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AttachmentMaxAggregateInputType
+  }
+
+  export type GetAttachmentAggregateType<T extends AttachmentAggregateArgs> = {
+        [P in keyof T & keyof AggregateAttachment]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAttachment[P]>
+      : GetScalarType<T[P], AggregateAttachment[P]>
+  }
+
+
+
+
+  export type AttachmentGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttachmentWhereInput
+    orderBy?: AttachmentOrderByWithAggregationInput | AttachmentOrderByWithAggregationInput[]
+    by: AttachmentScalarFieldEnum[] | AttachmentScalarFieldEnum
+    having?: AttachmentScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AttachmentCountAggregateInputType | true
+    _min?: AttachmentMinAggregateInputType
+    _max?: AttachmentMaxAggregateInputType
+  }
+
+  export type AttachmentGroupByOutputType = {
+    id: string
+    fileObjectId: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    createdById: string
+    status: $Enums.FileLifecycleStatus
+    createdAt: Date
+    _count: AttachmentCountAggregateOutputType | null
+    _min: AttachmentMinAggregateOutputType | null
+    _max: AttachmentMaxAggregateOutputType | null
+  }
+
+  type GetAttachmentGroupByPayload<T extends AttachmentGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AttachmentGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AttachmentGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AttachmentGroupByOutputType[P]>
+            : GetScalarType<T[P], AttachmentGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AttachmentSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileObjectId?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    originalName?: boolean
+    kind?: boolean
+    createdById?: boolean
+    status?: boolean
+    createdAt?: boolean
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attachment"]>
+
+  export type AttachmentSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileObjectId?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    originalName?: boolean
+    kind?: boolean
+    createdById?: boolean
+    status?: boolean
+    createdAt?: boolean
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attachment"]>
+
+  export type AttachmentSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    fileObjectId?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    originalName?: boolean
+    kind?: boolean
+    createdById?: boolean
+    status?: boolean
+    createdAt?: boolean
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attachment"]>
+
+  export type AttachmentSelectScalar = {
+    id?: boolean
+    fileObjectId?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    originalName?: boolean
+    kind?: boolean
+    createdById?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }
+
+  export type AttachmentOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "fileObjectId" | "entityType" | "entityId" | "originalName" | "kind" | "createdById" | "status" | "createdAt", ExtArgs["result"]["attachment"]>
+  export type AttachmentInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AttachmentIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AttachmentIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    fileObject?: boolean | FileObjectDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $AttachmentPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Attachment"
+    objects: {
+      fileObject: Prisma.$FileObjectPayload<ExtArgs>
+      createdBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      fileObjectId: string
+      /**
+       * Rejection, discrepancy, expense, audit event, message, or future configured target.
+       */
+      entityType: string
+      /**
+       * Target identifier; polymorphic and authorized by owning feature.
+       */
+      entityId: string
+      /**
+       * Display name.
+       */
+      originalName: string
+      kind: $Enums.AttachmentKind
+      createdById: string
+      status: $Enums.FileLifecycleStatus
+      createdAt: Date
+    }, ExtArgs["result"]["attachment"]>
+    composites: {}
+  }
+
+  type AttachmentGetPayload<S extends boolean | null | undefined | AttachmentDefaultArgs> = $Result.GetResult<Prisma.$AttachmentPayload, S>
+
+  type AttachmentCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AttachmentFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AttachmentCountAggregateInputType | true
+    }
+
+  export interface AttachmentDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Attachment'], meta: { name: 'Attachment' } }
+    /**
+     * Find zero or one Attachment that matches the filter.
+     * @param {AttachmentFindUniqueArgs} args - Arguments to find a Attachment
+     * @example
+     * // Get one Attachment
+     * const attachment = await prisma.attachment.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AttachmentFindUniqueArgs>(args: SelectSubset<T, AttachmentFindUniqueArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Attachment that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AttachmentFindUniqueOrThrowArgs} args - Arguments to find a Attachment
+     * @example
+     * // Get one Attachment
+     * const attachment = await prisma.attachment.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AttachmentFindUniqueOrThrowArgs>(args: SelectSubset<T, AttachmentFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Attachment that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentFindFirstArgs} args - Arguments to find a Attachment
+     * @example
+     * // Get one Attachment
+     * const attachment = await prisma.attachment.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AttachmentFindFirstArgs>(args?: SelectSubset<T, AttachmentFindFirstArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Attachment that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentFindFirstOrThrowArgs} args - Arguments to find a Attachment
+     * @example
+     * // Get one Attachment
+     * const attachment = await prisma.attachment.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AttachmentFindFirstOrThrowArgs>(args?: SelectSubset<T, AttachmentFindFirstOrThrowArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Attachments that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Attachments
+     * const attachments = await prisma.attachment.findMany()
+     * 
+     * // Get first 10 Attachments
+     * const attachments = await prisma.attachment.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const attachmentWithIdOnly = await prisma.attachment.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AttachmentFindManyArgs>(args?: SelectSubset<T, AttachmentFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Attachment.
+     * @param {AttachmentCreateArgs} args - Arguments to create a Attachment.
+     * @example
+     * // Create one Attachment
+     * const Attachment = await prisma.attachment.create({
+     *   data: {
+     *     // ... data to create a Attachment
+     *   }
+     * })
+     * 
+     */
+    create<T extends AttachmentCreateArgs>(args: SelectSubset<T, AttachmentCreateArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Attachments.
+     * @param {AttachmentCreateManyArgs} args - Arguments to create many Attachments.
+     * @example
+     * // Create many Attachments
+     * const attachment = await prisma.attachment.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AttachmentCreateManyArgs>(args?: SelectSubset<T, AttachmentCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Attachments and returns the data saved in the database.
+     * @param {AttachmentCreateManyAndReturnArgs} args - Arguments to create many Attachments.
+     * @example
+     * // Create many Attachments
+     * const attachment = await prisma.attachment.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Attachments and only return the `id`
+     * const attachmentWithIdOnly = await prisma.attachment.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AttachmentCreateManyAndReturnArgs>(args?: SelectSubset<T, AttachmentCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Attachment.
+     * @param {AttachmentDeleteArgs} args - Arguments to delete one Attachment.
+     * @example
+     * // Delete one Attachment
+     * const Attachment = await prisma.attachment.delete({
+     *   where: {
+     *     // ... filter to delete one Attachment
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AttachmentDeleteArgs>(args: SelectSubset<T, AttachmentDeleteArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Attachment.
+     * @param {AttachmentUpdateArgs} args - Arguments to update one Attachment.
+     * @example
+     * // Update one Attachment
+     * const attachment = await prisma.attachment.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AttachmentUpdateArgs>(args: SelectSubset<T, AttachmentUpdateArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Attachments.
+     * @param {AttachmentDeleteManyArgs} args - Arguments to filter Attachments to delete.
+     * @example
+     * // Delete a few Attachments
+     * const { count } = await prisma.attachment.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AttachmentDeleteManyArgs>(args?: SelectSubset<T, AttachmentDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Attachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Attachments
+     * const attachment = await prisma.attachment.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AttachmentUpdateManyArgs>(args: SelectSubset<T, AttachmentUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Attachments and returns the data updated in the database.
+     * @param {AttachmentUpdateManyAndReturnArgs} args - Arguments to update many Attachments.
+     * @example
+     * // Update many Attachments
+     * const attachment = await prisma.attachment.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Attachments and only return the `id`
+     * const attachmentWithIdOnly = await prisma.attachment.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AttachmentUpdateManyAndReturnArgs>(args: SelectSubset<T, AttachmentUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Attachment.
+     * @param {AttachmentUpsertArgs} args - Arguments to update or create a Attachment.
+     * @example
+     * // Update or create a Attachment
+     * const attachment = await prisma.attachment.upsert({
+     *   create: {
+     *     // ... data to create a Attachment
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Attachment we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AttachmentUpsertArgs>(args: SelectSubset<T, AttachmentUpsertArgs<ExtArgs>>): Prisma__AttachmentClient<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Attachments.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentCountArgs} args - Arguments to filter Attachments to count.
+     * @example
+     * // Count the number of Attachments
+     * const count = await prisma.attachment.count({
+     *   where: {
+     *     // ... the filter for the Attachments we want to count
+     *   }
+     * })
+    **/
+    count<T extends AttachmentCountArgs>(
+      args?: Subset<T, AttachmentCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AttachmentCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Attachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AttachmentAggregateArgs>(args: Subset<T, AttachmentAggregateArgs>): Prisma.PrismaPromise<GetAttachmentAggregateType<T>>
+
+    /**
+     * Group by Attachment.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttachmentGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AttachmentGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AttachmentGroupByArgs['orderBy'] }
+        : { orderBy?: AttachmentGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AttachmentGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAttachmentGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Attachment model
+   */
+  readonly fields: AttachmentFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Attachment.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AttachmentClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    fileObject<T extends FileObjectDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FileObjectDefaultArgs<ExtArgs>>): Prisma__FileObjectClient<$Result.GetResult<Prisma.$FileObjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Attachment model
+   */
+  interface AttachmentFieldRefs {
+    readonly id: FieldRef<"Attachment", 'String'>
+    readonly fileObjectId: FieldRef<"Attachment", 'String'>
+    readonly entityType: FieldRef<"Attachment", 'String'>
+    readonly entityId: FieldRef<"Attachment", 'String'>
+    readonly originalName: FieldRef<"Attachment", 'String'>
+    readonly kind: FieldRef<"Attachment", 'AttachmentKind'>
+    readonly createdById: FieldRef<"Attachment", 'String'>
+    readonly status: FieldRef<"Attachment", 'FileLifecycleStatus'>
+    readonly createdAt: FieldRef<"Attachment", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Attachment findUnique
+   */
+  export type AttachmentFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which Attachment to fetch.
+     */
+    where: AttachmentWhereUniqueInput
+  }
+
+  /**
+   * Attachment findUniqueOrThrow
+   */
+  export type AttachmentFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which Attachment to fetch.
+     */
+    where: AttachmentWhereUniqueInput
+  }
+
+  /**
+   * Attachment findFirst
+   */
+  export type AttachmentFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which Attachment to fetch.
+     */
+    where?: AttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attachments to fetch.
+     */
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Attachments.
+     */
+    cursor?: AttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Attachments.
+     */
+    distinct?: AttachmentScalarFieldEnum | AttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * Attachment findFirstOrThrow
+   */
+  export type AttachmentFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which Attachment to fetch.
+     */
+    where?: AttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attachments to fetch.
+     */
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Attachments.
+     */
+    cursor?: AttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attachments.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Attachments.
+     */
+    distinct?: AttachmentScalarFieldEnum | AttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * Attachment findMany
+   */
+  export type AttachmentFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter, which Attachments to fetch.
+     */
+    where?: AttachmentWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attachments to fetch.
+     */
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Attachments.
+     */
+    cursor?: AttachmentWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attachments from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attachments.
+     */
+    skip?: number
+    distinct?: AttachmentScalarFieldEnum | AttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * Attachment create
+   */
+  export type AttachmentCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Attachment.
+     */
+    data: XOR<AttachmentCreateInput, AttachmentUncheckedCreateInput>
+  }
+
+  /**
+   * Attachment createMany
+   */
+  export type AttachmentCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Attachments.
+     */
+    data: AttachmentCreateManyInput | AttachmentCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Attachment createManyAndReturn
+   */
+  export type AttachmentCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * The data used to create many Attachments.
+     */
+    data: AttachmentCreateManyInput | AttachmentCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Attachment update
+   */
+  export type AttachmentUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Attachment.
+     */
+    data: XOR<AttachmentUpdateInput, AttachmentUncheckedUpdateInput>
+    /**
+     * Choose, which Attachment to update.
+     */
+    where: AttachmentWhereUniqueInput
+  }
+
+  /**
+   * Attachment updateMany
+   */
+  export type AttachmentUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Attachments.
+     */
+    data: XOR<AttachmentUpdateManyMutationInput, AttachmentUncheckedUpdateManyInput>
+    /**
+     * Filter which Attachments to update
+     */
+    where?: AttachmentWhereInput
+    /**
+     * Limit how many Attachments to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Attachment updateManyAndReturn
+   */
+  export type AttachmentUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * The data used to update Attachments.
+     */
+    data: XOR<AttachmentUpdateManyMutationInput, AttachmentUncheckedUpdateManyInput>
+    /**
+     * Filter which Attachments to update
+     */
+    where?: AttachmentWhereInput
+    /**
+     * Limit how many Attachments to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Attachment upsert
+   */
+  export type AttachmentUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Attachment to update in case it exists.
+     */
+    where: AttachmentWhereUniqueInput
+    /**
+     * In case the Attachment found by the `where` argument doesn't exist, create a new Attachment with this data.
+     */
+    create: XOR<AttachmentCreateInput, AttachmentUncheckedCreateInput>
+    /**
+     * In case the Attachment was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AttachmentUpdateInput, AttachmentUncheckedUpdateInput>
+  }
+
+  /**
+   * Attachment delete
+   */
+  export type AttachmentDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    /**
+     * Filter which Attachment to delete.
+     */
+    where: AttachmentWhereUniqueInput
+  }
+
+  /**
+   * Attachment deleteMany
+   */
+  export type AttachmentDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Attachments to delete
+     */
+    where?: AttachmentWhereInput
+    /**
+     * Limit how many Attachments to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Attachment without action
+   */
+  export type AttachmentDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FileAuditEvent
+   */
+
+  export type AggregateFileAuditEvent = {
+    _count: FileAuditEventCountAggregateOutputType | null
+    _min: FileAuditEventMinAggregateOutputType | null
+    _max: FileAuditEventMaxAggregateOutputType | null
+  }
+
+  export type FileAuditEventMinAggregateOutputType = {
+    id: string | null
+    actorId: string | null
+    action: $Enums.AuditAction | null
+    entity: $Enums.AuditEntity | null
+    entityId: string | null
+    reason: string | null
+    createdAt: Date | null
+  }
+
+  export type FileAuditEventMaxAggregateOutputType = {
+    id: string | null
+    actorId: string | null
+    action: $Enums.AuditAction | null
+    entity: $Enums.AuditEntity | null
+    entityId: string | null
+    reason: string | null
+    createdAt: Date | null
+  }
+
+  export type FileAuditEventCountAggregateOutputType = {
+    id: number
+    actorId: number
+    action: number
+    entity: number
+    entityId: number
+    beforeValues: number
+    afterValues: number
+    reason: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type FileAuditEventMinAggregateInputType = {
+    id?: true
+    actorId?: true
+    action?: true
+    entity?: true
+    entityId?: true
+    reason?: true
+    createdAt?: true
+  }
+
+  export type FileAuditEventMaxAggregateInputType = {
+    id?: true
+    actorId?: true
+    action?: true
+    entity?: true
+    entityId?: true
+    reason?: true
+    createdAt?: true
+  }
+
+  export type FileAuditEventCountAggregateInputType = {
+    id?: true
+    actorId?: true
+    action?: true
+    entity?: true
+    entityId?: true
+    beforeValues?: true
+    afterValues?: true
+    reason?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type FileAuditEventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileAuditEvent to aggregate.
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAuditEvents to fetch.
+     */
+    orderBy?: FileAuditEventOrderByWithRelationInput | FileAuditEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FileAuditEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAuditEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAuditEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FileAuditEvents
+    **/
+    _count?: true | FileAuditEventCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FileAuditEventMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FileAuditEventMaxAggregateInputType
+  }
+
+  export type GetFileAuditEventAggregateType<T extends FileAuditEventAggregateArgs> = {
+        [P in keyof T & keyof AggregateFileAuditEvent]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFileAuditEvent[P]>
+      : GetScalarType<T[P], AggregateFileAuditEvent[P]>
+  }
+
+
+
+
+  export type FileAuditEventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileAuditEventWhereInput
+    orderBy?: FileAuditEventOrderByWithAggregationInput | FileAuditEventOrderByWithAggregationInput[]
+    by: FileAuditEventScalarFieldEnum[] | FileAuditEventScalarFieldEnum
+    having?: FileAuditEventScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FileAuditEventCountAggregateInputType | true
+    _min?: FileAuditEventMinAggregateInputType
+    _max?: FileAuditEventMaxAggregateInputType
+  }
+
+  export type FileAuditEventGroupByOutputType = {
+    id: string
+    actorId: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues: JsonValue | null
+    afterValues: JsonValue | null
+    reason: string | null
+    createdAt: Date
+    _count: FileAuditEventCountAggregateOutputType | null
+    _min: FileAuditEventMinAggregateOutputType | null
+    _max: FileAuditEventMaxAggregateOutputType | null
+  }
+
+  type GetFileAuditEventGroupByPayload<T extends FileAuditEventGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FileAuditEventGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FileAuditEventGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FileAuditEventGroupByOutputType[P]>
+            : GetScalarType<T[P], FileAuditEventGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FileAuditEventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    actorId?: boolean
+    action?: boolean
+    entity?: boolean
+    entityId?: boolean
+    beforeValues?: boolean
+    afterValues?: boolean
+    reason?: boolean
+    createdAt?: boolean
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAuditEvent"]>
+
+  export type FileAuditEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    actorId?: boolean
+    action?: boolean
+    entity?: boolean
+    entityId?: boolean
+    beforeValues?: boolean
+    afterValues?: boolean
+    reason?: boolean
+    createdAt?: boolean
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAuditEvent"]>
+
+  export type FileAuditEventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    actorId?: boolean
+    action?: boolean
+    entity?: boolean
+    entityId?: boolean
+    beforeValues?: boolean
+    afterValues?: boolean
+    reason?: boolean
+    createdAt?: boolean
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileAuditEvent"]>
+
+  export type FileAuditEventSelectScalar = {
+    id?: boolean
+    actorId?: boolean
+    action?: boolean
+    entity?: boolean
+    entityId?: boolean
+    beforeValues?: boolean
+    afterValues?: boolean
+    reason?: boolean
+    createdAt?: boolean
+  }
+
+  export type FileAuditEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "actorId" | "action" | "entity" | "entityId" | "beforeValues" | "afterValues" | "reason" | "createdAt", ExtArgs["result"]["fileAuditEvent"]>
+  export type FileAuditEventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileAuditEventIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileAuditEventIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    actor?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $FileAuditEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FileAuditEvent"
+    objects: {
+      actor: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      actorId: string
+      action: $Enums.AuditAction
+      entity: $Enums.AuditEntity
+      entityId: string
+      beforeValues: Prisma.JsonValue | null
+      afterValues: Prisma.JsonValue | null
+      /**
+       * Required for VOID, ARCHIVE, SUPERSEDE, APPROVE.
+       */
+      reason: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["fileAuditEvent"]>
+    composites: {}
+  }
+
+  type FileAuditEventGetPayload<S extends boolean | null | undefined | FileAuditEventDefaultArgs> = $Result.GetResult<Prisma.$FileAuditEventPayload, S>
+
+  type FileAuditEventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FileAuditEventFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FileAuditEventCountAggregateInputType | true
+    }
+
+  export interface FileAuditEventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FileAuditEvent'], meta: { name: 'FileAuditEvent' } }
+    /**
+     * Find zero or one FileAuditEvent that matches the filter.
+     * @param {FileAuditEventFindUniqueArgs} args - Arguments to find a FileAuditEvent
+     * @example
+     * // Get one FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FileAuditEventFindUniqueArgs>(args: SelectSubset<T, FileAuditEventFindUniqueArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FileAuditEvent that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FileAuditEventFindUniqueOrThrowArgs} args - Arguments to find a FileAuditEvent
+     * @example
+     * // Get one FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FileAuditEventFindUniqueOrThrowArgs>(args: SelectSubset<T, FileAuditEventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileAuditEvent that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventFindFirstArgs} args - Arguments to find a FileAuditEvent
+     * @example
+     * // Get one FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FileAuditEventFindFirstArgs>(args?: SelectSubset<T, FileAuditEventFindFirstArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileAuditEvent that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventFindFirstOrThrowArgs} args - Arguments to find a FileAuditEvent
+     * @example
+     * // Get one FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FileAuditEventFindFirstOrThrowArgs>(args?: SelectSubset<T, FileAuditEventFindFirstOrThrowArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FileAuditEvents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FileAuditEvents
+     * const fileAuditEvents = await prisma.fileAuditEvent.findMany()
+     * 
+     * // Get first 10 FileAuditEvents
+     * const fileAuditEvents = await prisma.fileAuditEvent.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fileAuditEventWithIdOnly = await prisma.fileAuditEvent.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FileAuditEventFindManyArgs>(args?: SelectSubset<T, FileAuditEventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FileAuditEvent.
+     * @param {FileAuditEventCreateArgs} args - Arguments to create a FileAuditEvent.
+     * @example
+     * // Create one FileAuditEvent
+     * const FileAuditEvent = await prisma.fileAuditEvent.create({
+     *   data: {
+     *     // ... data to create a FileAuditEvent
+     *   }
+     * })
+     * 
+     */
+    create<T extends FileAuditEventCreateArgs>(args: SelectSubset<T, FileAuditEventCreateArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FileAuditEvents.
+     * @param {FileAuditEventCreateManyArgs} args - Arguments to create many FileAuditEvents.
+     * @example
+     * // Create many FileAuditEvents
+     * const fileAuditEvent = await prisma.fileAuditEvent.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FileAuditEventCreateManyArgs>(args?: SelectSubset<T, FileAuditEventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FileAuditEvents and returns the data saved in the database.
+     * @param {FileAuditEventCreateManyAndReturnArgs} args - Arguments to create many FileAuditEvents.
+     * @example
+     * // Create many FileAuditEvents
+     * const fileAuditEvent = await prisma.fileAuditEvent.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FileAuditEvents and only return the `id`
+     * const fileAuditEventWithIdOnly = await prisma.fileAuditEvent.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FileAuditEventCreateManyAndReturnArgs>(args?: SelectSubset<T, FileAuditEventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FileAuditEvent.
+     * @param {FileAuditEventDeleteArgs} args - Arguments to delete one FileAuditEvent.
+     * @example
+     * // Delete one FileAuditEvent
+     * const FileAuditEvent = await prisma.fileAuditEvent.delete({
+     *   where: {
+     *     // ... filter to delete one FileAuditEvent
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FileAuditEventDeleteArgs>(args: SelectSubset<T, FileAuditEventDeleteArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FileAuditEvent.
+     * @param {FileAuditEventUpdateArgs} args - Arguments to update one FileAuditEvent.
+     * @example
+     * // Update one FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FileAuditEventUpdateArgs>(args: SelectSubset<T, FileAuditEventUpdateArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FileAuditEvents.
+     * @param {FileAuditEventDeleteManyArgs} args - Arguments to filter FileAuditEvents to delete.
+     * @example
+     * // Delete a few FileAuditEvents
+     * const { count } = await prisma.fileAuditEvent.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FileAuditEventDeleteManyArgs>(args?: SelectSubset<T, FileAuditEventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileAuditEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FileAuditEvents
+     * const fileAuditEvent = await prisma.fileAuditEvent.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FileAuditEventUpdateManyArgs>(args: SelectSubset<T, FileAuditEventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileAuditEvents and returns the data updated in the database.
+     * @param {FileAuditEventUpdateManyAndReturnArgs} args - Arguments to update many FileAuditEvents.
+     * @example
+     * // Update many FileAuditEvents
+     * const fileAuditEvent = await prisma.fileAuditEvent.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FileAuditEvents and only return the `id`
+     * const fileAuditEventWithIdOnly = await prisma.fileAuditEvent.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FileAuditEventUpdateManyAndReturnArgs>(args: SelectSubset<T, FileAuditEventUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FileAuditEvent.
+     * @param {FileAuditEventUpsertArgs} args - Arguments to update or create a FileAuditEvent.
+     * @example
+     * // Update or create a FileAuditEvent
+     * const fileAuditEvent = await prisma.fileAuditEvent.upsert({
+     *   create: {
+     *     // ... data to create a FileAuditEvent
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FileAuditEvent we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FileAuditEventUpsertArgs>(args: SelectSubset<T, FileAuditEventUpsertArgs<ExtArgs>>): Prisma__FileAuditEventClient<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FileAuditEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventCountArgs} args - Arguments to filter FileAuditEvents to count.
+     * @example
+     * // Count the number of FileAuditEvents
+     * const count = await prisma.fileAuditEvent.count({
+     *   where: {
+     *     // ... the filter for the FileAuditEvents we want to count
+     *   }
+     * })
+    **/
+    count<T extends FileAuditEventCountArgs>(
+      args?: Subset<T, FileAuditEventCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FileAuditEventCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FileAuditEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FileAuditEventAggregateArgs>(args: Subset<T, FileAuditEventAggregateArgs>): Prisma.PrismaPromise<GetFileAuditEventAggregateType<T>>
+
+    /**
+     * Group by FileAuditEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileAuditEventGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FileAuditEventGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FileAuditEventGroupByArgs['orderBy'] }
+        : { orderBy?: FileAuditEventGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FileAuditEventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFileAuditEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FileAuditEvent model
+   */
+  readonly fields: FileAuditEventFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FileAuditEvent.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FileAuditEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    actor<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FileAuditEvent model
+   */
+  interface FileAuditEventFieldRefs {
+    readonly id: FieldRef<"FileAuditEvent", 'String'>
+    readonly actorId: FieldRef<"FileAuditEvent", 'String'>
+    readonly action: FieldRef<"FileAuditEvent", 'AuditAction'>
+    readonly entity: FieldRef<"FileAuditEvent", 'AuditEntity'>
+    readonly entityId: FieldRef<"FileAuditEvent", 'String'>
+    readonly beforeValues: FieldRef<"FileAuditEvent", 'Json'>
+    readonly afterValues: FieldRef<"FileAuditEvent", 'Json'>
+    readonly reason: FieldRef<"FileAuditEvent", 'String'>
+    readonly createdAt: FieldRef<"FileAuditEvent", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FileAuditEvent findUnique
+   */
+  export type FileAuditEventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAuditEvent to fetch.
+     */
+    where: FileAuditEventWhereUniqueInput
+  }
+
+  /**
+   * FileAuditEvent findUniqueOrThrow
+   */
+  export type FileAuditEventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAuditEvent to fetch.
+     */
+    where: FileAuditEventWhereUniqueInput
+  }
+
+  /**
+   * FileAuditEvent findFirst
+   */
+  export type FileAuditEventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAuditEvent to fetch.
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAuditEvents to fetch.
+     */
+    orderBy?: FileAuditEventOrderByWithRelationInput | FileAuditEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileAuditEvents.
+     */
+    cursor?: FileAuditEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAuditEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAuditEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileAuditEvents.
+     */
+    distinct?: FileAuditEventScalarFieldEnum | FileAuditEventScalarFieldEnum[]
+  }
+
+  /**
+   * FileAuditEvent findFirstOrThrow
+   */
+  export type FileAuditEventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAuditEvent to fetch.
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAuditEvents to fetch.
+     */
+    orderBy?: FileAuditEventOrderByWithRelationInput | FileAuditEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileAuditEvents.
+     */
+    cursor?: FileAuditEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAuditEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAuditEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileAuditEvents.
+     */
+    distinct?: FileAuditEventScalarFieldEnum | FileAuditEventScalarFieldEnum[]
+  }
+
+  /**
+   * FileAuditEvent findMany
+   */
+  export type FileAuditEventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter, which FileAuditEvents to fetch.
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileAuditEvents to fetch.
+     */
+    orderBy?: FileAuditEventOrderByWithRelationInput | FileAuditEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FileAuditEvents.
+     */
+    cursor?: FileAuditEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileAuditEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileAuditEvents.
+     */
+    skip?: number
+    distinct?: FileAuditEventScalarFieldEnum | FileAuditEventScalarFieldEnum[]
+  }
+
+  /**
+   * FileAuditEvent create
+   */
+  export type FileAuditEventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FileAuditEvent.
+     */
+    data: XOR<FileAuditEventCreateInput, FileAuditEventUncheckedCreateInput>
+  }
+
+  /**
+   * FileAuditEvent createMany
+   */
+  export type FileAuditEventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FileAuditEvents.
+     */
+    data: FileAuditEventCreateManyInput | FileAuditEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileAuditEvent createManyAndReturn
+   */
+  export type FileAuditEventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * The data used to create many FileAuditEvents.
+     */
+    data: FileAuditEventCreateManyInput | FileAuditEventCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileAuditEvent update
+   */
+  export type FileAuditEventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FileAuditEvent.
+     */
+    data: XOR<FileAuditEventUpdateInput, FileAuditEventUncheckedUpdateInput>
+    /**
+     * Choose, which FileAuditEvent to update.
+     */
+    where: FileAuditEventWhereUniqueInput
+  }
+
+  /**
+   * FileAuditEvent updateMany
+   */
+  export type FileAuditEventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FileAuditEvents.
+     */
+    data: XOR<FileAuditEventUpdateManyMutationInput, FileAuditEventUncheckedUpdateManyInput>
+    /**
+     * Filter which FileAuditEvents to update
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * Limit how many FileAuditEvents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileAuditEvent updateManyAndReturn
+   */
+  export type FileAuditEventUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * The data used to update FileAuditEvents.
+     */
+    data: XOR<FileAuditEventUpdateManyMutationInput, FileAuditEventUncheckedUpdateManyInput>
+    /**
+     * Filter which FileAuditEvents to update
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * Limit how many FileAuditEvents to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileAuditEvent upsert
+   */
+  export type FileAuditEventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FileAuditEvent to update in case it exists.
+     */
+    where: FileAuditEventWhereUniqueInput
+    /**
+     * In case the FileAuditEvent found by the `where` argument doesn't exist, create a new FileAuditEvent with this data.
+     */
+    create: XOR<FileAuditEventCreateInput, FileAuditEventUncheckedCreateInput>
+    /**
+     * In case the FileAuditEvent was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FileAuditEventUpdateInput, FileAuditEventUncheckedUpdateInput>
+  }
+
+  /**
+   * FileAuditEvent delete
+   */
+  export type FileAuditEventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    /**
+     * Filter which FileAuditEvent to delete.
+     */
+    where: FileAuditEventWhereUniqueInput
+  }
+
+  /**
+   * FileAuditEvent deleteMany
+   */
+  export type FileAuditEventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileAuditEvents to delete
+     */
+    where?: FileAuditEventWhereInput
+    /**
+     * Limit how many FileAuditEvents to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileAuditEvent without action
+   */
+  export type FileAuditEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model FileConfig
+   */
+
+  export type AggregateFileConfig = {
+    _count: FileConfigCountAggregateOutputType | null
+    _avg: FileConfigAvgAggregateOutputType | null
+    _sum: FileConfigSumAggregateOutputType | null
+    _min: FileConfigMinAggregateOutputType | null
+    _max: FileConfigMaxAggregateOutputType | null
+  }
+
+  export type FileConfigAvgAggregateOutputType = {
+    maxFileSizeBytes: number | null
+    previewExpirySeconds: number | null
+  }
+
+  export type FileConfigSumAggregateOutputType = {
+    maxFileSizeBytes: number | null
+    previewExpirySeconds: number | null
+  }
+
+  export type FileConfigMinAggregateOutputType = {
+    id: string | null
+    maxFileSizeBytes: number | null
+    previewExpirySeconds: number | null
+    updatedAt: Date | null
+    updatedById: string | null
+  }
+
+  export type FileConfigMaxAggregateOutputType = {
+    id: string | null
+    maxFileSizeBytes: number | null
+    previewExpirySeconds: number | null
+    updatedAt: Date | null
+    updatedById: string | null
+  }
+
+  export type FileConfigCountAggregateOutputType = {
+    id: number
+    mimeAllowlist: number
+    maxFileSizeBytes: number
+    departments: number
+    previewExpirySeconds: number
+    updatedAt: number
+    updatedById: number
+    _all: number
+  }
+
+
+  export type FileConfigAvgAggregateInputType = {
+    maxFileSizeBytes?: true
+    previewExpirySeconds?: true
+  }
+
+  export type FileConfigSumAggregateInputType = {
+    maxFileSizeBytes?: true
+    previewExpirySeconds?: true
+  }
+
+  export type FileConfigMinAggregateInputType = {
+    id?: true
+    maxFileSizeBytes?: true
+    previewExpirySeconds?: true
+    updatedAt?: true
+    updatedById?: true
+  }
+
+  export type FileConfigMaxAggregateInputType = {
+    id?: true
+    maxFileSizeBytes?: true
+    previewExpirySeconds?: true
+    updatedAt?: true
+    updatedById?: true
+  }
+
+  export type FileConfigCountAggregateInputType = {
+    id?: true
+    mimeAllowlist?: true
+    maxFileSizeBytes?: true
+    departments?: true
+    previewExpirySeconds?: true
+    updatedAt?: true
+    updatedById?: true
+    _all?: true
+  }
+
+  export type FileConfigAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileConfig to aggregate.
+     */
+    where?: FileConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileConfigs to fetch.
+     */
+    orderBy?: FileConfigOrderByWithRelationInput | FileConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FileConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FileConfigs
+    **/
+    _count?: true | FileConfigCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FileConfigAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FileConfigSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FileConfigMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FileConfigMaxAggregateInputType
+  }
+
+  export type GetFileConfigAggregateType<T extends FileConfigAggregateArgs> = {
+        [P in keyof T & keyof AggregateFileConfig]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFileConfig[P]>
+      : GetScalarType<T[P], AggregateFileConfig[P]>
+  }
+
+
+
+
+  export type FileConfigGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FileConfigWhereInput
+    orderBy?: FileConfigOrderByWithAggregationInput | FileConfigOrderByWithAggregationInput[]
+    by: FileConfigScalarFieldEnum[] | FileConfigScalarFieldEnum
+    having?: FileConfigScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FileConfigCountAggregateInputType | true
+    _avg?: FileConfigAvgAggregateInputType
+    _sum?: FileConfigSumAggregateInputType
+    _min?: FileConfigMinAggregateInputType
+    _max?: FileConfigMaxAggregateInputType
+  }
+
+  export type FileConfigGroupByOutputType = {
+    id: string
+    mimeAllowlist: JsonValue
+    maxFileSizeBytes: number
+    departments: JsonValue
+    previewExpirySeconds: number
+    updatedAt: Date
+    updatedById: string
+    _count: FileConfigCountAggregateOutputType | null
+    _avg: FileConfigAvgAggregateOutputType | null
+    _sum: FileConfigSumAggregateOutputType | null
+    _min: FileConfigMinAggregateOutputType | null
+    _max: FileConfigMaxAggregateOutputType | null
+  }
+
+  type GetFileConfigGroupByPayload<T extends FileConfigGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FileConfigGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FileConfigGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FileConfigGroupByOutputType[P]>
+            : GetScalarType<T[P], FileConfigGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FileConfigSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    mimeAllowlist?: boolean
+    maxFileSizeBytes?: boolean
+    departments?: boolean
+    previewExpirySeconds?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileConfig"]>
+
+  export type FileConfigSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    mimeAllowlist?: boolean
+    maxFileSizeBytes?: boolean
+    departments?: boolean
+    previewExpirySeconds?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileConfig"]>
+
+  export type FileConfigSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    mimeAllowlist?: boolean
+    maxFileSizeBytes?: boolean
+    departments?: boolean
+    previewExpirySeconds?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["fileConfig"]>
+
+  export type FileConfigSelectScalar = {
+    id?: boolean
+    mimeAllowlist?: boolean
+    maxFileSizeBytes?: boolean
+    departments?: boolean
+    previewExpirySeconds?: boolean
+    updatedAt?: boolean
+    updatedById?: boolean
+  }
+
+  export type FileConfigOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "mimeAllowlist" | "maxFileSizeBytes" | "departments" | "previewExpirySeconds" | "updatedAt" | "updatedById", ExtArgs["result"]["fileConfig"]>
+  export type FileConfigInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileConfigIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FileConfigIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $FileConfigPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FileConfig"
+    objects: {
+      updatedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * Required array of MIME type patterns; validated on write.
+       */
+      mimeAllowlist: Prisma.JsonValue
+      /**
+       * Required, 1–10 GB inclusive.
+       */
+      maxFileSizeBytes: number
+      /**
+       * Required array of { name: string, code: string }; managed by Admin UI.
+       */
+      departments: Prisma.JsonValue
+      /**
+       * Required, 60–3600.
+       */
+      previewExpirySeconds: number
+      updatedAt: Date
+      updatedById: string
+    }, ExtArgs["result"]["fileConfig"]>
+    composites: {}
+  }
+
+  type FileConfigGetPayload<S extends boolean | null | undefined | FileConfigDefaultArgs> = $Result.GetResult<Prisma.$FileConfigPayload, S>
+
+  type FileConfigCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FileConfigFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: FileConfigCountAggregateInputType | true
+    }
+
+  export interface FileConfigDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FileConfig'], meta: { name: 'FileConfig' } }
+    /**
+     * Find zero or one FileConfig that matches the filter.
+     * @param {FileConfigFindUniqueArgs} args - Arguments to find a FileConfig
+     * @example
+     * // Get one FileConfig
+     * const fileConfig = await prisma.fileConfig.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FileConfigFindUniqueArgs>(args: SelectSubset<T, FileConfigFindUniqueArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FileConfig that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FileConfigFindUniqueOrThrowArgs} args - Arguments to find a FileConfig
+     * @example
+     * // Get one FileConfig
+     * const fileConfig = await prisma.fileConfig.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FileConfigFindUniqueOrThrowArgs>(args: SelectSubset<T, FileConfigFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileConfig that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigFindFirstArgs} args - Arguments to find a FileConfig
+     * @example
+     * // Get one FileConfig
+     * const fileConfig = await prisma.fileConfig.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FileConfigFindFirstArgs>(args?: SelectSubset<T, FileConfigFindFirstArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FileConfig that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigFindFirstOrThrowArgs} args - Arguments to find a FileConfig
+     * @example
+     * // Get one FileConfig
+     * const fileConfig = await prisma.fileConfig.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FileConfigFindFirstOrThrowArgs>(args?: SelectSubset<T, FileConfigFindFirstOrThrowArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FileConfigs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FileConfigs
+     * const fileConfigs = await prisma.fileConfig.findMany()
+     * 
+     * // Get first 10 FileConfigs
+     * const fileConfigs = await prisma.fileConfig.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const fileConfigWithIdOnly = await prisma.fileConfig.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FileConfigFindManyArgs>(args?: SelectSubset<T, FileConfigFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FileConfig.
+     * @param {FileConfigCreateArgs} args - Arguments to create a FileConfig.
+     * @example
+     * // Create one FileConfig
+     * const FileConfig = await prisma.fileConfig.create({
+     *   data: {
+     *     // ... data to create a FileConfig
+     *   }
+     * })
+     * 
+     */
+    create<T extends FileConfigCreateArgs>(args: SelectSubset<T, FileConfigCreateArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FileConfigs.
+     * @param {FileConfigCreateManyArgs} args - Arguments to create many FileConfigs.
+     * @example
+     * // Create many FileConfigs
+     * const fileConfig = await prisma.fileConfig.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FileConfigCreateManyArgs>(args?: SelectSubset<T, FileConfigCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FileConfigs and returns the data saved in the database.
+     * @param {FileConfigCreateManyAndReturnArgs} args - Arguments to create many FileConfigs.
+     * @example
+     * // Create many FileConfigs
+     * const fileConfig = await prisma.fileConfig.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FileConfigs and only return the `id`
+     * const fileConfigWithIdOnly = await prisma.fileConfig.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FileConfigCreateManyAndReturnArgs>(args?: SelectSubset<T, FileConfigCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FileConfig.
+     * @param {FileConfigDeleteArgs} args - Arguments to delete one FileConfig.
+     * @example
+     * // Delete one FileConfig
+     * const FileConfig = await prisma.fileConfig.delete({
+     *   where: {
+     *     // ... filter to delete one FileConfig
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FileConfigDeleteArgs>(args: SelectSubset<T, FileConfigDeleteArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FileConfig.
+     * @param {FileConfigUpdateArgs} args - Arguments to update one FileConfig.
+     * @example
+     * // Update one FileConfig
+     * const fileConfig = await prisma.fileConfig.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FileConfigUpdateArgs>(args: SelectSubset<T, FileConfigUpdateArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FileConfigs.
+     * @param {FileConfigDeleteManyArgs} args - Arguments to filter FileConfigs to delete.
+     * @example
+     * // Delete a few FileConfigs
+     * const { count } = await prisma.fileConfig.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FileConfigDeleteManyArgs>(args?: SelectSubset<T, FileConfigDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FileConfigs
+     * const fileConfig = await prisma.fileConfig.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FileConfigUpdateManyArgs>(args: SelectSubset<T, FileConfigUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FileConfigs and returns the data updated in the database.
+     * @param {FileConfigUpdateManyAndReturnArgs} args - Arguments to update many FileConfigs.
+     * @example
+     * // Update many FileConfigs
+     * const fileConfig = await prisma.fileConfig.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FileConfigs and only return the `id`
+     * const fileConfigWithIdOnly = await prisma.fileConfig.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FileConfigUpdateManyAndReturnArgs>(args: SelectSubset<T, FileConfigUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FileConfig.
+     * @param {FileConfigUpsertArgs} args - Arguments to update or create a FileConfig.
+     * @example
+     * // Update or create a FileConfig
+     * const fileConfig = await prisma.fileConfig.upsert({
+     *   create: {
+     *     // ... data to create a FileConfig
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FileConfig we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FileConfigUpsertArgs>(args: SelectSubset<T, FileConfigUpsertArgs<ExtArgs>>): Prisma__FileConfigClient<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FileConfigs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigCountArgs} args - Arguments to filter FileConfigs to count.
+     * @example
+     * // Count the number of FileConfigs
+     * const count = await prisma.fileConfig.count({
+     *   where: {
+     *     // ... the filter for the FileConfigs we want to count
+     *   }
+     * })
+    **/
+    count<T extends FileConfigCountArgs>(
+      args?: Subset<T, FileConfigCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FileConfigCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FileConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FileConfigAggregateArgs>(args: Subset<T, FileConfigAggregateArgs>): Prisma.PrismaPromise<GetFileConfigAggregateType<T>>
+
+    /**
+     * Group by FileConfig.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FileConfigGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FileConfigGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FileConfigGroupByArgs['orderBy'] }
+        : { orderBy?: FileConfigGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FileConfigGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFileConfigGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FileConfig model
+   */
+  readonly fields: FileConfigFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FileConfig.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FileConfigClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    updatedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FileConfig model
+   */
+  interface FileConfigFieldRefs {
+    readonly id: FieldRef<"FileConfig", 'String'>
+    readonly mimeAllowlist: FieldRef<"FileConfig", 'Json'>
+    readonly maxFileSizeBytes: FieldRef<"FileConfig", 'Int'>
+    readonly departments: FieldRef<"FileConfig", 'Json'>
+    readonly previewExpirySeconds: FieldRef<"FileConfig", 'Int'>
+    readonly updatedAt: FieldRef<"FileConfig", 'DateTime'>
+    readonly updatedById: FieldRef<"FileConfig", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FileConfig findUnique
+   */
+  export type FileConfigFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which FileConfig to fetch.
+     */
+    where: FileConfigWhereUniqueInput
+  }
+
+  /**
+   * FileConfig findUniqueOrThrow
+   */
+  export type FileConfigFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which FileConfig to fetch.
+     */
+    where: FileConfigWhereUniqueInput
+  }
+
+  /**
+   * FileConfig findFirst
+   */
+  export type FileConfigFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which FileConfig to fetch.
+     */
+    where?: FileConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileConfigs to fetch.
+     */
+    orderBy?: FileConfigOrderByWithRelationInput | FileConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileConfigs.
+     */
+    cursor?: FileConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileConfigs.
+     */
+    distinct?: FileConfigScalarFieldEnum | FileConfigScalarFieldEnum[]
+  }
+
+  /**
+   * FileConfig findFirstOrThrow
+   */
+  export type FileConfigFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which FileConfig to fetch.
+     */
+    where?: FileConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileConfigs to fetch.
+     */
+    orderBy?: FileConfigOrderByWithRelationInput | FileConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FileConfigs.
+     */
+    cursor?: FileConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileConfigs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FileConfigs.
+     */
+    distinct?: FileConfigScalarFieldEnum | FileConfigScalarFieldEnum[]
+  }
+
+  /**
+   * FileConfig findMany
+   */
+  export type FileConfigFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter, which FileConfigs to fetch.
+     */
+    where?: FileConfigWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FileConfigs to fetch.
+     */
+    orderBy?: FileConfigOrderByWithRelationInput | FileConfigOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FileConfigs.
+     */
+    cursor?: FileConfigWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FileConfigs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FileConfigs.
+     */
+    skip?: number
+    distinct?: FileConfigScalarFieldEnum | FileConfigScalarFieldEnum[]
+  }
+
+  /**
+   * FileConfig create
+   */
+  export type FileConfigCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FileConfig.
+     */
+    data: XOR<FileConfigCreateInput, FileConfigUncheckedCreateInput>
+  }
+
+  /**
+   * FileConfig createMany
+   */
+  export type FileConfigCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FileConfigs.
+     */
+    data: FileConfigCreateManyInput | FileConfigCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FileConfig createManyAndReturn
+   */
+  export type FileConfigCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * The data used to create many FileConfigs.
+     */
+    data: FileConfigCreateManyInput | FileConfigCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileConfig update
+   */
+  export type FileConfigUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FileConfig.
+     */
+    data: XOR<FileConfigUpdateInput, FileConfigUncheckedUpdateInput>
+    /**
+     * Choose, which FileConfig to update.
+     */
+    where: FileConfigWhereUniqueInput
+  }
+
+  /**
+   * FileConfig updateMany
+   */
+  export type FileConfigUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FileConfigs.
+     */
+    data: XOR<FileConfigUpdateManyMutationInput, FileConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which FileConfigs to update
+     */
+    where?: FileConfigWhereInput
+    /**
+     * Limit how many FileConfigs to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileConfig updateManyAndReturn
+   */
+  export type FileConfigUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * The data used to update FileConfigs.
+     */
+    data: XOR<FileConfigUpdateManyMutationInput, FileConfigUncheckedUpdateManyInput>
+    /**
+     * Filter which FileConfigs to update
+     */
+    where?: FileConfigWhereInput
+    /**
+     * Limit how many FileConfigs to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FileConfig upsert
+   */
+  export type FileConfigUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FileConfig to update in case it exists.
+     */
+    where: FileConfigWhereUniqueInput
+    /**
+     * In case the FileConfig found by the `where` argument doesn't exist, create a new FileConfig with this data.
+     */
+    create: XOR<FileConfigCreateInput, FileConfigUncheckedCreateInput>
+    /**
+     * In case the FileConfig was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FileConfigUpdateInput, FileConfigUncheckedUpdateInput>
+  }
+
+  /**
+   * FileConfig delete
+   */
+  export type FileConfigDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    /**
+     * Filter which FileConfig to delete.
+     */
+    where: FileConfigWhereUniqueInput
+  }
+
+  /**
+   * FileConfig deleteMany
+   */
+  export type FileConfigDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FileConfigs to delete
+     */
+    where?: FileConfigWhereInput
+    /**
+     * Limit how many FileConfigs to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FileConfig without action
+   */
+  export type FileConfigDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model User
    */
 
@@ -22806,6 +30376,10 @@ export namespace Prisma {
     returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
     returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
     vendorProductionRecordsCreated?: boolean | User$vendorProductionRecordsCreatedArgs<ExtArgs>
+    fileVersionsUploaded?: boolean | User$fileVersionsUploadedArgs<ExtArgs>
+    attachments?: boolean | User$attachmentsArgs<ExtArgs>
+    fileAuditEvents?: boolean | User$fileAuditEventsArgs<ExtArgs>
+    fileConfigsUpdated?: boolean | User$fileConfigsUpdatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -22872,6 +30446,10 @@ export namespace Prisma {
     returnsRaised?: boolean | User$returnsRaisedArgs<ExtArgs>
     returnsAssignedToMe?: boolean | User$returnsAssignedToMeArgs<ExtArgs>
     vendorProductionRecordsCreated?: boolean | User$vendorProductionRecordsCreatedArgs<ExtArgs>
+    fileVersionsUploaded?: boolean | User$fileVersionsUploadedArgs<ExtArgs>
+    attachments?: boolean | User$attachmentsArgs<ExtArgs>
+    fileAuditEvents?: boolean | User$fileAuditEventsArgs<ExtArgs>
+    fileConfigsUpdated?: boolean | User$fileConfigsUpdatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -22896,6 +30474,10 @@ export namespace Prisma {
       returnsRaised: Prisma.$ReturnPayload<ExtArgs>[]
       returnsAssignedToMe: Prisma.$ReturnPayload<ExtArgs>[]
       vendorProductionRecordsCreated: Prisma.$VendorProductionRecordPayload<ExtArgs>[]
+      fileVersionsUploaded: Prisma.$FileVersionPayload<ExtArgs>[]
+      attachments: Prisma.$AttachmentPayload<ExtArgs>[]
+      fileAuditEvents: Prisma.$FileAuditEventPayload<ExtArgs>[]
+      fileConfigsUpdated: Prisma.$FileConfigPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -23320,6 +30902,10 @@ export namespace Prisma {
     returnsRaised<T extends User$returnsRaisedArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsRaisedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     returnsAssignedToMe<T extends User$returnsAssignedToMeArgs<ExtArgs> = {}>(args?: Subset<T, User$returnsAssignedToMeArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     vendorProductionRecordsCreated<T extends User$vendorProductionRecordsCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$vendorProductionRecordsCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$VendorProductionRecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fileVersionsUploaded<T extends User$fileVersionsUploadedArgs<ExtArgs> = {}>(args?: Subset<T, User$fileVersionsUploadedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    attachments<T extends User$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, User$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fileAuditEvents<T extends User$fileAuditEventsArgs<ExtArgs> = {}>(args?: Subset<T, User$fileAuditEventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileAuditEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    fileConfigsUpdated<T extends User$fileConfigsUpdatedArgs<ExtArgs> = {}>(args?: Subset<T, User$fileConfigsUpdatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FileConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -24130,6 +31716,102 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: VendorProductionRecordScalarFieldEnum | VendorProductionRecordScalarFieldEnum[]
+  }
+
+  /**
+   * User.fileVersionsUploaded
+   */
+  export type User$fileVersionsUploadedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileVersion
+     */
+    select?: FileVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileVersion
+     */
+    omit?: FileVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileVersionInclude<ExtArgs> | null
+    where?: FileVersionWhereInput
+    orderBy?: FileVersionOrderByWithRelationInput | FileVersionOrderByWithRelationInput[]
+    cursor?: FileVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileVersionScalarFieldEnum | FileVersionScalarFieldEnum[]
+  }
+
+  /**
+   * User.attachments
+   */
+  export type User$attachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attachment
+     */
+    select?: AttachmentSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attachment
+     */
+    omit?: AttachmentOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttachmentInclude<ExtArgs> | null
+    where?: AttachmentWhereInput
+    orderBy?: AttachmentOrderByWithRelationInput | AttachmentOrderByWithRelationInput[]
+    cursor?: AttachmentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AttachmentScalarFieldEnum | AttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * User.fileAuditEvents
+   */
+  export type User$fileAuditEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileAuditEvent
+     */
+    select?: FileAuditEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileAuditEvent
+     */
+    omit?: FileAuditEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileAuditEventInclude<ExtArgs> | null
+    where?: FileAuditEventWhereInput
+    orderBy?: FileAuditEventOrderByWithRelationInput | FileAuditEventOrderByWithRelationInput[]
+    cursor?: FileAuditEventWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileAuditEventScalarFieldEnum | FileAuditEventScalarFieldEnum[]
+  }
+
+  /**
+   * User.fileConfigsUpdated
+   */
+  export type User$fileConfigsUpdatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FileConfig
+     */
+    select?: FileConfigSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FileConfig
+     */
+    omit?: FileConfigOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FileConfigInclude<ExtArgs> | null
+    where?: FileConfigWhereInput
+    orderBy?: FileConfigOrderByWithRelationInput | FileConfigOrderByWithRelationInput[]
+    cursor?: FileConfigWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FileConfigScalarFieldEnum | FileConfigScalarFieldEnum[]
   }
 
   /**
@@ -34135,6 +41817,89 @@ export namespace Prisma {
   export type CustomerPromotionScalarFieldEnum = (typeof CustomerPromotionScalarFieldEnum)[keyof typeof CustomerPromotionScalarFieldEnum]
 
 
+  export const FileObjectScalarFieldEnum: {
+    id: 'id',
+    storageKey: 'storageKey',
+    sizeBytes: 'sizeBytes',
+    sha256: 'sha256',
+    mimeType: 'mimeType',
+    createdAt: 'createdAt'
+  };
+
+  export type FileObjectScalarFieldEnum = (typeof FileObjectScalarFieldEnum)[keyof typeof FileObjectScalarFieldEnum]
+
+
+  export const FileAssetScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    category: 'category',
+    logicalName: 'logicalName',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type FileAssetScalarFieldEnum = (typeof FileAssetScalarFieldEnum)[keyof typeof FileAssetScalarFieldEnum]
+
+
+  export const FileVersionScalarFieldEnum: {
+    id: 'id',
+    fileAssetId: 'fileAssetId',
+    fileObjectId: 'fileObjectId',
+    versionNumber: 'versionNumber',
+    originalName: 'originalName',
+    uploadedById: 'uploadedById',
+    note: 'note',
+    status: 'status',
+    approved: 'approved',
+    createdAt: 'createdAt'
+  };
+
+  export type FileVersionScalarFieldEnum = (typeof FileVersionScalarFieldEnum)[keyof typeof FileVersionScalarFieldEnum]
+
+
+  export const AttachmentScalarFieldEnum: {
+    id: 'id',
+    fileObjectId: 'fileObjectId',
+    entityType: 'entityType',
+    entityId: 'entityId',
+    originalName: 'originalName',
+    kind: 'kind',
+    createdById: 'createdById',
+    status: 'status',
+    createdAt: 'createdAt'
+  };
+
+  export type AttachmentScalarFieldEnum = (typeof AttachmentScalarFieldEnum)[keyof typeof AttachmentScalarFieldEnum]
+
+
+  export const FileAuditEventScalarFieldEnum: {
+    id: 'id',
+    actorId: 'actorId',
+    action: 'action',
+    entity: 'entity',
+    entityId: 'entityId',
+    beforeValues: 'beforeValues',
+    afterValues: 'afterValues',
+    reason: 'reason',
+    createdAt: 'createdAt'
+  };
+
+  export type FileAuditEventScalarFieldEnum = (typeof FileAuditEventScalarFieldEnum)[keyof typeof FileAuditEventScalarFieldEnum]
+
+
+  export const FileConfigScalarFieldEnum: {
+    id: 'id',
+    mimeAllowlist: 'mimeAllowlist',
+    maxFileSizeBytes: 'maxFileSizeBytes',
+    departments: 'departments',
+    previewExpirySeconds: 'previewExpirySeconds',
+    updatedAt: 'updatedAt',
+    updatedById: 'updatedById'
+  };
+
+  export type FileConfigScalarFieldEnum = (typeof FileConfigScalarFieldEnum)[keyof typeof FileConfigScalarFieldEnum]
+
+
   export const UserScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -34507,6 +42272,76 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'FileCategory'
+   */
+  export type EnumFileCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileCategory'>
+    
+
+
+  /**
+   * Reference to a field of type 'FileCategory[]'
+   */
+  export type ListEnumFileCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileCategory[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'FileLifecycleStatus'
+   */
+  export type EnumFileLifecycleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileLifecycleStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'FileLifecycleStatus[]'
+   */
+  export type ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileLifecycleStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'AttachmentKind'
+   */
+  export type EnumAttachmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AttachmentKind'>
+    
+
+
+  /**
+   * Reference to a field of type 'AttachmentKind[]'
+   */
+  export type ListEnumAttachmentKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AttachmentKind[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'AuditAction'
+   */
+  export type EnumAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditAction'>
+    
+
+
+  /**
+   * Reference to a field of type 'AuditAction[]'
+   */
+  export type ListEnumAuditActionFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditAction[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'AuditEntity'
+   */
+  export type EnumAuditEntityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditEntity'>
+    
+
+
+  /**
+   * Reference to a field of type 'AuditEntity[]'
+   */
+  export type ListEnumAuditEntityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AuditEntity[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Float'
    */
   export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
@@ -34799,6 +42634,7 @@ export namespace Prisma {
     designVersions?: DesignVersionListRelationFilter
     returns?: ReturnListRelationFilter
     vendorProductionRecords?: VendorProductionRecordListRelationFilter
+    fileAssets?: FileAssetListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -34832,6 +42668,7 @@ export namespace Prisma {
     designVersions?: DesignVersionOrderByRelationAggregateInput
     returns?: ReturnOrderByRelationAggregateInput
     vendorProductionRecords?: VendorProductionRecordOrderByRelationAggregateInput
+    fileAssets?: FileAssetOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -34868,6 +42705,7 @@ export namespace Prisma {
     designVersions?: DesignVersionListRelationFilter
     returns?: ReturnListRelationFilter
     vendorProductionRecords?: VendorProductionRecordListRelationFilter
+    fileAssets?: FileAssetListRelationFilter
   }, "id">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -35822,6 +43660,444 @@ export namespace Prisma {
     reversedById?: StringNullableWithAggregatesFilter<"CustomerPromotion"> | string | null
   }
 
+  export type FileObjectWhereInput = {
+    AND?: FileObjectWhereInput | FileObjectWhereInput[]
+    OR?: FileObjectWhereInput[]
+    NOT?: FileObjectWhereInput | FileObjectWhereInput[]
+    id?: StringFilter<"FileObject"> | string
+    storageKey?: StringFilter<"FileObject"> | string
+    sizeBytes?: IntFilter<"FileObject"> | number
+    sha256?: StringFilter<"FileObject"> | string
+    mimeType?: StringFilter<"FileObject"> | string
+    createdAt?: DateTimeFilter<"FileObject"> | Date | string
+    fileVersions?: FileVersionListRelationFilter
+    attachments?: AttachmentListRelationFilter
+  }
+
+  export type FileObjectOrderByWithRelationInput = {
+    id?: SortOrder
+    storageKey?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    mimeType?: SortOrder
+    createdAt?: SortOrder
+    fileVersions?: FileVersionOrderByRelationAggregateInput
+    attachments?: AttachmentOrderByRelationAggregateInput
+  }
+
+  export type FileObjectWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    storageKey?: string
+    sha256?: string
+    AND?: FileObjectWhereInput | FileObjectWhereInput[]
+    OR?: FileObjectWhereInput[]
+    NOT?: FileObjectWhereInput | FileObjectWhereInput[]
+    sizeBytes?: IntFilter<"FileObject"> | number
+    mimeType?: StringFilter<"FileObject"> | string
+    createdAt?: DateTimeFilter<"FileObject"> | Date | string
+    fileVersions?: FileVersionListRelationFilter
+    attachments?: AttachmentListRelationFilter
+  }, "id" | "storageKey" | "sha256">
+
+  export type FileObjectOrderByWithAggregationInput = {
+    id?: SortOrder
+    storageKey?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    mimeType?: SortOrder
+    createdAt?: SortOrder
+    _count?: FileObjectCountOrderByAggregateInput
+    _avg?: FileObjectAvgOrderByAggregateInput
+    _max?: FileObjectMaxOrderByAggregateInput
+    _min?: FileObjectMinOrderByAggregateInput
+    _sum?: FileObjectSumOrderByAggregateInput
+  }
+
+  export type FileObjectScalarWhereWithAggregatesInput = {
+    AND?: FileObjectScalarWhereWithAggregatesInput | FileObjectScalarWhereWithAggregatesInput[]
+    OR?: FileObjectScalarWhereWithAggregatesInput[]
+    NOT?: FileObjectScalarWhereWithAggregatesInput | FileObjectScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FileObject"> | string
+    storageKey?: StringWithAggregatesFilter<"FileObject"> | string
+    sizeBytes?: IntWithAggregatesFilter<"FileObject"> | number
+    sha256?: StringWithAggregatesFilter<"FileObject"> | string
+    mimeType?: StringWithAggregatesFilter<"FileObject"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"FileObject"> | Date | string
+  }
+
+  export type FileAssetWhereInput = {
+    AND?: FileAssetWhereInput | FileAssetWhereInput[]
+    OR?: FileAssetWhereInput[]
+    NOT?: FileAssetWhereInput | FileAssetWhereInput[]
+    id?: StringFilter<"FileAsset"> | string
+    workItemId?: StringFilter<"FileAsset"> | string
+    category?: EnumFileCategoryFilter<"FileAsset"> | $Enums.FileCategory
+    logicalName?: StringFilter<"FileAsset"> | string
+    createdAt?: DateTimeFilter<"FileAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"FileAsset"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    fileVersions?: FileVersionListRelationFilter
+  }
+
+  export type FileAssetOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    category?: SortOrder
+    logicalName?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    fileVersions?: FileVersionOrderByRelationAggregateInput
+  }
+
+  export type FileAssetWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    workItemId_category_logicalName?: FileAssetWorkItemIdCategoryLogicalNameCompoundUniqueInput
+    AND?: FileAssetWhereInput | FileAssetWhereInput[]
+    OR?: FileAssetWhereInput[]
+    NOT?: FileAssetWhereInput | FileAssetWhereInput[]
+    workItemId?: StringFilter<"FileAsset"> | string
+    category?: EnumFileCategoryFilter<"FileAsset"> | $Enums.FileCategory
+    logicalName?: StringFilter<"FileAsset"> | string
+    createdAt?: DateTimeFilter<"FileAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"FileAsset"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    fileVersions?: FileVersionListRelationFilter
+  }, "id" | "workItemId_category_logicalName">
+
+  export type FileAssetOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    category?: SortOrder
+    logicalName?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: FileAssetCountOrderByAggregateInput
+    _max?: FileAssetMaxOrderByAggregateInput
+    _min?: FileAssetMinOrderByAggregateInput
+  }
+
+  export type FileAssetScalarWhereWithAggregatesInput = {
+    AND?: FileAssetScalarWhereWithAggregatesInput | FileAssetScalarWhereWithAggregatesInput[]
+    OR?: FileAssetScalarWhereWithAggregatesInput[]
+    NOT?: FileAssetScalarWhereWithAggregatesInput | FileAssetScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FileAsset"> | string
+    workItemId?: StringWithAggregatesFilter<"FileAsset"> | string
+    category?: EnumFileCategoryWithAggregatesFilter<"FileAsset"> | $Enums.FileCategory
+    logicalName?: StringWithAggregatesFilter<"FileAsset"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"FileAsset"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"FileAsset"> | Date | string
+  }
+
+  export type FileVersionWhereInput = {
+    AND?: FileVersionWhereInput | FileVersionWhereInput[]
+    OR?: FileVersionWhereInput[]
+    NOT?: FileVersionWhereInput | FileVersionWhereInput[]
+    id?: StringFilter<"FileVersion"> | string
+    fileAssetId?: StringFilter<"FileVersion"> | string
+    fileObjectId?: StringFilter<"FileVersion"> | string
+    versionNumber?: IntFilter<"FileVersion"> | number
+    originalName?: StringFilter<"FileVersion"> | string
+    uploadedById?: StringFilter<"FileVersion"> | string
+    note?: StringNullableFilter<"FileVersion"> | string | null
+    status?: EnumFileLifecycleStatusFilter<"FileVersion"> | $Enums.FileLifecycleStatus
+    approved?: BoolFilter<"FileVersion"> | boolean
+    createdAt?: DateTimeFilter<"FileVersion"> | Date | string
+    fileAsset?: XOR<FileAssetScalarRelationFilter, FileAssetWhereInput>
+    fileObject?: XOR<FileObjectScalarRelationFilter, FileObjectWhereInput>
+    uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type FileVersionOrderByWithRelationInput = {
+    id?: SortOrder
+    fileAssetId?: SortOrder
+    fileObjectId?: SortOrder
+    versionNumber?: SortOrder
+    originalName?: SortOrder
+    uploadedById?: SortOrder
+    note?: SortOrderInput | SortOrder
+    status?: SortOrder
+    approved?: SortOrder
+    createdAt?: SortOrder
+    fileAsset?: FileAssetOrderByWithRelationInput
+    fileObject?: FileObjectOrderByWithRelationInput
+    uploadedBy?: UserOrderByWithRelationInput
+  }
+
+  export type FileVersionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    fileAssetId_versionNumber?: FileVersionFileAssetIdVersionNumberCompoundUniqueInput
+    AND?: FileVersionWhereInput | FileVersionWhereInput[]
+    OR?: FileVersionWhereInput[]
+    NOT?: FileVersionWhereInput | FileVersionWhereInput[]
+    fileAssetId?: StringFilter<"FileVersion"> | string
+    fileObjectId?: StringFilter<"FileVersion"> | string
+    versionNumber?: IntFilter<"FileVersion"> | number
+    originalName?: StringFilter<"FileVersion"> | string
+    uploadedById?: StringFilter<"FileVersion"> | string
+    note?: StringNullableFilter<"FileVersion"> | string | null
+    status?: EnumFileLifecycleStatusFilter<"FileVersion"> | $Enums.FileLifecycleStatus
+    approved?: BoolFilter<"FileVersion"> | boolean
+    createdAt?: DateTimeFilter<"FileVersion"> | Date | string
+    fileAsset?: XOR<FileAssetScalarRelationFilter, FileAssetWhereInput>
+    fileObject?: XOR<FileObjectScalarRelationFilter, FileObjectWhereInput>
+    uploadedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "fileAssetId_versionNumber">
+
+  export type FileVersionOrderByWithAggregationInput = {
+    id?: SortOrder
+    fileAssetId?: SortOrder
+    fileObjectId?: SortOrder
+    versionNumber?: SortOrder
+    originalName?: SortOrder
+    uploadedById?: SortOrder
+    note?: SortOrderInput | SortOrder
+    status?: SortOrder
+    approved?: SortOrder
+    createdAt?: SortOrder
+    _count?: FileVersionCountOrderByAggregateInput
+    _avg?: FileVersionAvgOrderByAggregateInput
+    _max?: FileVersionMaxOrderByAggregateInput
+    _min?: FileVersionMinOrderByAggregateInput
+    _sum?: FileVersionSumOrderByAggregateInput
+  }
+
+  export type FileVersionScalarWhereWithAggregatesInput = {
+    AND?: FileVersionScalarWhereWithAggregatesInput | FileVersionScalarWhereWithAggregatesInput[]
+    OR?: FileVersionScalarWhereWithAggregatesInput[]
+    NOT?: FileVersionScalarWhereWithAggregatesInput | FileVersionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FileVersion"> | string
+    fileAssetId?: StringWithAggregatesFilter<"FileVersion"> | string
+    fileObjectId?: StringWithAggregatesFilter<"FileVersion"> | string
+    versionNumber?: IntWithAggregatesFilter<"FileVersion"> | number
+    originalName?: StringWithAggregatesFilter<"FileVersion"> | string
+    uploadedById?: StringWithAggregatesFilter<"FileVersion"> | string
+    note?: StringNullableWithAggregatesFilter<"FileVersion"> | string | null
+    status?: EnumFileLifecycleStatusWithAggregatesFilter<"FileVersion"> | $Enums.FileLifecycleStatus
+    approved?: BoolWithAggregatesFilter<"FileVersion"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"FileVersion"> | Date | string
+  }
+
+  export type AttachmentWhereInput = {
+    AND?: AttachmentWhereInput | AttachmentWhereInput[]
+    OR?: AttachmentWhereInput[]
+    NOT?: AttachmentWhereInput | AttachmentWhereInput[]
+    id?: StringFilter<"Attachment"> | string
+    fileObjectId?: StringFilter<"Attachment"> | string
+    entityType?: StringFilter<"Attachment"> | string
+    entityId?: StringFilter<"Attachment"> | string
+    originalName?: StringFilter<"Attachment"> | string
+    kind?: EnumAttachmentKindFilter<"Attachment"> | $Enums.AttachmentKind
+    createdById?: StringFilter<"Attachment"> | string
+    status?: EnumFileLifecycleStatusFilter<"Attachment"> | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFilter<"Attachment"> | Date | string
+    fileObject?: XOR<FileObjectScalarRelationFilter, FileObjectWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type AttachmentOrderByWithRelationInput = {
+    id?: SortOrder
+    fileObjectId?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    originalName?: SortOrder
+    kind?: SortOrder
+    createdById?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    fileObject?: FileObjectOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+  }
+
+  export type AttachmentWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: AttachmentWhereInput | AttachmentWhereInput[]
+    OR?: AttachmentWhereInput[]
+    NOT?: AttachmentWhereInput | AttachmentWhereInput[]
+    fileObjectId?: StringFilter<"Attachment"> | string
+    entityType?: StringFilter<"Attachment"> | string
+    entityId?: StringFilter<"Attachment"> | string
+    originalName?: StringFilter<"Attachment"> | string
+    kind?: EnumAttachmentKindFilter<"Attachment"> | $Enums.AttachmentKind
+    createdById?: StringFilter<"Attachment"> | string
+    status?: EnumFileLifecycleStatusFilter<"Attachment"> | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFilter<"Attachment"> | Date | string
+    fileObject?: XOR<FileObjectScalarRelationFilter, FileObjectWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type AttachmentOrderByWithAggregationInput = {
+    id?: SortOrder
+    fileObjectId?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    originalName?: SortOrder
+    kind?: SortOrder
+    createdById?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    _count?: AttachmentCountOrderByAggregateInput
+    _max?: AttachmentMaxOrderByAggregateInput
+    _min?: AttachmentMinOrderByAggregateInput
+  }
+
+  export type AttachmentScalarWhereWithAggregatesInput = {
+    AND?: AttachmentScalarWhereWithAggregatesInput | AttachmentScalarWhereWithAggregatesInput[]
+    OR?: AttachmentScalarWhereWithAggregatesInput[]
+    NOT?: AttachmentScalarWhereWithAggregatesInput | AttachmentScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Attachment"> | string
+    fileObjectId?: StringWithAggregatesFilter<"Attachment"> | string
+    entityType?: StringWithAggregatesFilter<"Attachment"> | string
+    entityId?: StringWithAggregatesFilter<"Attachment"> | string
+    originalName?: StringWithAggregatesFilter<"Attachment"> | string
+    kind?: EnumAttachmentKindWithAggregatesFilter<"Attachment"> | $Enums.AttachmentKind
+    createdById?: StringWithAggregatesFilter<"Attachment"> | string
+    status?: EnumFileLifecycleStatusWithAggregatesFilter<"Attachment"> | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeWithAggregatesFilter<"Attachment"> | Date | string
+  }
+
+  export type FileAuditEventWhereInput = {
+    AND?: FileAuditEventWhereInput | FileAuditEventWhereInput[]
+    OR?: FileAuditEventWhereInput[]
+    NOT?: FileAuditEventWhereInput | FileAuditEventWhereInput[]
+    id?: StringFilter<"FileAuditEvent"> | string
+    actorId?: StringFilter<"FileAuditEvent"> | string
+    action?: EnumAuditActionFilter<"FileAuditEvent"> | $Enums.AuditAction
+    entity?: EnumAuditEntityFilter<"FileAuditEvent"> | $Enums.AuditEntity
+    entityId?: StringFilter<"FileAuditEvent"> | string
+    beforeValues?: JsonNullableFilter<"FileAuditEvent">
+    afterValues?: JsonNullableFilter<"FileAuditEvent">
+    reason?: StringNullableFilter<"FileAuditEvent"> | string | null
+    createdAt?: DateTimeFilter<"FileAuditEvent"> | Date | string
+    actor?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type FileAuditEventOrderByWithRelationInput = {
+    id?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    entity?: SortOrder
+    entityId?: SortOrder
+    beforeValues?: SortOrderInput | SortOrder
+    afterValues?: SortOrderInput | SortOrder
+    reason?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    actor?: UserOrderByWithRelationInput
+  }
+
+  export type FileAuditEventWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: FileAuditEventWhereInput | FileAuditEventWhereInput[]
+    OR?: FileAuditEventWhereInput[]
+    NOT?: FileAuditEventWhereInput | FileAuditEventWhereInput[]
+    actorId?: StringFilter<"FileAuditEvent"> | string
+    action?: EnumAuditActionFilter<"FileAuditEvent"> | $Enums.AuditAction
+    entity?: EnumAuditEntityFilter<"FileAuditEvent"> | $Enums.AuditEntity
+    entityId?: StringFilter<"FileAuditEvent"> | string
+    beforeValues?: JsonNullableFilter<"FileAuditEvent">
+    afterValues?: JsonNullableFilter<"FileAuditEvent">
+    reason?: StringNullableFilter<"FileAuditEvent"> | string | null
+    createdAt?: DateTimeFilter<"FileAuditEvent"> | Date | string
+    actor?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type FileAuditEventOrderByWithAggregationInput = {
+    id?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    entity?: SortOrder
+    entityId?: SortOrder
+    beforeValues?: SortOrderInput | SortOrder
+    afterValues?: SortOrderInput | SortOrder
+    reason?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: FileAuditEventCountOrderByAggregateInput
+    _max?: FileAuditEventMaxOrderByAggregateInput
+    _min?: FileAuditEventMinOrderByAggregateInput
+  }
+
+  export type FileAuditEventScalarWhereWithAggregatesInput = {
+    AND?: FileAuditEventScalarWhereWithAggregatesInput | FileAuditEventScalarWhereWithAggregatesInput[]
+    OR?: FileAuditEventScalarWhereWithAggregatesInput[]
+    NOT?: FileAuditEventScalarWhereWithAggregatesInput | FileAuditEventScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FileAuditEvent"> | string
+    actorId?: StringWithAggregatesFilter<"FileAuditEvent"> | string
+    action?: EnumAuditActionWithAggregatesFilter<"FileAuditEvent"> | $Enums.AuditAction
+    entity?: EnumAuditEntityWithAggregatesFilter<"FileAuditEvent"> | $Enums.AuditEntity
+    entityId?: StringWithAggregatesFilter<"FileAuditEvent"> | string
+    beforeValues?: JsonNullableWithAggregatesFilter<"FileAuditEvent">
+    afterValues?: JsonNullableWithAggregatesFilter<"FileAuditEvent">
+    reason?: StringNullableWithAggregatesFilter<"FileAuditEvent"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"FileAuditEvent"> | Date | string
+  }
+
+  export type FileConfigWhereInput = {
+    AND?: FileConfigWhereInput | FileConfigWhereInput[]
+    OR?: FileConfigWhereInput[]
+    NOT?: FileConfigWhereInput | FileConfigWhereInput[]
+    id?: StringFilter<"FileConfig"> | string
+    mimeAllowlist?: JsonFilter<"FileConfig">
+    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    departments?: JsonFilter<"FileConfig">
+    previewExpirySeconds?: IntFilter<"FileConfig"> | number
+    updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
+    updatedById?: StringFilter<"FileConfig"> | string
+    updatedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type FileConfigOrderByWithRelationInput = {
+    id?: SortOrder
+    mimeAllowlist?: SortOrder
+    maxFileSizeBytes?: SortOrder
+    departments?: SortOrder
+    previewExpirySeconds?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+    updatedBy?: UserOrderByWithRelationInput
+  }
+
+  export type FileConfigWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: FileConfigWhereInput | FileConfigWhereInput[]
+    OR?: FileConfigWhereInput[]
+    NOT?: FileConfigWhereInput | FileConfigWhereInput[]
+    mimeAllowlist?: JsonFilter<"FileConfig">
+    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    departments?: JsonFilter<"FileConfig">
+    previewExpirySeconds?: IntFilter<"FileConfig"> | number
+    updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
+    updatedById?: StringFilter<"FileConfig"> | string
+    updatedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type FileConfigOrderByWithAggregationInput = {
+    id?: SortOrder
+    mimeAllowlist?: SortOrder
+    maxFileSizeBytes?: SortOrder
+    departments?: SortOrder
+    previewExpirySeconds?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+    _count?: FileConfigCountOrderByAggregateInput
+    _avg?: FileConfigAvgOrderByAggregateInput
+    _max?: FileConfigMaxOrderByAggregateInput
+    _min?: FileConfigMinOrderByAggregateInput
+    _sum?: FileConfigSumOrderByAggregateInput
+  }
+
+  export type FileConfigScalarWhereWithAggregatesInput = {
+    AND?: FileConfigScalarWhereWithAggregatesInput | FileConfigScalarWhereWithAggregatesInput[]
+    OR?: FileConfigScalarWhereWithAggregatesInput[]
+    NOT?: FileConfigScalarWhereWithAggregatesInput | FileConfigScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FileConfig"> | string
+    mimeAllowlist?: JsonWithAggregatesFilter<"FileConfig">
+    maxFileSizeBytes?: IntWithAggregatesFilter<"FileConfig"> | number
+    departments?: JsonWithAggregatesFilter<"FileConfig">
+    previewExpirySeconds?: IntWithAggregatesFilter<"FileConfig"> | number
+    updatedAt?: DateTimeWithAggregatesFilter<"FileConfig"> | Date | string
+    updatedById?: StringWithAggregatesFilter<"FileConfig"> | string
+  }
+
   export type UserWhereInput = {
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
@@ -35854,6 +44130,10 @@ export namespace Prisma {
     returnsRaised?: ReturnListRelationFilter
     returnsAssignedToMe?: ReturnListRelationFilter
     vendorProductionRecordsCreated?: VendorProductionRecordListRelationFilter
+    fileVersionsUploaded?: FileVersionListRelationFilter
+    attachments?: AttachmentListRelationFilter
+    fileAuditEvents?: FileAuditEventListRelationFilter
+    fileConfigsUpdated?: FileConfigListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -35885,6 +44165,10 @@ export namespace Prisma {
     returnsRaised?: ReturnOrderByRelationAggregateInput
     returnsAssignedToMe?: ReturnOrderByRelationAggregateInput
     vendorProductionRecordsCreated?: VendorProductionRecordOrderByRelationAggregateInput
+    fileVersionsUploaded?: FileVersionOrderByRelationAggregateInput
+    attachments?: AttachmentOrderByRelationAggregateInput
+    fileAuditEvents?: FileAuditEventOrderByRelationAggregateInput
+    fileConfigsUpdated?: FileConfigOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -35919,6 +44203,10 @@ export namespace Prisma {
     returnsRaised?: ReturnListRelationFilter
     returnsAssignedToMe?: ReturnListRelationFilter
     vendorProductionRecordsCreated?: VendorProductionRecordListRelationFilter
+    fileVersionsUploaded?: FileVersionListRelationFilter
+    attachments?: AttachmentListRelationFilter
+    fileAuditEvents?: FileAuditEventListRelationFilter
+    fileConfigsUpdated?: FileConfigListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -36820,6 +45108,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -36849,6 +45138,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -36878,6 +45168,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -36907,6 +45198,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -37918,6 +46210,465 @@ export namespace Prisma {
     reversedById?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type FileObjectCreateInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    fileVersions?: FileVersionCreateNestedManyWithoutFileObjectInput
+    attachments?: AttachmentCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectUncheckedCreateInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    fileVersions?: FileVersionUncheckedCreateNestedManyWithoutFileObjectInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUpdateManyWithoutFileObjectNestedInput
+    attachments?: AttachmentUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type FileObjectUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUncheckedUpdateManyWithoutFileObjectNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type FileObjectCreateManyInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+  }
+
+  export type FileObjectUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileObjectUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAssetCreateInput = {
+    id?: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutFileAssetsInput
+    fileVersions?: FileVersionCreateNestedManyWithoutFileAssetInput
+  }
+
+  export type FileAssetUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    fileVersions?: FileVersionUncheckedCreateNestedManyWithoutFileAssetInput
+  }
+
+  export type FileAssetUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutFileAssetsNestedInput
+    fileVersions?: FileVersionUpdateManyWithoutFileAssetNestedInput
+  }
+
+  export type FileAssetUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUncheckedUpdateManyWithoutFileAssetNestedInput
+  }
+
+  export type FileAssetCreateManyInput = {
+    id?: string
+    workItemId: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FileAssetUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAssetUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionCreateInput = {
+    id?: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+    fileAsset: FileAssetCreateNestedOneWithoutFileVersionsInput
+    fileObject: FileObjectCreateNestedOneWithoutFileVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutFileVersionsUploadedInput
+  }
+
+  export type FileVersionUncheckedCreateInput = {
+    id?: string
+    fileAssetId: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileAsset?: FileAssetUpdateOneRequiredWithoutFileVersionsNestedInput
+    fileObject?: FileObjectUpdateOneRequiredWithoutFileVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutFileVersionsUploadedNestedInput
+  }
+
+  export type FileVersionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionCreateManyInput = {
+    id?: string
+    fileAssetId: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentCreateInput = {
+    id?: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+    fileObject: FileObjectCreateNestedOneWithoutAttachmentsInput
+    createdBy: UserCreateNestedOneWithoutAttachmentsInput
+  }
+
+  export type AttachmentUncheckedCreateInput = {
+    id?: string
+    fileObjectId: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    createdById: string
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type AttachmentUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileObject?: FileObjectUpdateOneRequiredWithoutAttachmentsNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutAttachmentsNestedInput
+  }
+
+  export type AttachmentUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    createdById?: StringFieldUpdateOperationsInput | string
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentCreateManyInput = {
+    id?: string
+    fileObjectId: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    createdById: string
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type AttachmentUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    createdById?: StringFieldUpdateOperationsInput | string
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventCreateInput = {
+    id?: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+    actor: UserCreateNestedOneWithoutFileAuditEventsInput
+  }
+
+  export type FileAuditEventUncheckedCreateInput = {
+    id?: string
+    actorId: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type FileAuditEventUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    actor?: UserUpdateOneRequiredWithoutFileAuditEventsNestedInput
+  }
+
+  export type FileAuditEventUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventCreateManyInput = {
+    id?: string
+    actorId: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type FileAuditEventUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    actorId?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileConfigCreateInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
+    updatedBy: UserCreateNestedOneWithoutFileConfigsUpdatedInput
+  }
+
+  export type FileConfigUncheckedCreateInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
+    updatedById: string
+  }
+
+  export type FileConfigUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: UserUpdateOneRequiredWithoutFileConfigsUpdatedNestedInput
+  }
+
+  export type FileConfigUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type FileConfigCreateManyInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
+    updatedById: string
+  }
+
+  export type FileConfigUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileConfigUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedById?: StringFieldUpdateOperationsInput | string
+  }
+
   export type UserCreateInput = {
     id: string
     name: string
@@ -37947,6 +46698,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -37978,6 +46733,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUpdateInput = {
@@ -38009,6 +46768,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -38040,6 +46803,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -39167,6 +47934,12 @@ export namespace Prisma {
     none?: VendorProductionRecordWhereInput
   }
 
+  export type FileAssetListRelationFilter = {
+    every?: FileAssetWhereInput
+    some?: FileAssetWhereInput
+    none?: FileAssetWhereInput
+  }
+
   export type WorkItemTransitionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -39180,6 +47953,10 @@ export namespace Prisma {
   }
 
   export type VendorProductionRecordOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FileAssetOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -39951,6 +48728,345 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type FileVersionListRelationFilter = {
+    every?: FileVersionWhereInput
+    some?: FileVersionWhereInput
+    none?: FileVersionWhereInput
+  }
+
+  export type AttachmentListRelationFilter = {
+    every?: AttachmentWhereInput
+    some?: AttachmentWhereInput
+    none?: AttachmentWhereInput
+  }
+
+  export type FileVersionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type AttachmentOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FileObjectCountOrderByAggregateInput = {
+    id?: SortOrder
+    storageKey?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    mimeType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileObjectAvgOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+  }
+
+  export type FileObjectMaxOrderByAggregateInput = {
+    id?: SortOrder
+    storageKey?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    mimeType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileObjectMinOrderByAggregateInput = {
+    id?: SortOrder
+    storageKey?: SortOrder
+    sizeBytes?: SortOrder
+    sha256?: SortOrder
+    mimeType?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileObjectSumOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+  }
+
+  export type EnumFileCategoryFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileCategory | EnumFileCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileCategoryFilter<$PrismaModel> | $Enums.FileCategory
+  }
+
+  export type FileAssetWorkItemIdCategoryLogicalNameCompoundUniqueInput = {
+    workItemId: string
+    category: $Enums.FileCategory
+    logicalName: string
+  }
+
+  export type FileAssetCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    category?: SortOrder
+    logicalName?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FileAssetMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    category?: SortOrder
+    logicalName?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type FileAssetMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    category?: SortOrder
+    logicalName?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumFileCategoryWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileCategory | EnumFileCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileCategoryWithAggregatesFilter<$PrismaModel> | $Enums.FileCategory
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFileCategoryFilter<$PrismaModel>
+    _max?: NestedEnumFileCategoryFilter<$PrismaModel>
+  }
+
+  export type EnumFileLifecycleStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileLifecycleStatus | EnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileLifecycleStatusFilter<$PrismaModel> | $Enums.FileLifecycleStatus
+  }
+
+  export type FileAssetScalarRelationFilter = {
+    is?: FileAssetWhereInput
+    isNot?: FileAssetWhereInput
+  }
+
+  export type FileObjectScalarRelationFilter = {
+    is?: FileObjectWhereInput
+    isNot?: FileObjectWhereInput
+  }
+
+  export type FileVersionFileAssetIdVersionNumberCompoundUniqueInput = {
+    fileAssetId: string
+    versionNumber: number
+  }
+
+  export type FileVersionCountOrderByAggregateInput = {
+    id?: SortOrder
+    fileAssetId?: SortOrder
+    fileObjectId?: SortOrder
+    versionNumber?: SortOrder
+    originalName?: SortOrder
+    uploadedById?: SortOrder
+    note?: SortOrder
+    status?: SortOrder
+    approved?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileVersionAvgOrderByAggregateInput = {
+    versionNumber?: SortOrder
+  }
+
+  export type FileVersionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    fileAssetId?: SortOrder
+    fileObjectId?: SortOrder
+    versionNumber?: SortOrder
+    originalName?: SortOrder
+    uploadedById?: SortOrder
+    note?: SortOrder
+    status?: SortOrder
+    approved?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileVersionMinOrderByAggregateInput = {
+    id?: SortOrder
+    fileAssetId?: SortOrder
+    fileObjectId?: SortOrder
+    versionNumber?: SortOrder
+    originalName?: SortOrder
+    uploadedById?: SortOrder
+    note?: SortOrder
+    status?: SortOrder
+    approved?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileVersionSumOrderByAggregateInput = {
+    versionNumber?: SortOrder
+  }
+
+  export type EnumFileLifecycleStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileLifecycleStatus | EnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileLifecycleStatusWithAggregatesFilter<$PrismaModel> | $Enums.FileLifecycleStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFileLifecycleStatusFilter<$PrismaModel>
+    _max?: NestedEnumFileLifecycleStatusFilter<$PrismaModel>
+  }
+
+  export type EnumAttachmentKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.AttachmentKind | EnumAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumAttachmentKindFilter<$PrismaModel> | $Enums.AttachmentKind
+  }
+
+  export type AttachmentCountOrderByAggregateInput = {
+    id?: SortOrder
+    fileObjectId?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    originalName?: SortOrder
+    kind?: SortOrder
+    createdById?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AttachmentMaxOrderByAggregateInput = {
+    id?: SortOrder
+    fileObjectId?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    originalName?: SortOrder
+    kind?: SortOrder
+    createdById?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type AttachmentMinOrderByAggregateInput = {
+    id?: SortOrder
+    fileObjectId?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    originalName?: SortOrder
+    kind?: SortOrder
+    createdById?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumAttachmentKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AttachmentKind | EnumAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumAttachmentKindWithAggregatesFilter<$PrismaModel> | $Enums.AttachmentKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAttachmentKindFilter<$PrismaModel>
+    _max?: NestedEnumAttachmentKindFilter<$PrismaModel>
+  }
+
+  export type EnumAuditActionFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditAction | EnumAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditActionFilter<$PrismaModel> | $Enums.AuditAction
+  }
+
+  export type EnumAuditEntityFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditEntity | EnumAuditEntityFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditEntityFilter<$PrismaModel> | $Enums.AuditEntity
+  }
+
+  export type FileAuditEventCountOrderByAggregateInput = {
+    id?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    entity?: SortOrder
+    entityId?: SortOrder
+    beforeValues?: SortOrder
+    afterValues?: SortOrder
+    reason?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileAuditEventMaxOrderByAggregateInput = {
+    id?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    entity?: SortOrder
+    entityId?: SortOrder
+    reason?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FileAuditEventMinOrderByAggregateInput = {
+    id?: SortOrder
+    actorId?: SortOrder
+    action?: SortOrder
+    entity?: SortOrder
+    entityId?: SortOrder
+    reason?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumAuditActionWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditAction | EnumAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditActionWithAggregatesFilter<$PrismaModel> | $Enums.AuditAction
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAuditActionFilter<$PrismaModel>
+    _max?: NestedEnumAuditActionFilter<$PrismaModel>
+  }
+
+  export type EnumAuditEntityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditEntity | EnumAuditEntityFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditEntityWithAggregatesFilter<$PrismaModel> | $Enums.AuditEntity
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAuditEntityFilter<$PrismaModel>
+    _max?: NestedEnumAuditEntityFilter<$PrismaModel>
+  }
+
+  export type FileConfigCountOrderByAggregateInput = {
+    id?: SortOrder
+    mimeAllowlist?: SortOrder
+    maxFileSizeBytes?: SortOrder
+    departments?: SortOrder
+    previewExpirySeconds?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FileConfigAvgOrderByAggregateInput = {
+    maxFileSizeBytes?: SortOrder
+    previewExpirySeconds?: SortOrder
+  }
+
+  export type FileConfigMaxOrderByAggregateInput = {
+    id?: SortOrder
+    maxFileSizeBytes?: SortOrder
+    previewExpirySeconds?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FileConfigMinOrderByAggregateInput = {
+    id?: SortOrder
+    maxFileSizeBytes?: SortOrder
+    previewExpirySeconds?: SortOrder
+    updatedAt?: SortOrder
+    updatedById?: SortOrder
+  }
+
+  export type FileConfigSumOrderByAggregateInput = {
+    maxFileSizeBytes?: SortOrder
+    previewExpirySeconds?: SortOrder
+  }
+
   export type SessionListRelationFilter = {
     every?: SessionWhereInput
     some?: SessionWhereInput
@@ -39981,6 +49097,18 @@ export namespace Prisma {
     none?: AuditEventWhereInput
   }
 
+  export type FileAuditEventListRelationFilter = {
+    every?: FileAuditEventWhereInput
+    some?: FileAuditEventWhereInput
+    none?: FileAuditEventWhereInput
+  }
+
+  export type FileConfigListRelationFilter = {
+    every?: FileConfigWhereInput
+    some?: FileConfigWhereInput
+    none?: FileConfigWhereInput
+  }
+
   export type SessionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -39998,6 +49126,14 @@ export namespace Prisma {
   }
 
   export type AuditEventOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FileAuditEventOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FileConfigOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -40898,6 +50034,13 @@ export namespace Prisma {
     connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
   }
 
+  export type FileAssetCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput> | FileAssetCreateWithoutWorkItemInput[] | FileAssetUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: FileAssetCreateOrConnectWithoutWorkItemInput | FileAssetCreateOrConnectWithoutWorkItemInput[]
+    createMany?: FileAssetCreateManyWorkItemInputEnvelope
+    connect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+  }
+
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -40931,6 +50074,13 @@ export namespace Prisma {
     connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutWorkItemInput | VendorProductionRecordCreateOrConnectWithoutWorkItemInput[]
     createMany?: VendorProductionRecordCreateManyWorkItemInputEnvelope
     connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+  }
+
+  export type FileAssetUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput> | FileAssetCreateWithoutWorkItemInput[] | FileAssetUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: FileAssetCreateOrConnectWithoutWorkItemInput | FileAssetCreateOrConnectWithoutWorkItemInput[]
+    createMany?: FileAssetCreateManyWorkItemInputEnvelope
+    connect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
   }
 
   export type EnumWorkItemStateFieldUpdateOperationsInput = {
@@ -41065,6 +50215,20 @@ export namespace Prisma {
     deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
   }
 
+  export type FileAssetUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput> | FileAssetCreateWithoutWorkItemInput[] | FileAssetUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: FileAssetCreateOrConnectWithoutWorkItemInput | FileAssetCreateOrConnectWithoutWorkItemInput[]
+    upsert?: FileAssetUpsertWithWhereUniqueWithoutWorkItemInput | FileAssetUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: FileAssetCreateManyWorkItemInputEnvelope
+    set?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    disconnect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    delete?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    connect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    update?: FileAssetUpdateWithWhereUniqueWithoutWorkItemInput | FileAssetUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: FileAssetUpdateManyWithWhereWithoutWorkItemInput | FileAssetUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: FileAssetScalarWhereInput | FileAssetScalarWhereInput[]
+  }
+
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -41133,6 +50297,20 @@ export namespace Prisma {
     update?: VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput | VendorProductionRecordUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput | VendorProductionRecordUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+  }
+
+  export type FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput> | FileAssetCreateWithoutWorkItemInput[] | FileAssetUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: FileAssetCreateOrConnectWithoutWorkItemInput | FileAssetCreateOrConnectWithoutWorkItemInput[]
+    upsert?: FileAssetUpsertWithWhereUniqueWithoutWorkItemInput | FileAssetUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: FileAssetCreateManyWorkItemInputEnvelope
+    set?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    disconnect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    delete?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    connect?: FileAssetWhereUniqueInput | FileAssetWhereUniqueInput[]
+    update?: FileAssetUpdateWithWhereUniqueWithoutWorkItemInput | FileAssetUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: FileAssetUpdateManyWithWhereWithoutWorkItemInput | FileAssetUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: FileAssetScalarWhereInput | FileAssetScalarWhereInput[]
   }
 
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
@@ -41634,6 +50812,264 @@ export namespace Prisma {
     update?: XOR<XOR<CustomerUpdateToOneWithWhereWithoutPromotionsToInput, CustomerUpdateWithoutPromotionsToInput>, CustomerUncheckedUpdateWithoutPromotionsToInput>
   }
 
+  export type FileVersionCreateNestedManyWithoutFileObjectInput = {
+    create?: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput> | FileVersionCreateWithoutFileObjectInput[] | FileVersionUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileObjectInput | FileVersionCreateOrConnectWithoutFileObjectInput[]
+    createMany?: FileVersionCreateManyFileObjectInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type AttachmentCreateNestedManyWithoutFileObjectInput = {
+    create?: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput> | AttachmentCreateWithoutFileObjectInput[] | AttachmentUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutFileObjectInput | AttachmentCreateOrConnectWithoutFileObjectInput[]
+    createMany?: AttachmentCreateManyFileObjectInputEnvelope
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+  }
+
+  export type FileVersionUncheckedCreateNestedManyWithoutFileObjectInput = {
+    create?: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput> | FileVersionCreateWithoutFileObjectInput[] | FileVersionUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileObjectInput | FileVersionCreateOrConnectWithoutFileObjectInput[]
+    createMany?: FileVersionCreateManyFileObjectInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type AttachmentUncheckedCreateNestedManyWithoutFileObjectInput = {
+    create?: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput> | AttachmentCreateWithoutFileObjectInput[] | AttachmentUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutFileObjectInput | AttachmentCreateOrConnectWithoutFileObjectInput[]
+    createMany?: AttachmentCreateManyFileObjectInputEnvelope
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+  }
+
+  export type FileVersionUpdateManyWithoutFileObjectNestedInput = {
+    create?: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput> | FileVersionCreateWithoutFileObjectInput[] | FileVersionUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileObjectInput | FileVersionCreateOrConnectWithoutFileObjectInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutFileObjectInput | FileVersionUpsertWithWhereUniqueWithoutFileObjectInput[]
+    createMany?: FileVersionCreateManyFileObjectInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutFileObjectInput | FileVersionUpdateWithWhereUniqueWithoutFileObjectInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutFileObjectInput | FileVersionUpdateManyWithWhereWithoutFileObjectInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type AttachmentUpdateManyWithoutFileObjectNestedInput = {
+    create?: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput> | AttachmentCreateWithoutFileObjectInput[] | AttachmentUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutFileObjectInput | AttachmentCreateOrConnectWithoutFileObjectInput[]
+    upsert?: AttachmentUpsertWithWhereUniqueWithoutFileObjectInput | AttachmentUpsertWithWhereUniqueWithoutFileObjectInput[]
+    createMany?: AttachmentCreateManyFileObjectInputEnvelope
+    set?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    disconnect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    delete?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    update?: AttachmentUpdateWithWhereUniqueWithoutFileObjectInput | AttachmentUpdateWithWhereUniqueWithoutFileObjectInput[]
+    updateMany?: AttachmentUpdateManyWithWhereWithoutFileObjectInput | AttachmentUpdateManyWithWhereWithoutFileObjectInput[]
+    deleteMany?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutFileObjectNestedInput = {
+    create?: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput> | FileVersionCreateWithoutFileObjectInput[] | FileVersionUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileObjectInput | FileVersionCreateOrConnectWithoutFileObjectInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutFileObjectInput | FileVersionUpsertWithWhereUniqueWithoutFileObjectInput[]
+    createMany?: FileVersionCreateManyFileObjectInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutFileObjectInput | FileVersionUpdateWithWhereUniqueWithoutFileObjectInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutFileObjectInput | FileVersionUpdateManyWithWhereWithoutFileObjectInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type AttachmentUncheckedUpdateManyWithoutFileObjectNestedInput = {
+    create?: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput> | AttachmentCreateWithoutFileObjectInput[] | AttachmentUncheckedCreateWithoutFileObjectInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutFileObjectInput | AttachmentCreateOrConnectWithoutFileObjectInput[]
+    upsert?: AttachmentUpsertWithWhereUniqueWithoutFileObjectInput | AttachmentUpsertWithWhereUniqueWithoutFileObjectInput[]
+    createMany?: AttachmentCreateManyFileObjectInputEnvelope
+    set?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    disconnect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    delete?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    update?: AttachmentUpdateWithWhereUniqueWithoutFileObjectInput | AttachmentUpdateWithWhereUniqueWithoutFileObjectInput[]
+    updateMany?: AttachmentUpdateManyWithWhereWithoutFileObjectInput | AttachmentUpdateManyWithWhereWithoutFileObjectInput[]
+    deleteMany?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+  }
+
+  export type WorkItemCreateNestedOneWithoutFileAssetsInput = {
+    create?: XOR<WorkItemCreateWithoutFileAssetsInput, WorkItemUncheckedCreateWithoutFileAssetsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutFileAssetsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type FileVersionCreateNestedManyWithoutFileAssetInput = {
+    create?: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput> | FileVersionCreateWithoutFileAssetInput[] | FileVersionUncheckedCreateWithoutFileAssetInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileAssetInput | FileVersionCreateOrConnectWithoutFileAssetInput[]
+    createMany?: FileVersionCreateManyFileAssetInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type FileVersionUncheckedCreateNestedManyWithoutFileAssetInput = {
+    create?: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput> | FileVersionCreateWithoutFileAssetInput[] | FileVersionUncheckedCreateWithoutFileAssetInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileAssetInput | FileVersionCreateOrConnectWithoutFileAssetInput[]
+    createMany?: FileVersionCreateManyFileAssetInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type EnumFileCategoryFieldUpdateOperationsInput = {
+    set?: $Enums.FileCategory
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutFileAssetsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutFileAssetsInput, WorkItemUncheckedCreateWithoutFileAssetsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutFileAssetsInput
+    upsert?: WorkItemUpsertWithoutFileAssetsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutFileAssetsInput, WorkItemUpdateWithoutFileAssetsInput>, WorkItemUncheckedUpdateWithoutFileAssetsInput>
+  }
+
+  export type FileVersionUpdateManyWithoutFileAssetNestedInput = {
+    create?: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput> | FileVersionCreateWithoutFileAssetInput[] | FileVersionUncheckedCreateWithoutFileAssetInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileAssetInput | FileVersionCreateOrConnectWithoutFileAssetInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutFileAssetInput | FileVersionUpsertWithWhereUniqueWithoutFileAssetInput[]
+    createMany?: FileVersionCreateManyFileAssetInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutFileAssetInput | FileVersionUpdateWithWhereUniqueWithoutFileAssetInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutFileAssetInput | FileVersionUpdateManyWithWhereWithoutFileAssetInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutFileAssetNestedInput = {
+    create?: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput> | FileVersionCreateWithoutFileAssetInput[] | FileVersionUncheckedCreateWithoutFileAssetInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutFileAssetInput | FileVersionCreateOrConnectWithoutFileAssetInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutFileAssetInput | FileVersionUpsertWithWhereUniqueWithoutFileAssetInput[]
+    createMany?: FileVersionCreateManyFileAssetInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutFileAssetInput | FileVersionUpdateWithWhereUniqueWithoutFileAssetInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutFileAssetInput | FileVersionUpdateManyWithWhereWithoutFileAssetInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type FileAssetCreateNestedOneWithoutFileVersionsInput = {
+    create?: XOR<FileAssetCreateWithoutFileVersionsInput, FileAssetUncheckedCreateWithoutFileVersionsInput>
+    connectOrCreate?: FileAssetCreateOrConnectWithoutFileVersionsInput
+    connect?: FileAssetWhereUniqueInput
+  }
+
+  export type FileObjectCreateNestedOneWithoutFileVersionsInput = {
+    create?: XOR<FileObjectCreateWithoutFileVersionsInput, FileObjectUncheckedCreateWithoutFileVersionsInput>
+    connectOrCreate?: FileObjectCreateOrConnectWithoutFileVersionsInput
+    connect?: FileObjectWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutFileVersionsUploadedInput = {
+    create?: XOR<UserCreateWithoutFileVersionsUploadedInput, UserUncheckedCreateWithoutFileVersionsUploadedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileVersionsUploadedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumFileLifecycleStatusFieldUpdateOperationsInput = {
+    set?: $Enums.FileLifecycleStatus
+  }
+
+  export type FileAssetUpdateOneRequiredWithoutFileVersionsNestedInput = {
+    create?: XOR<FileAssetCreateWithoutFileVersionsInput, FileAssetUncheckedCreateWithoutFileVersionsInput>
+    connectOrCreate?: FileAssetCreateOrConnectWithoutFileVersionsInput
+    upsert?: FileAssetUpsertWithoutFileVersionsInput
+    connect?: FileAssetWhereUniqueInput
+    update?: XOR<XOR<FileAssetUpdateToOneWithWhereWithoutFileVersionsInput, FileAssetUpdateWithoutFileVersionsInput>, FileAssetUncheckedUpdateWithoutFileVersionsInput>
+  }
+
+  export type FileObjectUpdateOneRequiredWithoutFileVersionsNestedInput = {
+    create?: XOR<FileObjectCreateWithoutFileVersionsInput, FileObjectUncheckedCreateWithoutFileVersionsInput>
+    connectOrCreate?: FileObjectCreateOrConnectWithoutFileVersionsInput
+    upsert?: FileObjectUpsertWithoutFileVersionsInput
+    connect?: FileObjectWhereUniqueInput
+    update?: XOR<XOR<FileObjectUpdateToOneWithWhereWithoutFileVersionsInput, FileObjectUpdateWithoutFileVersionsInput>, FileObjectUncheckedUpdateWithoutFileVersionsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutFileVersionsUploadedNestedInput = {
+    create?: XOR<UserCreateWithoutFileVersionsUploadedInput, UserUncheckedCreateWithoutFileVersionsUploadedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileVersionsUploadedInput
+    upsert?: UserUpsertWithoutFileVersionsUploadedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutFileVersionsUploadedInput, UserUpdateWithoutFileVersionsUploadedInput>, UserUncheckedUpdateWithoutFileVersionsUploadedInput>
+  }
+
+  export type FileObjectCreateNestedOneWithoutAttachmentsInput = {
+    create?: XOR<FileObjectCreateWithoutAttachmentsInput, FileObjectUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: FileObjectCreateOrConnectWithoutAttachmentsInput
+    connect?: FileObjectWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutAttachmentsInput = {
+    create?: XOR<UserCreateWithoutAttachmentsInput, UserUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAttachmentsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumAttachmentKindFieldUpdateOperationsInput = {
+    set?: $Enums.AttachmentKind
+  }
+
+  export type FileObjectUpdateOneRequiredWithoutAttachmentsNestedInput = {
+    create?: XOR<FileObjectCreateWithoutAttachmentsInput, FileObjectUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: FileObjectCreateOrConnectWithoutAttachmentsInput
+    upsert?: FileObjectUpsertWithoutAttachmentsInput
+    connect?: FileObjectWhereUniqueInput
+    update?: XOR<XOR<FileObjectUpdateToOneWithWhereWithoutAttachmentsInput, FileObjectUpdateWithoutAttachmentsInput>, FileObjectUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutAttachmentsNestedInput = {
+    create?: XOR<UserCreateWithoutAttachmentsInput, UserUncheckedCreateWithoutAttachmentsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAttachmentsInput
+    upsert?: UserUpsertWithoutAttachmentsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAttachmentsInput, UserUpdateWithoutAttachmentsInput>, UserUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type UserCreateNestedOneWithoutFileAuditEventsInput = {
+    create?: XOR<UserCreateWithoutFileAuditEventsInput, UserUncheckedCreateWithoutFileAuditEventsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileAuditEventsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumAuditActionFieldUpdateOperationsInput = {
+    set?: $Enums.AuditAction
+  }
+
+  export type EnumAuditEntityFieldUpdateOperationsInput = {
+    set?: $Enums.AuditEntity
+  }
+
+  export type UserUpdateOneRequiredWithoutFileAuditEventsNestedInput = {
+    create?: XOR<UserCreateWithoutFileAuditEventsInput, UserUncheckedCreateWithoutFileAuditEventsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileAuditEventsInput
+    upsert?: UserUpsertWithoutFileAuditEventsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutFileAuditEventsInput, UserUpdateWithoutFileAuditEventsInput>, UserUncheckedUpdateWithoutFileAuditEventsInput>
+  }
+
+  export type UserCreateNestedOneWithoutFileConfigsUpdatedInput = {
+    create?: XOR<UserCreateWithoutFileConfigsUpdatedInput, UserUncheckedCreateWithoutFileConfigsUpdatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileConfigsUpdatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserUpdateOneRequiredWithoutFileConfigsUpdatedNestedInput = {
+    create?: XOR<UserCreateWithoutFileConfigsUpdatedInput, UserUncheckedCreateWithoutFileConfigsUpdatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFileConfigsUpdatedInput
+    upsert?: UserUpsertWithoutFileConfigsUpdatedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutFileConfigsUpdatedInput, UserUpdateWithoutFileConfigsUpdatedInput>, UserUncheckedUpdateWithoutFileConfigsUpdatedInput>
+  }
+
   export type SessionCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -41746,6 +51182,34 @@ export namespace Prisma {
     connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
   }
 
+  export type FileVersionCreateNestedManyWithoutUploadedByInput = {
+    create?: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput> | FileVersionCreateWithoutUploadedByInput[] | FileVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutUploadedByInput | FileVersionCreateOrConnectWithoutUploadedByInput[]
+    createMany?: FileVersionCreateManyUploadedByInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type AttachmentCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput> | AttachmentCreateWithoutCreatedByInput[] | AttachmentUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutCreatedByInput | AttachmentCreateOrConnectWithoutCreatedByInput[]
+    createMany?: AttachmentCreateManyCreatedByInputEnvelope
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+  }
+
+  export type FileAuditEventCreateNestedManyWithoutActorInput = {
+    create?: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput> | FileAuditEventCreateWithoutActorInput[] | FileAuditEventUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: FileAuditEventCreateOrConnectWithoutActorInput | FileAuditEventCreateOrConnectWithoutActorInput[]
+    createMany?: FileAuditEventCreateManyActorInputEnvelope
+    connect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+  }
+
+  export type FileConfigCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput> | FileConfigCreateWithoutUpdatedByInput[] | FileConfigUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: FileConfigCreateOrConnectWithoutUpdatedByInput | FileConfigCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: FileConfigCreateManyUpdatedByInputEnvelope
+    connect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -41856,6 +51320,34 @@ export namespace Prisma {
     connectOrCreate?: VendorProductionRecordCreateOrConnectWithoutCreatedByInput | VendorProductionRecordCreateOrConnectWithoutCreatedByInput[]
     createMany?: VendorProductionRecordCreateManyCreatedByInputEnvelope
     connect?: VendorProductionRecordWhereUniqueInput | VendorProductionRecordWhereUniqueInput[]
+  }
+
+  export type FileVersionUncheckedCreateNestedManyWithoutUploadedByInput = {
+    create?: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput> | FileVersionCreateWithoutUploadedByInput[] | FileVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutUploadedByInput | FileVersionCreateOrConnectWithoutUploadedByInput[]
+    createMany?: FileVersionCreateManyUploadedByInputEnvelope
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+  }
+
+  export type AttachmentUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput> | AttachmentCreateWithoutCreatedByInput[] | AttachmentUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutCreatedByInput | AttachmentCreateOrConnectWithoutCreatedByInput[]
+    createMany?: AttachmentCreateManyCreatedByInputEnvelope
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+  }
+
+  export type FileAuditEventUncheckedCreateNestedManyWithoutActorInput = {
+    create?: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput> | FileAuditEventCreateWithoutActorInput[] | FileAuditEventUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: FileAuditEventCreateOrConnectWithoutActorInput | FileAuditEventCreateOrConnectWithoutActorInput[]
+    createMany?: FileAuditEventCreateManyActorInputEnvelope
+    connect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+  }
+
+  export type FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput> | FileConfigCreateWithoutUpdatedByInput[] | FileConfigUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: FileConfigCreateOrConnectWithoutUpdatedByInput | FileConfigCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: FileConfigCreateManyUpdatedByInputEnvelope
+    connect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -42082,6 +51574,62 @@ export namespace Prisma {
     deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
   }
 
+  export type FileVersionUpdateManyWithoutUploadedByNestedInput = {
+    create?: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput> | FileVersionCreateWithoutUploadedByInput[] | FileVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutUploadedByInput | FileVersionCreateOrConnectWithoutUploadedByInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutUploadedByInput | FileVersionUpsertWithWhereUniqueWithoutUploadedByInput[]
+    createMany?: FileVersionCreateManyUploadedByInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutUploadedByInput | FileVersionUpdateWithWhereUniqueWithoutUploadedByInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutUploadedByInput | FileVersionUpdateManyWithWhereWithoutUploadedByInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type AttachmentUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput> | AttachmentCreateWithoutCreatedByInput[] | AttachmentUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutCreatedByInput | AttachmentCreateOrConnectWithoutCreatedByInput[]
+    upsert?: AttachmentUpsertWithWhereUniqueWithoutCreatedByInput | AttachmentUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: AttachmentCreateManyCreatedByInputEnvelope
+    set?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    disconnect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    delete?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    update?: AttachmentUpdateWithWhereUniqueWithoutCreatedByInput | AttachmentUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: AttachmentUpdateManyWithWhereWithoutCreatedByInput | AttachmentUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+  }
+
+  export type FileAuditEventUpdateManyWithoutActorNestedInput = {
+    create?: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput> | FileAuditEventCreateWithoutActorInput[] | FileAuditEventUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: FileAuditEventCreateOrConnectWithoutActorInput | FileAuditEventCreateOrConnectWithoutActorInput[]
+    upsert?: FileAuditEventUpsertWithWhereUniqueWithoutActorInput | FileAuditEventUpsertWithWhereUniqueWithoutActorInput[]
+    createMany?: FileAuditEventCreateManyActorInputEnvelope
+    set?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    disconnect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    delete?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    connect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    update?: FileAuditEventUpdateWithWhereUniqueWithoutActorInput | FileAuditEventUpdateWithWhereUniqueWithoutActorInput[]
+    updateMany?: FileAuditEventUpdateManyWithWhereWithoutActorInput | FileAuditEventUpdateManyWithWhereWithoutActorInput[]
+    deleteMany?: FileAuditEventScalarWhereInput | FileAuditEventScalarWhereInput[]
+  }
+
+  export type FileConfigUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput> | FileConfigCreateWithoutUpdatedByInput[] | FileConfigUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: FileConfigCreateOrConnectWithoutUpdatedByInput | FileConfigCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: FileConfigUpsertWithWhereUniqueWithoutUpdatedByInput | FileConfigUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: FileConfigCreateManyUpdatedByInputEnvelope
+    set?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    disconnect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    delete?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    connect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    update?: FileConfigUpdateWithWhereUniqueWithoutUpdatedByInput | FileConfigUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: FileConfigUpdateManyWithWhereWithoutUpdatedByInput | FileConfigUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: FileConfigScalarWhereInput | FileConfigScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -42304,6 +51852,62 @@ export namespace Prisma {
     update?: VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput | VendorProductionRecordUpdateWithWhereUniqueWithoutCreatedByInput[]
     updateMany?: VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput | VendorProductionRecordUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: VendorProductionRecordScalarWhereInput | VendorProductionRecordScalarWhereInput[]
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput = {
+    create?: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput> | FileVersionCreateWithoutUploadedByInput[] | FileVersionUncheckedCreateWithoutUploadedByInput[]
+    connectOrCreate?: FileVersionCreateOrConnectWithoutUploadedByInput | FileVersionCreateOrConnectWithoutUploadedByInput[]
+    upsert?: FileVersionUpsertWithWhereUniqueWithoutUploadedByInput | FileVersionUpsertWithWhereUniqueWithoutUploadedByInput[]
+    createMany?: FileVersionCreateManyUploadedByInputEnvelope
+    set?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    disconnect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    delete?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    connect?: FileVersionWhereUniqueInput | FileVersionWhereUniqueInput[]
+    update?: FileVersionUpdateWithWhereUniqueWithoutUploadedByInput | FileVersionUpdateWithWhereUniqueWithoutUploadedByInput[]
+    updateMany?: FileVersionUpdateManyWithWhereWithoutUploadedByInput | FileVersionUpdateManyWithWhereWithoutUploadedByInput[]
+    deleteMany?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+  }
+
+  export type AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput> | AttachmentCreateWithoutCreatedByInput[] | AttachmentUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: AttachmentCreateOrConnectWithoutCreatedByInput | AttachmentCreateOrConnectWithoutCreatedByInput[]
+    upsert?: AttachmentUpsertWithWhereUniqueWithoutCreatedByInput | AttachmentUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: AttachmentCreateManyCreatedByInputEnvelope
+    set?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    disconnect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    delete?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
+    update?: AttachmentUpdateWithWhereUniqueWithoutCreatedByInput | AttachmentUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: AttachmentUpdateManyWithWhereWithoutCreatedByInput | AttachmentUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+  }
+
+  export type FileAuditEventUncheckedUpdateManyWithoutActorNestedInput = {
+    create?: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput> | FileAuditEventCreateWithoutActorInput[] | FileAuditEventUncheckedCreateWithoutActorInput[]
+    connectOrCreate?: FileAuditEventCreateOrConnectWithoutActorInput | FileAuditEventCreateOrConnectWithoutActorInput[]
+    upsert?: FileAuditEventUpsertWithWhereUniqueWithoutActorInput | FileAuditEventUpsertWithWhereUniqueWithoutActorInput[]
+    createMany?: FileAuditEventCreateManyActorInputEnvelope
+    set?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    disconnect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    delete?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    connect?: FileAuditEventWhereUniqueInput | FileAuditEventWhereUniqueInput[]
+    update?: FileAuditEventUpdateWithWhereUniqueWithoutActorInput | FileAuditEventUpdateWithWhereUniqueWithoutActorInput[]
+    updateMany?: FileAuditEventUpdateManyWithWhereWithoutActorInput | FileAuditEventUpdateManyWithWhereWithoutActorInput[]
+    deleteMany?: FileAuditEventScalarWhereInput | FileAuditEventScalarWhereInput[]
+  }
+
+  export type FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput> | FileConfigCreateWithoutUpdatedByInput[] | FileConfigUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: FileConfigCreateOrConnectWithoutUpdatedByInput | FileConfigCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: FileConfigUpsertWithWhereUniqueWithoutUpdatedByInput | FileConfigUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: FileConfigCreateManyUpdatedByInputEnvelope
+    set?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    disconnect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    delete?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    connect?: FileConfigWhereUniqueInput | FileConfigWhereUniqueInput[]
+    update?: FileConfigUpdateWithWhereUniqueWithoutUpdatedByInput | FileConfigUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: FileConfigUpdateManyWithWhereWithoutUpdatedByInput | FileConfigUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: FileConfigScalarWhereInput | FileConfigScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -42968,6 +52572,91 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type NestedEnumFileCategoryFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileCategory | EnumFileCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileCategoryFilter<$PrismaModel> | $Enums.FileCategory
+  }
+
+  export type NestedEnumFileCategoryWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileCategory | EnumFileCategoryFieldRefInput<$PrismaModel>
+    in?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileCategory[] | ListEnumFileCategoryFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileCategoryWithAggregatesFilter<$PrismaModel> | $Enums.FileCategory
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFileCategoryFilter<$PrismaModel>
+    _max?: NestedEnumFileCategoryFilter<$PrismaModel>
+  }
+
+  export type NestedEnumFileLifecycleStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileLifecycleStatus | EnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileLifecycleStatusFilter<$PrismaModel> | $Enums.FileLifecycleStatus
+  }
+
+  export type NestedEnumFileLifecycleStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.FileLifecycleStatus | EnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.FileLifecycleStatus[] | ListEnumFileLifecycleStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumFileLifecycleStatusWithAggregatesFilter<$PrismaModel> | $Enums.FileLifecycleStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumFileLifecycleStatusFilter<$PrismaModel>
+    _max?: NestedEnumFileLifecycleStatusFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAttachmentKindFilter<$PrismaModel = never> = {
+    equals?: $Enums.AttachmentKind | EnumAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumAttachmentKindFilter<$PrismaModel> | $Enums.AttachmentKind
+  }
+
+  export type NestedEnumAttachmentKindWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AttachmentKind | EnumAttachmentKindFieldRefInput<$PrismaModel>
+    in?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AttachmentKind[] | ListEnumAttachmentKindFieldRefInput<$PrismaModel>
+    not?: NestedEnumAttachmentKindWithAggregatesFilter<$PrismaModel> | $Enums.AttachmentKind
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAttachmentKindFilter<$PrismaModel>
+    _max?: NestedEnumAttachmentKindFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAuditActionFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditAction | EnumAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditActionFilter<$PrismaModel> | $Enums.AuditAction
+  }
+
+  export type NestedEnumAuditEntityFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditEntity | EnumAuditEntityFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditEntityFilter<$PrismaModel> | $Enums.AuditEntity
+  }
+
+  export type NestedEnumAuditActionWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditAction | EnumAuditActionFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditAction[] | ListEnumAuditActionFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditActionWithAggregatesFilter<$PrismaModel> | $Enums.AuditAction
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAuditActionFilter<$PrismaModel>
+    _max?: NestedEnumAuditActionFilter<$PrismaModel>
+  }
+
+  export type NestedEnumAuditEntityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.AuditEntity | EnumAuditEntityFieldRefInput<$PrismaModel>
+    in?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.AuditEntity[] | ListEnumAuditEntityFieldRefInput<$PrismaModel>
+    not?: NestedEnumAuditEntityWithAggregatesFilter<$PrismaModel> | $Enums.AuditEntity
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumAuditEntityFilter<$PrismaModel>
+    _max?: NestedEnumAuditEntityFilter<$PrismaModel>
+  }
+
   export type WorkItemCreateWithoutDepartmentInput = {
     id?: string
     state: $Enums.WorkItemState
@@ -42994,6 +52683,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -43022,6 +52712,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -43654,6 +53345,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -43684,6 +53379,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -43717,6 +53416,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -43745,6 +53445,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -43841,6 +53542,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -43871,6 +53576,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -44000,6 +53709,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -44030,6 +53743,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -44201,6 +53918,34 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type FileAssetCreateWithoutWorkItemInput = {
+    id?: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    fileVersions?: FileVersionCreateNestedManyWithoutFileAssetInput
+  }
+
+  export type FileAssetUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    fileVersions?: FileVersionUncheckedCreateNestedManyWithoutFileAssetInput
+  }
+
+  export type FileAssetCreateOrConnectWithoutWorkItemInput = {
+    where: FileAssetWhereUniqueInput
+    create: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type FileAssetCreateManyWorkItemInputEnvelope = {
+    data: FileAssetCreateManyWorkItemInput | FileAssetCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
   export type OrderUpsertWithoutWorkItemsInput = {
     update: XOR<OrderUpdateWithoutWorkItemsInput, OrderUncheckedUpdateWithoutWorkItemsInput>
     create: XOR<OrderCreateWithoutWorkItemsInput, OrderUncheckedCreateWithoutWorkItemsInput>
@@ -44340,6 +54085,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -44370,6 +54119,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -44511,6 +54264,34 @@ export namespace Prisma {
     createdById?: StringFilter<"VendorProductionRecord"> | string
   }
 
+  export type FileAssetUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: FileAssetWhereUniqueInput
+    update: XOR<FileAssetUpdateWithoutWorkItemInput, FileAssetUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<FileAssetCreateWithoutWorkItemInput, FileAssetUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type FileAssetUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: FileAssetWhereUniqueInput
+    data: XOR<FileAssetUpdateWithoutWorkItemInput, FileAssetUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type FileAssetUpdateManyWithWhereWithoutWorkItemInput = {
+    where: FileAssetScalarWhereInput
+    data: XOR<FileAssetUpdateManyMutationInput, FileAssetUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type FileAssetScalarWhereInput = {
+    AND?: FileAssetScalarWhereInput | FileAssetScalarWhereInput[]
+    OR?: FileAssetScalarWhereInput[]
+    NOT?: FileAssetScalarWhereInput | FileAssetScalarWhereInput[]
+    id?: StringFilter<"FileAsset"> | string
+    workItemId?: StringFilter<"FileAsset"> | string
+    category?: EnumFileCategoryFilter<"FileAsset"> | $Enums.FileCategory
+    logicalName?: StringFilter<"FileAsset"> | string
+    createdAt?: DateTimeFilter<"FileAsset"> | Date | string
+    updatedAt?: DateTimeFilter<"FileAsset"> | Date | string
+  }
+
   export type DepartmentCreateWithoutProductTypesInput = {
     id?: string
     name: string
@@ -44564,6 +54345,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -44592,6 +54374,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -44679,6 +54462,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -44707,6 +54491,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -44742,6 +54527,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -44772,6 +54561,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -44816,6 +54609,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -44844,6 +54638,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -44885,6 +54680,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -44915,6 +54714,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -44943,6 +54746,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -44971,6 +54775,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -45006,6 +54811,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -45036,6 +54845,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -45080,6 +54893,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -45108,6 +54922,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -45149,6 +54964,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -45179,6 +54998,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -45207,6 +55030,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
@@ -45235,6 +55059,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
@@ -45270,6 +55095,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -45300,6 +55129,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
@@ -45335,6 +55168,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
@@ -45365,6 +55202,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
@@ -45445,6 +55286,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
@@ -45473,6 +55315,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsUploadedInput = {
@@ -45514,6 +55357,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -45544,6 +55391,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsApprovedInput = {
@@ -45585,6 +55436,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
@@ -45615,6 +55470,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
@@ -45659,6 +55518,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutReturnsInput = {
@@ -45687,6 +55547,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutReturnsInput = {
@@ -45722,6 +55583,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsRaisedInput = {
@@ -45752,6 +55617,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsRaisedInput = {
@@ -45814,6 +55683,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
@@ -45844,6 +55717,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
@@ -45955,6 +55832,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutReturnsInput = {
@@ -45983,6 +55861,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutReturnsRaisedInput = {
@@ -46024,6 +55903,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
@@ -46054,6 +55937,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutReturnsInput = {
@@ -46128,6 +56015,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
@@ -46158,6 +56049,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DesignVersionUpsertWithoutReturnsInput = {
@@ -46327,6 +56222,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutVendorProductionRecordsInput = {
@@ -46355,6 +56251,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutVendorProductionRecordsInput = {
@@ -46390,6 +56287,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput = {
@@ -46420,6 +56321,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput = {
@@ -46464,6 +56369,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput = {
@@ -46492,6 +56398,7 @@ export namespace Prisma {
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutVendorProductionRecordsCreatedInput = {
@@ -46533,6 +56440,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput = {
@@ -46563,6 +56474,10 @@ export namespace Prisma {
     designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -46977,6 +56892,1089 @@ export namespace Prisma {
     promotionsFrom?: CustomerPromotionUncheckedUpdateManyWithoutSourceCustomerNestedInput
   }
 
+  export type FileVersionCreateWithoutFileObjectInput = {
+    id?: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+    fileAsset: FileAssetCreateNestedOneWithoutFileVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutFileVersionsUploadedInput
+  }
+
+  export type FileVersionUncheckedCreateWithoutFileObjectInput = {
+    id?: string
+    fileAssetId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionCreateOrConnectWithoutFileObjectInput = {
+    where: FileVersionWhereUniqueInput
+    create: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput>
+  }
+
+  export type FileVersionCreateManyFileObjectInputEnvelope = {
+    data: FileVersionCreateManyFileObjectInput | FileVersionCreateManyFileObjectInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AttachmentCreateWithoutFileObjectInput = {
+    id?: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutAttachmentsInput
+  }
+
+  export type AttachmentUncheckedCreateWithoutFileObjectInput = {
+    id?: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    createdById: string
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type AttachmentCreateOrConnectWithoutFileObjectInput = {
+    where: AttachmentWhereUniqueInput
+    create: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput>
+  }
+
+  export type AttachmentCreateManyFileObjectInputEnvelope = {
+    data: AttachmentCreateManyFileObjectInput | AttachmentCreateManyFileObjectInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FileVersionUpsertWithWhereUniqueWithoutFileObjectInput = {
+    where: FileVersionWhereUniqueInput
+    update: XOR<FileVersionUpdateWithoutFileObjectInput, FileVersionUncheckedUpdateWithoutFileObjectInput>
+    create: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput>
+  }
+
+  export type FileVersionUpdateWithWhereUniqueWithoutFileObjectInput = {
+    where: FileVersionWhereUniqueInput
+    data: XOR<FileVersionUpdateWithoutFileObjectInput, FileVersionUncheckedUpdateWithoutFileObjectInput>
+  }
+
+  export type FileVersionUpdateManyWithWhereWithoutFileObjectInput = {
+    where: FileVersionScalarWhereInput
+    data: XOR<FileVersionUpdateManyMutationInput, FileVersionUncheckedUpdateManyWithoutFileObjectInput>
+  }
+
+  export type FileVersionScalarWhereInput = {
+    AND?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+    OR?: FileVersionScalarWhereInput[]
+    NOT?: FileVersionScalarWhereInput | FileVersionScalarWhereInput[]
+    id?: StringFilter<"FileVersion"> | string
+    fileAssetId?: StringFilter<"FileVersion"> | string
+    fileObjectId?: StringFilter<"FileVersion"> | string
+    versionNumber?: IntFilter<"FileVersion"> | number
+    originalName?: StringFilter<"FileVersion"> | string
+    uploadedById?: StringFilter<"FileVersion"> | string
+    note?: StringNullableFilter<"FileVersion"> | string | null
+    status?: EnumFileLifecycleStatusFilter<"FileVersion"> | $Enums.FileLifecycleStatus
+    approved?: BoolFilter<"FileVersion"> | boolean
+    createdAt?: DateTimeFilter<"FileVersion"> | Date | string
+  }
+
+  export type AttachmentUpsertWithWhereUniqueWithoutFileObjectInput = {
+    where: AttachmentWhereUniqueInput
+    update: XOR<AttachmentUpdateWithoutFileObjectInput, AttachmentUncheckedUpdateWithoutFileObjectInput>
+    create: XOR<AttachmentCreateWithoutFileObjectInput, AttachmentUncheckedCreateWithoutFileObjectInput>
+  }
+
+  export type AttachmentUpdateWithWhereUniqueWithoutFileObjectInput = {
+    where: AttachmentWhereUniqueInput
+    data: XOR<AttachmentUpdateWithoutFileObjectInput, AttachmentUncheckedUpdateWithoutFileObjectInput>
+  }
+
+  export type AttachmentUpdateManyWithWhereWithoutFileObjectInput = {
+    where: AttachmentScalarWhereInput
+    data: XOR<AttachmentUpdateManyMutationInput, AttachmentUncheckedUpdateManyWithoutFileObjectInput>
+  }
+
+  export type AttachmentScalarWhereInput = {
+    AND?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+    OR?: AttachmentScalarWhereInput[]
+    NOT?: AttachmentScalarWhereInput | AttachmentScalarWhereInput[]
+    id?: StringFilter<"Attachment"> | string
+    fileObjectId?: StringFilter<"Attachment"> | string
+    entityType?: StringFilter<"Attachment"> | string
+    entityId?: StringFilter<"Attachment"> | string
+    originalName?: StringFilter<"Attachment"> | string
+    kind?: EnumAttachmentKindFilter<"Attachment"> | $Enums.AttachmentKind
+    createdById?: StringFilter<"Attachment"> | string
+    status?: EnumFileLifecycleStatusFilter<"Attachment"> | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFilter<"Attachment"> | Date | string
+  }
+
+  export type WorkItemCreateWithoutFileAssetsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutFileAssetsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutFileAssetsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutFileAssetsInput, WorkItemUncheckedCreateWithoutFileAssetsInput>
+  }
+
+  export type FileVersionCreateWithoutFileAssetInput = {
+    id?: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+    fileObject: FileObjectCreateNestedOneWithoutFileVersionsInput
+    uploadedBy: UserCreateNestedOneWithoutFileVersionsUploadedInput
+  }
+
+  export type FileVersionUncheckedCreateWithoutFileAssetInput = {
+    id?: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionCreateOrConnectWithoutFileAssetInput = {
+    where: FileVersionWhereUniqueInput
+    create: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput>
+  }
+
+  export type FileVersionCreateManyFileAssetInputEnvelope = {
+    data: FileVersionCreateManyFileAssetInput | FileVersionCreateManyFileAssetInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WorkItemUpsertWithoutFileAssetsInput = {
+    update: XOR<WorkItemUpdateWithoutFileAssetsInput, WorkItemUncheckedUpdateWithoutFileAssetsInput>
+    create: XOR<WorkItemCreateWithoutFileAssetsInput, WorkItemUncheckedCreateWithoutFileAssetsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutFileAssetsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutFileAssetsInput, WorkItemUncheckedUpdateWithoutFileAssetsInput>
+  }
+
+  export type WorkItemUpdateWithoutFileAssetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutFileAssetsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type FileVersionUpsertWithWhereUniqueWithoutFileAssetInput = {
+    where: FileVersionWhereUniqueInput
+    update: XOR<FileVersionUpdateWithoutFileAssetInput, FileVersionUncheckedUpdateWithoutFileAssetInput>
+    create: XOR<FileVersionCreateWithoutFileAssetInput, FileVersionUncheckedCreateWithoutFileAssetInput>
+  }
+
+  export type FileVersionUpdateWithWhereUniqueWithoutFileAssetInput = {
+    where: FileVersionWhereUniqueInput
+    data: XOR<FileVersionUpdateWithoutFileAssetInput, FileVersionUncheckedUpdateWithoutFileAssetInput>
+  }
+
+  export type FileVersionUpdateManyWithWhereWithoutFileAssetInput = {
+    where: FileVersionScalarWhereInput
+    data: XOR<FileVersionUpdateManyMutationInput, FileVersionUncheckedUpdateManyWithoutFileAssetInput>
+  }
+
+  export type FileAssetCreateWithoutFileVersionsInput = {
+    id?: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutFileAssetsInput
+  }
+
+  export type FileAssetUncheckedCreateWithoutFileVersionsInput = {
+    id?: string
+    workItemId: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type FileAssetCreateOrConnectWithoutFileVersionsInput = {
+    where: FileAssetWhereUniqueInput
+    create: XOR<FileAssetCreateWithoutFileVersionsInput, FileAssetUncheckedCreateWithoutFileVersionsInput>
+  }
+
+  export type FileObjectCreateWithoutFileVersionsInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    attachments?: AttachmentCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectUncheckedCreateWithoutFileVersionsInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectCreateOrConnectWithoutFileVersionsInput = {
+    where: FileObjectWhereUniqueInput
+    create: XOR<FileObjectCreateWithoutFileVersionsInput, FileObjectUncheckedCreateWithoutFileVersionsInput>
+  }
+
+  export type UserCreateWithoutFileVersionsUploadedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutFileVersionsUploadedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutFileVersionsUploadedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutFileVersionsUploadedInput, UserUncheckedCreateWithoutFileVersionsUploadedInput>
+  }
+
+  export type FileAssetUpsertWithoutFileVersionsInput = {
+    update: XOR<FileAssetUpdateWithoutFileVersionsInput, FileAssetUncheckedUpdateWithoutFileVersionsInput>
+    create: XOR<FileAssetCreateWithoutFileVersionsInput, FileAssetUncheckedCreateWithoutFileVersionsInput>
+    where?: FileAssetWhereInput
+  }
+
+  export type FileAssetUpdateToOneWithWhereWithoutFileVersionsInput = {
+    where?: FileAssetWhereInput
+    data: XOR<FileAssetUpdateWithoutFileVersionsInput, FileAssetUncheckedUpdateWithoutFileVersionsInput>
+  }
+
+  export type FileAssetUpdateWithoutFileVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutFileAssetsNestedInput
+  }
+
+  export type FileAssetUncheckedUpdateWithoutFileVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileObjectUpsertWithoutFileVersionsInput = {
+    update: XOR<FileObjectUpdateWithoutFileVersionsInput, FileObjectUncheckedUpdateWithoutFileVersionsInput>
+    create: XOR<FileObjectCreateWithoutFileVersionsInput, FileObjectUncheckedCreateWithoutFileVersionsInput>
+    where?: FileObjectWhereInput
+  }
+
+  export type FileObjectUpdateToOneWithWhereWithoutFileVersionsInput = {
+    where?: FileObjectWhereInput
+    data: XOR<FileObjectUpdateWithoutFileVersionsInput, FileObjectUncheckedUpdateWithoutFileVersionsInput>
+  }
+
+  export type FileObjectUpdateWithoutFileVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: AttachmentUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type FileObjectUncheckedUpdateWithoutFileVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: AttachmentUncheckedUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type UserUpsertWithoutFileVersionsUploadedInput = {
+    update: XOR<UserUpdateWithoutFileVersionsUploadedInput, UserUncheckedUpdateWithoutFileVersionsUploadedInput>
+    create: XOR<UserCreateWithoutFileVersionsUploadedInput, UserUncheckedCreateWithoutFileVersionsUploadedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutFileVersionsUploadedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutFileVersionsUploadedInput, UserUncheckedUpdateWithoutFileVersionsUploadedInput>
+  }
+
+  export type UserUpdateWithoutFileVersionsUploadedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutFileVersionsUploadedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type FileObjectCreateWithoutAttachmentsInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    fileVersions?: FileVersionCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectUncheckedCreateWithoutAttachmentsInput = {
+    id?: string
+    storageKey: string
+    sizeBytes: number
+    sha256: string
+    mimeType: string
+    createdAt?: Date | string
+    fileVersions?: FileVersionUncheckedCreateNestedManyWithoutFileObjectInput
+  }
+
+  export type FileObjectCreateOrConnectWithoutAttachmentsInput = {
+    where: FileObjectWhereUniqueInput
+    create: XOR<FileObjectCreateWithoutAttachmentsInput, FileObjectUncheckedCreateWithoutAttachmentsInput>
+  }
+
+  export type UserCreateWithoutAttachmentsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutAttachmentsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutAttachmentsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAttachmentsInput, UserUncheckedCreateWithoutAttachmentsInput>
+  }
+
+  export type FileObjectUpsertWithoutAttachmentsInput = {
+    update: XOR<FileObjectUpdateWithoutAttachmentsInput, FileObjectUncheckedUpdateWithoutAttachmentsInput>
+    create: XOR<FileObjectCreateWithoutAttachmentsInput, FileObjectUncheckedCreateWithoutAttachmentsInput>
+    where?: FileObjectWhereInput
+  }
+
+  export type FileObjectUpdateToOneWithWhereWithoutAttachmentsInput = {
+    where?: FileObjectWhereInput
+    data: XOR<FileObjectUpdateWithoutAttachmentsInput, FileObjectUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type FileObjectUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type FileObjectUncheckedUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    storageKey?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sha256?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUncheckedUpdateManyWithoutFileObjectNestedInput
+  }
+
+  export type UserUpsertWithoutAttachmentsInput = {
+    update: XOR<UserUpdateWithoutAttachmentsInput, UserUncheckedUpdateWithoutAttachmentsInput>
+    create: XOR<UserCreateWithoutAttachmentsInput, UserUncheckedCreateWithoutAttachmentsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAttachmentsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAttachmentsInput, UserUncheckedUpdateWithoutAttachmentsInput>
+  }
+
+  export type UserUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAttachmentsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserCreateWithoutFileAuditEventsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutFileAuditEventsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutFileAuditEventsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutFileAuditEventsInput, UserUncheckedCreateWithoutFileAuditEventsInput>
+  }
+
+  export type UserUpsertWithoutFileAuditEventsInput = {
+    update: XOR<UserUpdateWithoutFileAuditEventsInput, UserUncheckedUpdateWithoutFileAuditEventsInput>
+    create: XOR<UserCreateWithoutFileAuditEventsInput, UserUncheckedCreateWithoutFileAuditEventsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutFileAuditEventsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutFileAuditEventsInput, UserUncheckedUpdateWithoutFileAuditEventsInput>
+  }
+
+  export type UserUpdateWithoutFileAuditEventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutFileAuditEventsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserCreateWithoutFileConfigsUpdatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+  }
+
+  export type UserUncheckedCreateWithoutFileConfigsUpdatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+  }
+
+  export type UserCreateOrConnectWithoutFileConfigsUpdatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutFileConfigsUpdatedInput, UserUncheckedCreateWithoutFileConfigsUpdatedInput>
+  }
+
+  export type UserUpsertWithoutFileConfigsUpdatedInput = {
+    update: XOR<UserUpdateWithoutFileConfigsUpdatedInput, UserUncheckedUpdateWithoutFileConfigsUpdatedInput>
+    create: XOR<UserCreateWithoutFileConfigsUpdatedInput, UserUncheckedCreateWithoutFileConfigsUpdatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutFileConfigsUpdatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutFileConfigsUpdatedInput, UserUncheckedUpdateWithoutFileConfigsUpdatedInput>
+  }
+
+  export type UserUpdateWithoutFileConfigsUpdatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutFileConfigsUpdatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+  }
+
   export type SessionCreateWithoutUserInput = {
     id: string
     expiresAt: Date | string
@@ -47233,6 +58231,7 @@ export namespace Prisma {
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -47261,6 +58260,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
     vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -47512,6 +58512,132 @@ export namespace Prisma {
 
   export type VendorProductionRecordCreateManyCreatedByInputEnvelope = {
     data: VendorProductionRecordCreateManyCreatedByInput | VendorProductionRecordCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FileVersionCreateWithoutUploadedByInput = {
+    id?: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+    fileAsset: FileAssetCreateNestedOneWithoutFileVersionsInput
+    fileObject: FileObjectCreateNestedOneWithoutFileVersionsInput
+  }
+
+  export type FileVersionUncheckedCreateWithoutUploadedByInput = {
+    id?: string
+    fileAssetId: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionCreateOrConnectWithoutUploadedByInput = {
+    where: FileVersionWhereUniqueInput
+    create: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput>
+  }
+
+  export type FileVersionCreateManyUploadedByInputEnvelope = {
+    data: FileVersionCreateManyUploadedByInput | FileVersionCreateManyUploadedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AttachmentCreateWithoutCreatedByInput = {
+    id?: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+    fileObject: FileObjectCreateNestedOneWithoutAttachmentsInput
+  }
+
+  export type AttachmentUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    fileObjectId: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type AttachmentCreateOrConnectWithoutCreatedByInput = {
+    where: AttachmentWhereUniqueInput
+    create: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type AttachmentCreateManyCreatedByInputEnvelope = {
+    data: AttachmentCreateManyCreatedByInput | AttachmentCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FileAuditEventCreateWithoutActorInput = {
+    id?: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type FileAuditEventUncheckedCreateWithoutActorInput = {
+    id?: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type FileAuditEventCreateOrConnectWithoutActorInput = {
+    where: FileAuditEventWhereUniqueInput
+    create: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput>
+  }
+
+  export type FileAuditEventCreateManyActorInputEnvelope = {
+    data: FileAuditEventCreateManyActorInput | FileAuditEventCreateManyActorInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FileConfigCreateWithoutUpdatedByInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
+  }
+
+  export type FileConfigUncheckedCreateWithoutUpdatedByInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
+  }
+
+  export type FileConfigCreateOrConnectWithoutUpdatedByInput = {
+    where: FileConfigWhereUniqueInput
+    create: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type FileConfigCreateManyUpdatedByInputEnvelope = {
+    data: FileConfigCreateManyUpdatedByInput | FileConfigCreateManyUpdatedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -47842,6 +58968,98 @@ export namespace Prisma {
     data: XOR<VendorProductionRecordUpdateManyMutationInput, VendorProductionRecordUncheckedUpdateManyWithoutCreatedByInput>
   }
 
+  export type FileVersionUpsertWithWhereUniqueWithoutUploadedByInput = {
+    where: FileVersionWhereUniqueInput
+    update: XOR<FileVersionUpdateWithoutUploadedByInput, FileVersionUncheckedUpdateWithoutUploadedByInput>
+    create: XOR<FileVersionCreateWithoutUploadedByInput, FileVersionUncheckedCreateWithoutUploadedByInput>
+  }
+
+  export type FileVersionUpdateWithWhereUniqueWithoutUploadedByInput = {
+    where: FileVersionWhereUniqueInput
+    data: XOR<FileVersionUpdateWithoutUploadedByInput, FileVersionUncheckedUpdateWithoutUploadedByInput>
+  }
+
+  export type FileVersionUpdateManyWithWhereWithoutUploadedByInput = {
+    where: FileVersionScalarWhereInput
+    data: XOR<FileVersionUpdateManyMutationInput, FileVersionUncheckedUpdateManyWithoutUploadedByInput>
+  }
+
+  export type AttachmentUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: AttachmentWhereUniqueInput
+    update: XOR<AttachmentUpdateWithoutCreatedByInput, AttachmentUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<AttachmentCreateWithoutCreatedByInput, AttachmentUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type AttachmentUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: AttachmentWhereUniqueInput
+    data: XOR<AttachmentUpdateWithoutCreatedByInput, AttachmentUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type AttachmentUpdateManyWithWhereWithoutCreatedByInput = {
+    where: AttachmentScalarWhereInput
+    data: XOR<AttachmentUpdateManyMutationInput, AttachmentUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type FileAuditEventUpsertWithWhereUniqueWithoutActorInput = {
+    where: FileAuditEventWhereUniqueInput
+    update: XOR<FileAuditEventUpdateWithoutActorInput, FileAuditEventUncheckedUpdateWithoutActorInput>
+    create: XOR<FileAuditEventCreateWithoutActorInput, FileAuditEventUncheckedCreateWithoutActorInput>
+  }
+
+  export type FileAuditEventUpdateWithWhereUniqueWithoutActorInput = {
+    where: FileAuditEventWhereUniqueInput
+    data: XOR<FileAuditEventUpdateWithoutActorInput, FileAuditEventUncheckedUpdateWithoutActorInput>
+  }
+
+  export type FileAuditEventUpdateManyWithWhereWithoutActorInput = {
+    where: FileAuditEventScalarWhereInput
+    data: XOR<FileAuditEventUpdateManyMutationInput, FileAuditEventUncheckedUpdateManyWithoutActorInput>
+  }
+
+  export type FileAuditEventScalarWhereInput = {
+    AND?: FileAuditEventScalarWhereInput | FileAuditEventScalarWhereInput[]
+    OR?: FileAuditEventScalarWhereInput[]
+    NOT?: FileAuditEventScalarWhereInput | FileAuditEventScalarWhereInput[]
+    id?: StringFilter<"FileAuditEvent"> | string
+    actorId?: StringFilter<"FileAuditEvent"> | string
+    action?: EnumAuditActionFilter<"FileAuditEvent"> | $Enums.AuditAction
+    entity?: EnumAuditEntityFilter<"FileAuditEvent"> | $Enums.AuditEntity
+    entityId?: StringFilter<"FileAuditEvent"> | string
+    beforeValues?: JsonNullableFilter<"FileAuditEvent">
+    afterValues?: JsonNullableFilter<"FileAuditEvent">
+    reason?: StringNullableFilter<"FileAuditEvent"> | string | null
+    createdAt?: DateTimeFilter<"FileAuditEvent"> | Date | string
+  }
+
+  export type FileConfigUpsertWithWhereUniqueWithoutUpdatedByInput = {
+    where: FileConfigWhereUniqueInput
+    update: XOR<FileConfigUpdateWithoutUpdatedByInput, FileConfigUncheckedUpdateWithoutUpdatedByInput>
+    create: XOR<FileConfigCreateWithoutUpdatedByInput, FileConfigUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type FileConfigUpdateWithWhereUniqueWithoutUpdatedByInput = {
+    where: FileConfigWhereUniqueInput
+    data: XOR<FileConfigUpdateWithoutUpdatedByInput, FileConfigUncheckedUpdateWithoutUpdatedByInput>
+  }
+
+  export type FileConfigUpdateManyWithWhereWithoutUpdatedByInput = {
+    where: FileConfigScalarWhereInput
+    data: XOR<FileConfigUpdateManyMutationInput, FileConfigUncheckedUpdateManyWithoutUpdatedByInput>
+  }
+
+  export type FileConfigScalarWhereInput = {
+    AND?: FileConfigScalarWhereInput | FileConfigScalarWhereInput[]
+    OR?: FileConfigScalarWhereInput[]
+    NOT?: FileConfigScalarWhereInput | FileConfigScalarWhereInput[]
+    id?: StringFilter<"FileConfig"> | string
+    mimeAllowlist?: JsonFilter<"FileConfig">
+    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    departments?: JsonFilter<"FileConfig">
+    previewExpirySeconds?: IntFilter<"FileConfig"> | number
+    updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
+    updatedById?: StringFilter<"FileConfig"> | string
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -47870,6 +59088,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -47900,6 +59122,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -47946,6 +59172,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -47976,6 +59206,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -48006,6 +59240,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -48036,6 +59274,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -48082,6 +59324,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -48112,6 +59358,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -48271,6 +59521,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -48301,6 +59555,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -48368,6 +59626,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -48398,6 +59660,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -48455,6 +59721,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -48485,6 +59755,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -48520,6 +59794,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -48550,6 +59828,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -48596,6 +59878,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -48626,6 +59912,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -48667,6 +59957,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -48697,6 +59991,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -48727,6 +60025,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -48757,6 +60059,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -48830,6 +60136,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -48860,6 +60170,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -48923,6 +60237,10 @@ export namespace Prisma {
     returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -48953,6 +60271,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
     returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -48999,6 +60321,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -49029,6 +60355,10 @@ export namespace Prisma {
     returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
     returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
     vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -49107,6 +60437,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -49135,6 +60466,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -49495,6 +60827,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -49523,6 +60856,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -49601,6 +60935,14 @@ export namespace Prisma {
     sentAt?: Date | string
     receivedAt?: Date | string | null
     createdById: string
+  }
+
+  export type FileAssetCreateManyWorkItemInput = {
+    id?: string
+    category: $Enums.FileCategory
+    logicalName: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type WorkItemTransitionUpdateWithoutWorkItemInput = {
@@ -49772,6 +61114,32 @@ export namespace Prisma {
     createdById?: StringFieldUpdateOperationsInput | string
   }
 
+  export type FileAssetUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUpdateManyWithoutFileAssetNestedInput
+  }
+
+  export type FileAssetUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileVersions?: FileVersionUncheckedUpdateManyWithoutFileAssetNestedInput
+  }
+
+  export type FileAssetUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumFileCategoryFieldUpdateOperationsInput | $Enums.FileCategory
+    logicalName?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WorkItemCreateManyProductTypeInput = {
     id?: string
     orderId: string
@@ -49821,6 +61189,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -49849,6 +61218,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -50020,6 +61390,146 @@ export namespace Prisma {
     isArchived?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionCreateManyFileObjectInput = {
+    id?: string
+    fileAssetId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type AttachmentCreateManyFileObjectInput = {
+    id?: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    createdById: string
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type FileVersionUpdateWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileAsset?: FileAssetUpdateOneRequiredWithoutFileVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutFileVersionsUploadedNestedInput
+  }
+
+  export type FileVersionUncheckedUpdateWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentUpdateWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutAttachmentsNestedInput
+  }
+
+  export type AttachmentUncheckedUpdateWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    createdById?: StringFieldUpdateOperationsInput | string
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentUncheckedUpdateManyWithoutFileObjectInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    createdById?: StringFieldUpdateOperationsInput | string
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionCreateManyFileAssetInput = {
+    id?: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    uploadedById: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type FileVersionUpdateWithoutFileAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileObject?: FileObjectUpdateOneRequiredWithoutFileVersionsNestedInput
+    uploadedBy?: UserUpdateOneRequiredWithoutFileVersionsUploadedNestedInput
+  }
+
+  export type FileVersionUncheckedUpdateWithoutFileAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutFileAssetInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    uploadedById?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type SessionCreateManyUserInput = {
@@ -50199,6 +61709,49 @@ export namespace Prisma {
     vendorName: string
     sentAt?: Date | string
     receivedAt?: Date | string | null
+  }
+
+  export type FileVersionCreateManyUploadedByInput = {
+    id?: string
+    fileAssetId: string
+    fileObjectId: string
+    versionNumber: number
+    originalName: string
+    note?: string | null
+    status?: $Enums.FileLifecycleStatus
+    approved?: boolean
+    createdAt?: Date | string
+  }
+
+  export type AttachmentCreateManyCreatedByInput = {
+    id?: string
+    fileObjectId: string
+    entityType: string
+    entityId: string
+    originalName: string
+    kind: $Enums.AttachmentKind
+    status?: $Enums.FileLifecycleStatus
+    createdAt?: Date | string
+  }
+
+  export type FileAuditEventCreateManyActorInput = {
+    id?: string
+    action: $Enums.AuditAction
+    entity: $Enums.AuditEntity
+    entityId: string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type FileConfigCreateManyUpdatedByInput = {
+    id?: string
+    mimeAllowlist: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes: number
+    departments: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds: number
+    updatedAt?: Date | string
   }
 
   export type SessionUpdateWithoutUserInput = {
@@ -50450,6 +62003,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -50478,6 +62032,7 @@ export namespace Prisma {
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
     vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -50755,6 +62310,135 @@ export namespace Prisma {
     vendorName?: StringFieldUpdateOperationsInput | string
     sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
     receivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type FileVersionUpdateWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileAsset?: FileAssetUpdateOneRequiredWithoutFileVersionsNestedInput
+    fileObject?: FileObjectUpdateOneRequiredWithoutFileVersionsNestedInput
+  }
+
+  export type FileVersionUncheckedUpdateWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileVersionUncheckedUpdateManyWithoutUploadedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileAssetId?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    versionNumber?: IntFieldUpdateOperationsInput | number
+    originalName?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    approved?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    fileObject?: FileObjectUpdateOneRequiredWithoutAttachmentsNestedInput
+  }
+
+  export type AttachmentUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AttachmentUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    fileObjectId?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    originalName?: StringFieldUpdateOperationsInput | string
+    kind?: EnumAttachmentKindFieldUpdateOperationsInput | $Enums.AttachmentKind
+    status?: EnumFileLifecycleStatusFieldUpdateOperationsInput | $Enums.FileLifecycleStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventUpdateWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventUncheckedUpdateWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileAuditEventUncheckedUpdateManyWithoutActorInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    action?: EnumAuditActionFieldUpdateOperationsInput | $Enums.AuditAction
+    entity?: EnumAuditEntityFieldUpdateOperationsInput | $Enums.AuditEntity
+    entityId?: StringFieldUpdateOperationsInput | string
+    beforeValues?: NullableJsonNullValueInput | InputJsonValue
+    afterValues?: NullableJsonNullValueInput | InputJsonValue
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileConfigUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileConfigUncheckedUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FileConfigUncheckedUpdateManyWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    mimeAllowlist?: JsonNullValueInput | InputJsonValue
+    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    departments?: JsonNullValueInput | InputJsonValue
+    previewExpirySeconds?: IntFieldUpdateOperationsInput | number
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RolePermissionCreateManyRoleInput = {

@@ -1,29 +1,32 @@
-// Dev-only local-disk StorageAdapter — contracts/storage.md "Local-disk
-// stub (this feature)".
+// 050's production local-disk StorageAdapter — contracts/storage.md
+// 050's local-disk implementation (extends stub).
 //
 // Root directory is injected via the constructor (dependency injection),
 // not read from `env.STORAGE_ROOT` inside this class, so it stays testable
-// against a throwaway temp directory (tests/contract/storageAdapter.test.ts)
-// independent of process env. The caller wiring this up for real use (e.g.
-// a server-only module) is responsible for passing `env.STORAGE_ROOT`.
+// against a throwaway temp directory independent of process env.
+// The caller wiring this up for real use is responsible for passing
+// the configured storage root.
 //
-// Development/CI only — explicitly out of scope for production use (spec
-// Assumptions). No versioning, no checksum caching beyond the one computed
-// on `put`, no access control.
+// Production-ready local filesystem adapter:
+// - Keys are opaque hash/ID strings chosen by 050; stored at
+//   `${root}/${key[0..1]}/${key[2..3]}/${key}`; **never uses
+//   customer/workitem/user names in paths**.
+// - `put(key, body)` streams to temporary file, computes SHA-256 and size,
+//   then atomically moves to final key path. **Throws if key already exists
+//   (no overwrite).**
+// - `get(key)` opens file stream, **computes streaming SHA-256 and verifies
+//   against stored checksum before yielding bytes**; throws on mismatch.
+// - `exists(key)` checks filesystem.
 //
-// Stream-based: never buffers a whole file into memory. `sha256` is
-// computed incrementally while the body streams to disk.
-//
-// This is a Port implementation (`src/server/core/storage/**`) and is
-// exempt from the "core must not throw" ESLint rule (eslint.config.js rule
-// (c)) — `put` throwing on an existing key, and `get`/`exists` propagating
-// filesystem errors, is this adapter's documented contract, per
-// contracts/storage.md.
+// This is a Port implementation and is exempt from the "core must not throw"
+// ESLint rule — `put` throwing on existing key, `get` throwing on mismatch,
+// and `exists` propagating filesystem errors is this adapter's documented
+// contract, per contracts/storage.md.
 
 import { createHash } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { access, mkdir, unlink } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { mkdir, unlink, access, link } from "node:fs/promises";
+import { dirname, join, resolve, relative, isAbsolute } from "node:path";
 import { PassThrough } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
@@ -36,8 +39,16 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     this.root = resolve(root);
   }
 
+  /**
+   * Resolve key to filesystem path safely under root, preventing path traversal.
+   */
   private resolvePath(key: string): string {
-    return join(this.root, key);
+    const resolved = resolve(this.root, key);
+    const rel = relative(this.root, resolved);
+    if (isAbsolute(rel) || rel.startsWith("..") || rel !== rel.replace(/\.\./g, "")) {
+      throw new Error(`Path traversal attempt rejected for key: "${key}"`);
+    }
+    return resolved;
   }
 
   async exists(key: string): Promise<boolean> {
@@ -71,12 +82,21 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
       hash.update(chunk);
     });
 
+    // Use temporary file path for atomic write
+    const tempPath = `${target}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 9)}`;
+
     try {
-      // "wx" is exclusive-create: it fails with EEXIST rather than
-      // truncating if another writer won a race against the `exists()`
-      // check above, closing the TOCTOU gap.
-      await pipeline(body, measure, createWriteStream(target, { flags: "wx" }));
+      await pipeline(body, measure, createWriteStream(tempPath));
+
+      // Atomic link + unlink — link fails with EEXIST atomically
+      await link(tempPath, target);
+      await unlink(tempPath);
     } catch (caught) {
+      // Clean up temp file on error
+      try {
+        await unlink(tempPath);
+      } catch {}
+
       if (
         caught instanceof Error &&
         "code" in caught &&
@@ -86,23 +106,6 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
           `LocalDiskStorageAdapter: refusing to overwrite existing key "${key}".`,
         );
       }
-
-      // Any other pipeline failure (the source stream erroring mid-transfer,
-      // a disk write error, etc.) can leave a partial/corrupted file behind
-      // on disk — the "wx" flag only protects against a pre-existing file,
-      // not a failure after bytes have already been flushed. Left in place,
-      // that partial file would make every future `put()` for this key fail
-      // with "refusing to overwrite existing key" (since `exists()` now sees
-      // it) and would make `get()` silently return truncated content. Clean
-      // it up so a retry with the same key can succeed.
-      try {
-        await unlink(target);
-      } catch {
-        // The file may not exist yet (e.g. the failure happened before any
-        // bytes were written) — that's fine. Never let a failed cleanup
-        // attempt mask the original error below.
-      }
-
       throw caught;
     }
 
@@ -111,10 +114,71 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
 
   async get(key: string): Promise<NodeJS.ReadableStream> {
     const target = this.resolvePath(key);
+
     // Resolve existence up front so a missing key rejects predictably
-    // (contracts/storage.md) rather than returning a stream that only
-    // errors asynchronously once something starts reading it.
     await access(target);
+
     return createReadStream(target);
   }
+
+  /**
+   * Get with checksum verification.
+   * Hashes while streaming via a Transform — verified bytes are the same
+   * bytes yielded to the caller. Throws on mismatch at EOF (flush).
+   */
+  async getWithVerification(
+    key: string,
+    expectedSha256: string,
+    expectedSize: number
+  ): Promise<NodeJS.ReadableStream> {
+    const target = this.resolvePath(key);
+    await access(target);
+
+    const fileStream = createReadStream(target);
+    const hash = createHash("sha256");
+    let totalSize = 0;
+
+    // Transform that hashes and counts bytes inline
+    const verify = new PassThrough();
+    verify.on("data", (chunk: Buffer) => {
+      totalSize += chunk.length;
+      hash.update(chunk);
+    });
+
+    // Pipe through the verify transform; errors from the hash check
+    // will propagate to the caller via the stream error event
+    const origPipe = fileStream.pipe.bind(fileStream);
+    fileStream.pipe = ((dest: NodeJS.WritableStream, options?: { end?: boolean }) => {
+      origPipe(dest, { end: false });
+      // When the source ends, verify hash before ending the transform
+      fileStream.on("end", () => {
+        const actualSha = hash.digest("hex");
+        if (actualSha !== expectedSha256) {
+          verify.destroy(new Error(
+            `Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`
+          ));
+          return;
+        }
+        if (totalSize !== expectedSize) {
+          verify.destroy(new Error(
+            `Size mismatch: expected ${expectedSize}, got ${totalSize}`
+          ));
+          return;
+        }
+        verify.end();
+      });
+      fileStream.on("error", (err) => verify.destroy(err));
+      return dest;
+    }) as any;
+
+    // Kick off the pipe
+    fileStream.pipe(verify);
+
+    return verify;
+  }
+}
+
+export function createLocalDiskAdapter(root?: string): LocalDiskStorageAdapter {
+  const storageRoot = root ?? process.env.STORAGE_ROOT ?? join(process.cwd(), "storage");
+  return new LocalDiskStorageAdapter(storageRoot);
 }

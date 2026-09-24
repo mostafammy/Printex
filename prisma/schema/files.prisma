@@ -1,0 +1,159 @@
+// File Storage & Versioning models — 050-files
+// Source of truth: specs/050-files/data-model.md
+// Relations to WorkItem (core.prisma) and User (identity.prisma) work across schema files.
+
+enum FileCategory {
+  ORIGINAL
+  DESIGN_VERSIONS
+  REVIEW_PROOF
+  APPROVED
+  PRODUCTION
+  SUPPORTING
+}
+
+enum FileLifecycleStatus {
+  ACTIVE
+  SUPERSEDED
+  VOID
+  ARCHIVED
+  CORRUPTED
+}
+
+enum AttachmentKind {
+  VOICE_NOTE
+  IMAGE
+  FILE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  STATUS_CHANGE
+  APPROVE
+  VOID
+  ARCHIVE
+  SUPERSEDE
+}
+
+enum AuditEntity {
+  FILE_OBJECT
+  FILE_ASSET
+  FILE_VERSION
+  ATTACHMENT
+}
+
+/// Immutable physical bytes, deduplicated by checksum (constitution IV).
+model FileObject {
+  id           String   @id @default(cuid())
+  /// Opaque hash/ID-based key; never customer/folder naming. Unique.
+  storageKey   String   @unique
+  /// Required, 0–5 GB inclusive.
+  sizeBytes    BigInt
+  /// Required 64-hex checksum; unique for deduplication.
+  sha256       String   @unique
+  /// Required; validated against configured allowlist.
+  mimeType     String
+  createdAt    DateTime @default(now())
+
+  fileVersions FileVersion[]
+  attachments  Attachment[]
+
+  @@index([sha256])
+}
+
+/// Logical file attached to one Work Item and category.
+model FileAsset {
+  id            String       @id @default(cuid())
+  workItemId    String
+  workItem      WorkItem     @relation("FileAssetWorkItem", fields: [workItemId], references: [id])
+  category      FileCategory
+  /// Display/grouping name; never storage identity.
+  logicalName   String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  fileVersions  FileVersion[]
+
+  @@index([workItemId, category])
+  @@unique([workItemId, category, logicalName])
+}
+
+/// Immutable upload metadata pointing to a FileObject.
+model FileVersion {
+  id              String               @id @default(cuid())
+  fileAssetId     String
+  fileAsset       FileAsset            @relation(fields: [fileAssetId], references: [id])
+  fileObjectId    String
+  fileObject      FileObject           @relation(fields: [fileObjectId], references: [id])
+  /// Unique per FileAsset, starts at 1, monotonic under concurrency.
+  versionNumber   Int
+  /// Display filename; validated, no path traversal.
+  originalName    String
+  uploadedById    String
+  uploadedBy      User                 @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
+  /// Optional upload note.
+  note            String?
+  status          FileLifecycleStatus  @default(ACTIVE)
+  /// Set only through markApproved; approval owner is 013.
+  approved        Boolean              @default(false)
+  createdAt       DateTime             @default(now())
+
+  @@unique([fileAssetId, versionNumber])
+  @@index([fileAssetId, createdAt])
+}
+
+/// Generic link to an operational entity (rejection, discrepancy, expense, audit event, message).
+model Attachment {
+  id            String             @id @default(cuid())
+  fileObjectId  String
+  fileObject    FileObject         @relation(fields: [fileObjectId], references: [id])
+  /// Rejection, discrepancy, expense, audit event, message, or future configured target.
+  entityType    String
+  /// Target identifier; polymorphic and authorized by owning feature.
+  entityId      String
+  /// Display name.
+  originalName  String
+  kind          AttachmentKind
+  createdById   String
+  createdBy     User               @relation("ReturnAttachment", fields: [createdById], references: [id])
+  status        FileLifecycleStatus @default(ACTIVE)
+  createdAt     DateTime           @default(now())
+
+  @@index([entityType, entityId])
+  @@index([fileObjectId])
+}
+
+/// Append-only audit trail for all file lifecycle mutations and approvals.
+/// Follows 001 audit.record contract.
+model FileAuditEvent {
+  id            String      @id @default(cuid())
+  actorId       String
+  actor         User        @relation("WorkItemTransitionActor", fields: [actorId], references: [id])
+  action        AuditAction
+  entity        AuditEntity
+  entityId      String
+  beforeValues  Json?
+  afterValues   Json?
+  /// Required for VOID, ARCHIVE, SUPERSEDE, APPROVE.
+  reason        String?
+  createdAt     DateTime    @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
+/// Runtime configuration singleton loaded from config/050-files.yaml at startup.
+model FileConfig {
+  id                String   @id @default("files-config")
+  /// Required array of MIME type patterns; validated on write.
+  mimeAllowlist     Json
+  /// Required, 1–10 GB inclusive.
+  maxFileSizeBytes  BigInt
+  /// Required array of { name: string, code: string }; managed by Admin UI.
+  departments       Json
+  /// Required, 60–3600.
+  previewExpirySeconds Int
+  updatedAt         DateTime @updatedAt
+  updatedById       String
+  updatedBy         User     @relation("WorkItemTransitionActor", fields: [updatedById], references: [id])
+}

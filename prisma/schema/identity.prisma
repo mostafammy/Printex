@@ -60,6 +60,10 @@ model User {
   returnsRaised          Return[]          @relation("ReturnRaisedBy")
   returnsAssignedToMe    Return[]          @relation("ReturnAssignedTo")
   vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
+  fileVersionsUploaded FileVersion[]          @relation("DesignVersionUploadedBy")
+  attachments          Attachment[]           @relation("ReturnAttachment")
+  fileAuditEvents      FileAuditEvent[]       @relation("WorkItemTransitionActor")
+  fileConfigsUpdated   FileConfig[]           @relation("WorkItemTransitionActor")
 
   @@unique([email])
   @@map("user")
