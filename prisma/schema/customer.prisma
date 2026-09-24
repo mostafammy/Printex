@@ -31,7 +31,6 @@ model CustomerClassification {
   updatedAt DateTime   @updatedAt
   customers Customer[]
 }
-
 model CustomerPromotion {
   id               String    @id @default(cuid())
   sourceCustomerId String

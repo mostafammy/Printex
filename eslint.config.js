@@ -234,6 +234,26 @@ export default tseslint.config(
     },
   },
   {
+    // Nothing outside `src/server/pricing/**` (and tests/**) may deep-import
+    // pricing internals; application code uses the pricing barrel.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/pricing/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/pricing/**", "!~/server/pricing", "!~/server/pricing/index"],
+              message:
+                "Import from the public barrel `~/server/pricing` instead of reaching into pricing internals.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
     // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
     // `src/server/core/storage/**`, which are Ports per contracts/storage.md

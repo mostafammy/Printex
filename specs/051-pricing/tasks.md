@@ -35,20 +35,20 @@ All stories -> Polish and consistency review
 
 ## Phase 1: Setup
 
-- [ ] T001 Create `prisma/schema/pricing.prisma` with `PricingUnit`, `PricingMode`, `PriceSource`, `PricingStatusValue`, `CustomerRuleKind`, and `PriceConfigStatus` enums plus ProductPricingPolicy, PriceList, PriceTier, CustomerPricingRule, WorkItemPrice, and PricingStatus models exactly per `data-model.md`.
-- [ ] T002 Add required relations from `prisma/schema/core.prisma`, `prisma/schema/customer.prisma`, and `prisma/schema/identity.prisma` to the new pricing models without redefining ProductType or Customer ownership.
-- [ ] T003 Add Decimal, effective-date, tier, pending-queue, and current-price indexes/constraints in `prisma/schema/pricing.prisma`; document any database-only non-overlap constraint that cannot be expressed by Prisma. Depends on T001.
+- [X] T001 Create `prisma/schema/pricing.prisma` with `PricingUnit`, `PricingMode`, `PriceSource`, `PricingStatusValue`, `CustomerRuleKind`, and `PriceConfigStatus` enums plus ProductPricingPolicy, PriceList, PriceTier, CustomerPricingRule, WorkItemPrice, and PricingStatus models exactly per `data-model.md`.
+- [X] T002 Add required relations from `prisma/schema/core.prisma`, `prisma/schema/customer.prisma`, and `prisma/schema/identity.prisma` to the new pricing models without redefining ProductType or Customer ownership.
+- [X] T003 Add Decimal, effective-date, tier, pending-queue, and current-price indexes/constraints in `prisma/schema/pricing.prisma`; document any database-only non-overlap constraint that cannot be expressed by Prisma. Depends on T001.
 - [ ] T004 **ACTION REQUIRED: blocked, do not run unattended.** Create and apply the additive Prisma migration at `prisma/migrations/20260924170000_pricing/migration.sql` containing the pricing tables, indexes, constraints, ProductPricingPolicy, and append-only SQL required by `data-model.md`. Confirm with the schema owner before applying it to any shared database; do not substitute `db push`. Depends on T001-T003.
 - [ ] T005 Verify `prisma/migrations/20260924170000_pricing/migration.sql` replays successfully in a fresh database and preserves append-only permissions and effective-date/tier constraints. Depends on T004.
-- [ ] T006 [P] Add/coordinate pricing permission vocabulary in `src/server/auth/permissions.ts`, role seeds in `prisma/seed.ts`, and `tests/contract/role-permission-matrix.test.ts`; preserve `pricing.use_fixed`, `pricing.set_variable`, and `pricing.override` unless 001 approves a documented change.
+- [X] T006 [P] Add/coordinate pricing permission vocabulary in `src/server/auth/permissions.ts`, role seeds in `prisma/seed.ts`, and `tests/contract/role-permission-matrix.test.ts`; preserve `pricing.use_fixed`, `pricing.set_variable`, and `pricing.override` unless 001 approves a documented change.
 
 ## Phase 2: Foundational
 
-- [ ] T007 Create `src/server/pricing/index.ts` as the barrel-only public surface and add the repository import restriction for `src/server/pricing/**` in `eslint.config.js`.
-- [ ] T008 [P] Implement `src/server/pricing/errors.ts` with typed errors from `contracts/pricing-service.md`, including forbidden, invalid dimensions/amount, missing price, stale spec, and dispute failures.
-- [ ] T009 [P] Implement `src/server/pricing/calculation.ts` with pure Decimal unit conversion, area/linear calculation, tier matching, customer-rule arithmetic, tax-inclusive semantics, and nearest-whole-EGP final rounding.
-- [ ] T010 [P] Add `tests/unit/pricing/calculation.test.ts` covering cm/m conversion, all five units, area multiplication, invalid dimensions, Decimal precision, and final rounding.
-- [ ] T011 [P] Add `tests/unit/pricing/tiers-and-dates.test.ts` covering inclusive 9/10/50 boundaries, effective-from/to semantics, expired rules, overlapping configuration rejection, and deterministic equal-precedence failure.
+- [X] T007 Create `src/server/pricing/index.ts` as the barrel-only public surface and add the repository import restriction for `src/server/pricing/**` in `eslint.config.js`.
+- [X] T008 [P] Implement `src/server/pricing/errors.ts` with typed errors from `contracts/pricing-service.md`, including forbidden, invalid dimensions/amount, missing price, stale spec, and dispute failures.
+- [X] T009 [P] Implement `src/server/pricing/calculation.ts` with pure Decimal unit conversion, area/linear calculation, tier matching, customer-rule arithmetic, tax-inclusive semantics, and nearest-whole-EGP final rounding.
+- [X] T010 [P] Add `tests/unit/pricing/calculation.test.ts` covering cm/m conversion, all five units, area multiplication, invalid dimensions, Decimal precision, and final rounding.
+- [X] T011 [P] Add `tests/unit/pricing/tiers-and-dates.test.ts` covering inclusive 9/10/50 boundaries, effective-from/to semantics, expired rules, overlapping configuration rejection, and deterministic equal-precedence failure.
 - [ ] T012 Implement `src/server/pricing/ports.ts` and the foundational persistence/binding pieces in `src/server/pricing/status.ts` for independent PricingStatus, pendingSince, responsible-user resolution, and fail-closed PricingGatePort defaults. Query functions are completed in T020.
 
 **Checkpoint**: Foundation is ready when pure calculations, schema validation, permissions, and the fail-closed port compile and pass their focused tests. No user-story implementation starts before this checkpoint.

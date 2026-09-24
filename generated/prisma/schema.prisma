@@ -111,6 +111,7 @@ model Customer {
   classification CustomerClassification? @relation(fields: [classificationId], references: [id])
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
+  pricingRules   CustomerPricingRule[]
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -187,6 +188,8 @@ model WorkItem {
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
   fileAssets              FileAsset[]              @relation("FileAssetWorkItem")
+  prices                  WorkItemPrice[]
+  pricingStatus           PricingStatus?
 
   @@index([orderId, state])
 }
@@ -206,7 +209,10 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems WorkItem[]
+  workItems            WorkItem[]
+  pricingPolicy        ProductPricingPolicy?
+  priceLists           PriceList[]
+  customerPricingRules CustomerPricingRule[]
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).
@@ -642,6 +648,11 @@ model User {
   attachments                    Attachment[]             @relation("ReturnAttachment")
   fileAuditEvents                FileAuditEvent[]         @relation("WorkItemTransitionActor")
   fileConfigsUpdated             FileConfig[]             @relation("WorkItemTransitionActor")
+  pricingPoliciesUpdated         ProductPricingPolicy[]   @relation("PricingPolicyUpdatedBy")
+  priceListsCreated              PriceList[]              @relation("PriceListCreatedBy")
+  pricingRulesCreated            CustomerPricingRule[]    @relation("CustomerRuleCreatedBy")
+  workItemPricesSet              WorkItemPrice[]          @relation("WorkItemPriceSetBy")
+  pricingStatusesUpdated         PricingStatus[]          @relation("PricingStatusUpdatedBy")
 
   @@unique([email])
   @@map("user")
@@ -814,6 +825,135 @@ model AuditEvent {
   @@index([actorId, createdAt])
   @@index([action, createdAt])
   @@map("audit_event")
+}
+
+// 051 Pricing Engine — historical price configuration and WorkItem pricing state.
+
+enum PricingMode {
+  FIXED
+  VARIABLE
+}
+
+enum PricingUnit {
+  PIECE
+  SQUARE_METER
+  LINEAR_METER
+  SHEET
+  PACK
+}
+
+enum PriceSource {
+  LIST
+  CUSTOMER_RULE
+  MANUAL
+}
+
+enum PricingStatusValue {
+  PENDING
+  PRICED
+  DISPUTED
+}
+
+enum CustomerRuleKind {
+  FIXED
+  PERCENT_DISCOUNT
+}
+
+enum PriceConfigStatus {
+  ACTIVE
+  RETIRED
+}
+
+model ProductPricingPolicy {
+  id            String      @id @default(cuid())
+  productTypeId String      @unique
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  mode          PricingMode
+  updatedById   String
+  updatedBy     User        @relation("PricingPolicyUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt     DateTime    @updatedAt
+}
+
+model PriceList {
+  id            String            @id @default(cuid())
+  productTypeId String
+  productType   ProductType       @relation(fields: [productTypeId], references: [id])
+  unit          PricingUnit
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  status        PriceConfigStatus @default(ACTIVE)
+  createdById   String
+  createdBy     User              @relation("PriceListCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime          @default(now())
+  tiers         PriceTier[]
+
+  @@index([productTypeId, unit, effectiveFrom, effectiveTo])
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+model PriceTier {
+  id              String    @id @default(cuid())
+  priceListId     String
+  priceList       PriceList @relation(fields: [priceListId], references: [id])
+  minimumQuantity Int
+  maximumQuantity Int?
+  basePrice       Decimal   @db.Decimal(12, 2)
+
+  @@index([priceListId, minimumQuantity, maximumQuantity])
+}
+
+model CustomerPricingRule {
+  id              String            @id @default(cuid())
+  customerId      String
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  productTypeId   String
+  productType     ProductType       @relation(fields: [productTypeId], references: [id])
+  unit            PricingUnit
+  kind            CustomerRuleKind
+  fixedPrice      Decimal?          @db.Decimal(12, 2)
+  discountPercent Decimal?          @db.Decimal(5, 2)
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  status          PriceConfigStatus @default(ACTIVE)
+  createdById     String
+  createdBy       User              @relation("CustomerRuleCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime          @default(now())
+
+  @@index([customerId, productTypeId, unit, effectiveFrom, effectiveTo])
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+model WorkItemPrice {
+  id              String      @id @default(cuid())
+  workItemId      String
+  workItem        WorkItem    @relation(fields: [workItemId], references: [id])
+  amount          Decimal     @db.Decimal(12, 2)
+  currency        String      @default("EGP")
+  source          PriceSource
+  quoteBreakdown  Json?
+  setById         String
+  setBy           User        @relation("WorkItemPriceSetBy", fields: [setById], references: [id])
+  setAt           DateTime    @default(now())
+  reason          String?
+  specFingerprint String?
+  replacedAt      DateTime?
+
+  @@index([workItemId, setAt])
+  @@index([workItemId, replacedAt])
+}
+
+model PricingStatus {
+  workItemId     String             @id
+  workItem       WorkItem           @relation(fields: [workItemId], references: [id])
+  status         PricingStatusValue @default(PENDING)
+  waitingSince   DateTime           @default(now())
+  disputeReason  String?
+  currentPriceId String?
+  updatedById    String?
+  updatedBy      User?              @relation("PricingStatusUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status, waitingSince])
 }
 
 // Prisma schema root — multi-file schema (prismaSchemaFolder preview feature).
