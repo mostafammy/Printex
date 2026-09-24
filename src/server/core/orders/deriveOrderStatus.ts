@@ -26,10 +26,9 @@ const PRE_PRODUCTION: readonly WorkItemState[] = ["NEW", "ASSIGNED"];
  * exists (constitution I: an Order without Work Items shouldn't be
  * displayed as "in progress" of anything). This function does not throw
  * (core functions never throw — plan.md §5.3), so it does not guard against
- * an empty array with a runtime error. EVERY `every()`-based branch below
- * (COMPLETED, DELIVERED, NOT_STARTED, and CANCELLED's own `.every()`) is
- * vacuously true for an empty `states` array, so with zero Work Items this
- * falls through to `COMPLETED` (the first `every`-based branch reached).
+ * an empty array with a runtime error. With zero Work Items, nonCancelledStates
+ * is empty and guarded by `length > 0`, so this falls through to `NOT_STARTED`
+ * (the first unguarded `every`-based branch reached, vacuously true).
  * That result is meaningless and callers are responsible for never
  * producing it in practice.
  *
@@ -56,11 +55,19 @@ export function deriveOrderStatus(
     return "CANCELLED";
   }
 
-  if (states.every((s) => s === "COMPLETED")) {
+  const nonCancelledStates = states.filter((s) => s !== "CANCELLED");
+
+  if (
+    nonCancelledStates.length > 0 &&
+    nonCancelledStates.every((s) => s === "COMPLETED")
+  ) {
     return "COMPLETED";
   }
 
-  if (states.every((s) => s === "DELIVERED" || s === "COMPLETED")) {
+  if (
+    nonCancelledStates.length > 0 &&
+    nonCancelledStates.every((s) => s === "DELIVERED" || s === "COMPLETED")
+  ) {
     return "DELIVERED";
   }
 
