@@ -24,10 +24,10 @@
 // contract, per contracts/storage.md.
 
 import { createHash } from "node:crypto";
-import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, unlink, access, link } from "node:fs/promises";
+import { createReadStream, createWriteStream, readFileSync } from "node:fs";
+import { mkdir, unlink, access, rename } from "node:fs/promises";
 import { dirname, join, resolve, relative, isAbsolute } from "node:path";
-import { PassThrough } from "node:stream";
+import { PassThrough, Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 import type { StorageAdapter } from "./adapter";
@@ -62,7 +62,7 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
 
   async put(
     key: string,
-    body: NodeJS.ReadableStream,
+    body: NodeJS.ReadableStream | ReadableStream,
   ): Promise<{ size: number; sha256: string }> {
     const target = this.resolvePath(key);
 
@@ -86,11 +86,13 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
     const tempPath = `${target}.tmp.${Date.now()}.${Math.random().toString(36).slice(2, 9)}`;
 
     try {
-      await pipeline(body, measure, createWriteStream(tempPath));
+      const source = "getReader" in body
+        ? Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0])
+        : body;
+      await pipeline(source as NodeJS.ReadableStream, measure, createWriteStream(tempPath));
 
-      // Atomic link + unlink — link fails with EEXIST atomically
-      await link(tempPath, target);
-      await unlink(tempPath);
+      // Atomic rename to final path
+      await rename(tempPath, target);
     } catch (caught) {
       // Clean up temp file on error
       try {
@@ -123,58 +125,41 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
 
   /**
    * Get with checksum verification.
-   * Hashes while streaming via a Transform — verified bytes are the same
-   * bytes yielded to the caller. Throws on mismatch at EOF (flush).
+   * Verifies SHA-256 before yielding bytes.
+   * Reads entire file to verify, then returns a fresh stream.
    */
   async getWithVerification(
     key: string,
     expectedSha256: string,
     expectedSize: number
-  ): Promise<NodeJS.ReadableStream> {
+  ): Promise<Readable> {
     const target = this.resolvePath(key);
     await access(target);
 
-    const fileStream = createReadStream(target);
+    // Verify checksum before returning
     const hash = createHash("sha256");
     let totalSize = 0;
 
-    // Transform that hashes and counts bytes inline
-    const verify = new PassThrough();
-    verify.on("data", (chunk: Buffer) => {
-      totalSize += chunk.length;
-      hash.update(chunk);
+    await new Promise<void>((resolve, reject) => {
+      const stream = createReadStream(target);
+      stream.on("data", (chunk: string | Buffer) => {
+        totalSize += chunk.length;
+        hash.update(chunk);
+      });
+      stream.on("end", () => resolve());
+      stream.on("error", reject);
     });
 
-    // Pipe through the verify transform; errors from the hash check
-    // will propagate to the caller via the stream error event
-    const origPipe = fileStream.pipe.bind(fileStream);
-    fileStream.pipe = ((dest: NodeJS.WritableStream, options?: { end?: boolean }) => {
-      origPipe(dest, { end: false });
-      // When the source ends, verify hash before ending the transform
-      fileStream.on("end", () => {
-        const actualSha = hash.digest("hex");
-        if (actualSha !== expectedSha256) {
-          verify.destroy(new Error(
-            `Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`
-          ));
-          return;
-        }
-        if (totalSize !== expectedSize) {
-          verify.destroy(new Error(
-            `Size mismatch: expected ${expectedSize}, got ${totalSize}`
-          ));
-          return;
-        }
-        verify.end();
-      });
-      fileStream.on("error", (err) => verify.destroy(err));
-      return dest;
-    }) as any;
+    const actualSha = hash.digest("hex");
+    if (actualSha !== expectedSha256) {
+      throw new Error(`Checksum mismatch: expected ${expectedSha256}, got ${actualSha}`);
+    }
+    if (totalSize !== expectedSize) {
+      throw new Error(`Size mismatch: expected ${expectedSize}, got ${totalSize}`);
+    }
 
-    // Kick off the pipe
-    fileStream.pipe(verify);
-
-    return verify;
+    // Return an in-memory stream so callers aren't affected by subsequent file deletion
+    return Readable.from(readFileSync(target));
   }
 }
 

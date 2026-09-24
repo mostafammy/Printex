@@ -1,5 +1,7 @@
 import { streamToTempFile, computeStreamIntegrity, verifyStreamIntegrity } from "@/server/files/integrity.js";
 import { ReadableStream } from "stream/web";
+import { tmpdir } from "os";
+import { join } from "path";
 import { describe, it, expect, vi } from "vitest";
 
 describe("Stream integrity", () => {
@@ -13,7 +15,7 @@ describe("Stream integrity", () => {
         },
       });
 
-      const tempPath = `/tmp/test-${Date.now()}.tmp`;
+      const tempPath = join(tmpdir(), `test-${Date.now()}.tmp`);
 
       const result = await streamToTempFile(stream, tempPath);
 
@@ -46,7 +48,7 @@ describe("Stream integrity", () => {
         },
       });
 
-      const tempPath = `/tmp/test-${Date.now()}.tmp`;
+      const tempPath = join(tmpdir(), `test-${Date.now()}.tmp`);
 
       const result = await streamToTempFile(stream, tempPath);
 
@@ -69,7 +71,7 @@ describe("Stream integrity", () => {
         },
       });
 
-      const tempPath = `/tmp/test-${Date.now()}.tmp`;
+      const tempPath = join(tmpdir(), `test-${Date.now()}.tmp`);
 
       await expect(
         streamToTempFile(stream, tempPath, { maxSize: 5 * 1024 * 1024 }) // 5 MB limit
@@ -177,10 +179,10 @@ describe("Stream integrity", () => {
         },
       });
 
-      const tempPath = `/tmp/test-interrupted-${Date.now()}.tmp`;
+      const tempPath = join(tmpdir(), `test-interrupted-${Date.now()}.tmp`);
 
       // Should complete successfully even with early close
-      const result = await streamToTempFile(stream, `/tmp/test-${Date.now()}.tmp`);
+      const result = await streamToTempFile(stream, join(tmpdir(), `test-${Date.now()}.tmp`));
 
       expect(result.size).toBeGreaterThanOrEqual(0);
     });

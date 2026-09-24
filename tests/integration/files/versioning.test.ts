@@ -1,7 +1,7 @@
 import { fileService } from "@/server/files/index.js";
-import { fileFixtures, makeFileAssetInput, makeFileVersionInput, createTestStream } from "@/tests/fixtures/files.js";
+import { fileFixtures, makeFileAssetInput, makeFileVersionInput, createTestStream } from "../../fixtures/files.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { prisma } from "@/server/db/client.js";
+import { db as prisma } from "@/server/db.js";
 
 describe("Versioning and deduplication integration", () => {
   let testWorkItemId: string;
@@ -184,7 +184,7 @@ describe("Versioning and deduplication integration", () => {
     // Verify version numbers are 1, 2, 3, 4, 5 (or continuing from existing)
     const versionNumbers = versions.map(v => v.versionNumber).sort((a, b) => a - b);
     for (let i = 1; i < versionNumbers.length; i++) {
-      expect(versionNumbers[i]).toBe(versionNumbers[i - 1] + 1);
+      expect(versionNumbers[i]).toBe(versionNumbers[i - 1]! + 1);
     }
   });
 

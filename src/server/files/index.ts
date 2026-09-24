@@ -12,4 +12,4 @@ export { LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/s
 export { getFilesConfig, isMimeAllowed, type FilesConfig } from "./config.js";
 export { loadFilesConfig, resetFilesConfig } from "./config.js";
 export { getMemorySnapshot, computeMemoryDelta, recordUploadMetrics, recordPreviewMetrics, isPreviewGrantExpired, createPreviewMetrics, formatMemorySnapshot, type UploadMetrics, type PreviewMetrics, type MemorySnapshot } from "./observability.js";
-export type { FileConfig, FileObject, FileAsset, FileVersion, Attachment, FileAuditEvent, FileLifecycleStatus } from "@prisma/client";
+export type { FileConfig, FileObject, FileAsset, FileVersion, Attachment, FileAuditEvent, FileLifecycleStatus } from "../../../generated/prisma/index.js";

@@ -1,4 +1,4 @@
-import { FileCategory, FileLifecycleStatus, AttachmentKind } from "@prisma/client";
+import { FileCategory, FileLifecycleStatus, AttachmentKind } from "../../generated/prisma/index.js";
 
 export const fileFixtures = {
   categories: [

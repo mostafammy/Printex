@@ -23319,13 +23319,13 @@ export namespace Prisma {
   }
 
   export type FileObjectSumAggregateOutputType = {
-    sizeBytes: number | null
+    sizeBytes: bigint | null
   }
 
   export type FileObjectMinAggregateOutputType = {
     id: string | null
     storageKey: string | null
-    sizeBytes: number | null
+    sizeBytes: bigint | null
     sha256: string | null
     mimeType: string | null
     createdAt: Date | null
@@ -23334,7 +23334,7 @@ export namespace Prisma {
   export type FileObjectMaxAggregateOutputType = {
     id: string | null
     storageKey: string | null
-    sizeBytes: number | null
+    sizeBytes: bigint | null
     sha256: string | null
     mimeType: string | null
     createdAt: Date | null
@@ -23476,7 +23476,7 @@ export namespace Prisma {
   export type FileObjectGroupByOutputType = {
     id: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint
     sha256: string
     mimeType: string
     createdAt: Date
@@ -23564,7 +23564,7 @@ export namespace Prisma {
       /**
        * Required, 0–5 GB inclusive.
        */
-      sizeBytes: number
+      sizeBytes: bigint
       /**
        * Required 64-hex checksum; unique for deduplication.
        */
@@ -24001,7 +24001,7 @@ export namespace Prisma {
   interface FileObjectFieldRefs {
     readonly id: FieldRef<"FileObject", 'String'>
     readonly storageKey: FieldRef<"FileObject", 'String'>
-    readonly sizeBytes: FieldRef<"FileObject", 'Int'>
+    readonly sizeBytes: FieldRef<"FileObject", 'BigInt'>
     readonly sha256: FieldRef<"FileObject", 'String'>
     readonly mimeType: FieldRef<"FileObject", 'String'>
     readonly createdAt: FieldRef<"FileObject", 'DateTime'>
@@ -28998,13 +28998,13 @@ export namespace Prisma {
   }
 
   export type FileConfigSumAggregateOutputType = {
-    maxFileSizeBytes: number | null
+    maxFileSizeBytes: bigint | null
     previewExpirySeconds: number | null
   }
 
   export type FileConfigMinAggregateOutputType = {
     id: string | null
-    maxFileSizeBytes: number | null
+    maxFileSizeBytes: bigint | null
     previewExpirySeconds: number | null
     updatedAt: Date | null
     updatedById: string | null
@@ -29012,7 +29012,7 @@ export namespace Prisma {
 
   export type FileConfigMaxAggregateOutputType = {
     id: string | null
-    maxFileSizeBytes: number | null
+    maxFileSizeBytes: bigint | null
     previewExpirySeconds: number | null
     updatedAt: Date | null
     updatedById: string | null
@@ -29156,7 +29156,7 @@ export namespace Prisma {
   export type FileConfigGroupByOutputType = {
     id: string
     mimeAllowlist: JsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint
     departments: JsonValue
     previewExpirySeconds: number
     updatedAt: Date
@@ -29250,7 +29250,7 @@ export namespace Prisma {
       /**
        * Required, 1–10 GB inclusive.
        */
-      maxFileSizeBytes: number
+      maxFileSizeBytes: bigint
       /**
        * Required array of { name: string, code: string }; managed by Admin UI.
        */
@@ -29687,7 +29687,7 @@ export namespace Prisma {
   interface FileConfigFieldRefs {
     readonly id: FieldRef<"FileConfig", 'String'>
     readonly mimeAllowlist: FieldRef<"FileConfig", 'Json'>
-    readonly maxFileSizeBytes: FieldRef<"FileConfig", 'Int'>
+    readonly maxFileSizeBytes: FieldRef<"FileConfig", 'BigInt'>
     readonly departments: FieldRef<"FileConfig", 'Json'>
     readonly previewExpirySeconds: FieldRef<"FileConfig", 'Int'>
     readonly updatedAt: FieldRef<"FileConfig", 'DateTime'>
@@ -42272,6 +42272,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'BigInt'
+   */
+  export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt[]'
+   */
+  export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+  /**
    * Reference to a field of type 'FileCategory'
    */
   export type EnumFileCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileCategory'>
@@ -43666,7 +43680,7 @@ export namespace Prisma {
     NOT?: FileObjectWhereInput | FileObjectWhereInput[]
     id?: StringFilter<"FileObject"> | string
     storageKey?: StringFilter<"FileObject"> | string
-    sizeBytes?: IntFilter<"FileObject"> | number
+    sizeBytes?: BigIntFilter<"FileObject"> | bigint | number
     sha256?: StringFilter<"FileObject"> | string
     mimeType?: StringFilter<"FileObject"> | string
     createdAt?: DateTimeFilter<"FileObject"> | Date | string
@@ -43692,7 +43706,7 @@ export namespace Prisma {
     AND?: FileObjectWhereInput | FileObjectWhereInput[]
     OR?: FileObjectWhereInput[]
     NOT?: FileObjectWhereInput | FileObjectWhereInput[]
-    sizeBytes?: IntFilter<"FileObject"> | number
+    sizeBytes?: BigIntFilter<"FileObject"> | bigint | number
     mimeType?: StringFilter<"FileObject"> | string
     createdAt?: DateTimeFilter<"FileObject"> | Date | string
     fileVersions?: FileVersionListRelationFilter
@@ -43719,7 +43733,7 @@ export namespace Prisma {
     NOT?: FileObjectScalarWhereWithAggregatesInput | FileObjectScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"FileObject"> | string
     storageKey?: StringWithAggregatesFilter<"FileObject"> | string
-    sizeBytes?: IntWithAggregatesFilter<"FileObject"> | number
+    sizeBytes?: BigIntWithAggregatesFilter<"FileObject"> | bigint | number
     sha256?: StringWithAggregatesFilter<"FileObject"> | string
     mimeType?: StringWithAggregatesFilter<"FileObject"> | string
     createdAt?: DateTimeWithAggregatesFilter<"FileObject"> | Date | string
@@ -44037,7 +44051,7 @@ export namespace Prisma {
     NOT?: FileConfigWhereInput | FileConfigWhereInput[]
     id?: StringFilter<"FileConfig"> | string
     mimeAllowlist?: JsonFilter<"FileConfig">
-    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    maxFileSizeBytes?: BigIntFilter<"FileConfig"> | bigint | number
     departments?: JsonFilter<"FileConfig">
     previewExpirySeconds?: IntFilter<"FileConfig"> | number
     updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
@@ -44062,7 +44076,7 @@ export namespace Prisma {
     OR?: FileConfigWhereInput[]
     NOT?: FileConfigWhereInput | FileConfigWhereInput[]
     mimeAllowlist?: JsonFilter<"FileConfig">
-    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    maxFileSizeBytes?: BigIntFilter<"FileConfig"> | bigint | number
     departments?: JsonFilter<"FileConfig">
     previewExpirySeconds?: IntFilter<"FileConfig"> | number
     updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
@@ -44091,7 +44105,7 @@ export namespace Prisma {
     NOT?: FileConfigScalarWhereWithAggregatesInput | FileConfigScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"FileConfig"> | string
     mimeAllowlist?: JsonWithAggregatesFilter<"FileConfig">
-    maxFileSizeBytes?: IntWithAggregatesFilter<"FileConfig"> | number
+    maxFileSizeBytes?: BigIntWithAggregatesFilter<"FileConfig"> | bigint | number
     departments?: JsonWithAggregatesFilter<"FileConfig">
     previewExpirySeconds?: IntWithAggregatesFilter<"FileConfig"> | number
     updatedAt?: DateTimeWithAggregatesFilter<"FileConfig"> | Date | string
@@ -46213,7 +46227,7 @@ export namespace Prisma {
   export type FileObjectCreateInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -46224,7 +46238,7 @@ export namespace Prisma {
   export type FileObjectUncheckedCreateInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -46235,7 +46249,7 @@ export namespace Prisma {
   export type FileObjectUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46246,7 +46260,7 @@ export namespace Prisma {
   export type FileObjectUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46257,7 +46271,7 @@ export namespace Prisma {
   export type FileObjectCreateManyInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -46266,7 +46280,7 @@ export namespace Prisma {
   export type FileObjectUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46275,7 +46289,7 @@ export namespace Prisma {
   export type FileObjectUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46603,7 +46617,7 @@ export namespace Prisma {
   export type FileConfigCreateInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -46613,7 +46627,7 @@ export namespace Prisma {
   export type FileConfigUncheckedCreateInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -46623,7 +46637,7 @@ export namespace Prisma {
   export type FileConfigUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46633,7 +46647,7 @@ export namespace Prisma {
   export type FileConfigUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46643,7 +46657,7 @@ export namespace Prisma {
   export type FileConfigCreateManyInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -46653,7 +46667,7 @@ export namespace Prisma {
   export type FileConfigUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -46662,7 +46676,7 @@ export namespace Prisma {
   export type FileConfigUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -48728,6 +48742,17 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type BigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
   export type FileVersionListRelationFilter = {
     every?: FileVersionWhereInput
     some?: FileVersionWhereInput
@@ -48781,6 +48806,22 @@ export namespace Prisma {
 
   export type FileObjectSumOrderByAggregateInput = {
     sizeBytes?: SortOrder
+  }
+
+  export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
   }
 
   export type EnumFileCategoryFilter<$PrismaModel = never> = {
@@ -50840,6 +50881,14 @@ export namespace Prisma {
     connect?: AttachmentWhereUniqueInput | AttachmentWhereUniqueInput[]
   }
 
+  export type BigIntFieldUpdateOperationsInput = {
+    set?: bigint | number
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
   export type FileVersionUpdateManyWithoutFileObjectNestedInput = {
     create?: XOR<FileVersionCreateWithoutFileObjectInput, FileVersionUncheckedCreateWithoutFileObjectInput> | FileVersionCreateWithoutFileObjectInput[] | FileVersionUncheckedCreateWithoutFileObjectInput[]
     connectOrCreate?: FileVersionCreateOrConnectWithoutFileObjectInput | FileVersionCreateOrConnectWithoutFileObjectInput[]
@@ -52570,6 +52619,33 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedBigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
+  export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
   }
 
   export type NestedEnumFileCategoryFilter<$PrismaModel = never> = {
@@ -57229,7 +57305,7 @@ export namespace Prisma {
   export type FileObjectCreateWithoutFileVersionsInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -57239,7 +57315,7 @@ export namespace Prisma {
   export type FileObjectUncheckedCreateWithoutFileVersionsInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -57367,7 +57443,7 @@ export namespace Prisma {
   export type FileObjectUpdateWithoutFileVersionsInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57377,7 +57453,7 @@ export namespace Prisma {
   export type FileObjectUncheckedUpdateWithoutFileVersionsInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57466,7 +57542,7 @@ export namespace Prisma {
   export type FileObjectCreateWithoutAttachmentsInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -57476,7 +57552,7 @@ export namespace Prisma {
   export type FileObjectUncheckedCreateWithoutAttachmentsInput = {
     id?: string
     storageKey: string
-    sizeBytes: number
+    sizeBytes: bigint | number
     sha256: string
     mimeType: string
     createdAt?: Date | string
@@ -57575,7 +57651,7 @@ export namespace Prisma {
   export type FileObjectUpdateWithoutAttachmentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -57585,7 +57661,7 @@ export namespace Prisma {
   export type FileObjectUncheckedUpdateWithoutAttachmentsInput = {
     id?: StringFieldUpdateOperationsInput | string
     storageKey?: StringFieldUpdateOperationsInput | string
-    sizeBytes?: IntFieldUpdateOperationsInput | number
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     sha256?: StringFieldUpdateOperationsInput | string
     mimeType?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -58616,7 +58692,7 @@ export namespace Prisma {
   export type FileConfigCreateWithoutUpdatedByInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -58625,7 +58701,7 @@ export namespace Prisma {
   export type FileConfigUncheckedCreateWithoutUpdatedByInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -59053,7 +59129,7 @@ export namespace Prisma {
     NOT?: FileConfigScalarWhereInput | FileConfigScalarWhereInput[]
     id?: StringFilter<"FileConfig"> | string
     mimeAllowlist?: JsonFilter<"FileConfig">
-    maxFileSizeBytes?: IntFilter<"FileConfig"> | number
+    maxFileSizeBytes?: BigIntFilter<"FileConfig"> | bigint | number
     departments?: JsonFilter<"FileConfig">
     previewExpirySeconds?: IntFilter<"FileConfig"> | number
     updatedAt?: DateTimeFilter<"FileConfig"> | Date | string
@@ -61748,7 +61824,7 @@ export namespace Prisma {
   export type FileConfigCreateManyUpdatedByInput = {
     id?: string
     mimeAllowlist: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes: number
+    maxFileSizeBytes: bigint | number
     departments: JsonNullValueInput | InputJsonValue
     previewExpirySeconds: number
     updatedAt?: Date | string
@@ -62417,7 +62493,7 @@ export namespace Prisma {
   export type FileConfigUpdateWithoutUpdatedByInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -62426,7 +62502,7 @@ export namespace Prisma {
   export type FileConfigUncheckedUpdateWithoutUpdatedByInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -62435,7 +62511,7 @@ export namespace Prisma {
   export type FileConfigUncheckedUpdateManyWithoutUpdatedByInput = {
     id?: StringFieldUpdateOperationsInput | string
     mimeAllowlist?: JsonNullValueInput | InputJsonValue
-    maxFileSizeBytes?: IntFieldUpdateOperationsInput | number
+    maxFileSizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
     departments?: JsonNullValueInput | InputJsonValue
     previewExpirySeconds?: IntFieldUpdateOperationsInput | number
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string

@@ -4,7 +4,7 @@
 
 import { type Prisma, AttachmentKind } from "../../../generated/prisma/index.js";
 import type { Actor } from "@/server/auth/getActor.js";
-import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
+import { type LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
 import { streamToTempFile } from "./integrity.js";
 import { validateAttachmentInput, FileError, FileErrorCode } from "./schemas.js";
 import { audit } from "@/server/auth/audit.js";
@@ -96,7 +96,7 @@ export class AttachmentService {
     txOrInput: Prisma.TransactionClient | AttachInput,
     possibleInput?: AttachInput
   ): Promise<string> {
-    const isTx = txOrInput && typeof (txOrInput as any).attachment !== "undefined";
+    const isTx = txOrInput && typeof txOrInput === "object" && "attachment" in txOrInput;
     const db = isTx ? (txOrInput as Prisma.TransactionClient) : prisma;
     const input = isTx ? possibleInput! : (txOrInput as AttachInput);
 
@@ -105,7 +105,7 @@ export class AttachmentService {
 
     // Stream to temp file and compute SHA-256 / size
     const tempPath = join(tmpdir(), `attach-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    const { size, sha256 } = await streamToTempFile(stream as any, tempPath);
+    const { size, sha256 } = await streamToTempFile(stream as ReadableStream<Uint8Array>, tempPath);
     const mimeType = getMimeType(fileName);
 
     // Validate
@@ -114,7 +114,7 @@ export class AttachmentService {
       entityId,
       fileName,
       kind: normalizedKind,
-      createdById: actor.id,
+      createdById: actor.userId,
       fileSize: size,
       mimeType,
     });
@@ -127,7 +127,7 @@ export class AttachmentService {
     if (!fileObject) {
       const { createReadStream } = await import("fs");
       const fileStream = createReadStream(tempPath);
-      await this.storage.put(sha256, fileStream as any);
+      await this.storage.put(sha256, fileStream as NodeJS.ReadableStream);
 
       fileObject = await db.fileObject.create({
         data: {
@@ -153,14 +153,14 @@ export class AttachmentService {
         entityId,
         originalName: fileName,
         kind: normalizedKind,
-        createdById: actor.id,
+        createdById: actor.userId,
         status: "ACTIVE",
       },
     });
 
     // Audit record
     await audit.record(db, {
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "CREATE",
       entityType: "ATTACHMENT",
       entityId: attachment.id,
@@ -211,7 +211,7 @@ export class AttachmentService {
         ? {
             id: r.fileObject.id,
             storageKey: r.fileObject.storageKey,
-            sizeBytes: r.fileObject.sizeBytes,
+            sizeBytes: Number(r.fileObject.sizeBytes),
             sha256: r.fileObject.sha256,
             mimeType: r.fileObject.mimeType,
           }
@@ -241,7 +241,7 @@ export class AttachmentService {
     });
 
     await audit.record(prisma, {
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "VOID",
       entityType: "ATTACHMENT",
       entityId: attachmentId,
@@ -273,7 +273,7 @@ export class AttachmentService {
     });
 
     await audit.record(prisma, {
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "ARCHIVE",
       entityType: "ATTACHMENT",
       entityId: attachmentId,

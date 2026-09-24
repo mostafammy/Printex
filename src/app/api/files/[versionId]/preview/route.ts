@@ -2,8 +2,8 @@
 // Re-authorization, SHA-256 verification, image/PDF preview vs metadata/icon
 
 import { getActor } from "@/server/auth/getActor.js";
-import { fileService, authorizeFileDownload } from "@/server/files/index.js";
-import { verifyPreviewGrant, decodeAndVerifyGrant } from "@/server/files/signed-preview.js";
+import { authorizeFileDownload } from "@/server/files/index.js";
+import { decodeAndVerifyGrant } from "@/server/files/signed-preview.js";
 import { mapFileError } from "@/server/files/errors.js";
 import { NextResponse } from "next/server";
 
@@ -53,7 +53,7 @@ export async function GET(
     await authorizeFileDownload(actor, versionId);
 
     // Get file version with file object
-    const { prisma } = await import("@/server/db/client.js");
+    const { db: prisma } = await import("@/server/db.js");
     const fileVersion = await prisma.fileVersion.findUnique({
       where: { id: versionId },
       include: { fileObject: true },

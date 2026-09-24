@@ -59,7 +59,7 @@ export const uploadInputSchema = z.object({
 });
 
 // Upload validation with MIME/size check
-export function validateUploadInput(input: z.infer<typeof uploadInputSchema>, fileSize: number, mimeType: string) {
+export function validateUploadInput(input: unknown, fileSize: number, mimeType: string) {
   const config = getFilesConfig();
 
   const validated = uploadInputSchema.parse(input);
@@ -105,17 +105,17 @@ export const attachmentInputSchema = z.object({
   mimeType: z.string(),
 });
 
-export function validateAttachmentInput(input: z.infer<typeof attachmentInputSchema>) {
+export function validateAttachmentInput(input: unknown) {
   const config = getFilesConfig();
 
   const validated = attachmentInputSchema.parse(input);
 
-  if (input.fileSize > config.maxFileSizeBytes) {
-    throw new Error(`File size ${input.fileSize} exceeds maximum allowed ${config.maxFileSizeBytes} bytes`);
+  if (validated.fileSize > config.maxFileSizeBytes) {
+    throw new Error(`File size ${validated.fileSize} exceeds maximum allowed ${config.maxFileSizeBytes} bytes`);
   }
 
-  if (!isMimeAllowed(input.mimeType)) {
-    throw new Error(`MIME type ${input.mimeType} not in allowlist`);
+  if (!isMimeAllowed(validated.mimeType)) {
+    throw new Error(`MIME type ${validated.mimeType} not in allowlist`);
   }
 
   return validated;

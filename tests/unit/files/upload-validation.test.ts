@@ -1,6 +1,6 @@
 import { validateUploadInput } from "@/server/files/schemas.js";
 import { isMimeAllowed } from "@/server/files/config.js";
-import { fileFixtures, makeFileObjectInput, makeFileAssetInput } from "@/tests/fixtures/files.js";
+import { fileFixtures, makeFileObjectInput, makeFileAssetInput } from "../../fixtures/files.js";
 import { describe, it, expect } from "vitest";
 
 describe("Upload validation", () => {

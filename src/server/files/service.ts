@@ -2,13 +2,13 @@
 // Core business logic: upload, list, approve, lifecycle, attachments
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { type Prisma } from "../../../generated/prisma/index.js";
+import { type Prisma, FileCategory, FileLifecycleStatus } from "../../../generated/prisma/index.js";
 import type { Actor } from "@/server/auth/getActor.js";
 import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
 import { streamToTempFile, withRetry, verifyStreamIntegrity } from "./integrity.js";
 import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode } from "./schemas.js";
 import { canDownloadFileVersion, canListFileVersions, canPerformLifecycleAction, canApproveFileVersion } from "./authorization.js";
-import { createPreviewGrant, verifyPreviewGrant, encodeGrant, type SignedPreviewGrant } from "./signed-preview.js";
+import { createPreviewGrant, decodeAndVerifyGrant, encodeGrant } from "./signed-preview.js";
 import { audit } from "@/server/auth/audit.js";
 import { db as prisma } from "@/server/db.js";
 import { tmpdir } from "node:os";
@@ -112,7 +112,7 @@ export class FileService {
         category,
         fileName: input.fileName,
         note: input.note,
-        actorId: actor.id,
+        actorId: actor.userId,
       }, size, mimeType);
 
       // Deduplicate FileObject by SHA-256 — upsert to handle concurrent uploads
@@ -130,8 +130,9 @@ export class FileService {
           },
         });
         isNewObject = true;
-      } catch (e: any) {
-        if (e?.code === "P2002") {
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err?.code === "P2002") {
           // Concurrent upload already created this FileObject
           fileObject = await prisma.fileObject.findUnique({ where: { sha256 } });
           if (!fileObject) throw e;
@@ -144,7 +145,7 @@ export class FileService {
       if (isNewObject) {
         const { createReadStream } = await import("fs");
         const fileStream = createReadStream(tempPath);
-        await this.storage.put(storageKey, fileStream as any);
+        await this.storage.put(storageKey, fileStream as NodeJS.ReadableStream);
       }
 
       // Atomic: supersede prior ACTIVE versions + create new version in transaction
@@ -170,7 +171,7 @@ export class FileService {
             fileObjectId: fileObject!.id,
             versionNumber: nextVersion,
             originalName: input.fileName,
-            uploadedById: actor.id,
+            uploadedById: actor.userId,
             note: input.note ?? null,
             status: "ACTIVE",
             approved: false,
@@ -183,7 +184,7 @@ export class FileService {
 
       // Audit the upload
       await audit.record({
-        actorId: actor.id,
+        actorId: actor.userId,
         action: "CREATE",
         entity: "FILE_VERSION",
         entityId: result.fileVersion.id,
@@ -201,7 +202,7 @@ export class FileService {
       // Audit each superseded version
       for (const prior of result.priorActive) {
         await audit.record({
-          actorId: actor.id,
+          actorId: actor.userId,
           action: "SUPERSEDE",
           entity: "FILE_VERSION",
           entityId: prior.id,
@@ -231,10 +232,10 @@ export class FileService {
     };
 
     if (category) {
-      where.fileAsset = { ...where.fileAsset, category };
+      where.fileAsset = { ...where.fileAsset, category: category as FileCategory } as never;
     }
     if (status) {
-      where.status = status;
+      where.status = status as FileLifecycleStatus;
     } else if (!includeArchived) {
       where.status = { not: "ARCHIVED" };
     }
@@ -276,7 +277,7 @@ export class FileService {
     });
 
     await audit.record({
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "APPROVE",
       entity: "FILE_VERSION",
       entityId: versionId,
@@ -296,7 +297,7 @@ export class FileService {
     }
 
     const baseUrl = process.env.APP_BASE_URL ?? "http://localhost:3000";
-    const grant = createPreviewGrant(versionId, actor.id, "download");
+    const grant = createPreviewGrant(versionId, actor.userId, "download");
     return `${baseUrl}/api/files/${versionId}/download?grant=${encodeGrant(grant)}`;
   }
 
@@ -322,7 +323,7 @@ export class FileService {
     });
 
     await audit.record({
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "VOID",
       entity: "FILE_VERSION",
       entityId: versionId,
@@ -354,7 +355,7 @@ export class FileService {
     });
 
     await audit.record({
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "ARCHIVE",
       entity: "FILE_VERSION",
       entityId: versionId,
@@ -390,7 +391,7 @@ export class FileService {
         entityId,
         fileName,
         kind,
-        createdById: actor.id,
+        createdById: actor.userId,
         fileSize: size,
         mimeType,
       });
@@ -405,8 +406,9 @@ export class FileService {
           data: { storageKey, sizeBytes: size, sha256, mimeType },
         });
         isNewObject = true;
-      } catch (e: any) {
-        if (e?.code === "P2002") {
+      } catch (e: unknown) {
+        const err = e as { code?: string };
+        if (err?.code === "P2002") {
           fileObject = await prisma.fileObject.findUnique({ where: { sha256 } });
           if (!fileObject) throw e;
         } else {
@@ -417,7 +419,7 @@ export class FileService {
       if (isNewObject) {
         const { createReadStream } = await import("fs");
         const fileStream = createReadStream(tempPath);
-        await this.storage.put(storageKey, fileStream as any);
+        await this.storage.put(storageKey, fileStream as NodeJS.ReadableStream);
       }
 
       // Create Attachment
@@ -428,13 +430,13 @@ export class FileService {
         entityId,
         originalName: fileName,
         kind,
-        createdById: actor.id,
+        createdById: actor.userId,
         status: "ACTIVE",
       },
     });
 
     await audit.record({
-      actorId: actor.id,
+      actorId: actor.userId,
       action: "CREATE",
       entity: "ATTACHMENT",
       entityId: attachment.id,
@@ -460,13 +462,36 @@ export class FileService {
    * Verify preview grant and return file version if valid.
    */
   async verifyPreviewGrant(token: string) {
-    const payload = verifyPreviewGrant(token);
+    const payload = decodeAndVerifyGrant(token);
     return payload;
   }
 
   // Helper methods
 
-  private toOutput(v: any): FileVersionOutput {
+  private toOutput(v: {
+    id: string;
+    fileAssetId: string;
+    fileObjectId: string;
+    versionNumber: number;
+    originalName: string;
+    uploadedById: string;
+    note: string | null;
+    status: string;
+    approved: boolean;
+    createdAt: Date;
+    fileObject?: {
+      id: string;
+      storageKey: string;
+      sizeBytes: number | bigint;
+      sha256: string;
+      mimeType: string;
+    } | null;
+  }): FileVersionOutput {
+    if (!v.fileObject) {
+      throw new Error("File object not found");
+    }
+    const fileObject = v.fileObject;
+
     return {
       id: v.id,
       fileAssetId: v.fileAssetId,
@@ -478,13 +503,13 @@ export class FileService {
       status: v.status,
       approved: v.approved,
       createdAt: v.createdAt,
-      fileObject: v.fileObject ? {
-        id: v.fileObject.id,
-        storageKey: v.fileObject.storageKey,
-        sizeBytes: v.fileObject.sizeBytes,
-        sha256: v.fileObject.sha256,
-        mimeType: v.fileObject.mimeType,
-      } : null,
+      fileObject: {
+        id: fileObject.id,
+        storageKey: fileObject.storageKey,
+        sizeBytes: Number(fileObject.sizeBytes),
+        sha256: fileObject.sha256,
+        mimeType: fileObject.mimeType,
+      },
     };
   }
 

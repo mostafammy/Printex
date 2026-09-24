@@ -2,9 +2,8 @@
 // Authenticated actor, schema validation, streamed request handling, no active version on failure.
 
 import { getActor } from "@/server/auth/getActor.js";
-import { fileService } from "@/server/files/index.js";
+import { fileService, type UploadInput } from "@/server/files/index.js";
 import { validateUploadInput, FileError, FileErrorCode } from "@/server/files/schemas.js";
-import { streamToTempFile } from "@/server/files/integrity.js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -56,11 +55,11 @@ export async function POST(request: Request) {
     // Upload via file service
     const fileVersion = await fileService.upload({
       workItemId: validated.workItemId,
-      category: validated.category,
-      stream: stream as any,
+      category: validated.category as UploadInput["category"],
+      stream: stream as ReadableStream<Uint8Array>,
       fileName: validated.fileName,
       note: validated.note,
-      actor: actor as any,
+      actor: actor,
     });
 
     return NextResponse.json({

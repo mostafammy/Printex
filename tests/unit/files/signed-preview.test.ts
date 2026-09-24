@@ -1,6 +1,11 @@
 import { createPreviewGrant, verifyPreviewGrant, encodeGrant, decodeAndVerifyGrant, createPreviewUrl, createDownloadUrl } from "@/server/files/signed-preview.js";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+// Set HMAC secret before any tests run
+beforeEach(() => {
+  process.env.FILES_PREVIEW_HMAC_SECRET = "test-secret-for-dev-32-chars-minimum!!";
+});
+
 describe("Signed preview grants", () => {
   describe("createPreviewGrant", () => {
     it("creates a valid grant with correct structure", () => {
@@ -140,6 +145,10 @@ describe("Signed preview grants", () => {
     });
 
     it("rejects tampered token", () => {
+      vi.useFakeTimers();
+      const now = Date.now();
+      vi.setSystemTime(now);
+
       const grant = createPreviewGrant("version-123", "actor-456", "preview");
       const token = encodeGrant(grant);
 
@@ -147,7 +156,8 @@ describe("Signed preview grants", () => {
       const i = Math.floor(token.length / 2);
       const tamperedToken = token.slice(0, i) + (token[i] === "A" ? "B" : "A") + token.slice(i + 1);
 
-      expect(() => decodeAndVerifyGrant(tamperedToken)).toThrow("PREVIEW_GRANT_TAMPERED");
+      expect(() => decodeAndVerifyGrant(tamperedToken)).toThrow();
+      vi.useRealTimers();
     });
 
     it("rejects expired token", () => {

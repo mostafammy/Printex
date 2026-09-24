@@ -5,7 +5,7 @@
 import { unlink, readdir, stat } from "fs/promises";
 import { join } from "path";
 import { tmpdir } from "os";
-import { prisma } from "@/server/db/client.js";
+import { db as prisma } from "@/server/db.js";
 
 const TEMP_DIR = tmpdir();
 const MAX_AGE_MS = 60 * 60 * 1000; // 1 hour

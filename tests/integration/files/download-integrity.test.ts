@@ -99,7 +99,7 @@ describe("Download integrity and checksum tests", () => {
       // Truncate file (simulate partial download/corruption)
       const fs = await import("fs");
       const handle = fs.openSync("/tmp/partial-corrupt.bin", "r+");
-      fs.truncateSync(handle, 1024); // Truncate to half
+      fs.ftruncateSync(handle, 1024); // Truncate to half
       fs.closeSync(handle);
 
       const corruptedStream = Readable.toWeb(createReadStream("/tmp/partial-corrupt.bin")) as ReadableStream;
@@ -127,7 +127,7 @@ describe("Download integrity and checksum tests", () => {
 
       // Create stream with one bit flipped
       const tamperedData = new Uint8Array(data);
-      tamperedData[100] ^= 0x01; // Flip one bit
+      tamperedData[100] = (tamperedData[100] ?? 0) ^ 0x01; // Flip one bit
 
       const stream = new ReadableStream({
         start(controller) {

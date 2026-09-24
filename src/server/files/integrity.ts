@@ -1,4 +1,5 @@
 import { createHash } from "crypto";
+import { Readable } from "node:stream";
 import { getFilesConfig } from "./config.js";
 
 export interface StreamIntegrityResult {
@@ -20,7 +21,7 @@ export interface BoundedStreamOptions {
  * Defaults to 200MB highWaterMark and config max file size.
  */
 export async function streamToTempFile(
-  readable: ReadableStream<Uint8Array>,
+  readable: unknown,
   tempPath: string,
   options: BoundedStreamOptions = {}
 ): Promise<StreamIntegrityResult> {
@@ -55,13 +56,13 @@ export async function streamToTempFile(
 
   // Wrap with timeout enforcement — inactivity timer that resets per chunk
   let inactivityTimer: ReturnType<typeof setTimeout>;
-  const timeoutMs = options.timeoutMs ?? 30_000;
+  const inactivityTimeoutMs = options.timeoutMs ?? 30_000;
   const timeoutStream = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        controller.error(new Error(`Upload timed out after ${timeoutMs}ms of inactivity`));
-      }, timeoutMs);
+        controller.error(new Error(`Upload timed out after ${inactivityTimeoutMs}ms of inactivity`));
+      }, inactivityTimeoutMs);
       controller.enqueue(chunk);
     },
     flush() {
@@ -73,10 +74,11 @@ export async function streamToTempFile(
   const writer = createWriteStream(tempPath, { flags: "wx" }); // wx = exclusive create, fail if exists
 
   try {
-    await pipeline(
-      readable,
-      timeoutStream,
-      transformStream,
+    const runPipeline = pipeline as unknown as (...streams: unknown[]) => Promise<void>;
+    await runPipeline(
+      Readable.fromWeb(readable as Parameters<typeof Readable.fromWeb>[0]),
+      timeoutStream as unknown as NodeJS.ReadableStream,
+      transformStream as unknown as NodeJS.ReadableStream,
       writer
     );
   } catch (error) {
@@ -99,12 +101,12 @@ export async function streamToTempFile(
  * Useful for verification on read.
  */
 export async function computeStreamIntegrity(
-  readable: ReadableStream<Uint8Array>
+  readable: unknown
 ): Promise<StreamIntegrityResult> {
   const hash = createHash("sha256");
   let totalSize = 0;
 
-  const reader = readable.getReader();
+  const reader = (readable as globalThis.ReadableStream<Uint8Array>).getReader();
 
   try {
     while (true) {
@@ -130,7 +132,7 @@ export async function computeStreamIntegrity(
  * Throws on mismatch.
  */
 export async function verifyStreamIntegrity(
-  readable: ReadableStream<Uint8Array>,
+  readable: unknown,
   expectedSha256: string,
   expectedSize: number
 ): Promise<void> {

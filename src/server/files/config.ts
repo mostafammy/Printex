@@ -61,7 +61,7 @@ export function resetFilesConfig(): void {
 }
 
 // Helper to check if a MIME type matches the allowlist (supports wildcards like "image/*")
-export function isMimeAllowed(mimeType: string, config?: FilesConfig): boolean {
+export function isMimeAllowed(mimeType: string, config?: Pick<FilesConfig, "mimeAllowlist">): boolean {
   const cfg = config ?? getFilesConfig();
   return cfg.mimeAllowlist.some((pattern) => {
     if (pattern.endsWith("/*")) {

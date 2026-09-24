@@ -45,6 +45,25 @@ export default tseslint.config(
       },
     },
   },
+  // --- Files module: relax strict type-checked rules for Prisma dynamic imports ---
+  {
+    files: [
+      "src/app/api/files/**/*.ts",
+      "src/server/files/**/*.ts",
+      "src/server/core/storage/**/*.ts",
+      "src/components/files/**/*.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+    },
+  },
   // --- Module boundary rules (plan.md §5.1, §5.3, §5.6) ---------------------
   // `src/server/core/**` is a framework-agnostic domain layer (hexagonal
   // architecture). These rules enforce, via `pnpm check`, the three

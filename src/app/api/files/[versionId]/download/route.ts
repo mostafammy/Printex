@@ -2,8 +2,7 @@
 // Re-authorization, SHA-256 verification, 64KB chunks, 30s per-chunk, 5min total timeout
 
 import { getActor } from "@/server/auth/getActor.js";
-import { fileService, authorizeFileDownload } from "@/server/files/index.js";
-import { verifyStreamIntegrity } from "@/server/files/integrity.js";
+import { authorizeFileDownload } from "@/server/files/index.js";
 import { mapFileError } from "@/server/files/errors.js";
 import { NextResponse } from "next/server";
 import { Readable } from "stream";
@@ -28,7 +27,7 @@ export async function GET(
     await authorizeFileDownload(actor, versionId);
 
     // Get file version with file object
-    const { prisma } = await import("@/server/db/client.js");
+    const { db: prisma } = await import("@/server/db.js");
     const fileVersion = await prisma.fileVersion.findUnique({
       where: { id: versionId },
       include: { fileObject: true },
@@ -46,11 +45,11 @@ export async function GET(
     const stream = await storageAdapter.getWithVerification(
       fileObject.storageKey,
       fileObject.sha256,
-      fileObject.sizeBytes
+      Number(fileObject.sizeBytes)
     );
 
     // Convert Node stream to Web stream
-    const webStream = Readable.toWeb(stream) as ReadableStream;
+    const webStream = Readable.toWeb(stream as import("stream").Readable) as ReadableStream;
 
     // Return streaming response
     return new NextResponse(webStream, {

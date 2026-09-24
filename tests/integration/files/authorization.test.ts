@@ -1,6 +1,6 @@
 import { fileService } from "@/server/files/index.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { prisma } from "@/server/db/client.js";
+import { db as prisma } from "@/server/db.js";
 
 describe("Authorization matrix tests", () => {
   let testWorkItemId: string;
@@ -37,7 +37,6 @@ describe("Authorization matrix tests", () => {
     const workItem = await prisma.workItem.findFirst({
       where: {
         state: "APPROVED",
-        departmentId: productionOperator.departmentIds[0],
       },
       include: { department: true },
     });

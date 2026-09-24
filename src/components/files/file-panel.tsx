@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { FilePreview, isPreviewable } from "./file-preview";
 
 export interface FileVersionItem {
@@ -80,10 +79,10 @@ function formatChecksum(sha256?: string): string {
 }
 
 export const FilePanel: React.FC<FilePanelProps> = ({
-  workItemId,
+  workItemId: _workItemId,
   categories = DEFAULT_CATEGORIES,
   fileVersions = [],
-  workItem,
+  workItem: _workItem,
   loading = false,
   error,
   forbidden = false,
@@ -92,7 +91,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
   onVoid,
   onArchive,
   onApprove,
-  currentUser,
+  currentUser: _currentUser,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("DESIGN_VERSIONS");
   const [modalAction, setModalAction] = useState<"VOID" | "ARCHIVE" | null>(null);
@@ -112,14 +111,6 @@ export const FilePanel: React.FC<FilePanelProps> = ({
       return cat === selectedCategory;
     });
   }, [fileVersions, selectedCategory]);
-
-  // Virtualizer for smooth handling of many versions
-  const rowVirtualizer = useVirtualizer({
-    count: filteredVersions.length,
-    getScrollElement: () => listContainerRef.current,
-    estimateSize: () => 60,
-    overscan: 5,
-  });
 
   const handleTabKeyDown = (index: number, e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === "ArrowLeft") {

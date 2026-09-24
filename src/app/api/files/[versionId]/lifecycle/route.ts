@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const { versionId } = await params;
-    const body = await request.json();
+    const body = (await request.json()) as { action?: string; reason?: string; actorId?: string };
     const { action, reason, actorId } = body;
 
     if (!action || !reason) {

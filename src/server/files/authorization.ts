@@ -2,10 +2,9 @@
 // Implements: Admin, assigned designer, same-department production operator
 // for Approved/Production; all other cases forbidden.
 
-import { ForbiddenError, authorize } from "@/server/auth/authorize.js";
-import { Actor } from "@/server/auth/getActor.js";
-import { FileCategory, FileLifecycleStatus } from "@prisma/client";
-import { prisma } from "@/server/db/client.js";
+import type { Actor } from "@/server/auth/getActor.js";
+import { FileCategory, FileLifecycleStatus } from "../../../generated/prisma/index.js";
+import { db as prisma } from "@/server/db.js";
 
 export interface FileAccessContext {
   actor: Actor;
@@ -34,7 +33,7 @@ export async function canDownloadFileVersion(
   const { actor, fileVersionId } = context;
 
   // Admin has access to everything
-  if (actor.permissions.has("admin")) {
+  if (actor.permissions.has("admin.override")) {
     return { allowed: true };
   }
 
@@ -64,7 +63,7 @@ export async function canDownloadFileVersion(
   const status = fileVersion.status;
 
   // Check if actor is assigned designer for this work item
-  if (workItem.assigneeId === actor.id && actor.permissions.has("designer")) {
+  if (workItem.assigneeId === actor.userId && actor.permissions.has("design.work")) {
     return { allowed: true };
   }
 
@@ -81,7 +80,7 @@ export async function canDownloadFileVersion(
   }
 
   // Check if actor has general file read permission (for Admin-like roles)
-  if (actor.permissions.has("files.read")) {
+  if (actor.permissions.has("files.download_production")) {
     return { allowed: true };
   }
 
@@ -96,7 +95,7 @@ export async function canListFileVersions(
   workItemId: string
 ): Promise<FileAccessResult> {
   // Admin
-  if (actor.permissions.has("admin")) {
+  if (actor.permissions.has("admin.override")) {
     return { allowed: true };
   }
 
@@ -110,7 +109,7 @@ export async function canListFileVersions(
   }
 
   // Assigned designer
-  if (workItem.assigneeId === actor.id && actor.permissions.has("designer")) {
+  if (workItem.assigneeId === actor.userId && actor.permissions.has("design.work")) {
     return { allowed: true };
   }
 
@@ -124,7 +123,7 @@ export async function canListFileVersions(
   }
 
   // General file read permission
-  if (actor.permissions.has("files.read")) {
+  if (actor.permissions.has("files.download_production")) {
     return { allowed: true };
   }
 
@@ -140,7 +139,7 @@ export async function canPerformLifecycleAction(
   action: "VOID" | "ARCHIVE" | "SUPERSEDE"
 ): Promise<FileAccessResult> {
   // Admin can do everything
-  if (actor.permissions.has("admin")) {
+  if (actor.permissions.has("admin.override")) {
     return { allowed: true };
   }
 
@@ -164,7 +163,7 @@ export async function canPerformLifecycleAction(
   const workItem = fileVersion.fileAsset.workItem;
 
   // Assigned designer can void/archive their own uploads
-  if (workItem.assigneeId === actor.id && actor.permissions.has("designer")) {
+  if (workItem.assigneeId === actor.userId && actor.permissions.has("design.work")) {
     // Designer can only void/archive, not supersede (that's done by upload)
     if (action === "VOID" || action === "ARCHIVE") {
       return { allowed: true };
@@ -172,7 +171,7 @@ export async function canPerformLifecycleAction(
   }
 
   // Head Designer / Review role can approve
-  if (action === "SUPERSEDE" && actor.permissions.has("head_designer")) {
+  if (action === "SUPERSEDE" && actor.permissions.has("design.review")) {
     return { allowed: true };
   }
 
@@ -187,11 +186,11 @@ export async function canApproveFileVersion(
   actor: Actor,
   fileVersionId: string
 ): Promise<FileAccessResult> {
-  if (actor.permissions.has("admin")) {
+  if (actor.permissions.has("admin.override")) {
     return { allowed: true };
   }
 
-  if (!actor.permissions.has("head_designer")) {
+  if (!actor.permissions.has("design.review")) {
     return { allowed: false, reason: "Only Head Designer can approve file versions" };
   }
 

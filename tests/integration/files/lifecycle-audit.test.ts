@@ -1,7 +1,7 @@
 import { fileService } from "@/server/files/index.js";
-import { createTestStream } from "@/tests/fixtures/files.js";
+import { createTestStream } from "../../fixtures/files.js";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { prisma } from "@/server/db/client.js";
+import { db as prisma } from "@/server/db.js";
 
 describe("Lifecycle and audit tests", () => {
   let testWorkItemId: string;
@@ -285,7 +285,7 @@ describe("Lifecycle and audit tests", () => {
 
       // No hard delete operations should exist in audit
       const deleteAudits = await prisma.fileAuditEvent.findMany({
-        where: { action: "DELETE" },
+        where: { action: "VOID" },
       });
       expect(deleteAudits).toHaveLength(0);
     });

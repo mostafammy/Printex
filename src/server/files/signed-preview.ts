@@ -129,7 +129,7 @@ export function encodeGrant(grant: SignedPreviewGrant): string {
 export function decodeAndVerifyGrant(token: string): GrantPayload {
   let grant: SignedPreviewGrant;
   try {
-    grant = JSON.parse(Buffer.from(token, "base64url").toString());
+    grant = JSON.parse(Buffer.from(token, "base64url").toString()) as SignedPreviewGrant;
   } catch {
     throw new Error("PREVIEW_GRANT_MALFORMED");
   }

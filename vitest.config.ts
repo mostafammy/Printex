@@ -4,9 +4,6 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    environmentMatchGlobs: [
-      ["tests/components/**", "jsdom"],
-    ],
     include: ["tests/**/*.test.{ts,tsx}"],
     // Integration tests hit a real remote Supabase Postgres instance over
     // the network — the default 5s timeout occasionally trips under normal

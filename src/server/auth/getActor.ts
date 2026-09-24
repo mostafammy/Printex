@@ -13,6 +13,7 @@ import { auth } from "~/server/better-auth";
 import type { Permission, RoleKey } from "./permissions";
 
 export interface Actor {
+  readonly id?: string;
   readonly userId: string;
   readonly roles: readonly RoleKey[];
   readonly permissions: ReadonlySet<Permission>;
@@ -72,7 +73,7 @@ export async function getActorForSession(
 
   const departmentIds = user.departments.map((ud) => ud.departmentId);
 
-  return { userId: user.id, roles, permissions, departmentIds };
+  return { id: user.id, userId: user.id, roles, permissions, departmentIds };
 }
 
 /**
@@ -84,7 +85,7 @@ export async function getActorForSession(
  * (confirmed by reading src/server/better-auth/server.ts which calls the
  * exact same API without further destructuring).
  */
-export async function getActor(): Promise<Actor> {
+export async function getActor(_request?: unknown): Promise<Actor> {
   const result = await auth.api.getSession({ headers: await headers() });
   if (!result) throw new UnauthenticatedError();
   return getActorForSession({
