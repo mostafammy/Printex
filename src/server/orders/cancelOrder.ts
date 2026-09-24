@@ -90,36 +90,45 @@ export async function cancelOrder(
   actor: Actor,
   orderId: string,
   reason: string,
-): Promise<{ cancelledWorkItemIds: string[] }> {
+): Promise<{
+  cancelledWorkItemIds: string[];
+  failedWorkItemIds: { id: string; reason: string }[];
+}> {
   authorize(actor, "order.cancel");
   const parsedReason = z.string().trim().min(1).parse(reason);
 
   const cancelledWorkItemIds: string[] = [];
+  const failedWorkItemIds: { id: string; reason: string }[] = [];
 
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const workItems = await tx.workItem.findMany({
-      where: { orderId },
-      select: { id: true, state: true },
-    });
-    const nonTerminal = workItems.filter((wi) => !TERMINAL_STATES.has(wi.state));
-
-    for (const wi of nonTerminal) {
-      // Cancelling "the order" is best-effort across its items, not an
-      // all-or-nothing atomic unit — a single item's INVALID_TRANSITION
-      // (e.g. it turned terminal between the read above and this write) is
-      // skipped, not thrown, so the rest of the batch still lands
-      // (contracts/order-entry.md's `cancelOrder`).
-      const result = await transitionWorkItem(tx, {
-        workItemId: asWorkItemId(wi.id),
-        to: "CANCELLED",
-        actor: toCoreActor(actor),
-        reason: parsedReason,
+  await db.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const workItems = await tx.workItem.findMany({
+        where: { orderId },
+        select: { id: true, state: true },
       });
-      if (result.ok) {
-        cancelledWorkItemIds.push(wi.id);
-      }
-    }
-  });
+      const nonTerminal = workItems.filter((wi) => !TERMINAL_STATES.has(wi.state));
 
-  return { cancelledWorkItemIds };
+      for (const wi of nonTerminal) {
+        // Cancelling "the order" is best-effort across its items, not an
+        // all-or-nothing atomic unit — a single item's INVALID_TRANSITION
+        // (e.g. it turned terminal between the read above and this write) is
+        // skipped, not thrown, so the rest of the batch still lands
+        // (contracts/order-entry.md's `cancelOrder`).
+        const result = await transitionWorkItem(tx, {
+          workItemId: asWorkItemId(wi.id),
+          to: "CANCELLED",
+          actor: toCoreActor(actor),
+          reason: parsedReason,
+        });
+        if (result.ok) {
+          cancelledWorkItemIds.push(wi.id);
+        } else {
+          failedWorkItemIds.push({ id: wi.id, reason: result.error.message });
+        }
+      }
+    },
+    { timeout: 20000, maxWait: 10000 },
+  );
+
+  return { cancelledWorkItemIds, failedWorkItemIds };
 }
