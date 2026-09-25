@@ -275,7 +275,7 @@ export default tseslint.config(
   },
   {
     files: [
-      "src/app/api/customers/[id]/pricing-rules/route.ts",
+      "src/app/api/customers/**/*.ts",
       "src/components/customers/special-pricing-tab.tsx",
       "src/server/pricing/customer-rules.ts",
     ],
