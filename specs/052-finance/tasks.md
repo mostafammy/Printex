@@ -197,13 +197,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 7
 
-- [ ] T049 [US7] Integration test `tests/integration/finance/dailyCash.test.ts`: SC-007 method totals + counts + drill-down IDs; voided payment excluded; SC-012 fixture — `occurredAt` 23:30 `shopTimezone` buckets to that local date not the UTC date; read without `finance.view` → `FORBIDDEN`
+- [x] T049 [US7] Integration test `tests/integration/finance/dailyCash.test.ts`: SC-007 method totals + counts + drill-down IDs; voided payment excluded; SC-012 fixture — `occurredAt` 23:30 `shopTimezone` buckets to that local date not the UTC date; read without `finance.view` → `FORBIDDEN`
 
 ### Implementation for User Story 7
 
 - [x] T050 [US7] Implement `src/server/finance/daily-cash.ts` per contracts/queries.md: `dailyCashSummary(date)` — bucket non-void payments by method using `src/server/finance/time.ts` shop-local conversion, per-method `{method, count, total}`, `grandTotal`, `paymentIds`; requires `finance.view`
-- [ ] T051 [P] [US7] Create `src/components/finance/DailyCashSummary.tsx` per contracts/ui.md: date picker (default today shop-local), per-method rows, grand total, row → filtered payments list, note when selected date ≠ UTC date
-- [ ] T052 [US7] Create route `src/app/(shell)/finance/daily-cash/page.tsx` + nav entry in `src/app/(shell)/nav.ts` (`finance.view`); Arabic strings in `src/messages/ar.json`
+- [x] T051 [P] [US7] Create `src/components/finance/DailyCashSummary.tsx` per contracts/ui.md: date picker (default today shop-local), per-method rows, grand total, row → filtered payments list, note when selected date ≠ UTC date
+- [x] T052 [US7] Create route `src/app/(shell)/finance/daily-cash/page.tsx` + nav entry in `src/app/(shell)/nav.ts` (`finance.view`); Arabic strings in `src/messages/ar.json`
 
 **Checkpoint**: US1–US7 functional
 
@@ -217,13 +217,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 8
 
-- [ ] T053 [US8] Integration test `tests/integration/finance/receipt.test.ts`: SC-010 — `getReceipt` fields match the stored payment and computed Remaining; receipt numbers strictly increasing; voided payment projection carries `voided: true` (for watermark); soft timing assertion: projection + page render < 5 s
+- [x] T053 [US8] Integration test `tests/integration/finance/receipt.test.ts`: SC-010 — `getReceipt` fields match the stored payment and computed Remaining; receipt numbers strictly increasing; voided payment projection carries `voided: true` (for watermark); soft timing assertion: projection + page render < 5 s
 
 ### Implementation for User Story 8
 
 - [x] T054 [US8] Implement `src/server/finance/receipt.ts` per contracts/queries.md: `getReceipt(paymentId)` projection (shop name from config, receiptNumber, order ref, customer, amount, method, source, occurredAt shop-local rendering, recorder, remaining-after) + `authorize(finance.view)`
-- [ ] T055 [US8] Create route `src/app/(shell)/finance/receipt/[paymentId]/page.tsx` per contracts/ui.md: print-optimized, A5 paper-width-agnostic CSS (max-width, no fixed viewport), VOID watermark when voided, `window.print()` action, renders within 5 s of invocation
-- [ ] T056 [US8] Wire print-receipt actions: post-record toast in `src/components/finance/RecordPaymentDialog.tsx` and per-row print button in `src/components/finance/OrderFinancePanel.tsx` payment history
+- [x] T055 [US8] Create route `src/app/(shell)/finance/receipt/[paymentId]/page.tsx` per contracts/ui.md: print-optimized, A5 paper-width-agnostic CSS (max-width, no fixed viewport), VOID watermark when voided, `window.print()` action, renders within 5 s of invocation
+- [x] T056 [US8] Wire print-receipt actions: post-record toast in `src/components/finance/RecordPaymentDialog.tsx` and per-row print button in `src/components/finance/OrderFinancePanel.tsx` payment history
 
 **Checkpoint**: All 8 user stories functional and independently testable
 
