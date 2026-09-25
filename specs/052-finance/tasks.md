@@ -158,13 +158,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 5
 
-- [ ] T042 [US5] Integration test `tests/integration/finance/directCost.test.ts`: record with `expense.record` → row + `direct_cost.recorded` audit; amount ≤ 0 → `VALIDATION`; `workItemId` not in `orderId` → `VALIDATION`; without permission → `FORBIDDEN`; void with reason → excluded from profitability, original retrievable, no update/delete path; no permission → no audit
+- [x] T042 [US5] Integration test `tests/integration/finance/directCost.test.ts`: record with `expense.record` → row + `direct_cost.recorded` audit; amount ≤ 0 → `VALIDATION`; `workItemId` not in `orderId` → `VALIDATION`; without permission → `FORBIDDEN`; void with reason → excluded from profitability, original retrievable, no update/delete path; no permission → no audit
 
 ### Implementation for User Story 5
 
 - [x] T043 [US5] Implement `src/server/finance/costs.ts` per contracts/finance-service.md: `recordDirectCost` (required `orderId`, optional `workItemId` ∈ order, amount "> 0", `costDate`, description required, optional receipt with entity-scope check + `attachments.attach`, audit `direct_cost.recorded`), `voidDirectCost` (reason required, `FinanceVoid(DIRECT_COST)`, audit), plus `listDirectCosts` per contracts/queries.md (order/work-item/date filters, `includeVoided` default false)
-- [ ] T044 [P] [US5] Create `src/components/finance/DirectCostForm.tsx` per contracts/ui.md: order picker (required), optional work item, amount, date, description, optional receipt
-- [ ] T045 [US5] Add "Add job cost" action + server action `recordDirectCostAction` to `src/app/(shell)/orders/[orderId]/finance-actions.ts` and surface it in `src/components/finance/OrderFinancePanel.tsx` (costs section listing the order's direct costs with void support)
+- [x] T044 [P] [US5] Create `src/components/finance/DirectCostForm.tsx` per contracts/ui.md: order picker (required), optional work item, amount, date, description, optional receipt
+- [x] T045 [US5] Add "Add job cost" action + server action `recordDirectCostAction` to `src/app/(shell)/orders/[orderId]/finance-actions.ts` and surface it in `src/components/finance/OrderFinancePanel.tsx` (costs section listing the order's direct costs with void support)
 
 **Checkpoint**: US1–US5 functional — full cost capture alongside payments
 
@@ -178,12 +178,12 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 6
 
-- [ ] T046 [US6] Integration test `tests/integration/finance/profitability.test.ts`: SC-004 fixture → 1000 − 300 − 100 = 600 with `sources.{priceIds,directCostIds,expenseIds}` matching; unlinked expense excluded; voided cost excluded; PENDING-priced Work Item → `pricingIncomplete: true` and revenue marked partial
+- [x] T046 [US6] Integration test `tests/integration/finance/profitability.test.ts`: SC-004 fixture → 1000 − 300 − 100 = 600 with `sources.{priceIds,directCostIds,expenseIds}` matching; unlinked expense excluded; voided cost excluded; PENDING-priced Work Item → `pricingIncomplete: true` and revenue marked partial
 
 ### Implementation for User Story 6
 
 - [x] T047 [US6] Implement `src/server/finance/profitability.ts` per contracts/queries.md: `orderProfitability(orderId)` — revenue via `051.getCurrentPrice` over non-cancelled Work Items, directCosts Σ non-void, jobExpenses Σ order-linked non-void, grossProfit = revenue − directCosts − jobExpenses, source ID lists for drill-down, `pricingIncomplete` flag (FR-018)
-- [ ] T048 [US6] Create `src/components/finance/ProfitabilityBlock.tsx` per contracts/ui.md: equation row (Revenue − Direct Costs − Job Expenses = Gross Profit), each figure a link to its drill-down (price history / cost list / expense list scoped to the order), pricing-incomplete banner; embed in `src/components/finance/OrderFinancePanel.tsx`
+- [x] T048 [US6] Create `src/components/finance/ProfitabilityBlock.tsx` per contracts/ui.md: equation row (Revenue − Direct Costs − Job Expenses = Gross Profit), each figure a link to its drill-down (price history / cost list / expense list scoped to the order), pricing-incomplete banner; embed in `src/components/finance/OrderFinancePanel.tsx`
 
 **Checkpoint**: US1–US6 functional — every spec money story except daily cash and receipt
 

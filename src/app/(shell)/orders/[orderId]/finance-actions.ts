@@ -12,6 +12,7 @@ import {
   orderSummary,
   recordDirectCost,
   recordPayment,
+  voidDirectCost,
   voidPayment,
 } from "~/server/finance";
 
@@ -98,6 +99,19 @@ export async function recordDirectCostAction(orderId: string, formData: FormData
       amount: formStr(formData, "amount"),
       costDate: formStr(formData, "costDate"),
       description: formStr(formData, "description"),
+    });
+    revalidateOrder(orderId);
+  } catch (error) {
+    fail(error);
+  }
+}
+
+export async function voidDirectCostAction(orderId: string, formData: FormData): Promise<void> {
+  try {
+    const actor = await getActor();
+    await voidDirectCost(actor, {
+      directCostId: formStr(formData, "directCostId"),
+      reason: formStr(formData, "reason"),
     });
     revalidateOrder(orderId);
   } catch (error) {
