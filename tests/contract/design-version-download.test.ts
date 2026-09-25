@@ -48,7 +48,8 @@ vi.mock("~/server/db", () => ({
 }));
 
 // Import route after mocks are registered
-import { GET, authorizeDownload } from "~/app/api/design-versions/[id]/download/route";
+import { GET } from "~/app/api/design-versions/[id]/download/route";
+import { authorizeDownload } from "~/app/api/design-versions/[id]/download/authorize";
 
 function makeActor(permissions: Permission[], departmentIds: string[] = [], userId = "user-1"): Actor {
   return {
