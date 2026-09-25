@@ -8,7 +8,6 @@ export default defineConfig({
     include: ["tests/**/*.test.{ts,tsx}"],
     fileParallelism: false,
     maxWorkers: 1,
-    minWorkers: 1,
     // Integration tests hit a real remote Supabase Postgres instance over
     // the network — the default 5s timeout occasionally trips under normal
     // pooler latency, especially with several tests running in parallel.
