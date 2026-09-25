@@ -31,6 +31,16 @@ function formStr(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
 }
 
+type PriceTierFormValue = { minimumQuantity: number; maximumQuantity: number | null; basePrice: string };
+
+function isPriceTier(value: unknown): value is PriceTierFormValue {
+  if (!value || typeof value !== "object") return false;
+  const tier = value as Record<string, unknown>;
+  return typeof tier.minimumQuantity === "number"
+    && (typeof tier.maximumQuantity === "number" || tier.maximumQuantity === null)
+    && typeof tier.basePrice === "string";
+}
+
 const UNITS: readonly { value: PricingUnit; label: string }[] = [
   { value: "PIECE", label: "قطعة" },
   { value: "SQUARE_METER", label: "متر مربع" },
@@ -65,13 +75,15 @@ async function createPriceListAction(formData: FormData) {
 
   // Parse tier rows from the form.
   const tierJson = formStr(formData.get("tiers"));
-  let tiers: { minimumQuantity: number; maximumQuantity: number | null; basePrice: string }[];
+  let parsedTiers: unknown;
   try {
-    tiers = JSON.parse(tierJson);
+    parsedTiers = JSON.parse(tierJson) as unknown;
   } catch {
     return;
   }
-  if (!Array.isArray(tiers) || tiers.length === 0) return;
+  if (!Array.isArray(parsedTiers) || parsedTiers.length === 0) return;
+  const tiers = parsedTiers.filter(isPriceTier);
+  if (tiers.length !== parsedTiers.length) return;
 
   try {
     await createPriceList(actor, {
