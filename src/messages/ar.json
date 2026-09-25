@@ -270,6 +270,7 @@
       "customerBalance": "رصيد العميل",
       "creditBadgeApproved": "آجل معتمد",
       "creditBadgeNone": "نقدي",
+      "creditLimit": "حد الائتمان",
       "editCredit": "تعديل سياسة الائتمان",
       "creditReason": "سبب التعديل",
       "saveCredit": "حفظ",
