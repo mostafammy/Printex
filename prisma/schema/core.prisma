@@ -111,6 +111,7 @@ model Customer {
   classification CustomerClassification? @relation(fields: [classificationId], references: [id])
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
+  pricingRules   CustomerPricingRule[]
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -187,6 +188,8 @@ model WorkItem {
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
   fileAssets FileAsset[] @relation("FileAssetWorkItem")
+  prices     WorkItemPrice[]
+  pricingStatus PricingStatus?
 
   @@index([orderId, state])
 }
@@ -207,6 +210,9 @@ model ProductType {
   createdAt             DateTime    @default(now())
 
   workItems WorkItem[]
+  pricingPolicy ProductPricingPolicy?
+  priceLists PriceList[]
+  customerPricingRules CustomerPricingRule[]
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).

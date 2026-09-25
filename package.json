@@ -19,6 +19,9 @@
     "preview": "next build && next start",
     "start": "next start",
     "test": "vitest run",
+    "test:pricing": "vitest run tests/integration/pricing tests/contract/pricing --pool=forks --maxWorkers=1",
+    "test:db": "node scripts/test-db.mjs",
+    "test:db:reset": "node scripts/test-db.mjs --reset",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },

@@ -477,6 +477,72 @@ exports.Prisma.AuditEventScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ProductPricingPolicyScalarFieldEnum = {
+  id: 'id',
+  productTypeId: 'productTypeId',
+  mode: 'mode',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PriceListScalarFieldEnum = {
+  id: 'id',
+  productTypeId: 'productTypeId',
+  unit: 'unit',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  status: 'status',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PriceTierScalarFieldEnum = {
+  id: 'id',
+  priceListId: 'priceListId',
+  minimumQuantity: 'minimumQuantity',
+  maximumQuantity: 'maximumQuantity',
+  basePrice: 'basePrice'
+};
+
+exports.Prisma.CustomerPricingRuleScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  productTypeId: 'productTypeId',
+  unit: 'unit',
+  kind: 'kind',
+  fixedPrice: 'fixedPrice',
+  discountPercent: 'discountPercent',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  status: 'status',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WorkItemPriceScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  amount: 'amount',
+  currency: 'currency',
+  source: 'source',
+  quoteBreakdown: 'quoteBreakdown',
+  setById: 'setById',
+  setAt: 'setAt',
+  reason: 'reason',
+  specFingerprint: 'specFingerprint',
+  replacedAt: 'replacedAt'
+};
+
+exports.Prisma.PricingStatusScalarFieldEnum = {
+  workItemId: 'workItemId',
+  status: 'status',
+  waitingSince: 'waitingSince',
+  disputeReason: 'disputeReason',
+  currentPriceId: 'currentPriceId',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -611,6 +677,41 @@ exports.AuditEntity = exports.$Enums.AuditEntity = {
   ATTACHMENT: 'ATTACHMENT'
 };
 
+exports.PricingMode = exports.$Enums.PricingMode = {
+  FIXED: 'FIXED',
+  VARIABLE: 'VARIABLE'
+};
+
+exports.PricingUnit = exports.$Enums.PricingUnit = {
+  PIECE: 'PIECE',
+  SQUARE_METER: 'SQUARE_METER',
+  LINEAR_METER: 'LINEAR_METER',
+  SHEET: 'SHEET',
+  PACK: 'PACK'
+};
+
+exports.PriceConfigStatus = exports.$Enums.PriceConfigStatus = {
+  ACTIVE: 'ACTIVE',
+  RETIRED: 'RETIRED'
+};
+
+exports.CustomerRuleKind = exports.$Enums.CustomerRuleKind = {
+  FIXED: 'FIXED',
+  PERCENT_DISCOUNT: 'PERCENT_DISCOUNT'
+};
+
+exports.PriceSource = exports.$Enums.PriceSource = {
+  LIST: 'LIST',
+  CUSTOMER_RULE: 'CUSTOMER_RULE',
+  MANUAL: 'MANUAL'
+};
+
+exports.PricingStatusValue = exports.$Enums.PricingStatusValue = {
+  PENDING: 'PENDING',
+  PRICED: 'PRICED',
+  DISPUTED: 'DISPUTED'
+};
+
 exports.Prisma.ModelName = {
   Department: 'Department',
   Customer: 'Customer',
@@ -643,7 +744,13 @@ exports.Prisma.ModelName = {
   UserRole: 'UserRole',
   UserPermission: 'UserPermission',
   UserDepartment: 'UserDepartment',
-  AuditEvent: 'AuditEvent'
+  AuditEvent: 'AuditEvent',
+  ProductPricingPolicy: 'ProductPricingPolicy',
+  PriceList: 'PriceList',
+  PriceTier: 'PriceTier',
+  CustomerPricingRule: 'CustomerPricingRule',
+  WorkItemPrice: 'WorkItemPrice',
+  PricingStatus: 'PricingStatus'
 };
 
 /**

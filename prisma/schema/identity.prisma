@@ -64,6 +64,11 @@ model User {
   attachments          Attachment[]           @relation("ReturnAttachment")
   fileAuditEvents      FileAuditEvent[]       @relation("WorkItemTransitionActor")
   fileConfigsUpdated   FileConfig[]           @relation("WorkItemTransitionActor")
+  pricingPoliciesUpdated ProductPricingPolicy[] @relation("PricingPolicyUpdatedBy")
+  priceListsCreated     PriceList[]             @relation("PriceListCreatedBy")
+  pricingRulesCreated   CustomerPricingRule[]  @relation("CustomerRuleCreatedBy")
+  workItemPricesSet     WorkItemPrice[]         @relation("WorkItemPriceSetBy")
+  pricingStatusesUpdated PricingStatus[]        @relation("PricingStatusUpdatedBy")
 
   @@unique([email])
   @@map("user")

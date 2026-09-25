@@ -88,7 +88,7 @@ src/server/pricing/                 # implementation planned by PRI-31
 src/components/pricing/             # PricingPanel and queue surfaces
 src/app/(shell)/pricing/             # queue/admin routes
 prisma/schema/pricing.prisma        # additive pricing schema
-prisma/migrations/20260924170000_pricing/ # Prisma migration with constraints/backfill SQL
+prisma/schema/migrations/20260924170000_pricing/ # Prisma migration with constraints/backfill SQL (CLI reads prisma/schema/migrations/)
 tests/{unit,contract,integration}/pricing/
 ```
 

@@ -1,7 +1,7 @@
 // audit.record() - FR-019, FR-020. The only code path allowed to write AuditEvent rows.
 
 import type { Prisma } from "../../../generated/prisma";
-import { db } from "../db.js";
+import { db } from "~/server/db";
 
 type AuditInput = {
   action: string;

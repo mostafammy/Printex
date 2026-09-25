@@ -63,6 +63,12 @@ export const navItems: readonly NavItem[] = [
     roles: ["PRODUCTION_OPERATOR", ADMIN],
   },
   {
+    id: "pricing",
+    href: "/pricing",
+    label: ar.nav.pricing,
+    roles: ["RECEPTION", "ACCOUNTING", ADMIN],
+  },
+  {
     id: "delivery",
     href: "/delivery",
     label: ar.nav.delivery,
