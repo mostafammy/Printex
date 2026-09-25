@@ -233,17 +233,17 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 **Purpose**: Cross-story guarantees, 090 surface, validation
 
-- [ ] T057 [P] Permission matrix integration test `tests/integration/finance/permissions.test.ts`: every entry point × {Reception, Accounting, Admin/Owner} — assert the full table in contracts/authorization-audit.md (Reception: read-only; Accounting: record/void payments + expenses; `admin.config`-gated Admin-only: credit write, expense approval, FinanceConfig write)
-- [ ] T058 [P] Audit completeness integration test `tests/integration/finance/auditMatrix.test.ts`: all nine audit actions fire with actor + timestamp; forced failure after insert → no orphan audit row (atomicity); no audit on refused attempts
-- [ ] T059 [P] Decimal integrity test `tests/unit/finance/decimal.test.ts` (SC-008): migration column types are `numeric`/`Decimal` (assert via Prisma DMMF), `0.10` EGP round-trips exactly, no float math in money helpers
-- [ ] T060 [P] Performance smoke `tests/integration/finance/perf.test.ts` (SC-011): orderSummary + customerBalance < 500 ms p95, single recordPayment (incl. audit) < 500 ms p95 with generous CI tolerance
+- [x] T057 [P] Permission matrix integration test `tests/integration/finance/permissions.test.ts`: every entry point × {Reception, Accounting, Admin/Owner} — assert the full table in contracts/authorization-audit.md (Reception: read-only; Accounting: record/void payments + expenses; `admin.config`-gated Admin-only: credit write, expense approval, FinanceConfig write)
+- [x] T058 [P] Audit completeness integration test `tests/integration/finance/auditMatrix.test.ts`: all nine audit actions fire with actor + timestamp; forced failure after insert → no orphan audit row (atomicity); no audit on refused attempts
+- [x] T059 [P] Decimal integrity test `tests/unit/finance/decimal.test.ts` (SC-008): migration column types are `numeric`/`Decimal` (assert via Prisma DMMF), `0.10` EGP round-trips exactly, no float math in money helpers
+- [x] T060 [P] Performance smoke `tests/integration/finance/perf.test.ts` (SC-011): orderSummary + customerBalance < 500 ms p95, single recordPayment (incl. audit) < 500 ms p95 with generous CI tolerance
 - [x] T061 [P] Implement 090-only rollup query `listCustomerBalances` in `src/server/finance/summaries.ts` per contracts/queries.md (no UI; exported for reporting)
-- [ ] T062 Verify `listExpenses` / `listPayments` / `listDirectCosts` filter surfaces in `src/server/finance/{expenses,payments,costs}.ts` match contracts/queries.md exactly (pagination cursors, `includeVoided` default false)
+- [x] T062 Verify `listExpenses` / `listPayments` / `listDirectCosts` filter surfaces in `src/server/finance/{expenses,payments,costs}.ts` match contracts/queries.md exactly (pagination cursors, `includeVoided` default false)
 - [ ] T063 Run `specs/052-finance/quickstart.md` scenarios 1–12 end-to-end; fix any gap found (SC-001…SC-012 all demonstrated)
 - [ ] T064 `pnpm check` green + full `pnpm test` green; confirm no task in this list left a placeholder or TODO in `src/server/finance/` or `src/components/finance/`
-- [ ] T065 [P] Backup scope confirmation: new tables verified inside primary PostgreSQL backup set, attachments inside 050 file backup set (constitution Backups) — document result in `specs/052-finance/plan.md` delivery notes
-- [ ] T066 Post-commit closure invocation test `tests/integration/finance/closureTrigger.test.ts` (SC-009): bind a spy closure port → `recordPayment` and `voidPayment` → assert the port is invoked exactly once AFTER the transaction commits (never inside `tx`), that a `{ closed: false }` result does not fail/roll back the payment, and that an unbound port leaves the payment successful (constitution VII)
-- [ ] T067 Credit-application test `tests/integration/finance/creditsApplied.test.ts` (FR-012): bind a fake compensation port returning a CREDIT → `orderSummary.remaining` = total − paid − credit; unbound port → credit ignored (empty default); PRICE_ADJUSTMENT rows never reduce remaining
+- [x] T065 [P] Backup scope confirmation: new tables verified inside primary PostgreSQL backup set, attachments inside 050 file backup set (constitution Backups) — document result in `specs/052-finance/plan.md` delivery notes
+- [x] T066 Post-commit closure invocation test `tests/integration/finance/closureTrigger.test.ts` (SC-009): bind a spy closure port → `recordPayment` and `voidPayment` → assert the port is invoked exactly once AFTER the transaction commits (never inside `tx`), that a `{ closed: false }` result does not fail/roll back the payment, and that an unbound port leaves the payment successful (constitution VII)
+- [x] T067 Credit-application test `tests/integration/finance/creditsApplied.test.ts` (FR-012): bind a fake compensation port returning a CREDIT → `orderSummary.remaining` = total − paid − credit; unbound port → credit ignored (empty default); PRICE_ADJUSTMENT rows never reduce remaining
 
 ---
 

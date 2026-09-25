@@ -126,3 +126,4 @@ tests/contract/finance/             # FinanceSummaryPort shape, closure/compensa
 - Money rows get `REVOKE UPDATE, DELETE` in the same migration that creates them; the migration documents the non-superuser app-role prerequisite (001 precedent).
 - Receipt sequence, config seeds, and the Cash Customer lookup all exist before the first integration test runs.
 - `FinanceConfig` V1 editing = YAML seed + `admin.config`-gated write helper; no config-admin screen in V1 (spec Assumptions — "V1 config editing").
+- **Backup scope (T065)**: all 052 tables (`Payment`, `FinanceVoid`, `Expense`, `ExpenseApproval`, `DirectCost`, `CustomerCredit`, `FinanceConfig`) live in the primary PostgreSQL database — covered by the existing DB backup set; receipt-photo attachments are 050 `Attachment`/`FileObject` rows + storage objects, covered by the existing file backup set. No new persistent store was added (constitution Backups).
