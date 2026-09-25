@@ -23,6 +23,7 @@ type CustomerBalanceTabProps = { readonly customerId: string };
 
 - Fills 010's `slots.paymentsBalance` prop on `CustomerProfile` (`src/components/customers/customer-profile.tsx`).
 - Balance headline (Σ Remaining), credit badge (approved / not / Cash Customer), credit limit + usage when set (over-limit → warning strip, never a block — Clarifications), per-order breakdown rows linking to each order's panel.
+- Admin/Owner-only edit affordance: credit flag toggle + optional Decimal limit input + mandatory reason prompt, calling `updateCreditAction` (`admin.config`); all other viewers get the read-only badge only (FR-010).
 - Empty state for customers with no orders; forbidden state when `finance.view` absent.
 
 ## `<RecordPaymentDialog>`

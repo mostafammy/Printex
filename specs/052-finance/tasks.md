@@ -74,7 +74,7 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 - [ ] T016 [US1] Implement `recordPayment` in `src/server/finance/payments.ts` per contracts/finance-service.md: `getActor` → `authorize(payment.record)` → Zod (amount "> 0" decimal string, method/source ∈ active config, `occurredAt <= now`) → `nextval(receipt_sequence)` → insert Payment → `audit.record(tx, payment.recorded)` → COMMIT → post-commit closure port call (never inside tx)
 - [ ] T017 [US1] Implement `orderSummary` in `src/server/finance/summaries.ts` per contracts/finance-service.md: Total = Σ `051.getCurrentPrice(workItemId)` over non-cancelled Work Items; Paid = Σ non-void payments; Remaining = Total − Paid − compensation-port credits (may be ≤ 0); `creditApproved` = CustomerCredit flag && !isCashCustomer; `pricingIncomplete` flag; `UNAVAILABLE` variant for missing order
 - [ ] T018 [US1] Implement `financeSummaryProvider` in `src/server/finance/ports.ts`: delegate to `orderSummary`, project to the frozen 015 shape (strip `pricingIncomplete`, `counts`)
-- [ ] T019 [P] [US1] Create `src/components/finance/RecordPaymentDialog.tsx` per contracts/ui.md: amount decimal input, method/source selects from FinanceConfig, occurred-at (default now, future blocked), optional note, 100% / 50% deposit presets that prefill but never auto-submit; client hints only — server is authority; Arabic-first RTL
+- [ ] T019 [P] [US1] Create `src/components/finance/RecordPaymentDialog.tsx` per contracts/ui.md: amount decimal input, method/source selects from FinanceConfig with the first active option **preselected** (user can change; keeps FR-021's 3-interaction budget), occurred-at (default now, future blocked), optional note, 100% / 50% deposit presets that prefill but never auto-submit; client hints only — server is authority; Arabic-first RTL
 - [ ] T020 [US1] Create `src/components/finance/OrderFinancePanel.tsx` per contracts/ui.md: header (Total · Paid · Remaining · credit badge · pricing-incomplete notice), payments list (date/time, method, source, amount, recorder, note, receipt number, posted status), record-payment action; read-only mode for `finance.view`-only holders — backed by `listPayments` implemented in `src/server/finance/payments.ts` per contracts/queries.md (filters, `includeVoided` default false, cursor pagination)
 - [ ] T021 [US1] Wire panel into `src/app/(shell)/orders/[orderId]/page.tsx` — replace the `{S.placeholderPayments}` placeholder text with `<OrderFinancePanel orderId={...} />`
 - [ ] T022 [US1] Add server action `recordPaymentAction` in `src/app/(shell)/orders/[orderId]/finance-actions.ts`: Zod-form validation, error mapping (`FORBIDDEN`/`VALIDATION`), returns fresh summary for panel refresh
@@ -121,6 +121,7 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 - [ ] T031 [US3] Implement `customerBalance` in `src/server/finance/summaries.ts` per contracts/finance-service.md: balance = Σ per-order Remaining, `creditApproved`, `creditLimit`, per-order rows `{orderId, total, paid, remaining, pricingIncomplete}`; requires `finance.view`
 - [ ] T032 [P] [US3] Create `src/components/finance/CustomerBalanceTab.tsx` per contracts/ui.md: balance headline, credit badge, limit + usage with over-limit warning strip (never a block), per-order rows linking to each `<OrderFinancePanel>`, empty state, forbidden state
 - [ ] T033 [US3] Wire tab into the customer profile route that instantiates `CustomerProfile` (`src/app/(shell)/customers/…`) passing `slots.paymentsBalance={<CustomerBalanceTab customerId={…} />}`; verify no core profile tab is replaced (010 contract)
+- [ ] T034 [US3] Credit maintenance surface (FR-010): server action `updateCreditAction` in `src/app/(shell)/customers/[customerId]/finance-actions.ts` gated by `admin.config` with mandatory reason validated before `audit.record`, calling `src/server/finance/credit.ts`; Admin-only edit affordance (credit flag toggle + optional Decimal limit input + reason prompt) inside `src/components/finance/CustomerBalanceTab.tsx`, with non-admins seeing the read-only badge; makes quickstart scenario 5 executable through the product
 
 **Checkpoint**: US1–US3 functional — per-order money in + cross-order balance + credit standing
 
@@ -134,16 +135,16 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 4
 
-- [ ] T034 [US4] Integration test `tests/integration/finance/expenseRecord.test.ts`: record with `expense.record` → row + `expense.recorded` audit (+`attachmentIds` when receipt attached); amount ≤ 0 → `VALIDATION`; inactive category → `VALIDATION`; without permission → `FORBIDDEN` no audit
-- [ ] T035 [US4] Integration test `tests/integration/finance/expenseApproval.test.ts`: SC fixture — threshold 1000: record 1500 → `awaitingApproval` true immediately, counted in totals/profitability; Admin/Owner approves → flag clears, `expense.approved` audited; Accounting approve attempt → `FORBIDDEN`; record 400 → no flag; approve a voided expense → refused
-- [ ] T036 [US4] Integration test `tests/integration/finance/expenseVoid.test.ts`: void with reason → excluded from expense totals and every order's profitability, original retrievable, no update/delete path (SC-002)
+- [ ] T035 [US4] Integration test `tests/integration/finance/expenseRecord.test.ts`: record with `expense.record` → row + `expense.recorded` audit (+`attachmentIds` when receipt attached); amount ≤ 0 → `VALIDATION`; inactive category → `VALIDATION`; without permission → `FORBIDDEN` no audit
+- [ ] T036 [US4] Integration test `tests/integration/finance/expenseApproval.test.ts`: SC fixture — threshold 1000: record 1500 → `awaitingApproval` true immediately, counted in totals/profitability; Admin/Owner approves → flag clears, `expense.approved` audited; Accounting approve attempt → `FORBIDDEN`; record 400 → no flag; approve a voided expense → refused
+- [ ] T037 [US4] Integration test `tests/integration/finance/expenseVoid.test.ts`: void with reason → excluded from expense totals and every order's profitability, original retrievable, no update/delete path (SC-002)
 
 ### Implementation for User Story 4
 
-- [ ] T037 [US4] Implement `src/server/finance/expenses.ts` per contracts/finance-service.md: `recordExpense` (`authorize(expense.record)`, amount "> 0", category ∈ active list, `expenseDate` calendar-date validation, optional order/work-item coherence check `workItemId ∈ orderId`, receipt via `attachments.attach(tx, {entityType:"Expense", …})` AFTER entity-scope check — 050 entity-ownership rule, audit `expense.recorded`), `voidExpense` (reason required, `FinanceVoid(EXPENSE)`), `approveExpense` (`admin.config`, refuse when `amount < threshold` / already approved / voided, insert unique `ExpenseApproval`, audit `expense.approved`)
-- [ ] T038 [P] [US4] Create `src/components/finance/ExpensesList.tsx` per contracts/ui.md — backed by `listExpenses` implemented in `src/server/finance/expenses.ts` per contracts/queries.md (date range/category/order/employee/approval-state filters, `includeVoided` default false, cursor pagination): columns incl. approval pill and voided state, receipt thumbnail link, pagination, empty/forbidden states
-- [ ] T039 [P] [US4] Create `src/components/finance/ExpenseForm.tsx`: amount, category (active list), date, employee, description, optional order/work-item picker, optional receipt upload; success → list refresh
-- [ ] T040 [US4] Create route `src/app/(shell)/finance/expenses/page.tsx` + server actions (`recordExpenseAction`, `voidExpenseAction`, `approveExpenseAction`) gated by `finance.view`/`expense.record` per contracts/authorization-audit.md; add Finance nav group entry in `src/app/(shell)/nav.ts` gated by `finance.view`; Arabic strings in `src/messages/ar.json`
+- [ ] T038 [US4] Implement `src/server/finance/expenses.ts` per contracts/finance-service.md: `recordExpense` (`authorize(expense.record)`, amount "> 0", category ∈ active list, `expenseDate` calendar-date validation, optional order/work-item coherence check `workItemId ∈ orderId`, receipt via `attachments.attach(tx, {entityType:"Expense", …})` AFTER entity-scope check — 050 entity-ownership rule, audit `expense.recorded`), `voidExpense` (reason required, `FinanceVoid(EXPENSE)`), `approveExpense` (`admin.config`, refuse when `amount < threshold` / already approved / voided, insert unique `ExpenseApproval`, audit `expense.approved`)
+- [ ] T039 [P] [US4] Create `src/components/finance/ExpensesList.tsx` per contracts/ui.md — backed by `listExpenses` implemented in `src/server/finance/expenses.ts` per contracts/queries.md (date range/category/order/employee/approval-state filters, `includeVoided` default false, cursor pagination): columns incl. approval pill and voided state, receipt thumbnail link, pagination, empty/forbidden states
+- [ ] T040 [P] [US4] Create `src/components/finance/ExpenseForm.tsx`: amount, category (active list), date, employee, description, optional order/work-item picker, optional receipt upload; success → list refresh
+- [ ] T041 [US4] Create route `src/app/(shell)/finance/expenses/page.tsx` + server actions with per-action gating per contracts/authorization-audit.md: list/read → `finance.view`, `recordExpenseAction` / `voidExpenseAction` → `expense.record`, `approveExpenseAction` → `admin.config`; add Finance nav group entry in `src/app/(shell)/nav.ts` gated by `finance.view`; Arabic strings in `src/messages/ar.json`
 
 **Checkpoint**: US1–US4 functional — money out with receipts and approval flags
 
@@ -157,13 +158,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 5
 
-- [ ] T041 [US5] Integration test `tests/integration/finance/directCost.test.ts`: record with `expense.record` → row + `direct_cost.recorded` audit; amount ≤ 0 → `VALIDATION`; `workItemId` not in `orderId` → `VALIDATION`; without permission → `FORBIDDEN`; void with reason → excluded from profitability, original retrievable, no update/delete path; no permission → no audit
+- [ ] T042 [US5] Integration test `tests/integration/finance/directCost.test.ts`: record with `expense.record` → row + `direct_cost.recorded` audit; amount ≤ 0 → `VALIDATION`; `workItemId` not in `orderId` → `VALIDATION`; without permission → `FORBIDDEN`; void with reason → excluded from profitability, original retrievable, no update/delete path; no permission → no audit
 
 ### Implementation for User Story 5
 
-- [ ] T042 [US5] Implement `src/server/finance/costs.ts` per contracts/finance-service.md: `recordDirectCost` (required `orderId`, optional `workItemId` ∈ order, amount "> 0", `costDate`, description required, optional receipt with entity-scope check + `attachments.attach`, audit `direct_cost.recorded`), `voidDirectCost` (reason required, `FinanceVoid(DIRECT_COST)`, audit), plus `listDirectCosts` per contracts/queries.md (order/work-item/date filters, `includeVoided` default false)
-- [ ] T043 [P] [US5] Create `src/components/finance/DirectCostForm.tsx` per contracts/ui.md: order picker (required), optional work item, amount, date, description, optional receipt
-- [ ] T044 [US5] Add "Add job cost" action + server action `recordDirectCostAction` to `src/app/(shell)/orders/[orderId]/finance-actions.ts` and surface it in `src/components/finance/OrderFinancePanel.tsx` (costs section listing the order's direct costs with void support)
+- [ ] T043 [US5] Implement `src/server/finance/costs.ts` per contracts/finance-service.md: `recordDirectCost` (required `orderId`, optional `workItemId` ∈ order, amount "> 0", `costDate`, description required, optional receipt with entity-scope check + `attachments.attach`, audit `direct_cost.recorded`), `voidDirectCost` (reason required, `FinanceVoid(DIRECT_COST)`, audit), plus `listDirectCosts` per contracts/queries.md (order/work-item/date filters, `includeVoided` default false)
+- [ ] T044 [P] [US5] Create `src/components/finance/DirectCostForm.tsx` per contracts/ui.md: order picker (required), optional work item, amount, date, description, optional receipt
+- [ ] T045 [US5] Add "Add job cost" action + server action `recordDirectCostAction` to `src/app/(shell)/orders/[orderId]/finance-actions.ts` and surface it in `src/components/finance/OrderFinancePanel.tsx` (costs section listing the order's direct costs with void support)
 
 **Checkpoint**: US1–US5 functional — full cost capture alongside payments
 
@@ -177,12 +178,12 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 6
 
-- [ ] T045 [US6] Integration test `tests/integration/finance/profitability.test.ts`: SC-004 fixture → 1000 − 300 − 100 = 600 with `sources.{priceIds,directCostIds,expenseIds}` matching; unlinked expense excluded; voided cost excluded; PENDING-priced Work Item → `pricingIncomplete: true` and revenue marked partial
+- [ ] T046 [US6] Integration test `tests/integration/finance/profitability.test.ts`: SC-004 fixture → 1000 − 300 − 100 = 600 with `sources.{priceIds,directCostIds,expenseIds}` matching; unlinked expense excluded; voided cost excluded; PENDING-priced Work Item → `pricingIncomplete: true` and revenue marked partial
 
 ### Implementation for User Story 6
 
-- [ ] T046 [US6] Implement `src/server/finance/profitability.ts` per contracts/queries.md: `orderProfitability(orderId)` — revenue via `051.getCurrentPrice` over non-cancelled Work Items, directCosts Σ non-void, jobExpenses Σ order-linked non-void, grossProfit = revenue − directCosts − jobExpenses, source ID lists for drill-down, `pricingIncomplete` flag (FR-018)
-- [ ] T047 [US6] Create `src/components/finance/ProfitabilityBlock.tsx` per contracts/ui.md: equation row (Revenue − Direct Costs − Job Expenses = Gross Profit), each figure a link to its drill-down (price history / cost list / expense list scoped to the order), pricing-incomplete banner; embed in `src/components/finance/OrderFinancePanel.tsx`
+- [ ] T047 [US6] Implement `src/server/finance/profitability.ts` per contracts/queries.md: `orderProfitability(orderId)` — revenue via `051.getCurrentPrice` over non-cancelled Work Items, directCosts Σ non-void, jobExpenses Σ order-linked non-void, grossProfit = revenue − directCosts − jobExpenses, source ID lists for drill-down, `pricingIncomplete` flag (FR-018)
+- [ ] T048 [US6] Create `src/components/finance/ProfitabilityBlock.tsx` per contracts/ui.md: equation row (Revenue − Direct Costs − Job Expenses = Gross Profit), each figure a link to its drill-down (price history / cost list / expense list scoped to the order), pricing-incomplete banner; embed in `src/components/finance/OrderFinancePanel.tsx`
 
 **Checkpoint**: US1–US6 functional — every spec money story except daily cash and receipt
 
@@ -196,13 +197,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 7
 
-- [ ] T048 [US7] Integration test `tests/integration/finance/dailyCash.test.ts`: SC-007 method totals + counts + drill-down IDs; voided payment excluded; SC-012 fixture — `occurredAt` 23:30 `shopTimezone` buckets to that local date not the UTC date; read without `finance.view` → `FORBIDDEN`
+- [ ] T049 [US7] Integration test `tests/integration/finance/dailyCash.test.ts`: SC-007 method totals + counts + drill-down IDs; voided payment excluded; SC-012 fixture — `occurredAt` 23:30 `shopTimezone` buckets to that local date not the UTC date; read without `finance.view` → `FORBIDDEN`
 
 ### Implementation for User Story 7
 
-- [ ] T049 [US7] Implement `src/server/finance/daily-cash.ts` per contracts/queries.md: `dailyCashSummary(date)` — bucket non-void payments by method using `src/server/finance/time.ts` shop-local conversion, per-method `{method, count, total}`, `grandTotal`, `paymentIds`; requires `finance.view`
-- [ ] T050 [P] [US7] Create `src/components/finance/DailyCashSummary.tsx` per contracts/ui.md: date picker (default today shop-local), per-method rows, grand total, row → filtered payments list, note when selected date ≠ UTC date
-- [ ] T051 [US7] Create route `src/app/(shell)/finance/daily-cash/page.tsx` + nav entry in `src/app/(shell)/nav.ts` (`finance.view`); Arabic strings in `src/messages/ar.json`
+- [ ] T050 [US7] Implement `src/server/finance/daily-cash.ts` per contracts/queries.md: `dailyCashSummary(date)` — bucket non-void payments by method using `src/server/finance/time.ts` shop-local conversion, per-method `{method, count, total}`, `grandTotal`, `paymentIds`; requires `finance.view`
+- [ ] T051 [P] [US7] Create `src/components/finance/DailyCashSummary.tsx` per contracts/ui.md: date picker (default today shop-local), per-method rows, grand total, row → filtered payments list, note when selected date ≠ UTC date
+- [ ] T052 [US7] Create route `src/app/(shell)/finance/daily-cash/page.tsx` + nav entry in `src/app/(shell)/nav.ts` (`finance.view`); Arabic strings in `src/messages/ar.json`
 
 **Checkpoint**: US1–US7 functional
 
@@ -216,13 +217,13 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 ### Tests for User Story 8
 
-- [ ] T052 [US8] Integration test `tests/integration/finance/receipt.test.ts`: SC-010 — `getReceipt` fields match the stored payment and computed Remaining; receipt numbers strictly increasing; voided payment projection carries `voided: true` (for watermark); soft timing assertion: projection + page render < 5 s
+- [ ] T053 [US8] Integration test `tests/integration/finance/receipt.test.ts`: SC-010 — `getReceipt` fields match the stored payment and computed Remaining; receipt numbers strictly increasing; voided payment projection carries `voided: true` (for watermark); soft timing assertion: projection + page render < 5 s
 
 ### Implementation for User Story 8
 
-- [ ] T053 [US8] Implement `src/server/finance/receipt.ts` per contracts/queries.md: `getReceipt(paymentId)` projection (shop name from config, receiptNumber, order ref, customer, amount, method, source, occurredAt shop-local rendering, recorder, remaining-after) + `authorize(finance.view)`
-- [ ] T054 [US8] Create route `src/app/(shell)/finance/receipt/[paymentId]/page.tsx` per contracts/ui.md: print-optimized, A5 paper-width-agnostic CSS (max-width, no fixed viewport), VOID watermark when voided, `window.print()` action, renders within 5 s of invocation
-- [ ] T055 [US8] Wire print-receipt actions: post-record toast in `src/components/finance/RecordPaymentDialog.tsx` and per-row print button in `src/components/finance/OrderFinancePanel.tsx` payment history
+- [ ] T054 [US8] Implement `src/server/finance/receipt.ts` per contracts/queries.md: `getReceipt(paymentId)` projection (shop name from config, receiptNumber, order ref, customer, amount, method, source, occurredAt shop-local rendering, recorder, remaining-after) + `authorize(finance.view)`
+- [ ] T055 [US8] Create route `src/app/(shell)/finance/receipt/[paymentId]/page.tsx` per contracts/ui.md: print-optimized, A5 paper-width-agnostic CSS (max-width, no fixed viewport), VOID watermark when voided, `window.print()` action, renders within 5 s of invocation
+- [ ] T056 [US8] Wire print-receipt actions: post-record toast in `src/components/finance/RecordPaymentDialog.tsx` and per-row print button in `src/components/finance/OrderFinancePanel.tsx` payment history
 
 **Checkpoint**: All 8 user stories functional and independently testable
 
@@ -232,17 +233,17 @@ Single project (per plan.md): `src/`, `prisma/`, `config/`, `tests/` at reposito
 
 **Purpose**: Cross-story guarantees, 090 surface, validation
 
-- [ ] T056 [P] Permission matrix integration test `tests/integration/finance/permissions.test.ts`: every entry point × {Reception, Accounting, Admin/Owner} — assert the full table in contracts/authorization-audit.md (Reception: read-only; Accounting: record/void payments + expenses; `admin.config`-gated Admin-only: credit write, expense approval, FinanceConfig write)
-- [ ] T057 [P] Audit completeness integration test `tests/integration/finance/auditMatrix.test.ts`: all nine audit actions fire with actor + timestamp; forced failure after insert → no orphan audit row (atomicity); no audit on refused attempts
-- [ ] T058 [P] Decimal integrity test `tests/unit/finance/decimal.test.ts` (SC-008): migration column types are `numeric`/`Decimal` (assert via Prisma DMMF), `0.10` EGP round-trips exactly, no float math in money helpers
-- [ ] T059 [P] Performance smoke `tests/integration/finance/perf.test.ts` (SC-011): orderSummary + customerBalance < 500 ms p95, single recordPayment (incl. audit) < 500 ms p95 with generous CI tolerance
-- [ ] T060 [P] Implement 090-only rollup query `listCustomerBalances` in `src/server/finance/summaries.ts` per contracts/queries.md (no UI; exported for reporting)
-- [ ] T061 Verify `listExpenses` / `listPayments` / `listDirectCosts` filter surfaces in `src/server/finance/{expenses,payments,costs}.ts` match contracts/queries.md exactly (pagination cursors, `includeVoided` default false)
-- [ ] T062 Run `specs/052-finance/quickstart.md` scenarios 1–12 end-to-end; fix any gap found (SC-001…SC-012 all demonstrated)
-- [ ] T063 `pnpm check` green + full `pnpm test` green; confirm no task in this list left a placeholder or TODO in `src/server/finance/` or `src/components/finance/`
-- [ ] T064 [P] Backup scope confirmation: new tables verified inside primary PostgreSQL backup set, attachments inside 050 file backup set (constitution Backups) — document result in `specs/052-finance/plan.md` delivery notes
-- [ ] T065 Post-commit closure invocation test `tests/integration/finance/closureTrigger.test.ts` (SC-009): bind a spy closure port → `recordPayment` and `voidPayment` → assert the port is invoked exactly once AFTER the transaction commits (never inside `tx`), that a `{ closed: false }` result does not fail/roll back the payment, and that an unbound port leaves the payment successful (constitution VII)
-- [ ] T066 Credit-application test `tests/integration/finance/creditsApplied.test.ts` (FR-012): bind a fake compensation port returning a CREDIT → `orderSummary.remaining` = total − paid − credit; unbound port → credit ignored (empty default); PRICE_ADJUSTMENT rows never reduce remaining
+- [ ] T057 [P] Permission matrix integration test `tests/integration/finance/permissions.test.ts`: every entry point × {Reception, Accounting, Admin/Owner} — assert the full table in contracts/authorization-audit.md (Reception: read-only; Accounting: record/void payments + expenses; `admin.config`-gated Admin-only: credit write, expense approval, FinanceConfig write)
+- [ ] T058 [P] Audit completeness integration test `tests/integration/finance/auditMatrix.test.ts`: all nine audit actions fire with actor + timestamp; forced failure after insert → no orphan audit row (atomicity); no audit on refused attempts
+- [ ] T059 [P] Decimal integrity test `tests/unit/finance/decimal.test.ts` (SC-008): migration column types are `numeric`/`Decimal` (assert via Prisma DMMF), `0.10` EGP round-trips exactly, no float math in money helpers
+- [ ] T060 [P] Performance smoke `tests/integration/finance/perf.test.ts` (SC-011): orderSummary + customerBalance < 500 ms p95, single recordPayment (incl. audit) < 500 ms p95 with generous CI tolerance
+- [ ] T061 [P] Implement 090-only rollup query `listCustomerBalances` in `src/server/finance/summaries.ts` per contracts/queries.md (no UI; exported for reporting)
+- [ ] T062 Verify `listExpenses` / `listPayments` / `listDirectCosts` filter surfaces in `src/server/finance/{expenses,payments,costs}.ts` match contracts/queries.md exactly (pagination cursors, `includeVoided` default false)
+- [ ] T063 Run `specs/052-finance/quickstart.md` scenarios 1–12 end-to-end; fix any gap found (SC-001…SC-012 all demonstrated)
+- [ ] T064 `pnpm check` green + full `pnpm test` green; confirm no task in this list left a placeholder or TODO in `src/server/finance/` or `src/components/finance/`
+- [ ] T065 [P] Backup scope confirmation: new tables verified inside primary PostgreSQL backup set, attachments inside 050 file backup set (constitution Backups) — document result in `specs/052-finance/plan.md` delivery notes
+- [ ] T066 Post-commit closure invocation test `tests/integration/finance/closureTrigger.test.ts` (SC-009): bind a spy closure port → `recordPayment` and `voidPayment` → assert the port is invoked exactly once AFTER the transaction commits (never inside `tx`), that a `{ closed: false }` result does not fail/roll back the payment, and that an unbound port leaves the payment successful (constitution VII)
+- [ ] T067 Credit-application test `tests/integration/finance/creditsApplied.test.ts` (FR-012): bind a fake compensation port returning a CREDIT → `orderSummary.remaining` = total − paid − credit; unbound port → credit ignored (empty default); PRICE_ADJUSTMENT rows never reduce remaining
 
 ---
 
