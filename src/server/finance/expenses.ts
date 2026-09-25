@@ -21,7 +21,7 @@ export type RecordExpenseInput = {
   readonly orderId?: string;
   readonly workItemId?: string;
   readonly receipt?: {
-    readonly stream: NodeJS.ReadableStream;
+    readonly stream: NodeJS.ReadableStream | ReadableStream<Uint8Array>;
     readonly fileName: string;
   };
 };

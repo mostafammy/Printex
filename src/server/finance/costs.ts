@@ -17,7 +17,7 @@ export type RecordDirectCostInput = {
   readonly costDate: string; // YYYY-MM-DD
   readonly description: string;
   readonly receipt?: {
-    readonly stream: NodeJS.ReadableStream;
+    readonly stream: NodeJS.ReadableStream | ReadableStream<Uint8Array>;
     readonly fileName: string;
   };
 };
