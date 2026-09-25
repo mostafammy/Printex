@@ -64,8 +64,10 @@ export function SpecialPricingTab({ customerId }: SpecialPricingTabProps) {
       try {
         const res = await fetch(`/api/customers/${customerId}/pricing-rules`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = (await res.json()) as CustomerPricingRuleRow[];
-        if (!cancelled) setRules(data);
+        const data: unknown = await res.json();
+        if (!Array.isArray(data)) throw new Error("Invalid pricing response");
+        const parsedRules = data as CustomerPricingRuleRow[];
+        if (!cancelled) setRules(parsedRules);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "خطأ غير معروف");
       } finally {

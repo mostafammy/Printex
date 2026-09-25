@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findCustomerPricingRules } from "~/server/pricing";
+import { findCustomerPricingRules, type CustomerPricingRuleRow } from "~/server/pricing";
 
 export async function GET(
   _request: Request,
@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const rules = await findCustomerPricingRules(id);
+    const rules: CustomerPricingRuleRow[] = await findCustomerPricingRules(id);
     return NextResponse.json(rules);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";

@@ -49,14 +49,14 @@ export async function findCustomerPricingRules(
     id: r.id,
     customerId: r.customerId,
     productTypeId: r.productTypeId,
-    kind: r.kind as CustomerPricingRuleKind,
+    kind: r.kind,
     fixedPrice: r.fixedPrice?.toString() ?? null,
     discountPercent: r.discountPercent?.toString() ?? null,
     effectiveFrom: r.effectiveFrom,
     effectiveTo: r.effectiveTo,
     createdById: r.createdById,
     createdAt: r.createdAt,
-    status: r.status as PriceConfigStatus,
+    status: r.status,
     productType: r.productType,
   }));
 }
