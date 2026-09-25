@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { CustomerProfile } from "~/components/customers/customer-profile";
+import { SpecialPricingTab } from "~/components/customers/special-pricing-tab";
 import { getCustomer } from "~/server/customers";
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
-  const customer = await getCustomer((await params).id);
+  const { id } = await params;
+  const customer = await getCustomer(id);
   if (!customer) notFound();
 
   return (
@@ -16,7 +18,7 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
       }
       slots={{
         paymentsBalance: <span className="text-sm text-muted-foreground">الرصيد والمدفوعات — قريباً</span>,
-        specialPricing: <span className="text-sm text-muted-foreground">الأسعار الخاصة — قريباً</span>,
+        specialPricing: <SpecialPricingTab customerId={id} />,
         messages: <span className="text-sm text-muted-foreground">الرسائل — قريباً</span>,
       }}
     />
