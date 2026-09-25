@@ -61,8 +61,8 @@ beforeAll(async () => {
 
 describe("createPricingReturn (integration)", () => {
   it("creates a Return with PRICING_ISSUE category, Pricing origin, required explanation, actor, assignee, and timestamp", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     const order = await testDb.order.create({
       data: {
@@ -111,8 +111,8 @@ describe("createPricingReturn (integration)", () => {
   });
 
   it("has no DesignVersion — the return does not masquerade as a design failure", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     const order = await testDb.order.create({
       data: {
@@ -143,8 +143,8 @@ describe("createPricingReturn (integration)", () => {
   });
 
   it("rejects an empty explanation (explanation is required)", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     const order = await testDb.order.create({
       data: {
@@ -180,8 +180,8 @@ describe("createPricingReturn (integration)", () => {
   });
 
   it("supports an optional note alongside the required explanation", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     const order = await testDb.order.create({
       data: {
@@ -213,8 +213,8 @@ describe("createPricingReturn (integration)", () => {
   });
 
   it("writes a PRICING_ISSUE return that is distinguishable from DESIGN_ISSUE returns", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     const order = await testDb.order.create({
       data: {
@@ -252,8 +252,8 @@ describe("createPricingReturn (integration)", () => {
   });
 
   it("rolls back the entire transaction when createReturnInTx fails", async () => {
-    const actor = await createActor(["pricing.use_fixed"]);
-    const assignee = await createActor(["pricing.use_fixed"]);
+    const actor = await createActor(["pricing.override"]);
+    const assignee = await createActor(["pricing.override"]);
 
     // Create a valid work item first
     const order = await testDb.order.create({
