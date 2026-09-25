@@ -210,9 +210,12 @@ describe("Customer rule precedence", () => {
   });
 
   it("creates a percentage-discount customer rule without overlap", async () => {
+    // Distinct product type: the previous test's FIXED rule is open-ended on
+    // productTypeId/PIECE and would otherwise overlap this rule's interval.
+    const percentProductTypeId = await seedProductType("ConfigPercentRule");
     const ruleId = await createCustomerPricingRule(admin, {
       customerId,
-      productTypeId,
+      productTypeId: percentProductTypeId,
       unit: "PIECE",
       kind: "PERCENT_DISCOUNT",
       discountPercent: "15",
@@ -361,8 +364,11 @@ describe("Price list retirement and history", () => {
   });
 
   it("audits every createPriceList and retirePriceList call", async () => {
+    // Distinct product type: the first "Price list effective dates" test left
+    // an open-ended ACTIVE PIECE list on productTypeId, which would overlap.
+    const auditListProductTypeId = await seedProductType("ConfigAuditList");
     const { priceListId } = await createPriceList(admin, {
-      productTypeId,
+      productTypeId: auditListProductTypeId,
       unit: "PIECE",
       effectiveFrom: new Date("2029-01-01T00:00:00.000Z"),
       tiers: [{ minimumQuantity: 1, maximumQuantity: null, basePrice: "100" }],
