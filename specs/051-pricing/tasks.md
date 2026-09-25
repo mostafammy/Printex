@@ -114,7 +114,7 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/returns.test.ts` creates and reads a Pricing-originated `PRICING_ISSUE` return.
 
 - [X] T032 [P] [US6] Implement `src/server/pricing/returns.ts` composing 013 `createReturnInTx` with Pricing origin, `PRICING_ISSUE`, required explanation, assignee, and no DesignVersion.
-- [ ] T033 [US6] Add `tests/integration/pricing/returns.test.ts` proving category/origin, required explanation, actor/assignee/timestamp, authorization, and transaction rollback.
+- [X] T033 [US6] Add `tests/integration/pricing/returns.test.ts` proving category/origin, required explanation, actor/assignee/timestamp, authorization, and transaction rollback.
 
 ## Phase 9: User Story 7 - Admin price configuration (P2)
 
@@ -123,17 +123,17 @@ All stories -> Polish and consistency review
 **Independent test**: `tests/integration/pricing/configuration.test.ts` creates, retires, and queries effective/historical configuration.
 
 - [X] T034 [P] [US7] Implement `src/server/pricing/configuration.ts` for ProductPricingPolicy mode configuration, price-list/tier and customer-rule create/retire operations, overlap validation, `admin.config` authorization, and audit events.
-- [ ] T035 [US7] Add `src/app/(shell)/pricing/price-lists/page.tsx` and server actions for list/tier administration; never mutate historical commercial values.
-- [ ] T036 [US7] Add the customer profile special-pricing tab in the 010 customer route/component slot, reading 051 rules through the public barrel.
-- [ ] T037 [US7] Add `tests/integration/pricing/configuration.test.ts` for ProductPricingPolicy FIXED/VARIABLE changes, effective dates, tier overlap, rule precedence, retirement history, authorization, and audit.
+- [X] T035 [US7] Add `src/app/(shell)/pricing/price-lists/page.tsx` and server actions for list/tier administration; never mutate historical commercial values.
+- [X] T036 [US7] Add the customer profile special-pricing tab in the 010 customer route/component slot, reading 051 rules through the public barrel.
+- [X] T037 [US7] Add `tests/integration/pricing/configuration.test.ts` for ProductPricingPolicy FIXED/VARIABLE changes, effective dates, tier overlap, rule precedence, retirement history, authorization, and audit.
 
 ## Phase 10: Polish and cross-cutting validation
 
 - [X] T038 [P] Add `tests/contract/pricing/public-barrel.test.ts` and update `eslint.config.js` so external code can import only `~/server/pricing`.
 - [X] T039 [P] Add Arabic/RTL message keys in `src/messages/ar.json` for statuses, sources, queue age, errors, and breakdown labels without moving calculation into the UI.
-- [ ] T040 [P] Add `tests/integration/pricing/audit-coverage.test.ts` proving every accepted price change, reset, configuration mutation, and pricing return has an audit event.
+- [X] T040 [P] Add `tests/integration/pricing/audit-coverage.test.ts` proving every accepted price change, reset, configuration mutation, and pricing return has an audit event.
 - [X] T041 Add `tests/performance/pricing/latency.test.ts` for the documented p95 targets, then run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
-- [ ] T042 Run the spec-kit consistency analysis across `spec.md`, `plan.md`, and `tasks.md`; resolve all critical coverage, terminology, and constitution findings in the docs before implementation begins.
+- [X] T042 Run the spec-kit consistency analysis across `spec.md`, `plan.md`, and `tasks.md`; resolve all critical coverage, terminology, and constitution findings in the docs before implementation begins.
 - [ ] T043 **ACTION REQUIRED: blocked, do not run unattended.** After schema-owner approval, apply the final Prisma migration, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR.
 
 ## Parallel opportunities
