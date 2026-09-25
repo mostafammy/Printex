@@ -37,7 +37,7 @@ export async function GET(
       orderBy: { createdAt: "desc" },
       include: { fileObject: true },
     });
-    if (!attachment || !attachment.fileObject) {
+    if (!attachment?.fileObject) {
       return NextResponse.json({ error: "No receipt attached" }, { status: 404 });
     }
 
@@ -47,7 +47,7 @@ export async function GET(
       attachment.fileObject.sha256,
       Number(attachment.fileObject.sizeBytes),
     );
-    const webStream = Readable.toWeb(stream as import("stream").Readable) as ReadableStream;
+    const webStream = Readable.toWeb(stream) as ReadableStream;
     const safeName = attachment.originalName.replace(/[\r\n"]+/g, "_");
 
     return new NextResponse(webStream, {

@@ -54,7 +54,7 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
                 ))}
               </ul>
             </details>
-            <a href="#direct-costs" className="ml-1 text-xs underline text-muted-foreground hover:text-foreground">
+            <a href="#direct-costs" className="ms-1 text-xs underline text-muted-foreground hover:text-foreground">
               →
             </a>
           </dd>
@@ -76,10 +76,9 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
             </details>
             <Link
               href={`/finance/expenses?orderId=${profit.orderId}`}
-              className="ml-1 text-xs underline text-muted-foreground hover:text-foreground"
+              className="ms-1 text-xs underline text-muted-foreground hover:text-foreground"
               title={S.expensesHeading}
             >
-              →
             </Link>
           </dd>
         </div>
