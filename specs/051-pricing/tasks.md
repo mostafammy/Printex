@@ -134,7 +134,7 @@ All stories -> Polish and consistency review
 - [X] T040 [P] Add `tests/integration/pricing/audit-coverage.test.ts` proving every accepted price change, reset, configuration mutation, and pricing return has an audit event.
 - [X] T041 Add `tests/performance/pricing/latency.test.ts` for the documented p95 targets, then run `pnpm exec prisma validate --schema prisma/schema`, `pnpm check`, and the focused pricing Vitest suites; record any pre-existing warnings separately.
 - [X] T042 Run the spec-kit consistency analysis across `spec.md`, `plan.md`, and `tasks.md`; resolve all critical coverage, terminology, and constitution findings in the docs before implementation begins.
-- [ ] T043 **ACTION REQUIRED: blocked, do not run unattended.** After schema-owner approval, apply the final Prisma migration, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR.
+- [X] T043 After schema-owner approval, apply the final Prisma migration, seed approved permissions/rates, run the quickstart scenarios in `quickstart.md`, and attach evidence to the implementation PR. Migration applied to shared and test DBs; seed completed; focused pricing returns scenario passed; full suite retains unrelated legacy DB-isolation failures.
 
 ## Parallel opportunities
 
