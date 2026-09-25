@@ -44,6 +44,12 @@ export { createPricingReturn } from "./returns";
 export type { PricingReturnInput } from "./returns";
 export { createCustomerPricingRule, createPriceList, retirePriceList, setPricingPolicy } from "./configuration";
 export type { CreateCustomerRuleInput, CreatePriceListInput, PricingMode } from "./configuration";
+export { findCustomerPricingRules } from "./customer-rules";
+export type {
+  CustomerPricingRuleKind,
+  CustomerPricingRuleRow,
+  PriceConfigStatus,
+} from "./customer-rules";
 
 export { quote } from "./quote";
 export type { QuoteBreakdown, QuoteInput, QuoteResult } from "./quote";
