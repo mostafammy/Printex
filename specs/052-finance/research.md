@@ -49,7 +49,7 @@ Phase 0 for `/speckit-plan`. Every unknown in plan.md's Technical Context is res
 
 **Decision**: A dedicated `receipt_sequence` Postgres sequence; `recordPayment` calls `nextval` inside its transaction. Numbers are per-shop, monotonically increasing, and may contain gaps (rollback or unused allocation).
 
-**Rationale**: The spec's assumption is "gapless-enough for a single LAN deployment" — sequence gaps are explicitly tolerated, and `nextval` is concurrency-safe without the row-lock contention of a counter singleton update. Strict gapless fiscal numbering belongs to tax invoicing, which is out of scope (FR-028).
+**Rationale**: The spec's assumption allows gaps only from rolled-back or unused sequence allocations — sequence gaps are explicitly tolerated, and `nextval` is concurrency-safe without the row-lock contention of a counter singleton update. Strict gapless fiscal numbering belongs to tax invoicing, which is out of scope (FR-028).
 
 **Alternatives considered**: Counter row in `FinanceConfig` with `SELECT … FOR UPDATE` — correct but serializes every payment insert on one row for no benefit; per-order numbering — rejected (receipts are shop-level, printed across orders).
 

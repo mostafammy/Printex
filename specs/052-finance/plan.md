@@ -25,7 +25,7 @@
 - Money is `Decimal` EGP end-to-end; totals computed server-side only; never floating point.
 - Timestamps stored UTC; daily cash summary and date filters bucket by shop-local calendar date (`shopTimezone` config, default `Africa/Cairo`).
 - Payments, expenses, and direct costs are immutable; corrections happen only by Void (reason + audit); approval is an appended record, never an in-place edit of the expense row.
-- Permissions frozen in 001: `payment.record`, `payment.void`, `expense.record`, `finance.view`; Admin/Owner actions (credit flag/limit, expense approval, config) map to existing admin-scope keys — no new permission keys.
+- Permissions frozen in 001: `payment.record`, `payment.void`, `expense.record`, `finance.view`; Admin/Owner actions (credit flag/limit, expense approval, config) use the existing `admin.config` key — no new permission keys.
 - Delivery is never blocked by an unpaid balance (015 FR-027 / FR-024); closure re-evaluation runs only after the payment/void transaction commits.
 - Arabic-first, task-oriented RTL UI; `<OrderFinancePanel>` / `<CustomerBalanceTab>` are contracts, not second calculations.
 - Backups: all new tables live in the existing primary PostgreSQL database and the receipt sequence lives with it — covered by the existing DB backup scope (constitution Backups); 052 adds no new persistent store. Receipt-photo attachments are 050 objects, already in the file backup scope.
@@ -63,7 +63,7 @@
 
 ## Integration dependencies
 
-- **001**: `getActor`, `authorize`, `audit.record`; frozen keys `payment.record`, `payment.void`, `expense.record`, `finance.view`; Admin actions reuse existing admin-scope keys (exact mapping fixed in tasks).
+- **001**: `getActor`, `authorize`, `audit.record`; frozen keys `payment.record`, `payment.void`, `expense.record`, `finance.view`; Admin actions (credit flag/limit, expense approval, `FinanceConfig` writes) reuse the existing `admin.config` key — pinned here and in tasks (no new permission keys).
 - **002/011**: Order, WorkItem identity; 052 never writes workflow state.
 - **010**: Customer + immutable Cash Customer; `payments-balance` slot (component prop `slots.paymentsBalance` exists in code); Customer master untouched — credit lives on 052's `CustomerCredit`.
 - **011**: order-detail page placeholder (`placeholderPayments`) filled by `<OrderFinancePanel>`.
@@ -125,3 +125,4 @@ tests/contract/finance/             # FinanceSummaryPort shape, closure/compensa
 - The hand-over acknowledgment (FR-011) is a 015-side prompt fed by `orderSummary`; 052 delivers the data contract and the acceptance fixture, and the UI task lands with 015 unless 015 ships first — tracked as a cross-feature task, not a 052 blocker.
 - Money rows get `REVOKE UPDATE, DELETE` in the same migration that creates them; the migration documents the non-superuser app-role prerequisite (001 precedent).
 - Receipt sequence, config seeds, and the Cash Customer lookup all exist before the first integration test runs.
+- `FinanceConfig` V1 editing = YAML seed + `admin.config`-gated write helper; no config-admin screen in V1 (spec Assumptions — "V1 config editing").

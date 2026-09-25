@@ -24,7 +24,7 @@ The tables `payment`, `expense`, `direct_cost`, `finance_void`, and `expense_app
 | `note` | String? | optional |
 | `occurredAt` | DateTime | payment date+time; default now; `<= now`; stored UTC |
 | `recordedAt` | DateTime | server now, UTC; required audit metadata |
-| `recordedById` | String | required FK to 001 User (`payment.record` holder) |
+| `recordedById` | String | required FK to 001 User (`payment.record` holder) — implements PRD §22's "Recorded by" |
 | `receiptNumber` | BigInt | from `receipt_sequence`; unique |
 
 Relationships: belongs to Order and Customer; optional one `FinanceVoid` row (`entityType = PAYMENT`); referenced by 015's delivery read via `orderSummary`.

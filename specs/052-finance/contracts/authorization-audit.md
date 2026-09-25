@@ -11,7 +11,7 @@ Owner: 001 (vocabulary + primitives). This file binds 052's usage. Every entry p
 | `voidPayment` | `payment.void` | Accounting, Admin/Owner — **not** Reception |
 | `orderSummary` (own UI), `customerBalance`, expenses list, costs, profitability, daily cash, payment history | `finance.view` | Reception included (read-only surfaces) |
 | Delivery sheet projection | `delivery.record` (015's gate — not a 052 check) | Print Reception/Delivery |
-| Credit flag/limit write, expense approval, `FinanceConfig` write | existing Admin/Owner admin-scope key (`admin.config` or `admin.override` — exact key fixed in tasks; **no new permission key**) | Admin/Owner |
+| Credit flag/limit write, expense approval, `FinanceConfig` write | `admin.config` (existing 001 key; **no new permission key**). Credit writes also require a non-empty reason — 052-local policy validated before `audit.record` | Admin/Owner |
 
 Reception specifics (acceptance): Reception holds `finance.view` but not `payment.record`/`expense.record`/`payment.void` — record attempts refuse with `FORBIDDEN` and write **no** audit event (audit fires only on committed mutations); void attempts refuse identically.
 
