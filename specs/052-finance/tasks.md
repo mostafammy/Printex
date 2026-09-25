@@ -336,3 +336,18 @@ Task: "T020 OrderFinancePanel src/components/finance/OrderFinancePanel.tsx"
 - 015 seams (`bindFinancialClosurePort`, `bindCompensationReadPort`, `financeSummaryProvider`) use safe defaults — never import `~/server/collection` at compile time (research.md)
 - No task may add a permission key: vocabulary frozen in 001
 - Commit after each task or logical group; stop at each checkpoint to validate the story independently
+
+---
+
+## Phase 12: Convergence
+
+**Purpose**: Remaining gaps found by `/speckit-converge` assessing shipped code against spec.md, plan.md, contracts/, and the constitution (0 CRITICAL — no constitution violations; all findings are partials).
+
+**Note**: IDs continue from T067; nothing above was renumbered.
+
+- [ ] T068 [US7] Fix daily-cash drill-down (F1, FR-020/SC-007): in `src/components/finance/daily-cash-summary.tsx` replace the wrong `/finance/expenses` link with a payments view filtered to the summary date — add `from`/`to` (or `date`) + `method` support to `src/app/(shell)/finance/expenses/page.tsx` is WRONG page; instead render payments for the day via `listPayments({ from, to })` on a new `/finance/daily-cash` section (or a payments sub-list on the same page) so grand-total and per-method rows both drill into the actual underlying `Payment` rows (id, method, source, receipt #, voided state)
+- [ ] T069 [US4] Expense receipt visibility (F2, FR-013/contracts/ui.md): extend `listExpenses` (`src/server/finance/expenses.ts`) to return the expense's 050 attachment id(s) (query `attachment` by `entityType: "Expense"` + `entityId`) and render a receipt link/thumbnail in `src/components/finance/expenses-list.tsx`; serving MUST re-check the viewer's 052 read scope (`finance.view` at the route) in addition to 050's download authorization (authorization-audit.md "Entity ownership authorization")
+- [ ] T070 [US6] Profitability drill-downs (F3, FR-018/contracts/ui.md): (a) link the Revenue term in `src/components/finance/profitability-block.tsx` to the order's 051 price history (Work Item pricing panel/price history view); (b) accept `orderId` in `src/app/(shell)/finance/expenses/page.tsx` filters (read `params.orderId`, pass to `listExpenses`) and make the job-expenses term link to `/finance/expenses?orderId=…`; (c) make the direct-costs term link to the panel's costs section (`/orders/<id>#…`) — every term of the equation must open its source records, per spec FR-018
+- [ ] T071 [US4] Approve-button visibility (F4, FR-008/ui.md): in `src/app/(shell)/finance/expenses/page.tsx` compute `canApprove = permissions.has("admin.config")` separately from `canModerate` (`expense.record`), pass both to `ExpensesList`, and show the approve form only when `canApprove` while keeping void gated by `canModerate` — Accounting must not see an approve button that always fails
+- [ ] T072 Contract wording reconcile (F5, contracts/ui.md): update `specs/052-finance/contracts/ui.md` `RecordPaymentDialog`/void sections to describe the shipped `<details>`-based record form and inline per-row void form (per tasks.md T026 amendment) — wording only, no behavior change
+- [ ] T073 [US3] Balance-tab order links use order number (F6, US3/ui.md): include `orderNumber` in `CustomerBalance.orders` rows (`src/server/finance/summaries.ts` `customerBalance` — select `Order.number`) and link `#<number>` in `src/components/finance/customer-balance-tab.tsx`
