@@ -354,7 +354,7 @@ describe("Price list retirement and history", () => {
     });
     expect(list.status).toBe("RETIRED");
     expect(list.tiers).toHaveLength(1);
-    expect(list.tiers[0].basePrice.toString()).toBe("30");
+    expect(list.tiers[0]?.basePrice.toString()).toBe("30");
   });
 
   it("audits every createPriceList and retirePriceList call", async () => {

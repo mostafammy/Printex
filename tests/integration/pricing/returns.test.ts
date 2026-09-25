@@ -82,8 +82,8 @@ describe("createPricingReturn (integration)", () => {
     });
 
     const before = new Date();
-    const { returnId } = await createPricingReturn(actor, {
-      workItemId: workItem.id,
+    const { returnId } = await createPricingReturn(actor, workItem.id, {
+      pricingDepartmentId,
       assignedToId: assignee.userId,
       explanation: "Customer disputes the quoted price for this banner.",
     });
@@ -131,8 +131,8 @@ describe("createPricingReturn (integration)", () => {
       },
     });
 
-    const { returnId } = await createPricingReturn(actor, {
-      workItemId: workItem.id,
+    const { returnId } = await createPricingReturn(actor, workItem.id, {
+      pricingDepartmentId,
       assignedToId: assignee.userId,
       explanation: "Wrong price was applied to the invoice.",
     });
@@ -167,7 +167,8 @@ describe("createPricingReturn (integration)", () => {
     await expect(
       createPricingReturn(actor, {
         workItemId: workItem.id,
-        assignedToId: assignee.userId,
+        pricingDepartmentId,
+      assignedToId: assignee.userId,
         explanation: "",
       }),
     ).rejects.toThrow();
@@ -200,8 +201,8 @@ describe("createPricingReturn (integration)", () => {
       },
     });
 
-    const { returnId } = await createPricingReturn(actor, {
-      workItemId: workItem.id,
+    const { returnId } = await createPricingReturn(actor, workItem.id, {
+      pricingDepartmentId,
       assignedToId: assignee.userId,
       explanation: "Price mismatch detected during final review.",
       note: "See attached invoice comparison.",
@@ -233,8 +234,8 @@ describe("createPricingReturn (integration)", () => {
       },
     });
 
-    const { returnId } = await createPricingReturn(actor, {
-      workItemId: workItem.id,
+    const { returnId } = await createPricingReturn(actor, workItem.id, {
+      pricingDepartmentId,
       assignedToId: assignee.userId,
       explanation: "Price is wrong — customer was overcharged.",
     });
@@ -282,7 +283,8 @@ describe("createPricingReturn (integration)", () => {
     await expect(
       createPricingReturn(actor, {
         workItemId: "nonexistent_work_item_id",
-        assignedToId: assignee.userId,
+        pricingDepartmentId,
+      assignedToId: assignee.userId,
         explanation: "This should fail and roll back.",
       }),
     ).rejects.toThrow();
