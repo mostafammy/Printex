@@ -165,10 +165,9 @@ describe("createPricingReturn (integration)", () => {
 
     // Explanation is required per contracts/returns.md and spec.md US6 AS1
     await expect(
-      createPricingReturn(actor, {
-        workItemId: workItem.id,
+      createPricingReturn(actor, workItem.id, {
         pricingDepartmentId,
-      assignedToId: assignee.userId,
+        assignedToId: assignee.userId,
         explanation: "",
       }),
     ).rejects.toThrow();
@@ -281,10 +280,9 @@ describe("createPricingReturn (integration)", () => {
     // Attempt to create a return with a non-existent workItemId
     // The transaction should roll back and no Return row should be created
     await expect(
-      createPricingReturn(actor, {
-        workItemId: "nonexistent_work_item_id",
+      createPricingReturn(actor, "nonexistent_work_item_id", {
         pricingDepartmentId,
-      assignedToId: assignee.userId,
+        assignedToId: assignee.userId,
         explanation: "This should fail and roll back.",
       }),
     ).rejects.toThrow();
