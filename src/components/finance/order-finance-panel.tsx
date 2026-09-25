@@ -148,7 +148,7 @@ export async function OrderFinancePanel({ orderId }: Props) {
       )}
 
       {/* US5: direct manufacturing costs (T045) */}
-      <h3 className="mt-6 text-sm font-semibold">{S.directCosts}</h3>
+      <h3 id="direct-costs" className="mt-6 text-sm font-semibold">{S.directCosts}</h3>
       {costs.rows.length === 0 ? (
         <p className="mt-2 text-sm text-muted-foreground">{S.paymentsEmpty}</p>
       ) : (

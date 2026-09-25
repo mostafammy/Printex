@@ -1,5 +1,6 @@
-// <DailyCashSummary> — 052-finance US7 (contracts/ui.md, T051).
-// Per-method rows with counts/totals, grand total, drill-down links.
+// <DailyCashSummary> — 052-finance US7 (contracts/ui.md, T051 + T068).
+// Per-method rows with counts/totals, grand total; every figure drills into
+// the underlying Payment rows for the selected shop-local day (FR-020).
 
 import Link from "next/link";
 import type { DailyCashSummary as DailyCash } from "~/server/finance";
@@ -7,7 +8,18 @@ import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
 
-export function DailyCashSummary({ summary }: { readonly summary: DailyCash }) {
+type Props = {
+  readonly summary: DailyCash;
+  readonly methodFilter?: string | undefined;
+};
+
+export function DailyCashSummary({ summary, methodFilter }: Props) {
+  const dayHref = (method?: string): string => {
+    const params = new URLSearchParams({ date: summary.date });
+    if (method) params.set("method", method);
+    return `/finance/daily-cash?${params.toString()}`;
+  };
+
   return (
     <div className="rounded-lg border border-border bg-card p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -31,7 +43,16 @@ export function DailyCashSummary({ summary }: { readonly summary: DailyCash }) {
           <tbody>
             {summary.lines.map((line) => (
               <tr key={line.method} className="border-b border-border/50">
-                <td className="py-2">{line.method}</td>
+                <td className="py-2">
+                  <Link
+                    href={dayHref(line.method)}
+                    className="underline decoration-dotted underline-offset-2 hover:text-primary"
+                    title={`${S.paymentsList} — ${line.method}`}
+                  >
+                    {line.method}
+                    {methodFilter === line.method ? " ●" : ""}
+                  </Link>
+                </td>
                 <td className="py-2">{line.count}</td>
                 <td className="py-2 font-medium">{line.total} ج.م</td>
               </tr>
@@ -39,18 +60,22 @@ export function DailyCashSummary({ summary }: { readonly summary: DailyCash }) {
             <tr>
               <td className="py-2 font-semibold">{S.grandTotal}</td>
               <td className="py-2" />
-              <td className="py-2 font-bold">{summary.grandTotal} ج.م</td>
+              <td className="py-2 font-bold">
+                <a href="#payments-of-day" className="underline decoration-dotted underline-offset-2 hover:text-primary">
+                  {summary.grandTotal} ج.م
+                </a>
+              </td>
             </tr>
           </tbody>
         </table>
       )}
 
-      <Link
-        href={`/finance/expenses?includeVoided=false`}
+      <a
+        href="#payments-of-day"
         className="mt-4 inline-block text-xs underline text-muted-foreground hover:text-foreground"
       >
         {S.paymentsList} ({summary.paymentIds.length})
-      </Link>
+      </a>
     </div>
   );
 }

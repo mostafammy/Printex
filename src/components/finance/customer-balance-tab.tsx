@@ -61,7 +61,7 @@ export async function CustomerBalanceTab({ customerId }: { readonly customerId: 
                 href={`/orders/${order.orderId}`}
                 className="underline text-muted-foreground hover:text-foreground"
               >
-                #{order.orderId.slice(-6)}
+                #{order.orderNumber}
               </Link>
               <span className="text-xs text-muted-foreground">
                 {S.total} {order.total} · {S.paid} {order.paid} · {S.remaining} {order.remaining}

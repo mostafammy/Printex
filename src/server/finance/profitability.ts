@@ -17,6 +17,12 @@ export type OrderProfitability = {
   readonly orderId: string;
   readonly revenue: string;
   readonly pricingIncomplete: boolean;
+  /** Per-Work-Item revenue rows for drill-down (T070 / FR-018). */
+  readonly revenueEntries: ReadonlyArray<{
+    readonly workItemId: string;
+    readonly amount: string;
+    readonly priceId: string;
+  }>;
   readonly directCosts: ProfitabilityTerm<{
     id: string;
     amount: string;
@@ -61,6 +67,7 @@ export async function orderProfitability(orderId: string): Promise<OrderProfitab
   let revenue = new Prisma.Decimal(0);
   let pricingIncomplete = false;
   const priceIds: string[] = [];
+  const revenueEntries: Array<{ workItemId: string; amount: string; priceId: string }> = [];
   for (const item of order.workItems) {
     if (item.state === "CANCELLED") continue;
     const price = await getCurrentPrice(item.id);
@@ -70,6 +77,11 @@ export async function orderProfitability(orderId: string): Promise<OrderProfitab
     }
     revenue = revenue.plus(new Prisma.Decimal(price.amount));
     priceIds.push(price.id);
+    revenueEntries.push({
+      workItemId: item.id,
+      amount: price.amount,
+      priceId: price.id,
+    });
   }
 
   // Direct costs (non-void).
@@ -131,6 +143,7 @@ export async function orderProfitability(orderId: string): Promise<OrderProfitab
     orderId,
     revenue: toDecimalString(revenue),
     pricingIncomplete,
+    revenueEntries,
     directCosts: { total: toDecimalString(directCostTotal), entries: directCostEntries },
     jobExpenses: { total: toDecimalString(jobExpenseTotal), entries: jobExpenseEntries },
     grossProfit: toDecimalString(grossProfit),

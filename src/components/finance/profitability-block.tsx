@@ -1,6 +1,8 @@
-// <ProfitabilityBlock> — 052-finance US6 (contracts/ui.md, T048).
-// Revenue − Direct Costs − Job Expenses = Gross Profit, each term linked to
-// its drill-down; pricing-incomplete banner (revenue marked partial).
+// <ProfitabilityBlock> — 052-finance US6 (contracts/ui.md, T048 + T070).
+// Revenue − Direct Costs − Job Expenses = Gross Profit; every term opens
+// its source records (spec FR-018): revenue expands into per-Work-Item
+// 051 prices, costs expand into entries, expenses deep-link to the
+// order-filtered expenses list.
 
 import Link from "next/link";
 import type { OrderProfitability } from "~/server/finance";
@@ -21,8 +23,19 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
         <div>
           <dt className="text-muted-foreground">{S.revenue}</dt>
           <dd className="font-semibold">
-            {profit.pricingIncomplete ? "≈" : ""}
-            {profit.revenue} ج.م
+            <details>
+              <summary className="cursor-pointer list-none">
+                {profit.pricingIncomplete ? "≈" : ""}
+                {profit.revenue} ج.م ({profit.revenueEntries.length})
+              </summary>
+              <ul className="mt-1 flex flex-col gap-1 text-xs text-muted-foreground">
+                {profit.revenueEntries.map((entry) => (
+                  <li key={entry.priceId}>
+                    {entry.amount} — <Link href={`/orders/${profit.orderId}`} className="underline hover:text-foreground">#{entry.workItemId.slice(-6)}</Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </dd>
         </div>
         <div>
@@ -41,6 +54,9 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
                 ))}
               </ul>
             </details>
+            <a href="#direct-costs" className="ml-1 text-xs underline text-muted-foreground hover:text-foreground">
+              →
+            </a>
           </dd>
         </div>
         <div>
@@ -58,6 +74,13 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
                 ))}
               </ul>
             </details>
+            <Link
+              href={`/finance/expenses?orderId=${profit.orderId}`}
+              className="ml-1 text-xs underline text-muted-foreground hover:text-foreground"
+              title={S.expensesHeading}
+            >
+              →
+            </Link>
           </dd>
         </div>
         <div>
@@ -75,16 +98,7 @@ export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitabi
       </dl>
       <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
         <span>
-          {S.revenue}: {profit.sources.priceIds.length} ×{" "}
-          <Link href={`/orders/${profit.orderId}`} className="underline hover:text-foreground">
-            {S.paymentsList}
-          </Link>
-        </span>
-        <span>
-          {S.directCosts}: {profit.sources.directCostIds.length}
-        </span>
-        <span>
-          {S.expensesHeading}: {profit.sources.expenseIds.length}
+          {S.revenue}: {profit.revenueEntries.length} × {S.directCosts}: {profit.directCosts.entries.length} × {S.expensesHeading}: {profit.jobExpenses.entries.length}
         </span>
       </div>
     </div>

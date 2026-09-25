@@ -1,5 +1,6 @@
-// Expenses route — 052-finance US4 (T041). finance.view reads; mutations go
-// through the server actions (service-level authorization).
+// Expenses route — 052-finance US4 (T041 + T070 orderId filter + T071
+// approve gating). finance.view reads; mutations go through the server
+// actions (service-level authorization).
 
 import { authorize, getActor } from "~/server/auth";
 import { listExpenses, type ListExpensesFilter } from "~/server/finance";
@@ -29,20 +30,32 @@ export default async function ExpensesPage({
     to: str(params.to),
     category: str(params.category),
     employee: str(params.employee),
+    orderId: str(params.orderId),
     approval: str(params.approval) as ListExpensesFilter["approval"],
     page: Number(str(params.page) ?? "1") || 1,
     pageSize: 25,
     includeVoided: str(params.includeVoided) === "true",
   };
 
-  const [result, canModerate] = await Promise.all([
-    listExpenses(filter),
-    getActor().then((a) => a.permissions.has("expense.record")),
-  ]);
+  const [result] = await Promise.all([listExpenses(filter)]);
+  // void gate: expense.record; approve gate: admin.config (T071 — Accounting
+  // must not see an approve button that would always fail).
+  const canModerate = actor.permissions.has("expense.record");
+  const canApprove = actor.permissions.has("admin.config");
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">{S.expensesHeading}</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-xl font-semibold">{S.expensesHeading}</h1>
+        {filter.orderId && (
+          <span className="text-xs text-muted-foreground">
+            #{filter.orderId.slice(-6)}{" "}
+            <a href="/finance/expenses" className="underline">
+              ×
+            </a>
+          </span>
+        )}
+      </div>
 
       <ExpenseForm />
 
@@ -63,6 +76,7 @@ export default async function ExpensesPage({
           <span className="mb-1 block text-xs text-muted-foreground">{S.employee}</span>
           <input name="employee" type="text" defaultValue={filter.employee} className="rounded-md border border-input bg-background px-2 py-1" />
         </label>
+        {filter.orderId && <input type="hidden" name="orderId" value={filter.orderId} />}
         <button type="submit" className="rounded-md border border-border px-3 py-1.5 hover:bg-muted">
           ✓
         </button>
@@ -76,8 +90,10 @@ export default async function ExpensesPage({
           to: filter.to,
           category: filter.category,
           approval: filter.approval,
+          orderId: filter.orderId,
         }}
         canModerate={canModerate}
+        canApprove={canApprove}
       />
     </div>
   );

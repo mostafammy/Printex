@@ -20,11 +20,15 @@ type Props = {
     readonly to?: string;
     readonly category?: string;
     readonly approval?: string;
+    readonly orderId?: string;
   };
+  /** void permission (expense.record) — shows the void form. */
   readonly canModerate: boolean;
+  /** approve permission (admin.config) — shows the approve button (T071). */
+  readonly canApprove: boolean;
 };
 
-export function ExpensesList({ rows, nextPage, filters, canModerate }: Props) {
+export function ExpensesList({ rows, nextPage, filters, canModerate, canApprove }: Props) {
   if (rows.length === 0) {
     return <p className="mt-4 text-sm text-muted-foreground">{S.paymentsEmpty}</p>;
   }
@@ -34,6 +38,7 @@ export function ExpensesList({ rows, nextPage, filters, canModerate }: Props) {
   if (filters.to) query.set("to", filters.to);
   if (filters.category) query.set("category", filters.category);
   if (filters.approval) query.set("approval", filters.approval);
+  if (filters.orderId) query.set("orderId", filters.orderId);
 
   return (
     <div className="mt-4">
@@ -71,10 +76,20 @@ export function ExpensesList({ rows, nextPage, filters, canModerate }: Props) {
                   #{row.orderId.slice(-6)}
                 </Link>
               )}
+              {row.receiptAttachmentId && (
+                <a
+                  href={`/api/finance/expense-receipt/${row.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline text-primary hover:opacity-80"
+                >
+                  {S.receiptAttachment}
+                </a>
+              )}
             </div>
-            {canModerate && !row.voided && (
+            {!row.voided && (canApprove || canModerate) && (
               <div className="mt-2 flex flex-wrap items-end gap-2">
-                {row.awaitingApproval && (
+                {canApprove && row.awaitingApproval && (
                   <form action={approveExpenseAction}>
                     <input type="hidden" name="expenseId" value={row.id} />
                     <button
@@ -85,21 +100,23 @@ export function ExpensesList({ rows, nextPage, filters, canModerate }: Props) {
                     </button>
                   </form>
                 )}
-                <form action={voidExpenseAction} className="flex items-end gap-2">
-                  <input type="hidden" name="expenseId" value={row.id} />
-                  <input
-                    name="reason"
-                    required
-                    placeholder={S.voidReason}
-                    className="w-36 rounded-md border border-input bg-background px-2 py-1 text-xs"
-                  />
-                  <button
-                    type="submit"
-                    className="rounded-md border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
-                  >
-                    {S.void}
-                  </button>
-                </form>
+                {canModerate && (
+                  <form action={voidExpenseAction} className="flex items-end gap-2">
+                    <input type="hidden" name="expenseId" value={row.id} />
+                    <input
+                      name="reason"
+                      required
+                      placeholder={S.voidReason}
+                      className="w-36 rounded-md border border-input bg-background px-2 py-1 text-xs"
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-destructive/40 px-3 py-1 text-xs text-destructive hover:bg-destructive/10"
+                    >
+                      {S.void}
+                    </button>
+                  </form>
+                )}
               </div>
             )}
           </li>

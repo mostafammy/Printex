@@ -117,6 +117,7 @@ export async function orderSummary(orderId: string): Promise<OrderFinanceResult>
 
 export type CustomerBalanceOrderRow = {
   readonly orderId: string;
+  readonly orderNumber: number;
   readonly total: string;
   readonly paid: string;
   readonly remaining: string;
@@ -135,7 +136,12 @@ export type CustomerBalance = {
 export async function customerBalance(customerId: string): Promise<CustomerBalance | null> {
   const customer = await db.customer.findUnique({
     where: { id: customerId },
-    select: { id: true, isCashCustomer: true, customerCredit: true, orders: { select: { id: true } } },
+    select: {
+      id: true,
+      isCashCustomer: true,
+      customerCredit: true,
+      orders: { select: { id: true, number: true }, orderBy: { number: "desc" } },
+    },
   });
   if (!customer) return null;
 
@@ -146,6 +152,7 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
     if (summary.status !== "AVAILABLE") continue;
     orders.push({
       orderId: order.id,
+      orderNumber: order.number,
       total: summary.total,
       paid: summary.paid,
       remaining: summary.remaining,

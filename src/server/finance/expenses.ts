@@ -242,6 +242,8 @@ export type ExpenseRow = {
   readonly awaitingApproval: boolean;
   readonly approvedAt: Date | null;
   readonly voided: boolean;
+  /** First live 050 receipt attachment, if any (FR-013). */
+  readonly receiptAttachmentId: string | null;
 };
 
 /** FR-019 read query (contracts/queries.md listExpenses) — caller authorizes. */
@@ -281,6 +283,23 @@ export async function listExpenses(filter: ListExpensesFilter): Promise<{
   const voidedSet = new Set(voidRows.map((r) => r.entityId));
 
   const threshold = await getApprovalThreshold();
+  // FR-013: resolve receipt attachments for the page in one query.
+  const attachments = await db.attachment.findMany({
+    where: {
+      entityType: "Expense",
+      entityId: { in: pageRows.map((r) => r.id) },
+      status: { notIn: ["ARCHIVED", "VOID"] },
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, entityId: true },
+  });
+  const receiptByExpense = new Map<string, string>();
+  for (const attachment of attachments) {
+    if (!receiptByExpense.has(attachment.entityId)) {
+      receiptByExpense.set(attachment.entityId, attachment.id);
+    }
+  }
+
   const shaped = pageRows
     .map((row) => ({
       id: row.id,
@@ -294,6 +313,7 @@ export async function listExpenses(filter: ListExpensesFilter): Promise<{
       awaitingApproval: row.amount.gte(threshold) && !row.approval,
       approvedAt: row.approval?.approvedAt ?? null,
       voided: voidedSet.has(row.id),
+      receiptAttachmentId: receiptByExpense.get(row.id) ?? null,
     }))
     .filter((row) => filter.includeVoided === true || !row.voided)
     .filter((row) => {
