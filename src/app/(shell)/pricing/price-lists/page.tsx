@@ -3,6 +3,7 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 // Historical commercial values are append-only; retire replaces active records.
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
@@ -14,6 +15,7 @@ import {
 } from "~/server/pricing";
 import type { PricingUnit, PricingMode } from "~/server/pricing";
 import { Button } from "~/components/ui/button";
+import { PriceListTierRows } from "~/components/pricing/price-list-tier-rows";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -98,7 +100,9 @@ async function createPriceListAction(formData: FormData) {
       })),
     });
   } catch (caught) {
-    if (caught instanceof DomainPricingError) return;
+    if (caught instanceof DomainPricingError) {
+      redirect(`/pricing/price-lists?error=${encodeURIComponent(caught.message)}`);
+    }
     throw caught;
   }
   revalidatePath("/pricing/price-lists");
@@ -116,15 +120,21 @@ async function retirePriceListAction(formData: FormData) {
 
 // ── Page Component ─────────────────────────────────────────────────────────
 
-export default async function PriceListsPage() {
+export default async function PriceListsPage({
+  searchParams,
+}: {
+  readonly searchParams?: Promise<{ error?: string }>;
+}) {
   const actor = await getActor();
   authorize(actor, "admin.config");
+  const error = (await searchParams)?.error;
 
-  const [priceLists, productTypes, policies] = await Promise.all([
+  const [priceLists, productTypes, activeProductTypes, policies] = await Promise.all([
     db.priceList.findMany({
       include: { tiers: { orderBy: { minimumQuantity: "asc" } } },
       orderBy: { createdAt: "desc" },
     }),
+    db.productType.findMany({ orderBy: { name: "asc" } }),
     db.productType.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     db.productPricingPolicy.findMany(),
   ]);
@@ -146,7 +156,7 @@ export default async function PriceListsPage() {
             </label>
             <select name="productTypeId" required className={selectCls}>
               <option value="">—</option>
-              {productTypes.map((pt) => (
+              {activeProductTypes.map((pt) => (
                 <option key={pt.id} value={pt.id}>
                   {pt.name}
                 </option>
@@ -171,6 +181,7 @@ export default async function PriceListsPage() {
       {/* ── Create Price List Form ──────────────────────────────────────── */}
       <section className="rounded-lg border border-border bg-card p-6">
         <h2 className="mb-4 text-base font-semibold">{S.priceListCreateHeading}</h2>
+        {error ? <p role="alert" className="mb-4 text-sm text-destructive">{error}</p> : null}
         <form action={createPriceListAction} className="flex flex-col gap-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1.5">
@@ -179,7 +190,7 @@ export default async function PriceListsPage() {
               </label>
               <select name="productTypeId" required className={selectCls}>
                 <option value="">—</option>
-                {productTypes.map((pt) => (
+                {activeProductTypes.map((pt) => (
                   <option key={pt.id} value={pt.id}>
                     {pt.name}
                   </option>
@@ -227,11 +238,8 @@ export default async function PriceListsPage() {
               {S.priceListTiersHeading}
             </h3>
             <div id="tier-rows" className="flex flex-col gap-2">
-              <TierRow index={0} />
-              <TierRow index={1} />
-              <TierRow index={2} />
+              <PriceListTierRows labels={{ min: S.priceListTierMin, max: S.priceListTierMax, price: S.priceListTierPrice }} />
             </div>
-            <input type="hidden" name="tiers" id="tiers-json" value="[]" />
             <p className="mt-2 text-xs text-muted-foreground">
               {S.priceListTiersHint}
             </p>
@@ -272,10 +280,10 @@ export default async function PriceListsPage() {
                   <td className="px-4 py-3">
                     {UNITS.find((u) => u.value === pl.unit)?.label ?? pl.unit}
                   </td>
-                  <td className="px-4 py-3" dir="ltr">{new Date(pl.effectiveFrom).toLocaleDateString("ar-EG")}</td>
+                  <td className="px-4 py-3" dir="ltr">{new Date(pl.effectiveFrom).toLocaleDateString("ar-EG", { timeZone: "UTC" })}</td>
                   <td className="px-4 py-3" dir="ltr">
                     {pl.effectiveTo
-                      ? new Date(pl.effectiveTo).toLocaleDateString("ar-EG")
+                      ? new Date(pl.effectiveTo).toLocaleDateString("ar-EG", { timeZone: "UTC" })
                       : S.priceListOpenEnded}
                   </td>
                   <td className="px-4 py-3">
@@ -325,7 +333,9 @@ export default async function PriceListsPage() {
   );
 }
 
-// ── Tier row component (server-rendered; hidden input holds JSON) ──────────
+/* Tier rows are client-controlled so their serialized values reach the server action. */
+/* The component is kept below the page to keep this route's public surface unchanged. */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 function TierRow({ index }: { readonly index: number }) {
   return (
     <div className="flex flex-wrap items-end gap-2">

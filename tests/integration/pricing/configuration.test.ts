@@ -302,8 +302,9 @@ describe("Customer rule precedence", () => {
 
 describe("Price list retirement and history", () => {
   it("retires a price list and sets status to RETIRED", async () => {
+    const retirementProductTypeId = await seedProductType("ConfigRetirement");
     const { priceListId } = await createPriceList(admin, {
-      productTypeId,
+      productTypeId: retirementProductTypeId,
       unit: "PACK",
       effectiveFrom: new Date("2026-09-01T00:00:00.000Z"),
       effectiveTo: new Date("2026-12-31T00:00:00.000Z"),
@@ -319,8 +320,9 @@ describe("Price list retirement and history", () => {
   });
 
   it("audits the retirement event", async () => {
+    const auditProductTypeId = await seedProductType("ConfigRetirementAudit");
     const { priceListId } = await createPriceList(admin, {
-      productTypeId,
+      productTypeId: auditProductTypeId,
       unit: "PACK",
       effectiveFrom: new Date("2027-01-01T00:00:00.000Z"),
       tiers: [{ minimumQuantity: 1, maximumQuantity: null, basePrice: "20" }],
@@ -336,8 +338,9 @@ describe("Price list retirement and history", () => {
   });
 
   it("preserves the historical record after retirement", async () => {
+    const historyProductTypeId = await seedProductType("ConfigHistory");
     const { priceListId } = await seedPriceList({
-      productTypeId,
+      productTypeId: historyProductTypeId,
       unit: "PIECE",
       createdById: admin.userId,
       tiers: [{ minimumQuantity: 1, maximumQuantity: null, basePrice: "30" }],
@@ -395,8 +398,9 @@ describe("Admin authorization", () => {
   });
 
   it("forbids non-admin from retiring a price list", async () => {
+    const authProductTypeId = await seedProductType("ConfigAuthorization");
     const { priceListId } = await seedPriceList({
-      productTypeId,
+      productTypeId: authProductTypeId,
       unit: "PIECE",
       createdById: admin.userId,
       tiers: [{ minimumQuantity: 1, maximumQuantity: null, basePrice: "10" }],

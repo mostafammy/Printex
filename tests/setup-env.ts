@@ -6,7 +6,7 @@ try {
   for (const line of contents.split(/\r?\n/)) {
     const match = line.match(/^([^#=\s]+)=(.*)$/);
     if (!match?.[1] || process.env[match[1] ]) continue;
-    process.env[match[1]] = match[2]?.trim().replace(/^"|"$/g, "");
+    process.env[match[1]] = match[2]?.trim().replace(/^(?:"([\s\S]*)"|'([\s\S]*)')$/, "$1$2");
   }
 } catch {
   // CI provides environment variables directly.
