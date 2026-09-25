@@ -49,7 +49,7 @@ beforeAll(async () => {
   customerId = customer.id;
 
   const pricingDept = await testDb.department.create({
-    data: { name: "Pricing" },
+    data: { name: unique("Pricing") },
   });
   pricingDepartmentId = pricingDept.id;
 
