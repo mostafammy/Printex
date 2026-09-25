@@ -18,6 +18,7 @@ import {
 } from "~/server/orders";
 import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
 import type { EligibleDesigner } from "~/server/designers";
+import { OrderFinancePanel } from "~/components/finance/order-finance-panel";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -481,11 +482,13 @@ export default async function OrderDetailPage({
         )}
       </section>
 
+      {/* 052-finance: fills the payments placeholder (FR-021 / T021). */}
+      <OrderFinancePanel orderId={orderId} />
+
       {/* Out-of-scope placeholders (FR-009a) — designer assignment now lives
           in the Work Item cards above (012-designer-assignment-timers). */}
       <section className="rounded-lg border border-dashed border-border p-6 text-sm text-muted-foreground">
         <p>{S.placeholderPricing}</p>
-        <p>{S.placeholderPayments}</p>
         <p>{S.placeholderFiles}</p>
         <p>{S.placeholderMessages}</p>
       </section>

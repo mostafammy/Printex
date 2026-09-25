@@ -1,0 +1,38 @@
+# 052-finance configuration
+# Loaded at startup from config/052-finance.yaml
+# Override via FINANCE_CONFIG_PATH environment variable
+
+paymentMethods:
+  - "Cash"
+  - "Card"
+  - "Bank transfer"
+  - "InstaPay"
+  - "Vodafone Cash"
+  - "Cheque"
+
+paymentSources:
+  - "Reception desk"
+  - "Bank"
+  - "Delivery driver"
+
+expenseCategories:
+  - label: "Material"
+    active: true
+  - label: "External production"
+    active: true
+  - label: "Transport"
+    active: true
+  - label: "Maintenance"
+    active: true
+  - label: "Supplies"
+    active: true
+  - label: "Other"
+    active: true
+
+# Expenses at/above this Decimal amount show "awaiting Admin/Owner approval"
+# until an Admin/Owner approves them (FR-013). Never blocks recording.
+approvalThreshold: "1000"
+
+# Timestamps are stored in UTC; daily cash summary and date filters bucket by
+# this shop-local calendar date (FR-027, SC-012).
+shopTimezone: "Africa/Cairo"

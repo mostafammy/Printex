@@ -74,6 +74,18 @@ export const navItems: readonly NavItem[] = [
     label: ar.nav.delivery,
     roles: ["PRINT_RECEPTION_DELIVERY", ADMIN],
   },
+  {
+    id: "finance-expenses",
+    href: "/finance/expenses",
+    label: ar.nav.financeExpenses,
+    roles: ["ACCOUNTING", ADMIN],
+  },
+  {
+    id: "finance-daily-cash",
+    href: "/finance/daily-cash",
+    label: ar.nav.financeDailyCash,
+    roles: ["ACCOUNTING", ADMIN],
+  },
   { id: "admin", href: "/admin", label: ar.nav.admin, roles: [ADMIN] },
 ];
 

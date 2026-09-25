@@ -69,6 +69,14 @@ model User {
   pricingRulesCreated   CustomerPricingRule[]  @relation("CustomerRuleCreatedBy")
   workItemPricesSet     WorkItemPrice[]         @relation("WorkItemPriceSetBy")
   pricingStatusesUpdated PricingStatus[]        @relation("PricingStatusUpdatedBy")
+  // --- 052-finance reverse relations ---
+  paymentsRecorded   Payment[]          @relation("PaymentRecordedBy")
+  financeVoided      FinanceVoid[]      @relation("FinanceVoidedBy")
+  expensesCreated    Expense[]          @relation("ExpenseCreatedBy")
+  expensesApproved   ExpenseApproval[]  @relation("ExpenseApprovedBy")
+  directCostsCreated DirectCost[]       @relation("DirectCostCreatedBy")
+  creditsUpdated     CustomerCredit[]   @relation("CustomerCreditUpdatedBy")
+  financeConfigUpdates FinanceConfig[]  @relation("FinanceConfigUpdatedBy")
 
   @@unique([email])
   @@map("user")

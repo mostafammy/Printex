@@ -132,7 +132,8 @@ jobs:
         # change it.
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d printex_test -c \
-            "REVOKE UPDATE, DELETE ON audit_event FROM printex_app;"
+            "REVOKE UPDATE, DELETE ON audit_event FROM printex_app;" \
+            -c "REVOKE UPDATE, DELETE ON \"Payment\", \"FinanceVoid\", \"Expense\", \"ExpenseApproval\", \"DirectCost\" FROM printex_app;"
 
       - name: Check (lint + typecheck)
         run: pnpm check

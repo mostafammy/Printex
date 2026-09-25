@@ -378,6 +378,79 @@ exports.Prisma.FileConfigScalarFieldEnum = {
   updatedById: 'updatedById'
 };
 
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  customerId: 'customerId',
+  amount: 'amount',
+  currency: 'currency',
+  method: 'method',
+  source: 'source',
+  note: 'note',
+  occurredAt: 'occurredAt',
+  recordedAt: 'recordedAt',
+  recordedById: 'recordedById',
+  receiptNumber: 'receiptNumber'
+};
+
+exports.Prisma.FinanceVoidScalarFieldEnum = {
+  id: 'id',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  reason: 'reason',
+  voidedById: 'voidedById',
+  voidedAt: 'voidedAt'
+};
+
+exports.Prisma.ExpenseScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  category: 'category',
+  expenseDate: 'expenseDate',
+  employee: 'employee',
+  description: 'description',
+  orderId: 'orderId',
+  workItemId: 'workItemId',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ExpenseApprovalScalarFieldEnum = {
+  expenseId: 'expenseId',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt'
+};
+
+exports.Prisma.DirectCostScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  costDate: 'costDate',
+  description: 'description',
+  orderId: 'orderId',
+  workItemId: 'workItemId',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CustomerCreditScalarFieldEnum = {
+  customerId: 'customerId',
+  creditApproved: 'creditApproved',
+  creditLimit: 'creditLimit',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FinanceConfigScalarFieldEnum = {
+  id: 'id',
+  paymentMethods: 'paymentMethods',
+  paymentSources: 'paymentSources',
+  expenseCategories: 'expenseCategories',
+  approvalThreshold: 'approvalThreshold',
+  shopTimezone: 'shopTimezone',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -677,6 +750,12 @@ exports.AuditEntity = exports.$Enums.AuditEntity = {
   ATTACHMENT: 'ATTACHMENT'
 };
 
+exports.FinanceVoidEntity = exports.$Enums.FinanceVoidEntity = {
+  PAYMENT: 'PAYMENT',
+  EXPENSE: 'EXPENSE',
+  DIRECT_COST: 'DIRECT_COST'
+};
+
 exports.PricingMode = exports.$Enums.PricingMode = {
   FIXED: 'FIXED',
   VARIABLE: 'VARIABLE'
@@ -735,6 +814,13 @@ exports.Prisma.ModelName = {
   Attachment: 'Attachment',
   FileAuditEvent: 'FileAuditEvent',
   FileConfig: 'FileConfig',
+  Payment: 'Payment',
+  FinanceVoid: 'FinanceVoid',
+  Expense: 'Expense',
+  ExpenseApproval: 'ExpenseApproval',
+  DirectCost: 'DirectCost',
+  CustomerCredit: 'CustomerCredit',
+  FinanceConfig: 'FinanceConfig',
   User: 'User',
   Session: 'Session',
   Account: 'Account',

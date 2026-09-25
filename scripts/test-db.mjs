@@ -23,6 +23,10 @@ run("pnpm", ["exec", "prisma", "db", "push", "--skip-generate"], { ...env, DATAB
 psql("GRANT CONNECT ON DATABASE printex_test TO printex_app; GRANT USAGE ON SCHEMA public TO printex_app; GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO printex_app; GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO printex_app;");
 run("pnpm", ["exec", "prisma", "db", "seed"], env);
 psql("REVOKE UPDATE, DELETE ON audit_event FROM printex_app;");
+// 052-finance append-only money rows (SC-002): the app role can INSERT the
+// immutable rows (payments, voids, expenses, approvals, costs) but never
+// UPDATE or DELETE them — tests assert the database refuses direct SQL too.
+psql("REVOKE UPDATE, DELETE ON \"Payment\", \"FinanceVoid\", \"Expense\", \"ExpenseApproval\", \"DirectCost\" FROM printex_app;");
 
 if (args.has("reset")) {
   console.log("Test database reset and seeded.");

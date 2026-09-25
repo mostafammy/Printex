@@ -112,6 +112,9 @@ model Customer {
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
   pricingRules   CustomerPricingRule[]
+  // --- 052-finance reverse relations ---
+  payments       Payment[]
+  customerCredit CustomerCredit?
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -133,7 +136,11 @@ model Order {
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
 
-  workItems WorkItem[]
+  workItems   WorkItem[]
+  // --- 052-finance reverse relations ---
+  payments    Payment[]
+  expenses    Expense[]
+  directCosts DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
 }
@@ -190,6 +197,9 @@ model WorkItem {
   fileAssets              FileAsset[]              @relation("FileAssetWorkItem")
   prices                  WorkItemPrice[]
   pricingStatus           PricingStatus?
+  // --- 052-finance reverse relations ---
+  expenses                Expense[]
+  directCosts             DirectCost[]
 
   @@index([orderId, state])
 }
@@ -582,6 +592,150 @@ model FileConfig {
   updatedBy            User     @relation("WorkItemTransitionActor", fields: [updatedById], references: [id])
 }
 
+// 052-finance — payments, expenses, direct costs, customer credit, config.
+//
+// Immutability: Payment / Expense / DirectCost / FinanceVoid / ExpenseApproval
+// rows are append-only (constitution III). Corrections are expressed by
+// appending a FinanceVoid row; approval by appending an ExpenseApproval row.
+// No application code path issues UPDATE/DELETE against these tables, and the
+// creating migration raises from BEFORE UPDATE/DELETE triggers (051 pricing
+// precedent); scripts/test-db.mjs additionally REVOKEs UPDATE/DELETE from the
+// test app role so tests can prove the database refuses too (SC-002).
+
+enum FinanceVoidEntity {
+  PAYMENT
+  EXPENSE
+  DIRECT_COST
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  /// Positive Decimal EGP. Never Float (constitution Money).
+  amount        Decimal  @db.Decimal(12, 2)
+  currency      String   @default("EGP")
+  /// Label snapshot of the configured method at record time (FR-003).
+  method        String
+  /// Label snapshot of the configured source/location at record time.
+  source        String
+  note          String?
+  /// Payment date+time, UTC; <= now at insert (FR-002, FR-027).
+  occurredAt    DateTime
+  recordedAt    DateTime @default(now())
+  recordedById  String
+  recordedBy    User     @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
+  /// Sequential per shop; gaps allowed only from rolled-back allocations
+  /// (native autoincrement — Order.number precedent).
+  receiptNumber Int      @unique @default(autoincrement())
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([occurredAt])
+}
+
+/// Appended correction record — the ONLY lifecycle mutation for money rows.
+/// @@unique([entityType, entityId]) structurally enforces single-void.
+model FinanceVoid {
+  id         String            @id @default(cuid())
+  entityType FinanceVoidEntity
+  entityId   String
+  /// Required non-empty; validated before audit.record (001 reason policy).
+  reason     String
+  voidedById String
+  voidedBy   User              @relation("FinanceVoidedBy", fields: [voidedById], references: [id])
+  voidedAt   DateTime          @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([entityId])
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  /// Positive Decimal EGP.
+  amount      Decimal   @db.Decimal(12, 2)
+  /// Label snapshot of the configured category at record time (FR-014).
+  category    String
+  /// User-chosen calendar date (UTC midnight of that date).
+  expenseDate DateTime
+  /// Responsible employee display name (PRD §31) — may be a non-user.
+  employee    String
+  description String
+  orderId     String?
+  order       Order?    @relation(fields: [orderId], references: [id])
+  workItemId  String?
+  workItem    WorkItem? @relation(fields: [workItemId], references: [id])
+  createdById String
+  createdBy   User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  approval ExpenseApproval?
+
+  @@index([orderId])
+  @@index([expenseDate])
+  @@index([category])
+}
+
+/// Approval is an appended record — the Expense row itself never changes.
+/// At most one approval per expense.
+model ExpenseApproval {
+  expenseId    String   @id
+  expense      Expense  @relation(fields: [expenseId], references: [id])
+  approvedById String
+  approvedBy   User     @relation("ExpenseApprovedBy", fields: [approvedById], references: [id])
+  approvedAt   DateTime @default(now())
+}
+
+model DirectCost {
+  id          String    @id @default(cuid())
+  amount      Decimal   @db.Decimal(12, 2)
+  /// User-chosen calendar date (UTC midnight of that date).
+  costDate    DateTime
+  description String
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  workItemId  String?
+  workItem    WorkItem? @relation(fields: [workItemId], references: [id])
+  createdById String
+  createdBy   User      @relation("DirectCostCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([orderId])
+  @@index([workItemId])
+}
+
+/// Finance-owned credit standing associated with a customer (FR-010) —
+/// NOT a mutation of the 010-owned Customer master row.
+model CustomerCredit {
+  customerId     String   @id
+  customer       Customer @relation(fields: [customerId], references: [id])
+  creditApproved Boolean  @default(false)
+  /// Warn-only in V1 (Clarifications 2026-09-25) — never blocks anything.
+  creditLimit    Decimal? @db.Decimal(12, 2)
+  /// Required non-empty reason (052-local policy, validated pre-audit).
+  updatedById    String
+  updatedBy      User     @relation("CustomerCreditUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime @updatedAt
+}
+
+/// Singleton runtime configuration, seeded from config/052-finance.yaml
+/// (FileConfig precedent). Money rows keep label snapshots — history is
+/// unaffected by config edits.
+model FinanceConfig {
+  id                String   @id @default("finance-config")
+  paymentMethods    Json
+  paymentSources    Json
+  /// [{ label: string, active: boolean }]
+  expenseCategories Json
+  approvalThreshold Decimal  @db.Decimal(12, 2)
+  shopTimezone      String   @default("Africa/Cairo")
+  updatedById       String
+  updatedBy         User     @relation("FinanceConfigUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt         DateTime @updatedAt
+}
+
 // Better Auth models — moved as-is from the original single-file schema.
 // Owned in practice by feature 001 going forward.
 // Extended by 001-identity-access-audit: username plugin fields, lockout
@@ -653,6 +807,14 @@ model User {
   pricingRulesCreated            CustomerPricingRule[]    @relation("CustomerRuleCreatedBy")
   workItemPricesSet              WorkItemPrice[]          @relation("WorkItemPriceSetBy")
   pricingStatusesUpdated         PricingStatus[]          @relation("PricingStatusUpdatedBy")
+  // --- 052-finance reverse relations ---
+  paymentsRecorded               Payment[]                @relation("PaymentRecordedBy")
+  financeVoided                  FinanceVoid[]            @relation("FinanceVoidedBy")
+  expensesCreated                Expense[]                @relation("ExpenseCreatedBy")
+  expensesApproved               ExpenseApproval[]        @relation("ExpenseApprovedBy")
+  directCostsCreated             DirectCost[]             @relation("DirectCostCreatedBy")
+  creditsUpdated                 CustomerCredit[]         @relation("CustomerCreditUpdatedBy")
+  financeConfigUpdates           FinanceConfig[]          @relation("FinanceConfigUpdatedBy")
 
   @@unique([email])
   @@map("user")

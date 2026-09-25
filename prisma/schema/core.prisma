@@ -112,6 +112,9 @@ model Customer {
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
   pricingRules   CustomerPricingRule[]
+  // --- 052-finance reverse relations ---
+  payments       Payment[]
+  customerCredit CustomerCredit?
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -133,7 +136,11 @@ model Order {
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
 
-  workItems WorkItem[]
+  workItems    WorkItem[]
+  // --- 052-finance reverse relations ---
+  payments     Payment[]
+  expenses     Expense[]
+  directCosts  DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
 }
@@ -190,6 +197,9 @@ model WorkItem {
   fileAssets FileAsset[] @relation("FileAssetWorkItem")
   prices     WorkItemPrice[]
   pricingStatus PricingStatus?
+  // --- 052-finance reverse relations ---
+  expenses    Expense[]
+  directCosts DirectCost[]
 
   @@index([orderId, state])
 }
