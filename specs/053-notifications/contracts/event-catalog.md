@@ -11,7 +11,11 @@ one either. One catalog, one spelling of every event (spec FR-011).
 type CatalogEntry = {
   readonly type: string;                    // canonical type — the key
   readonly aliases?: readonly string[];     // other spellings that map here (research.md §4)
-  readonly delivery: "DIRECT" | "TRIGGER";  // TRIGGER derives other entries; it is never itself delivered
+  readonly delivery: "DIRECT" | "TRIGGER" | "RECORDED_ONLY";
+  // TRIGGER derives other entries and is never itself delivered.
+  // RECORDED_ONLY is processed (so the outbox drains) but produces no notification —
+  // the only current instance is customer.ready_for_collection, whose audience is the
+  // customer, not a user. 054 reads the same outbox for the customer-facing message.
   readonly title: string;                   // Arabic, captured onto the notification
   readonly body?: (ctx: CatalogContext) => string;  // Arabic; may return "" for title-only entries
   readonly recipients: RecipientSpec;       // the DEFAULT recipient specification
@@ -109,7 +113,9 @@ visible rather than assumed covered (spec FR-019 spirit).
   (FR-019). If you emit one, add the entry in the same change.
 - **One transaction.** Always pass the `tx` the triggering write used (002's rule). An event recorded
   outside that transaction could describe a write that rolled back.
-- **Do not write `processedAt`, `processingStatus`, `attemptCount`, `lastAttemptAt`, or `lastError`.**
+- **Do not write `deliveredAt`, `deliveryStatus`, `attemptCount`, `lastAttemptAt`, or `lastError`.**
+  These are 053's processing columns on the outbox row (002 reserved the first two for exactly this);
+  the catalog only ever *reads* the recipient and payload data.
   Those five columns belong to 053 exclusively (002's contract reserves them).
 - **Recipients are a specification, not a decision.** Emit *who should hear about it*; 053 decides who
   actually does (002's contract hands resolution to 053).

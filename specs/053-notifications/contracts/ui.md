@@ -88,6 +88,8 @@ constant (002's `navItems` pattern).
 | Save | `حفظ` with a required reason field | `admin.config`; reason required by 053's policy before `audit.record` (FR-061) |
 | Scheduler panel | running state, last run time, evaluated/flagged/alerted counts, next run, lease owner | `schedulerStatus()`; shows `متوقف` when the lease is unheld |
 | "Run now" | `تشغيل الفحص الآن` | `admin.config`; triggers one tick (FR-054) |
+| "Start" / "Stop" | `تشغيل الفحص التلقائي` / `إيقاف الفحص التلقائي` | `admin.config`; one button whose label reflects current state. Required by FR-054 — the scheduler MUST be startable and stoppable by an Admin **without a redeploy**, so both transitions need a control here. "Stop" is a local pause of this process's interval, not a global kill: it releases the lease, and the state reads `متوقف` |
+| Recipient overrides | Per-catalog-type recipients, with the catalog's default shown and a `إلغاء التجاوز` (clear) action | `admin.config`; a **required** reason on save. Required by FR-017; union semantics per `notification-service.md` §`recipientOverride` |
 | Unmapped types | Table of `type` + count + last seen, or `لا توجد أنواع غير معرّفة` | Makes the catalog gap visible (FR-019) |
 
 Validation errors render inline against the offending field, in Arabic, with the server's error code mapped

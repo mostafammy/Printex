@@ -19,20 +19,21 @@ function processOutboxBatch(limit?: number): Promise<{
 ```
 
 Behavior:
-1. Claim a batch of `NotificationEvent` rows where `processedAt IS NULL AND processingStatus = 'PENDING'`,
+1. Claim a batch of `NotificationEvent` rows where `deliveredAt IS NULL AND deliveryStatus = 'PENDING'`,
    ordered by `createdAt` ascending (FIFO — FR-009), using a single conditional UPDATE so a concurrent
-   processor cannot claim the same rows.
+   processor cannot claim the same rows. (These are 002's own reserved columns, reused — not a parallel pair;
+   see [data-model.md](../data-model.md) §NotificationEvent.)
 2. For each claimed event, look up its catalog entry by canonical type **or alias** (research.md §4). No
    entry → mark `UNMAPPED`, increment the Admin-visible counter, continue. Never throws.
 3. Resolve recipients: union of `recipientUserIds`, `recipientRoles`, `recipientDepartmentIds`, and
    `recipientPermissions`, each expanded against **active** users only, deduplicated by user
    (FR-002, FR-003).
 4. Insert one `Notification` per resolved user with the catalog's captured title, body, and deep link
-   (FR-018, FR-022), and mark the event `PROCESSED` with `processedAt` — all in **one transaction per
+   (FR-018, FR-022), and mark the event `PROCESSED` with `deliveredAt` — all in **one transaction per
    event** (FR-005). A duplicate insert against the `@@unique([sourceEventId, userId])` pair is caught and
    treated as success, not an error (FR-007).
 5. On a per-event failure: mark `FAILED` with `lastError` and `attemptCount + 1`, do **not** set
-   `processedAt`, and continue with the rest of the batch. After `MAX_ATTEMPTS` (5), stop retrying that
+   `deliveredAt`, and continue with the rest of the batch. After `MAX_ATTEMPTS` (5), stop retrying that
    event and surface it on the thresholds screen (FR-008).
 6. Publish a live signal to each affected user's connected clients (see `notification-stream.md`).
 7. Errors: never throws for per-event failures. Throws only `OUTBOX_UNAVAILABLE` if the claim query itself
@@ -260,9 +261,40 @@ function schedulerStatus(): Promise<{
 ```
 
 Behavior: read the `SchedulerLease` row and the most recent `SchedulerRun`, and aggregate
-`processingStatus = 'UNMAPPED'` outbox rows by type. This is what makes "are alerts actually running?" and
+`deliveryStatus = 'UNMAPPED'` outbox rows by type. This is what makes "are alerts actually running?" and
 "what have we never heard about?" answerable without reading logs (FR-053, FR-019). Errors:
 `UNAUTHENTICATED`, `FORBIDDEN`.
+
+## `recipientOverride(type)` / `setRecipientOverride()` / `clearRecipientOverride()`
+
+```ts
+// FR-017. The per-event override that makes delivery configuration rather than
+// catalog constants. Read by the resolver on every event; written by Admin only.
+function recipientOverride(type: string): Promise<RecipientSpec | null>;
+function setRecipientOverride(
+  actor: Actor,
+  input: { type: string; userIds?: string[]; roles?: string[]; departmentIds?: string[]; permissions?: string[]; reason: string },
+): Promise<OverrideView>;
+function clearRecipientOverride(actor: Actor, type: string, reason: string): Promise<void>;
+```
+
+Behavior:
+1. `recipientOverride` reads `NotificationTypeOverride` by canonical type; no row → `null`, and the caller
+   uses the catalog's default untouched. It is a single indexed read on the processor's hot path, not a join.
+2. The resolver **unions** the override with the catalog default — a non-empty override array *adds*
+   recipients, it never removes the catalog's own. See data-model.md §NotificationTypeOverride for why removal
+   is deliberately not expressible.
+3. `setRecipientOverride` validates `type` against the catalog (an unknown type is `VALIDATION`, never a
+   dormant row), validates the three recipient arrays against `ALL_ROLE_KEYS` / `ALL_PERMISSIONS` / active
+   Departments, and requires a non-empty `reason` (constitution III; the audit contract marks this reason
+   **required**).
+4. Writes `notification.recipient_override_updated` with a **required** reason in the same transaction
+   (authorization-audit.md).
+5. `clearRecipientOverride` DELETEs the row — the only delete in 053, and it deletes *configuration*, never
+   history (no notification, breach, or audit row is removable; constitution III is preserved because nothing
+   that records what happened is being erased).
+6. Errors: `UNAUTHENTICATED`, `FORBIDDEN` (no `admin.config`), `VALIDATION` (unknown type, unknown role /
+   permission / department, empty reason).
 
 ## `startDelayScheduler()` / `stopDelayScheduler()`
 
@@ -284,6 +316,12 @@ Behavior:
 5. Any throw inside a tick is caught, recorded on the `SchedulerRun` as `ERROR`, and does **not** propagate
    to the Next.js request path or crash the process (FR-052).
 6. Errors: never throws. Failure is observable only through `delayThresholds.schedulerStatus()`.
+7. `stopDelayScheduler()` clears the interval and releases this process's lease, so `schedulerStatus()`
+   immediately reports `متوقف` and another instance (or a later restart) can acquire it. It is idempotent and
+   a no-op when not running. Stopping is **reversible** and non-destructive: it cancels future ticks only —
+   no `DelayBreach` or `Notification` is removed, and the alerts resume on the next start with the existing
+   breach rows intact, so a stop/start cycle still yields exactly one alert per breach (FR-044, SC-003). This
+   is what makes the Admin-facing stop control of FR-054 safe to expose.
 
 ## Guarantees (all paths)
 

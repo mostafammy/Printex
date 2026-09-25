@@ -21,15 +21,19 @@ delivery over SSE with a complete polling fallback, Admin-configurable per-phase
 **Primary Dependencies**: Next.js 15 App Router, Prisma/PostgreSQL (multi-file `prismaSchemaFolder`),
 Zod, Vitest, existing 001/002/011/012/013/014/015/016/051/091 contracts. No new package.
 
-**Storage**: PostgreSQL additive schema `prisma/schema/notifications.prisma`; five new tables
-(`Notification`, `DelayThreshold`, `DelayBreach`, `SchedulerRun`, `SchedulerLease`); five added columns on
-002's `notification_event`. One raw-SQL step for the threshold CHECK constraint. No DB-level `REVOKE` on
-`notification` (reasoned in [data-model.md](./data-model.md) § Migration and immutability notes).
+**Storage**: PostgreSQL additive schema `prisma/schema/notifications.prisma`; six new tables
+(`Notification`, `NotificationTypeOverride`, `DelayThreshold`, `DelayBreach`, `SchedulerRun`,
+`SchedulerLease`); four added columns on 002's `notification_event` plus a retyping of its already-reserved
+`deliveryStatus` to the `DeliveryStatus` enum and a `NULL → PENDING` backfill (A-001, research.md §Decision:
+outbox reserved columns — the backfill is load-bearing, not cosmetic: without it the claim predicate skips
+every event the live features have already recorded). One raw-SQL step for the threshold CHECK constraint.
+No DB-level `REVOKE` on `notification` (reasoned in [data-model.md](./data-model.md) § Migration and
+immutability notes).
 
 **Module boundary**: New `src/server/notifications/` barrel is the only public import surface (mirror of
-`src/server/pricing/` and `src/server/finance/`). Internals: `catalog.ts`, `processor.ts`,
-`recipients.ts`, `center.ts`, `delays.ts`, `thresholds.ts`, `scheduler.ts`, `stream.ts`, `errors.ts`.
-UI in `src/components/notifications/` and shell routes.
+`src/server/pricing/` and `src/server/finance/`). Internals: `catalog.ts`, `derived.ts`, `processor.ts`,
+`recipients.ts`, `center.ts`, `delays.ts`, `thresholds.ts`, `overrides.ts`, `scheduler.ts`, `stream.ts`,
+`errors.ts`. UI in `src/components/notifications/` and shell routes.
 
 **Testing**: Unit tests for age computation, phase mapping, age formatting, catalog rendering; integration
 tests through server entry points for authorization, idempotency (the acceptance criterion), once-per-breach,
@@ -66,10 +70,10 @@ one server. Every design decision below is sized for that, not for a distributed
 |---|---|
 | I. Canonical Order → Work Item model | PASS: notifications reference Work Item/Order but add no parallel source of truth. `work_item.state_changed` is a *trigger*, not a second model of the workflow; delay state is derived from the same state, never stored beside it. |
 | II. Business gates are inviolable | PASS: 053 observes and reports. It never writes a Work Item state, never blocks a transition, never touches `PricingStatus`, and never participates in the delivery gate. PRD §6 (urgent) and §55 Rule 12 are honored — urgency changes neither alerting nor frequency. |
-| III. History is append-only | PASS: notification content is write-once; no delete path exists; delay state is derived. The notification is explicitly a pointer, with the audit log as the record (FR-060). |
+| III. History is append-only | PASS: notification content is write-once; no delete path exists; delay state is derived. The notification is explicitly a pointer, with the audit log as the record (FR-060). The one `DELETE` in 053 removes a `NotificationTypeOverride` *configuration* row, never a notification, breach, or audit record, and it is itself audit-backed (research.md §Decision: per-event override). The outbox has a single processing marker — 002's own reserved `deliveredAt`/`deliveryStatus`, reused rather than shadowed by a parallel pair (A-001). |
 | IV. Files are immutable/private | PASS: 053 stores no file bytes and no file identifiers beyond what an event already carries. A notification about a file revision links to the Work Item, not to a file URL. |
 | V. Server is the only authority | PASS: `getActor()` first on every user path; recipient resolution, unread counts, read state, and delay state are all server-computed. The client supplies no recipient, no count, and no delay signal. |
-| VI. Configuration over hard-coding | PASS: thresholds and their recipients are `DelayThreshold` rows. No employee name, role name, or department name appears in delivery logic. `DelayPhase` is a fixed 5-value measurement vocabulary by design — a new *threshold* is data, a new *axis to measure* is code, mirroring 001's permission-vocabulary precedent. |
+| VI. Configuration over hard-coding | PASS: thresholds and their recipients are `DelayThreshold` rows, and each catalog type's recipients are overridable through a `NotificationTypeOverride` row (FR-017), so no recipient is reachable *only* through a catalog constant. No employee name, role name, or department name appears in delivery logic. `DelayPhase` is a fixed 5-value measurement vocabulary by design — a new *threshold* is data, a new *axis to measure* is code, mirroring 001's permission-vocabulary precedent. |
 | VII. Local-first, isolated integrations | PASS: the stream is served by the same local process; no outbound network I/O anywhere in 053. 091's `ops.*` alerts are in-app only and never routed to WhatsApp. |
 | VIII. AI optional | PASS: no AI features. `operational.anomaly` is a catalog entry owned by 090, not an AI implementation. |
 | IX. Arabic-first, task-oriented UX | PASS: every title, body, empty state, error, and validation message is Arabic. The bell is on every page for every role; the delayed list links straight to the Order (minimal clicks). |
@@ -155,8 +159,8 @@ specs/053-notifications/
 ### Source Code (repository root)
 
 ```text
-src/server/notifications/          # barrel: index.ts + catalog, recipients, processor, center,
-                                  # delays, thresholds, scheduler, stream, errors
+src/server/notifications/          # barrel: index.ts + catalog, derived, recipients, overrides,
+                                  # processor, center, delays, thresholds, scheduler, stream, errors
 src/components/notifications/      # NotificationBell, NotificationDropdown, NotificationList,
                                   # ThresholdsScreen, DelayedList, use-notification-stream
 src/app/(shell)/layout.tsx         # add the shell header hosting <NotificationBell>
@@ -196,5 +200,5 @@ feature-scoped tests. No new top-level directories, no new packages, no new cont
   `schedulerStatus()` ships in the same phase.
 - 014's `production_file_revised` acknowledgement gate stays 014's to implement. 053 delivers the catalog
   entry and the notification; 014 delivers the timer hold.
-- **Backup scope**: all five tables live in the primary PostgreSQL database — covered by the existing DB
+- **Backup scope**: all six tables live in the primary PostgreSQL database — covered by the existing DB
   backup set. 053 adds no new persistent store, so no new backup obligation (constitution Backups).

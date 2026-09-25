@@ -21,17 +21,36 @@ phase, not a mutation of any existing model.
 The outbox table is 002's. 053's migration adds the processing columns; no other feature writes them
 (002 contracts/notifications.md reserves them for 053).
 
+002 already ships `deliveredAt DateTime?` and `deliveryStatus String?` on this table, both commented
+`/// Left null; written by 053`, and 002's data-model reserves them for this feature
+(`002-core-domain-shell/contracts/notifications.md`: "deliveredAt/deliveryStatus on the row are reserved for
+053; no other feature should write to them"). **053 reuses those two columns rather than adding a parallel
+pair** — introducing `processedAt`/`processingStatus` alongside them would leave 002's two reserved columns
+permanently dead and give one row two answers to "was this event delivered?". Only `deliveryStatus`'s type
+changes: `String?` → the `DeliveryStatus` enum below, which is a safe `ALTER` because every existing row is
+NULL.
+
 | Field | Type | Notes |
 |---|---|---|
-| `processedAt` | DateTime? | set once when the event is fully processed; null = unprocessed |
-| `processingStatus` | DeliveryStatus? | PENDING / PROCESSED / FAILED / UNMAPPED |
-| `attemptCount` | Int | default 0; incremented per processing attempt (FR-008) |
-| `lastAttemptAt` | DateTime? | UTC; for Admin diagnosis of a stuck event |
-| `lastError` | String? | failure reason; cleared on eventual success |
-| `recipientPermissions` | String[] | **new addressing mode** (FR-002/FR-016); default `[]`, additive to the three existing columns |
+| `deliveredAt` | DateTime? | **002's reserved column**, reused unchanged; set once when the event is fully processed, null = unprocessed |
+| `deliveryStatus` | DeliveryStatus? | **002's reserved column**, retyped `String?` → enum; PENDING / PROCESSED / FAILED / UNMAPPED |
+| `attemptCount` | Int | **new**; default 0; incremented per processing attempt (FR-008) |
+| `lastAttemptAt` | DateTime? | **new**; UTC; for Admin diagnosis of a stuck event |
+| `lastError` | String? | **new**; failure reason; cleared on eventual success |
+| `recipientPermissions` | String[] | **new addressing mode** (FR-002/FR-016); default `[]`, additive to the three existing recipient columns |
 
-`processedAt IS NULL AND processingStatus = 'PENDING'` is the claim predicate the processor uses to select
+So: **four new columns** (`attemptCount`, `lastAttemptAt`, `lastError`, `recipientPermissions`) plus a retype
+of the existing `deliveryStatus`.
+
+`deliveredAt IS NULL AND deliveryStatus = 'PENDING'` is the claim predicate the processor uses to select
 work; setting it and creating the notifications happen in one transaction (FR-005).
+
+**Backfill requirement**: every row already in the outbox has `deliveryStatus IS NULL` (002 never wrote it).
+The migration MUST run `UPDATE notification_event SET deliveryStatus = 'PENDING' WHERE deliveryStatus IS
+NULL` **before** adding the index. Without it, the claim predicate silently skips every event that shipped
+features have already recorded — 012/013/014/015/016 are live and their events are sitting in that table
+right now — and FR-013's "a notification is produced for each of them" would hold only for events recorded
+after the migration, i.e. never for the events that motivated the feature.
 
 `UNMAPPED` is distinct from `PROCESSED`: both produce no notification, but `UNMAPPED` additionally increments
 the Admin-visible unmapped-type counter (FR-019, research.md §9).
@@ -69,6 +88,40 @@ amount, and both are audited (FR-061). Title, body, and link are written once an
 
 Validation (server, Zod): none on write — 053 creates notifications from trusted catalog entries and resolved
 user ids. Read filters validate their enum values (`read`/`unread`, catalog type).
+
+### NotificationTypeOverride
+
+The per-event recipient override FR-017 requires. One row per catalog type whose default recipient
+specification an Admin has redirected.
+
+| Field | Type | Rules |
+|---|---|---|
+| `id` | String | PK, cuid |
+| `type` | String | **unique**; the canonical catalog type (never an alias) |
+| `userIds` | String[] | replaces the catalog's default `userIds` when non-empty |
+| `roles` | String[] | replaces the catalog's default `roles` when non-empty |
+| `departmentIds` | String[] | replaces the catalog's default `departmentIds` when non-empty |
+| `permissions` | String[] | replaces the catalog's default `permissions` when non-empty |
+| `updatedById` | String? | FK to 001 User; null until first Admin write |
+| `updatedAt` | DateTime | `@updatedAt`; UTC |
+
+**Merge semantics, stated explicitly because it is the part implementations get wrong**: an override is a
+*union* with the catalog default, not a replacement. A non-empty array in the override adds those recipients;
+it does not remove the catalog's own. Redirection therefore never silently mutes a role the business depends
+on (a designer who must always hear about their own rejection cannot be dropped by a stray override), and
+"clear the override" is always `DELETE`d rather than set to an empty array — an empty array is a no-op
+under union semantics, so storing one would be indistinguishable from "no override", and the UI would
+misreport which types are overridden. FR-067 (no per-user preferences) is unaffected: this overrides a
+*type*, never a *user*.
+
+This is a **sixth** table, making six tables created by the migration (see §Migration and immutability
+notes). It is in scope because FR-017 is a MUST and the audit contract already reserves an audit action for
+it; without the table that audit action and SC-015 have nothing to point at.
+
+Validation (server, Zod): `type` must resolve to a known canonical catalog entry — an override for a type
+with no catalog entry is a `VALIDATION` error, not a dormant row; the three recipient arrays are validated
+against `ALL_ROLE_KEYS`, `ALL_PERMISSIONS`, and active Departments exactly as `DelayThreshold`'s are
+(constitution VI).
 
 ### DelayThreshold
 
@@ -195,7 +248,7 @@ constitution VI's "roles are permission scopes" reasoning applied to measurement
 - `notification(userId, readAt, createdAt desc)` — the bell count and the dropdown's newest-first page.
 - `notification(userId, type, createdAt desc)` — the type filter on the notifications page.
 - `notification(sourceEventId)` — idempotency lookup and event-to-notification drill-down.
-- `notification_event(processedAt, processingStatus, createdAt)` — the processor's claim query.
+- `notification_event(deliveredAt, deliveryStatus, createdAt)` — the processor's claim query.
 - `notification_event(type, createdAt)` — the unmapped-type counter and the Admin catalog view.
 - `delay_breach(workItemId, phase)` — "is this Work Item already in breach?" and the delayed query.
 - `delay_threshold(phase)` — covered by the unique constraint.
@@ -214,8 +267,9 @@ SchedulerRun        SchedulerLease        (standalone operational records)
 
 ## Migration and immutability notes
 
-- One additive migration: create the four new tables, add the five columns to `notification_event`, create
-  the indexes above, insert the five seeded `DelayThreshold` rows with the Clarification defaults
+- One additive migration: create the **six** new tables, add the **four** new columns to `notification_event`
+  plus the `deliveryStatus` retype and its `NULL → PENDING` backfill (see §NotificationEvent), create the
+  indexes above, insert the five seeded `DelayThreshold` rows with the Clarification defaults
   (4h / 1h / 2h / 8h / 24h), and insert the single `SchedulerLease` row.
 - `notification` gets a `CHECK` on nothing beyond the unique pair; `delay_threshold.thresholdMinutes` gets
   `CHECK (thresholdMinutes IS NULL OR thresholdMinutes > 0)` so a non-positive threshold is refused by the

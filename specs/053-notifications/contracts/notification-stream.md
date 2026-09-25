@@ -56,8 +56,9 @@ each is an independent entry. Requirements:
 - **Reclaim dead connections.** A connection that errors, aborts, or fails its ping write is removed within
   one tick. A machine that slept does not hold a registry entry forever.
 - **Bounded total.** A configurable cap on concurrent connections; beyond it, new connections are refused
-  with `503` and the client falls back to polling. A shop has tens of users, so the cap is set well above
-  expected peak (multiple tabs per user) and exists only as a runaway guard.
+  with `503` and the error code **`STREAM_CAPACITY`** (distinct from a generic failure, so the client can tell
+  "at capacity, retry later" from "broken") and the client falls back to polling. A shop has tens of users,
+  so the cap is set well above expected peak (multiple tabs per user) and exists only as a runaway guard.
 - **No cross-user delivery.** `publish(userId, notification)` writes only to that user's connections
   (FR-032). The registry is keyed by user id and the publish path takes the id from the notification's own
   `userId` — never from a client-supplied value.

@@ -90,6 +90,53 @@ Phase 0 for `/speckit-plan`. Every unknown in plan.md's Technical Context is res
 
 **Alternatives considered**: Throw on unknown types — rejected (a catalog gap in 053 would become a runtime failure in 011–016's write paths); silently ignore — rejected (the gap is invisible and permanent); auto-generate a generic notification from the raw payload — rejected (a notification nobody can act on, delivered to a guessed recipient, is worse than none).
 
+## Decision: The outbox's own reserved columns are the processing markers — no parallel pair
+
+**Decision**: 053 writes `deliveredAt` and `deliveryStatus` — the two columns 002 already shipped and
+explicitly reserved for it — and adds only `attemptCount`, `lastAttemptAt`, `lastError`. `deliveryStatus` is
+retyped from `String?` to the `DeliveryStatus` enum. The migration backfills `NULL → PENDING` before adding
+the claim index.
+
+**Rationale**: 002's shipped schema (`prisma/schema/core.prisma`) carries `deliveredAt DateTime?` and
+`deliveryStatus String?` with the comments `/// Left null; written by 053`, and 002's data-model and contract
+both reserve them. The first draft of 053's artifacts instead specified `processedAt`/`processingStatus`, which
+would have left 002's two columns permanently dead and given one row two answers to "was this event
+processed?" — the exact second-source-of-truth problem constitution III exists to prevent. A retype is a safe
+`ALTER` because 002 never wrote the column, so every existing row is NULL. The backfill is not optional: 012,
+013, 014, 015, and 016 are live and have already recorded events into this table, and without it the claim
+predicate (`deliveredAt IS NULL AND deliveryStatus = 'PENDING'`) would skip every one of them — the feature
+would ship "working" while delivering nothing for the events that motivated it.
+
+**Alternatives considered**: Keep the parallel pair and ignore 002's — rejected (leaves dead columns and two
+answers per row); drop 002's columns in the migration — rejected (002's contract reserves them, and dropping
+them means editing a shipped, frozen schema for no gain); retype `deliveryStatus` without a backfill — rejected
+(above).
+
+## Decision: The per-event override unions with the catalog default; removal is deliberately inexpressible
+
+**Decision**: `NotificationTypeOverride` stores four recipient arrays per catalog type. The resolver unions
+them with the catalog's defaults. There is no "replace" or "exclude" mode, and an empty array is a no-op —
+clearing an override is a `DELETE` of the configuration row.
+
+**Rationale**: FR-017 requires the redirect to be configuration rather than a code change, and the audit
+contract already reserved `notification.recipient_override_updated` for it. Union semantics were chosen over
+replacement for one specific reason: replacement makes a stray Admin edit able to silently mute a role the
+business depends on — an override that empties the designer recipients would stop PRD §14's rejection
+notifications, and nothing would report it as an error. Under union, the worst case of a bad override is
+*more* people hearing about something, which is recoverable. Removal is left inexpressible for the same
+reason: a shop that wants to stop one role hearing about one event can narrow the threshold row or archive
+the type, but the catalog's floor is not editable away by accident. It also sidesteps the empty-array
+ambiguity — under union an empty array and no row are indistinguishable, so the schema and UI both treat
+"no override" as row-absent.
+
+**Alternatives considered**: Replace semantics — rejected (a bad edit can silently mute a required
+notification); a separate `excludedRoles` array to allow removal — rejected (it reintroduces exactly the
+removal power that caused the concern, and the audit surface for "who un-notified themselves" is worse than
+the failure it prevents); storing overrides in the catalog file and redeploying — rejected (defeats
+constitution VI's purpose, which is changing policy without a code change); overloading the existing
+`DelayThreshold` table with a `type` column — rejected (that table is keyed by `DelayPhase` for a different
+feature's concern, and mixing two recipient models in one row makes both harder to reason about).
+
 ## Dependency readiness (facts, not decisions)
 
 | Dependency | State at planning | 053 impact |

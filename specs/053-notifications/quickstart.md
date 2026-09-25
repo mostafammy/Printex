@@ -62,7 +62,7 @@ Expected: exactly one `work_item.phase_delayed` notification per configured reci
 row, and `SchedulerRun.alerted === 1` on the first tick and `0` on each of the next nine. The Work Item is
 flagged delayed in `getDelayedWorkItems()` the whole time.
 
-### 4. A re-breach alerts again (SC-044, US2)
+### 4. A re-breach alerts again (FR-044, US2)
 
 1. With the item still in `WAITING_REVIEW` and already alerted, move it out of the phase and back in.
 2. Run `runDelayTick()`.
