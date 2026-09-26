@@ -679,7 +679,7 @@ has the same effects as an approved CR (FR-027–028).
 - [x] T073 Run `pnpm check` (lint + typecheck) across `src/server/changes/**`,
   `src/components/changes/**`, and every edited 001/002/011/014 file. Fix any violation, including
   no `any` and exhaustive switches.
-- [x] T074 Run the full `pnpm test` suite. Every pre-existing 001/002/010–014 test must still pass,
+- [ ] T074 Run the full `pnpm test` suite. Every pre-existing 001/002/010–014 test must still pass,
   and any test changed under T066 must be listed in the PR. All new `tests/**/changes/**` tests
   must pass once T002, T004, and T005 unblock the DB-dependent ones. The unit tests (T011, T013,
   T015, T021, T053) pass regardless.
