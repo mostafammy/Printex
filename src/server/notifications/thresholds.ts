@@ -291,6 +291,18 @@ export interface SchedulerStatus {
   readonly unmappedTypes: ReadonlyArray<{ type: string; count: number; lastSeenAt: string }>;
   /** Events that exhausted their attempt budget (FR-008). */
   readonly failedTypes: ReadonlyArray<{ type: string; count: number; lastError: string | null }>;
+  /**
+   * Outbox totals for the inspection panel (T068): processed / pending /
+   * failed / unmapped, as four counts. Read under `audit.view` (the
+   * contract's permission table), so "what has the system never heard
+   * about?" is answerable without logs.
+   */
+  readonly outboxTotals: Readonly<{
+    processed: number;
+    pending: number;
+    failed: number;
+    unmapped: number;
+  }>;
 }
 
 function toRunView(row: {
@@ -333,7 +345,8 @@ export async function schedulerStatus(actor: Actor): Promise<SchedulerStatus> {
   const { intervalMinutes } = getNotificationConfig().scheduler;
 
   const now = new Date();
-  const [lease, lastRun, unmappedGroups, failedGroups] = await Promise.all([
+  const [lease, lastRun, unmappedGroups, failedGroups, processed, pending, failed, unmapped] =
+    await Promise.all([
     db.schedulerLease.findUnique({ where: { id: "delay-scheduler" } }),
     db.schedulerRun.findFirst({ orderBy: { startedAt: "desc" } }),
     db.notificationEvent.groupBy({
@@ -347,7 +360,11 @@ export async function schedulerStatus(actor: Actor): Promise<SchedulerStatus> {
       where: { deliveryStatus: "FAILED" },
       _count: { type: true },
     }),
-  ]);
+    db.notificationEvent.count({ where: { deliveryStatus: "PROCESSED" } }),
+    db.notificationEvent.count({ where: { deliveryStatus: "PENDING", deliveredAt: null } }),
+    db.notificationEvent.count({ where: { deliveryStatus: "FAILED" } }),
+    db.notificationEvent.count({ where: { deliveryStatus: "UNMAPPED" } }),
+    ]);
 
   const running = lease !== null && lease.expiresAt > now;
   const nextRunAt =
@@ -395,5 +412,6 @@ export async function schedulerStatus(actor: Actor): Promise<SchedulerStatus> {
     intervalMinutes,
     unmappedTypes: [...unmappedByType.values()],
     failedTypes: [...failedByType.values()],
+    outboxTotals: { processed, pending, failed, unmapped },
   };
 }

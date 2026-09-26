@@ -7,7 +7,7 @@ import {
   startOutboxProcessor,
   unreadCount,
 } from "~/server/notifications";
-import { NotificationBell } from "~/components/notifications/notification-list";
+import { NotificationBell } from "~/components/notifications/NotificationBell";
 import { markAllReadAction, markReadAction } from "./notifications/actions";
 
 import { SidebarNav } from "./_components/sidebar-nav";

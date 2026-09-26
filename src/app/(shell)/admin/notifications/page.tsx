@@ -49,6 +49,9 @@ export default async function AdminNotificationsPage({
     return <p className="py-8 text-center text-sm text-muted-foreground">{N.errorForbidden}</p>;
   }
 
+  // The outbox panel's own key (contract permission table): audit.view.
+  const canInspectOutbox = actor.permissions.has("audit.view");
+
   const [thresholds, status] = await Promise.all([readThresholds(), schedulerStatus(actor)]);
   const running = isSchedulerRunning() || status.running;
 
@@ -210,6 +213,32 @@ export default async function AdminNotificationsPage({
         </div>
       </section>
 
+      {/* --- outbox inspection (T068 / FR-006 / FR-019) --------------------
+          Gated on `audit.view`, not on the page's `admin.config`: the
+          contract's permission table scopes "outbox / notification-log
+          inspection" to audit.view (authorization-audit.md). Admin/Owner
+          holds both, so nothing changes for them — the gate exists so the
+          KEY that protects this section is the key the contract names. */}
+      {canInspectOutbox && (
+      <>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{N.outboxInspectionTitle}</h2>
+        <div className="flex flex-wrap gap-4 text-sm">
+          <span className="rounded-md border border-border px-3 py-1">
+            {N.outboxProcessed}: {status.outboxTotals.processed}
+          </span>
+          <span className="rounded-md border border-border px-3 py-1">
+            {N.outboxPending}: {status.outboxTotals.pending}
+          </span>
+          <span className="rounded-md border border-border px-3 py-1">
+            {N.outboxFailed}: {status.outboxTotals.failed}
+          </span>
+          <span className="rounded-md border border-border px-3 py-1">
+            {N.outboxUnmapped}: {status.outboxTotals.unmapped}
+          </span>
+        </div>
+      </section>
+
       {/* --- unmapped types (FR-019) --------------------------------------- */}
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">{N.unmappedTitle}</h2>
@@ -252,6 +281,8 @@ export default async function AdminNotificationsPage({
             ))}
           </ul>
         </section>
+      )}
+      </>
       )}
     </div>
   );

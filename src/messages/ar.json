@@ -486,7 +486,13 @@
     "errorNotificationNotFound": "الإشعار غير موجود",
     "errorForbidden": "ليس لديك صلاحية لهذا الإجراء",
     "errorSaveFailed": "تعذّر الحفظ",
-    "badgeDelayed": "متأخر"
+    "badgeDelayed": "متأخر",
+    "outboxInspectionTitle": "فحص صندوق الأحداث",
+    "outboxProcessed": "تمت المعالجة",
+    "outboxPending": "في الانتظار",
+    "outboxFailed": "متعثرة",
+    "outboxUnmapped": "غير معرّفة",
+    "outboxInspectionHint": "الوصول إلى هذا القسم يتطلب صلاحية سجل التدقيق."
   },
   "ops": {
     "alert": {
