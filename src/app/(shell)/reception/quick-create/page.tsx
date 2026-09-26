@@ -9,6 +9,7 @@ import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import { quickCreateOrder } from "~/server/orders";
 import { Button } from "~/components/ui/button";
+import { CustomerSelectField } from "~/components/customers";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -52,7 +53,13 @@ export default async function QuickCreatePage() {
   const actor = await getActor();
   authorize(actor, "order.create");
 
-  const customers = await db.customer.findMany({ orderBy: { name: "asc" } });
+  const cashCustomerRow = await db.customer.findFirst({
+    where: { isCashCustomer: true },
+    select: { id: true },
+  });
+  const cashCustomer = cashCustomerRow
+    ? { id: cashCustomerRow.id, label: S.cashCustomerOption }
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -96,16 +103,7 @@ export default async function QuickCreatePage() {
             <User className="h-3.5 w-3.5 text-muted-foreground" />
             <span>{S.customerLabel}</span>
           </label>
-          <select id="customerId" name="customerId" required className={inputCls} defaultValue="">
-            <option value="" disabled>
-              اختر العميل...
-            </option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.isCashCustomer ? S.cashCustomerOption : c.name}
-              </option>
-            ))}
-          </select>
+          <CustomerSelectField name="customerId" required cashCustomer={cashCustomer} />
         </div>
 
         <div className="flex flex-col gap-1.5">
