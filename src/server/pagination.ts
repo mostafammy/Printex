@@ -131,3 +131,36 @@ export async function paginateQuery<T>(
   const request = PageRequest.of(input);
   return new OffsetPaginator(fetchPage).paginate(request);
 }
+
+/**
+ * Strategy for a sort key that spans more than one relation/derived value
+ * and so can't be expressed as a single Prisma `orderBy` (e.g. this
+ * codebase's several "urgent-first, then oldest by a transition timestamp"
+ * queues, where "urgent" lives on the related Order and "oldest" is derived
+ * from a Work Item's transition history, not a stored column). The full
+ * candidate set has to be fetched and sorted in memory before it can be
+ * sliced into pages.
+ *
+ * This is safe ONLY when `fetchAll`'s own filter already keeps the
+ * candidate set small (a queue's current backlog, not "every row ever") —
+ * it is not a way to paginate an actually-unbounded scan; use
+ * `OffsetPaginator` for that.
+ */
+export class InMemoryPaginator<T> implements Paginator<T> {
+  constructor(private readonly fetchAll: () => Promise<T[]>) {}
+
+  async paginate(request: PageRequest): Promise<PageResult<T>> {
+    const all = await this.fetchAll();
+    const slice = all.slice(request.skip, request.skip + request.take);
+    return PageResult.fromOverfetch(slice, request);
+  }
+}
+
+/** Convenience entry point mirroring `paginateQuery`, for `InMemoryPaginator`. */
+export async function paginateInMemory<T>(
+  input: PageInput,
+  fetchAll: () => Promise<T[]>,
+): Promise<PageResult<T>> {
+  const request = PageRequest.of(input);
+  return new InMemoryPaginator(fetchAll).paginate(request);
+}
