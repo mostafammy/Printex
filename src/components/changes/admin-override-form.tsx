@@ -109,7 +109,9 @@ export function AdminOverrideForm({
       const value = formData.get(key);
       if (typeof value === "string" && value !== "") outgoing.set(key, value);
     }
-    copyChangedSpecFields(formData, currentSpec, outgoing);
+    if (copyChangedSpecFields(formData, currentSpec, outgoing) === 0) {
+      return { ok: false, error: ar.changes.errors.NO_CHANGES };
+    }
     return action(prevState, outgoing);
   };
 

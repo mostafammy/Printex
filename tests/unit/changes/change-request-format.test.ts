@@ -61,6 +61,23 @@ describe("copyChangedSpecFields", () => {
     );
     expect(out.get("description")).toBe("");
   });
+
+  it("returns 0 when nothing changed, so forms can answer NO_CHANGES locally (QA T076)", () => {
+    const out = new FormData();
+    const changed = copyChangedSpecFields(
+      form({
+        quantity: "500",
+        widthValue: "1.50",
+        heightValue: "2.0",
+        dimensionUnit: "M",
+        description: "Banner",
+      }),
+      current,
+      out,
+    );
+    expect(changed).toBe(0);
+    expect([...out.keys()]).toEqual([]);
+  });
 });
 
 describe("specPatchFromFormData", () => {

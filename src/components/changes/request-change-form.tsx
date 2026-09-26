@@ -83,7 +83,9 @@ export function RequestChangeForm({
     outgoing.set("orderId", orderId);
     const reason = formData.get("reason");
     outgoing.set("reason", typeof reason === "string" ? reason.trim() : "");
-    copyChangedSpecFields(formData, currentSpec, outgoing);
+    if (copyChangedSpecFields(formData, currentSpec, outgoing) === 0) {
+      return { ok: false, error: ar.changes.errors.NO_CHANGES };
+    }
     return action(prevState, outgoing);
   };
 

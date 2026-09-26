@@ -141,7 +141,7 @@ export async function SpecHistory({
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <span>
-                    {H.stateAtCreation}: {v.stateAtCreation}
+                    {H.stateAtCreation}: {ar.workItemStates[v.stateAtCreation]}
                   </span>
                   <span>
                     {H.time}: {formattedTime}

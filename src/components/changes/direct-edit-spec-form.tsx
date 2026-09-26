@@ -10,6 +10,7 @@ import type { RedesignChoice, SpecSnapshot } from "~/server/changes";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 import type { EditSpecActionResult } from "./change-error-messages";
+import { copyChangedSpecFields } from "./change-request-format";
 
 const E = ar.changes.edit;
 
@@ -75,80 +76,9 @@ export function DirectEditSpecForm({
       outgoing.set("originDepartmentId", originDept);
     }
 
-    const norm = (v: FormDataEntryValue | null): string | null => {
-      if (typeof v !== "string") return null;
-      const t = v.trim();
-      return t === "" ? null : t;
-    };
-
-    // 1. quantity: compare number vs number
-    const submittedQtyStr = norm(formData.get("quantity"));
-    const submittedQty = submittedQtyStr !== null ? Number(submittedQtyStr) : null;
-    const currentQty = currentSpec.quantity ?? null;
-    if (submittedQty !== currentQty) {
-      outgoing.set("quantity", submittedQtyStr ?? "");
-    }
-
-    // 2. widthValue: compare decimal values
-    const submittedWidth = norm(formData.get("widthValue"));
-    const currentWidth = currentSpec.widthValue ?? null;
-    const widthDiffers = (() => {
-      if (submittedWidth === currentWidth) return false;
-      if (submittedWidth === null || currentWidth === null) return true;
-      const numSubmitted = Number(submittedWidth);
-      const numCurrent = Number(currentWidth);
-      if (Number.isFinite(numSubmitted) && Number.isFinite(numCurrent)) {
-        return numSubmitted !== numCurrent;
-      }
-      return submittedWidth !== currentWidth;
-    })();
-    if (widthDiffers) {
-      outgoing.set("widthValue", submittedWidth ?? "");
-    }
-
-    // 3. heightValue: compare decimal values
-    const submittedHeight = norm(formData.get("heightValue"));
-    const currentHeight = currentSpec.heightValue ?? null;
-    const heightDiffers = (() => {
-      if (submittedHeight === currentHeight) return false;
-      if (submittedHeight === null || currentHeight === null) return true;
-      const numSubmitted = Number(submittedHeight);
-      const numCurrent = Number(currentHeight);
-      if (Number.isFinite(numSubmitted) && Number.isFinite(numCurrent)) {
-        return numSubmitted !== numCurrent;
-      }
-      return submittedHeight !== currentHeight;
-    })();
-    if (heightDiffers) {
-      outgoing.set("heightValue", submittedHeight ?? "");
-    }
-
-    // 4. dimensionUnit: compare string vs string
-    const submittedUnit = norm(formData.get("dimensionUnit"));
-    const currentUnit = currentSpec.dimensionUnit ?? null;
-    if (submittedUnit !== currentUnit) {
-      outgoing.set("dimensionUnit", submittedUnit ?? "");
-    }
-
-    // 5. material: compare string vs string
-    const submittedMaterial = norm(formData.get("material"));
-    const currentMaterial = currentSpec.material ?? null;
-    if (submittedMaterial !== currentMaterial) {
-      outgoing.set("material", submittedMaterial ?? "");
-    }
-
-    // 6. description: compare string vs string
-    const submittedDesc = norm(formData.get("description"));
-    const currentDesc = currentSpec.description ?? null;
-    if (submittedDesc !== currentDesc) {
-      outgoing.set("description", submittedDesc ?? "");
-    }
-
-    // 7. finishNotes: compare string vs string
-    const submittedFinish = norm(formData.get("finishNotes"));
-    const currentFinish = currentSpec.finishNotes ?? null;
-    if (submittedFinish !== currentFinish) {
-      outgoing.set("finishNotes", submittedFinish ?? "");
+    // Only fields that differ from the rendered spec. "1.50" vs "1.5" is no change.
+    if (copyChangedSpecFields(formData, currentSpec, outgoing) === 0) {
+      return { ok: false, error: ar.changes.errors.NO_CHANGES };
     }
 
     return action(prevState, outgoing);

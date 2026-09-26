@@ -521,5 +521,22 @@
       "SPEC_CHANGE_VETOED": "تم رفض تعديل المواصفات بواسطة خدمة مرتبطة",
       "UNKNOWN": "حدث خطأ غير متوقع أثناء معالجة الطلب"
     }
+  },
+  "workItemStates": {
+    "NEW": "جديد",
+    "ASSIGNED": "تم الإسناد",
+    "IN_DESIGN": "قيد التصميم",
+    "DESIGN_COMPLETED": "اكتمل التصميم",
+    "WAITING_REVIEW": "بانتظار المراجعة",
+    "REWORK_REQUIRED": "يتطلب إعادة عمل",
+    "APPROVED": "معتمد",
+    "WAITING_PRICING": "بانتظار التسعير",
+    "READY_FOR_PRODUCTION": "جاهز للإنتاج",
+    "IN_PRODUCTION": "قيد الإنتاج",
+    "PRODUCTION_COMPLETED": "اكتمل الإنتاج",
+    "READY_FOR_COLLECTION": "جاهز للاستلام",
+    "DELIVERED": "تم التسليم",
+    "COMPLETED": "مكتمل",
+    "CANCELLED": "ملغى"
   }
 }

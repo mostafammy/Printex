@@ -58,7 +58,8 @@ export function copyChangedSpecFields(
   formData: FormData,
   current: SpecSnapshot,
   out: FormData,
-): void {
+): number {
+  let changed = 0;
   const read = (key: string): string | null => {
     const v = trimmed(formData, key);
     return v === undefined || v === "" ? null : v;
@@ -67,15 +68,23 @@ export function copyChangedSpecFields(
   const quantity = read("quantity");
   if ((quantity === null ? null : Number(quantity)) !== current.quantity) {
     out.set("quantity", quantity ?? "");
+    changed++;
   }
   for (const field of DECIMAL_FIELDS) {
     const value = read(field);
-    if (!sameDecimal(value, current[field])) out.set(field, value ?? "");
+    if (!sameDecimal(value, current[field])) {
+      out.set(field, value ?? "");
+      changed++;
+    }
   }
   for (const field of ["dimensionUnit", ...TEXT_FIELDS] as const) {
     const value = read(field);
-    if (value !== current[field]) out.set(field, value ?? "");
+    if (value !== current[field]) {
+      out.set(field, value ?? "");
+      changed++;
+    }
   }
+  return changed;
 }
 
 /**

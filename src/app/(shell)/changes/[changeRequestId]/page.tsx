@@ -182,7 +182,7 @@ export default async function ChangeRequestDetailPage({
           </div>
           <div>
             <dt className="text-muted-foreground">{Q.workItemStateLabel}</dt>
-            <dd>{cr.workItem.state}</dd>
+            <dd>{ar.workItemStates[cr.workItem.state]}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{Q.baseVersionLabel}</dt>
