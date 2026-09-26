@@ -5,7 +5,7 @@ import { audit, authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
 import { attachments } from "~/server/files";
-import { normalizePage, paginateRows } from "~/server/pagination";
+import { paginateQuery } from "~/server/pagination";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
 import { DomainFinanceError } from "./errors";
 import { parsePositiveDecimal } from "./money";
@@ -169,25 +169,25 @@ export async function listDirectCosts(filter: ListDirectCostsFilter): Promise<{
   rows: DirectCostRow[];
   nextCursor: number | null;
 }> {
-  const { page, pageSize, skip, take } = normalizePage(filter);
-  const rows = await db.directCost.findMany({
-    where: {
-      ...(filter.orderId ? { orderId: filter.orderId } : {}),
-      ...(filter.workItemId ? { workItemId: filter.workItemId } : {}),
-      ...(filter.from || filter.to
-        ? {
-            costDate: {
-              ...(filter.from ? { gte: calendarDateToUtcMidnight(filter.from) } : {}),
-              ...(filter.to ? { lte: calendarDateToUtcMidnight(filter.to) } : {}),
-            },
-          }
-        : {}),
-    },
-    orderBy: [{ costDate: "desc" }, { id: "desc" }],
-    skip,
-    take,
-  });
-  const { rows: pageRows, nextCursor } = paginateRows(rows, page, pageSize);
+  const { rows: pageRows, nextCursor } = await paginateQuery(filter, (skip, take) =>
+    db.directCost.findMany({
+      where: {
+        ...(filter.orderId ? { orderId: filter.orderId } : {}),
+        ...(filter.workItemId ? { workItemId: filter.workItemId } : {}),
+        ...(filter.from || filter.to
+          ? {
+              costDate: {
+                ...(filter.from ? { gte: calendarDateToUtcMidnight(filter.from) } : {}),
+                ...(filter.to ? { lte: calendarDateToUtcMidnight(filter.to) } : {}),
+              },
+            }
+          : {}),
+      },
+      orderBy: [{ costDate: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+  );
   const voidRows = await db.financeVoid.findMany({
     where: { entityType: "DIRECT_COST", entityId: { in: pageRows.map((r) => r.id) } },
     select: { entityId: true },
