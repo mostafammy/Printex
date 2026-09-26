@@ -5,9 +5,11 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { Coins, PlusCircle, CheckCircle2, XCircle, Sliders, Trash2, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Coins, PlusCircle, CheckCircle2, XCircle, Sliders, Trash2, AlertCircle, ChevronLeft } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
+import { paginateQuery } from "~/server/pagination";
 import {
   createPriceList,
   retirePriceList,
@@ -123,21 +125,32 @@ async function retirePriceListAction(formData: FormData) {
 export default async function PriceListsPage({
   searchParams,
 }: {
-  readonly searchParams?: Promise<{ error?: string }>;
+  readonly searchParams?: Promise<{ error?: string; page?: string }>;
 }) {
   const actor = await getActor();
   authorize(actor, "admin.config");
-  const error = (await searchParams)?.error;
+  const resolvedSearchParams = await searchParams;
+  const error = resolvedSearchParams?.error;
+  const requestedPage = resolvedSearchParams?.page ? Number(resolvedSearchParams.page) : undefined;
 
-  const [priceLists, productTypes, activeProductTypes, policies] = await Promise.all([
-    db.priceList.findMany({
-      include: { tiers: { orderBy: { minimumQuantity: "asc" } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    db.productType.findMany({ orderBy: { name: "asc" } }),
-    db.productType.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    db.productPricingPolicy.findMany(),
-  ]);
+  const [{ rows: priceLists, nextCursor }, productTypes, activeProductTypes, policies] =
+    await Promise.all([
+      paginateQuery({ page: requestedPage }, (skip, take) =>
+        db.priceList.findMany({
+          include: { tiers: { orderBy: { minimumQuantity: "asc" } } },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take,
+        }),
+      ),
+      // Dropdown source for the "create price list" form below — every active
+      // product type must stay selectable, so this one is deliberately not
+      // paginated (a searchable combobox would be the right fix if this list
+      // keeps growing, not a paged table).
+      db.productType.findMany({ orderBy: { name: "asc" } }),
+      db.productType.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+      db.productPricingPolicy.findMany(),
+    ]);
 
   const productTypeById = new Map(productTypes.map((pt) => [pt.id, pt]));
   const policyByProductType = new Map(policies.map((p) => [p.productTypeId, p.mode]));
@@ -384,6 +397,18 @@ export default async function PriceListsPage({
           </table>
         </div>
       </div>
+
+      {nextCursor !== null && (
+        <div className="pt-2 text-center">
+          <Link
+            href={`/pricing/price-lists?page=${nextCursor}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
+          >
+            <span>الصفحة التالية</span>
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
