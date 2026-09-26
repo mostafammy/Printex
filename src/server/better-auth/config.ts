@@ -22,6 +22,38 @@ export const auth = betterAuth({
     },
   },
   plugins: [username()],
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          let username = (user as { username?: string }).username;
+          if (!username) {
+            const email = (user as { email?: string }).email;
+            const name = (user as { name?: string }).name;
+            const seed = (email ? email.split("@")[0] : name) ?? "user";
+            const sanitized = seed.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 15) || "user";
+            const randomSuffix = Math.random().toString(36).slice(2, 7);
+            username = `${sanitized}_${randomSuffix}`;
+          }
+          return {
+            data: {
+              ...user,
+              username,
+              displayUsername:
+                ((user as { displayUsername?: string }).displayUsername ??
+                (user as { name?: string }).name) ??
+                username,
+              isActive: (user as { isActive?: boolean }).isActive ?? true,
+              failedLoginAttempts:
+                (user as { failedLoginAttempts?: number }).failedLoginAttempts ?? 0,
+            },
+          };
+
+        },
+      },
+    },
+  },
+
   // Session expires in 12 hours (confirmed: expiresIn is in seconds — see
   // init-options.d.mts line 935: "@default 7 days (60 * 60 * 24 * 7)").
   session: {
