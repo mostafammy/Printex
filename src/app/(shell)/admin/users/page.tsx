@@ -3,12 +3,11 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize, ALL_PERMISSIONS } from "~/server/auth";
 import type { Permission } from "~/server/auth";
-import { paginateQuery } from "~/server/pagination";
+import { paginateQuery, DEFAULT_PAGE_SIZE } from "~/server/pagination";
+import { PaginationBar } from "~/components/pagination-bar";
 import {
   createUser,
   deactivateUser,
@@ -151,7 +150,7 @@ export default async function AdminUsersPage({
   const params = await searchParams;
   const requestedPage = typeof params.page === "string" ? Number(params.page) : undefined;
 
-  const [{ rows: users, nextCursor }, roles, departments] = await Promise.all([
+  const [{ rows: users, nextCursor }, totalCount, roles, departments] = await Promise.all([
     paginateQuery({ page: requestedPage }, (skip, take) =>
       db.user.findMany({
         include: {
@@ -164,9 +163,11 @@ export default async function AdminUsersPage({
         take,
       }),
     ),
+    db.user.count(),
     db.role.findMany({ orderBy: { name: "asc" } }),
     db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
   ]);
+  const page = Math.max(Math.trunc(requestedPage ?? 1), 1);
 
   return (
     <div className="flex flex-col gap-8">
@@ -471,15 +472,14 @@ export default async function AdminUsersPage({
         </div>
       </div>
 
-      {nextCursor !== null && (
-        <div className="pt-2 text-center">
-          <Link
-            href={`/admin/users?page=${nextCursor}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-          >
-            <span>الصفحة التالية</span>
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Link>
+      {totalCount > DEFAULT_PAGE_SIZE && (
+        <div className="pt-2">
+          <PaginationBar
+            basePath="/admin/users"
+            page={page}
+            hasNextPage={nextCursor !== null}
+            totalPages={Math.ceil(totalCount / DEFAULT_PAGE_SIZE)}
+          />
         </div>
       )}
     </div>
