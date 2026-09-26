@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { IBM_Plex_Sans_Arabic } from "next/font/google";
 
 import ar from "~/messages/ar.json";
+import { AppBootLoader } from "~/components/loading";
 
 export const metadata: Metadata = {
   title: ar.ui.appName,
@@ -25,7 +26,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html dir="rtl" lang="ar" className={ibmPlexSansArabic.variable}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <AppBootLoader>{children}</AppBootLoader>
+      </body>
     </html>
   );
 }

@@ -20,6 +20,7 @@
   },
   "ui": {
     "appName": "برينتكس",
+    "loading": "جارٍ التحميل",
     "logout": "تسجيل الخروج",
     "myQueuePageTitle": "طابور أعمالي",
     "myQueuePagePlaceholder": "لا يوجد محتوى فعلي بعد — هذه صفحة مؤقتة.",
@@ -119,7 +120,6 @@
     "passwordMinLength": "كلمة المرور يجب أن لا تقل عن 8 أحرف",
     "usernameTaken": "اسم المستخدم هذا مسجّل بالفعل",
     "signUpError": "تعذر إنشاء الحساب، يرجى التحقق من البيانات والمحاولة مجدداً",
-
 
     "adminUsersPageTitle": "إدارة المستخدمين",
     "adminRolesPageTitle": "الأدوار والصلاحيات",
