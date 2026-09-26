@@ -3,9 +3,12 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize, ALL_PERMISSIONS } from "~/server/auth";
 import type { Permission } from "~/server/auth";
+import { normalizePage, paginateRows } from "~/server/pagination";
 import {
   createUser,
   deactivateUser,
@@ -137,11 +140,19 @@ async function revokePermissionAction(formData: FormData) {
 
 // ── Page Component ─────────────────────────────────────────────────────────
 
-export default async function AdminUsersPage() {
+export default async function AdminUsersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await getActor();
   authorize(actor, "admin.users");
 
-  const [users, roles, departments] = await Promise.all([
+  const params = await searchParams;
+  const requestedPage = typeof params.page === "string" ? Number(params.page) : undefined;
+  const { page, pageSize, skip, take } = normalizePage({ page: requestedPage });
+
+  const [userRows, roles, departments] = await Promise.all([
     db.user.findMany({
       include: {
         roles: { include: { role: true } },
@@ -149,10 +160,13 @@ export default async function AdminUsersPage() {
         extraPermissions: true,
       },
       orderBy: { username: "asc" },
+      skip,
+      take,
     }),
     db.role.findMany({ orderBy: { name: "asc" } }),
     db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
   ]);
+  const { rows: users, nextCursor } = paginateRows(userRows, page, pageSize);
 
   return (
     <div className="flex flex-col gap-8">
@@ -456,6 +470,18 @@ export default async function AdminUsersPage() {
         </table>
         </div>
       </div>
+
+      {nextCursor !== null && (
+        <div className="pt-2 text-center">
+          <Link
+            href={`/admin/users?page=${nextCursor}`}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
+          >
+            <span>الصفحة التالية</span>
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
