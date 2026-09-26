@@ -6,7 +6,8 @@
     "design": "التصميم",
     "production": "الإنتاج",
     "delivery": "التسليم",
-    "admin": "الإدارة"
+    "admin": "الإدارة",
+    "changes": "طلبات التغيير"
   },
   "roles": {
     "reception": "موظف استقبال",
@@ -314,6 +315,36 @@
     "reviewRejectButton": "رفض وإعادة للتصميم"
   },
   "changes": {
+    "fields": {
+      "productTypeId": "نوع المنتج",
+      "description": "الوصف",
+      "quantity": "الكمية",
+      "widthValue": "العرض",
+      "heightValue": "الارتفاع",
+      "dimensionUnit": "وحدة القياس",
+      "material": "الخامة",
+      "finishNotes": "ملاحظات التشطيب"
+    },
+    "dimensionUnit": {
+      "MM": "مم",
+      "CM": "سم",
+      "M": "م",
+      "IN": "بوصة"
+    },
+    "diff": {
+      "none": "لا توجد تغييرات في المواصفات",
+      "field": "البند",
+      "before": "قبل",
+      "after": "بعد",
+      "arrow": "←",
+      "fromPrevious": "التغييرات عن النسخة السابقة",
+      "compareHeading": "مقارنة نسختين",
+      "compareFrom": "من النسخة",
+      "compareTo": "إلى النسخة",
+      "compareButton": "قارن",
+      "productionStartHeading": "تغييرات المواصفات منذ بدء الإنتاج",
+      "productionStartNone": "لم تتغير المواصفات منذ بدء الإنتاج"
+    },
     "history": {
       "heading": "سجل المواصفات",
       "empty": "لا يوجد سجل مواصفات بعد",
@@ -361,6 +392,106 @@
       "adminOnlyNotice": "تم الانتهاء من الإنتاج، أي تعديل إضافي يتطلب تجاوزاً إدارياً",
       "lockedNotice": "صنف العمل ملغي ولا يمكن تعديل مواصفاته",
       "successMessage": "تم تحديث المواصفات بنجاح"
+    },
+    "lateCancel": {
+      "requiredNotice": "بدأ إنتاج هذا الصنف، ولا يمكن إلغاؤه إلا بإلغاء متأخر يسجل السبب والتكلفة",
+      "triggerButton": "إلغاء متأخر",
+      "reasonLabel": "سبب الإلغاء",
+      "reasonPlaceholder": "اكتب سبب الإلغاء (إلزامي)",
+      "costLabel": "التكلفة المتكبدة",
+      "costPlaceholder": "مثال: 350.00",
+      "costHint": "أدخل المبلغ صراحةً، رقم غير سالب بحد أقصى رقمين عشريين (أدخل 0 إذا لم تكن هناك تكلفة)",
+      "producedLabel": "الكمية المنتجة حتى الآن",
+      "noteLabel": "ملاحظة على التكلفة",
+      "submitButton": "تأكيد الإلغاء المتأخر",
+      "submittingButton": "جاري الإلغاء...",
+      "successMessage": "تم إلغاء الصنف وتسجيل تكلفة الإلغاء",
+      "orderCancelledCount": "عدد الأصناف الملغاة:",
+      "orderRequiresHeading": "الأصناف التالية بدأ إنتاجها ولم تُلغَ، وتحتاج إلى إلغاء متأخر:"
+    },
+    "request": {
+      "triggerButton": "طلب تغيير المواصفات",
+      "notice": "صنف العمل قيد الإنتاج، أي تغيير يتطلب طلب تغيير يعتمده رئيس التصميم أو المالك",
+      "reasonLabel": "سبب طلب التغيير",
+      "reasonPlaceholder": "اكتب سبب طلب التغيير (إلزامي)",
+      "submitButton": "إرسال طلب التغيير",
+      "submittingButton": "جاري الإرسال...",
+      "successMessage": "تم إرسال طلب التغيير، والإنتاج متوقف حتى يتم البت فيه",
+      "pendingNotice": "يوجد طلب تغيير قيد انتظار الاعتماد، والإنتاج متوقف مؤقتاً",
+      "withdrawReasonLabel": "سبب سحب الطلب",
+      "withdrawButton": "سحب طلب التغيير",
+      "withdrawingButton": "جاري السحب...",
+      "withdrawSuccessMessage": "تم سحب طلب التغيير"
+    },
+    "queue": {
+      "pageTitle": "طلبات التغيير المعلقة",
+      "empty": "لا توجد طلبات تغيير تنتظر القرار",
+      "forbidden": "ليست لديك صلاحية اعتماد طلبات التغيير",
+      "notFound": "طلب التغيير غير موجود",
+      "orderHeader": "الطلب",
+      "priorityHeader": "الأولوية",
+      "workItemHeader": "صنف العمل",
+      "changedFieldsHeader": "الحقول المتغيرة",
+      "requesterHeader": "مقدم الطلب",
+      "ageHeader": "منذ",
+      "urgentBadge": "عاجل",
+      "normalPriority": "عادي",
+      "openLink": "عرض",
+      "nextPage": "الصفحة التالية",
+      "firstPage": "الصفحة الأولى",
+      "backLink": "العودة إلى طلبات التغيير",
+      "detailTitle": "طلب تغيير",
+      "customerLabel": "العميل",
+      "statusLabel": "الحالة",
+      "workItemStateLabel": "حالة صنف العمل",
+      "requestReasonLabel": "سبب الطلب",
+      "requesterLabel": "مقدم الطلب",
+      "requestedAtLabel": "تاريخ الطلب",
+      "baseVersionLabel": "النسخة الأساسية",
+      "currentVersionLabel": "النسخة الحالية",
+      "changesHeading": "التغييرات المقترحة",
+      "changesCaption": "الحالي ← المقترح",
+      "noteLabel": "ملاحظة القرار (اختيارية)",
+      "approveContinueButton": "اعتماد ومتابعة الإنتاج",
+      "approveRedesignButton": "اعتماد وإعادة التصميم",
+      "redesignNotAllowedNote": "إعادة التصميم غير متاحة لهذا الصنف (لا يتطلب تصميماً أو لا يوجد مصمم مسند)",
+      "rejectReasonLabel": "سبب الرفض",
+      "rejectButton": "رفض الطلب",
+      "decidedByLabel": "صاحب القرار",
+      "decidedAtLabel": "تاريخ القرار",
+      "decisionNoteLabel": "ملاحظة القرار",
+      "outcomeLabel": "نتيجة الاعتماد",
+      "decidedNotice": "تم البت في هذا الطلب ولا يمكن تغيير القرار",
+      "status": {
+        "PENDING": "قيد الانتظار",
+        "APPROVED": "معتمد",
+        "REJECTED": "مرفوض",
+        "WITHDRAWN": "مسحوب",
+        "CLOSED_BY_CANCELLATION": "مغلق بسبب الإلغاء"
+      },
+      "outcome": {
+        "CONTINUE_PRODUCTION": "متابعة الإنتاج",
+        "REDESIGN": "إعادة التصميم"
+      }
+    },
+    "hold": {
+      "changePending": "الإنتاج متوقف: يوجد طلب تغيير في المواصفات قيد انتظار الاعتماد. لا يمكن الاستئناف أو الإنهاء أو الإرجاع للتصميم حتى يتم البت فيه.",
+      "revisionUnacknowledged": "تم اعتماد تعديل على المواصفات. راجع المواصفات المحدثة ثم أكد الاطلاع قبل متابعة الإنتاج.",
+      "acknowledgeButton": "تأكيد الاطلاع على التعليمات المعدلة",
+      "specVersionLabel": "نسخة المواصفات"
+    },
+    "override": {
+      "triggerButton": "تجاوز إداري للمواصفات",
+      "notice": "تعديل المواصفات بصلاحية المدير في أي حالة غير ملغاة. يُسجَّل كنسخة جديدة مع السبب، وتبقى النسخة السابقة كما هي.",
+      "productionNotice": "صنف العمل قيد الإنتاج: يُسجَّل التجاوز كطلب تغيير معتمد وله نفس آثار الاعتماد.",
+      "reasonLabel": "سبب التجاوز",
+      "reasonPlaceholder": "اكتب سبب التجاوز (إلزامي)",
+      "outcomeHeading": "ما يحدث للإنتاج بعد التعديل",
+      "continueProductionLabel": "متابعة الإنتاج (يجب على المشغل تأكيد الاطلاع على التعليمات المعدلة)",
+      "redesignLabel": "إعادة التصميم وإرجاع الصنف للمصمم",
+      "submitButton": "حفظ التجاوز الإداري",
+      "submittingButton": "جاري الحفظ...",
+      "successMessage": "تم حفظ التجاوز الإداري كنسخة مواصفات جديدة"
     },
     "errors": {
       "VALIDATION": "بيانات المواصفات المدخلة غير صالحة",

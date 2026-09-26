@@ -10,6 +10,8 @@ import { transitionWorkItem, closeOpenSegment, asUserId, asWorkItemId } from "~/
 import type { Actor as CoreActor, DomainError } from "~/server/core";
 import { notify } from "~/server/core/notifications/notify";
 import { createReturnInTx } from "~/server/review";
+// Registers 016's transition guards on every path that transitions (research §18).
+import "~/server/changes";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 

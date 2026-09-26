@@ -1,87 +1,84 @@
-"use client";
-
-// edit-spec-form.tsx — Component for editing Work Item specifications.
+// edit-spec-form.tsx — Server Component for Work Item specification editing.
 // tasks.md T038, contracts/change-control.md §editSpec.
+// Server Component: renders notices (CHANGE_REQUEST, ADMIN_ONLY, LOCKED) on the server,
+// and delegates to the client-only DirectEditSpecForm for interactive direct editing.
 
-import { useState, useActionState } from "react";
-import type { WorkItemState } from "~/server/core";
-import { specEditPolicy, redesignChoice } from "~/server/changes";
-import { Button } from "~/components/ui/button";
+import type { SpecEditPolicy, RedesignChoice, SpecSnapshot } from "~/server/changes";
 import ar from "~/messages/ar.json";
+import { DirectEditSpecForm } from "./direct-edit-spec-form";
+import {
+  RequestChangeForm,
+  WithdrawChangeRequestForm,
+  type ChangeRequestAction,
+} from "./request-change-form";
+import type { EditSpecActionResult } from "./change-error-messages";
+
+export { getChangeErrorMessage } from "./change-error-messages";
+export type { EditSpecActionResult } from "./change-error-messages";
 
 const E = ar.changes.edit;
-const ERRORS: Record<string, string> = ar.changes.errors;
-
-const inputCls =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground " +
-  "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
-
-export interface EditSpecActionResult {
-  ok: boolean;
-  error?: string;
-  success?: boolean;
-}
 
 export interface EditSpecFormProps {
   readonly workItemId: string;
   readonly orderId: string;
-  readonly state: WorkItemState;
-  readonly requiresDesign: boolean;
+  readonly policy: SpecEditPolicy;
+  readonly choice: RedesignChoice;
   readonly expectedVersion: number;
   readonly canEdit: boolean;
-  readonly currentSpec: {
-    readonly description?: string | null;
-    readonly quantity?: number | null;
-    readonly widthValue?: string | number | null;
-    readonly heightValue?: string | number | null;
-    readonly dimensionUnit?: string | null;
-    readonly material?: string | null;
-    readonly finishNotes?: string | null;
-    readonly productTypeId?: string | null;
-  };
+  readonly currentSpec: SpecSnapshot;
   readonly departments?: readonly { readonly id: string; readonly name: string }[];
   readonly effectiveDepartmentId?: string | null;
   readonly action: (
     prevState: EditSpecActionResult | null,
     formData: FormData,
   ) => Promise<EditSpecActionResult>;
+  /** US3: change-request wiring for the CHANGE_REQUEST policy (IN_PRODUCTION). */
+  readonly changeRequest?: {
+    readonly pendingId: string | null;
+    readonly requestAction: ChangeRequestAction;
+    readonly withdrawAction: ChangeRequestAction;
+  };
 }
 
 export function EditSpecForm({
   workItemId,
   orderId,
-  state,
-  requiresDesign,
+  policy,
+  choice,
   expectedVersion,
   canEdit,
   currentSpec,
   departments,
   effectiveDepartmentId,
   action,
+  changeRequest,
 }: EditSpecFormProps) {
-  const policy = specEditPolicy(state);
-  const choice = redesignChoice(state, requiresDesign);
-  const [selectedChoice, setSelectedChoice] = useState<"KEEP_DESIGN" | "REDESIGN">("KEEP_DESIGN");
-
-  const [formState, formAction, isPending] = useActionState(action, null);
-
-  // 1. CHANGE_REQUEST state (e.g. IN_PRODUCTION)
+  // 1. CHANGE_REQUEST state (IN_PRODUCTION): a pending request can be
+  // withdrawn; otherwise a new one can be raised (US3, T051).
   if (policy === "CHANGE_REQUEST") {
+    if (!canEdit || !changeRequest) {
+      return (
+        <div className="mt-3 text-xs text-muted-foreground" data-testid="change-request-section">
+          {E.requestChangeNotice}
+        </div>
+      );
+    }
+    if (changeRequest.pendingId) {
+      return (
+        <WithdrawChangeRequestForm
+          changeRequestId={changeRequest.pendingId}
+          orderId={orderId}
+          action={changeRequest.withdrawAction}
+        />
+      );
+    }
     return (
-      <div className="mt-3 flex items-center gap-2" data-testid="change-request-section">
-        {/* Disabled placeholder for change request — to be wired in User Story 3 (Phase 5, T039-T042) */}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled
-          title={E.requestChangeDisabledTooltip}
-        >
-          {E.requestChangeButton}
-        </Button>
-        <span className="text-xs text-muted-foreground">{E.requestChangeNotice}</span>
-      </div>
+      <RequestChangeForm
+        workItemId={workItemId}
+        orderId={orderId}
+        currentSpec={currentSpec}
+        action={changeRequest.requestAction}
+      />
     );
   }
 
@@ -108,196 +105,17 @@ export function EditSpecForm({
     return null;
   }
 
-  // 5. DIRECT policy with permission: Render collapsible edit form
+  // 5. DIRECT policy with permission: Render client-side interactive edit form
   return (
-    <details className="mt-3 rounded-md border border-border p-3" data-testid="edit-spec-section">
-      <summary className="cursor-pointer text-sm font-medium text-primary">
-        {E.triggerButton}
-      </summary>
-
-      <form action={formAction} className="mt-3 flex flex-col gap-3">
-        <input type="hidden" name="workItemId" value={workItemId} />
-        <input type="hidden" name="orderId" value={orderId} />
-        <input type="hidden" name="expectedVersion" value={expectedVersion} />
-
-        {formState?.error && (
-          <div
-            className="rounded bg-destructive/10 p-2 text-xs text-destructive"
-            role="alert"
-            data-testid="edit-spec-error"
-          >
-            {formState.error}
-          </div>
-        )}
-
-        {formState?.success && (
-          <div
-            className="rounded bg-emerald-100 p-2 text-xs text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300"
-            role="status"
-            data-testid="edit-spec-success"
-          >
-            {E.successMessage}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.quantityLabel}</label>
-            <input
-              name="quantity"
-              type="number"
-              min={1}
-              step={1}
-              defaultValue={currentSpec.quantity ?? ""}
-              className={inputCls}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.widthLabel}</label>
-            <input
-              name="widthValue"
-              type="number"
-              min={0.01}
-              step={0.01}
-              defaultValue={currentSpec.widthValue ? String(currentSpec.widthValue) : ""}
-              className={inputCls}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.heightLabel}</label>
-            <input
-              name="heightValue"
-              type="number"
-              min={0.01}
-              step={0.01}
-              defaultValue={currentSpec.heightValue ? String(currentSpec.heightValue) : ""}
-              className={inputCls}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.dimensionUnitLabel}</label>
-            <select
-              name="dimensionUnit"
-              defaultValue={currentSpec.dimensionUnit ?? "CM"}
-              className={inputCls}
-            >
-              <option value="MM">MM</option>
-              <option value="CM">CM</option>
-              <option value="M">M</option>
-              <option value="IN">IN</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.materialLabel}</label>
-            <input
-              name="material"
-              type="text"
-              defaultValue={currentSpec.material ?? ""}
-              placeholder={E.materialPlaceholder}
-              className={inputCls}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{E.descriptionLabel}</label>
-            <input
-              name="description"
-              type="text"
-              defaultValue={currentSpec.description ?? ""}
-              placeholder={E.descriptionPlaceholder}
-              className={inputCls}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">{E.finishNotesLabel}</label>
-          <input
-            name="finishNotes"
-            type="text"
-            defaultValue={currentSpec.finishNotes ?? ""}
-            placeholder={E.finishNotesPlaceholder}
-            className={inputCls}
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">{E.reasonLabel}</label>
-          <input
-            name="reason"
-            type="text"
-            placeholder={E.reasonPlaceholder}
-            className={inputCls}
-          />
-        </div>
-
-        {/* Redesign choice radio when REQUIRED */}
-        {choice === "REQUIRED" && (
-          <div
-            className="rounded border border-border/80 bg-muted/20 p-3"
-            data-testid="redesign-choice-section"
-          >
-            <div className="mb-2 text-xs font-semibold text-foreground">
-              {E.designChoiceHeading}
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="radio"
-                  name="designChoice"
-                  value="KEEP_DESIGN"
-                  checked={selectedChoice === "KEEP_DESIGN"}
-                  onChange={() => setSelectedChoice("KEEP_DESIGN")}
-                />
-                <span>{E.keepDesignLabel}</span>
-              </label>
-              <label className="flex cursor-pointer items-center gap-2 text-xs">
-                <input
-                  type="radio"
-                  name="designChoice"
-                  value="REDESIGN"
-                  checked={selectedChoice === "REDESIGN"}
-                  onChange={() => setSelectedChoice("REDESIGN")}
-                />
-                <span>{E.redesignLabel}</span>
-              </label>
-            </div>
-
-            {selectedChoice === "REDESIGN" && !effectiveDepartmentId && (
-              <div className="mt-3 flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground">
-                  {E.originDepartmentLabel}
-                </label>
-                <select name="originDepartmentId" required className={inputCls}>
-                  <option value="">{E.originDepartmentPlaceholder}</option>
-                  {(departments ?? []).map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div>
-          <Button type="submit" variant="default" size="sm" disabled={isPending}>
-            {isPending ? E.savingButton : E.saveButton}
-          </Button>
-        </div>
-      </form>
-    </details>
+    <DirectEditSpecForm
+      workItemId={workItemId}
+      orderId={orderId}
+      choice={choice}
+      expectedVersion={expectedVersion}
+      currentSpec={currentSpec}
+      departments={departments}
+      effectiveDepartmentId={effectiveDepartmentId}
+      action={action}
+    />
   );
-}
-
-/**
- * Maps a ChangeResult error code to its Arabic user-facing message.
- */
-export function getChangeErrorMessage(code: string): string {
-  return ERRORS[code] ?? ERRORS.UNKNOWN ?? "حدث خطأ غير متوقع";
 }

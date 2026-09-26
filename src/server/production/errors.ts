@@ -12,7 +12,10 @@ export type DomainProductionErrorCode =
   | "VENDOR_RECEIPT_REQUIRED"
   | "NOT_EXTERNAL_DEPARTMENT"
   | "ALREADY_RECEIVED"
-  | "PRODUCTION_ALREADY_STARTED";
+  | "PRODUCTION_ALREADY_STARTED"
+  // 016 (contracts/change-control.md §014 touch points): a pending change
+  // request or an unacknowledged revision freezes the job.
+  | "CHANGE_HOLD";
 
 export class DomainProductionError extends Error {
   readonly code: DomainProductionErrorCode;

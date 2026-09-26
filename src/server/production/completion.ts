@@ -8,6 +8,8 @@ import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { transitionWorkItem, closeOpenSegment, asUserId, asWorkItemId } from "~/server/core";
 import type { Actor as CoreActor, DomainError } from "~/server/core";
+// Registers 016's transition guards on every path that transitions (research §18).
+import "~/server/changes";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 

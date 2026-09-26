@@ -17,6 +17,7 @@ import {
   asWorkItemId,
 } from "~/server/core";
 import type { Actor as CoreActor, DomainError } from "~/server/core";
+import { getProductionHold } from "~/server/changes";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 
@@ -119,6 +120,15 @@ export async function resumeProduction(actor: Actor, workItemId: string): Promis
       throw new DomainProductionError(
         "PENDING_FILE_REVISION",
         "A newer approved file must be acknowledged before production can resume.",
+      );
+    }
+
+    // 016 FR-012/FR-014: same kind of plain check — a pending change request
+    // or an unacknowledged revised instruction keeps the timer stopped.
+    if ((await getProductionHold(tx, workItemId)) !== null) {
+      throw new DomainProductionError(
+        "CHANGE_HOLD",
+        "A specification change is pending or unacknowledged; production cannot resume.",
       );
     }
 
