@@ -46551,7 +46551,7 @@ export namespace Prisma {
       id: string
       roleId: string
       /**
-       * One of the 21 fixed Permission union keys (FR-010). Validated at the
+       * One of the 22 fixed Permission union keys (FR-010). Validated at the
        * application layer (Zod), not as a DB enum.
        */
       permission: string
@@ -48656,7 +48656,7 @@ export namespace Prisma {
       id: string
       userId: string
       /**
-       * One of the 21 fixed Permission union keys (FR-010).
+       * One of the 22 fixed Permission union keys (FR-010).
        */
       permission: string
       /**
