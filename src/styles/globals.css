@@ -348,7 +348,8 @@
 
 /* Apple Aurora Floating Dynamics */
 @keyframes apple-aurora-float-1 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0px, 0px) scale(1);
   }
   50% {
@@ -357,7 +358,8 @@
 }
 
 @keyframes apple-aurora-float-2 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0px, 0px) scale(1);
   }
   50% {
@@ -366,7 +368,8 @@
 }
 
 @keyframes apple-aurora-float-3 {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0px, 0px) scale(1);
   }
   50% {
@@ -664,11 +667,11 @@
 
 .loading-ambient {
   position: absolute;
-  width: 220px;
-  height: 220px;
+  width: 240px;
+  height: 240px;
   border-radius: 9999px;
-  background: color-mix(in oklch, var(--primary) 16%, transparent);
-  filter: blur(40px);
+  background: color-mix(in oklch, var(--primary) 26%, transparent);
+  filter: blur(38px);
   pointer-events: none;
   transform: translateZ(0);
 }
@@ -678,15 +681,15 @@
   width: var(--loading-core-size);
   height: var(--loading-core-size);
   border-radius: var(--radius-2xl);
-  border: 1px solid var(--border);
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--card) 95%, var(--foreground) 5%),
-    color-mix(in oklch, var(--card) 85%, var(--foreground) 15%)
+    color-mix(in oklch, var(--foreground) 90%, var(--card) 10%),
+    color-mix(in oklch, var(--foreground) 76%, var(--card) 24%)
   );
   box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.03),
-    0 8px 24px -4px rgba(0, 0, 0, 0.04);
+    inset 0 1px 0 0 color-mix(in oklch, var(--card) 30%, transparent),
+    0 2px 6px 0 color-mix(in oklch, var(--foreground) 20%, transparent),
+    0 18px 36px -8px color-mix(in oklch, var(--foreground) 32%, transparent);
   pointer-events: none;
   z-index: 2;
   transform: translateZ(0);
