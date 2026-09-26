@@ -12,6 +12,25 @@ import {
   SHOW_DELAY_MS,
 } from "~/components/loading";
 
+const pathnameMock = vi.fn(() => "/queue");
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => pathnameMock(),
+}));
+
+async function flushBootRaf() {
+  await act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  });
+}
+
+async function wait(ms: number) {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+}
+
 describe("LoadingExperience", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -160,4 +179,83 @@ describe("LoadingExperience", () => {
 
     expect(screen.getByTestId("app-content")).toBeInTheDocument();
   });
+});
+
+// Real timers: these exercise AppBootLoader's boot rAF + navigation-detection
+// logic end to end, which fake timers cannot reliably drive (rAF scheduling).
+describe("AppBootLoader route navigation", () => {
+  beforeEach(() => {
+    pathnameMock.mockReturnValue("/queue");
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("shows the loader for a same-tab internal navigation and hides it once the route commits", async () => {
+    const { rerender } = render(
+      <AppBootLoader>
+        <a href="/orders">Orders</a>
+      </AppBootLoader>,
+    );
+
+    await flushBootRaf();
+    await wait(
+      SHOW_DELAY_MS + AWAKENING_MS + MIN_VISIBLE_MS + COMPLETE_MS + 50,
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+
+    const link = screen.getByText("Orders");
+    await act(async () => {
+      link.dispatchEvent(
+        new MouseEvent("pointerdown", { bubbles: true, button: 0 }),
+      );
+    });
+
+    await wait(SHOW_DELAY_MS + 20);
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    // The route commits: usePathname now reports the destination.
+    pathnameMock.mockReturnValue("/orders");
+    rerender(
+      <AppBootLoader>
+        <a href="/orders">Orders</a>
+      </AppBootLoader>,
+    );
+
+    await wait(MIN_VISIBLE_MS + COMPLETE_MS + 50);
+    expect(screen.queryByRole("status")).toBeNull();
+  }, 10000);
+
+  it("ignores modifier-key clicks, new-tab, download, and external links", async () => {
+    render(
+      <AppBootLoader>
+        <a href="/orders" target="_blank" rel="noreferrer">
+          New tab
+        </a>
+        <a href="https://example.com">External</a>
+        <a href="/file.pdf" download>
+          Download
+        </a>
+      </AppBootLoader>,
+    );
+
+    await flushBootRaf();
+    await wait(
+      SHOW_DELAY_MS + AWAKENING_MS + MIN_VISIBLE_MS + COMPLETE_MS + 50,
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+
+    for (const text of ["New tab", "External", "Download"]) {
+      const link = screen.getByText(text);
+      await act(async () => {
+        link.dispatchEvent(
+          new MouseEvent("pointerdown", { bubbles: true, button: 0 }),
+        );
+      });
+    }
+
+    await wait(SHOW_DELAY_MS + 20);
+    expect(screen.queryByRole("status")).toBeNull();
+  }, 10000);
 });
