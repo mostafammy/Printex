@@ -30,6 +30,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-mono: var(--mono);
+  --color-mono-foreground: var(--mono-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -79,6 +82,9 @@
   --accent: oklch(0.95 0.018 255); /* Apple subtle sky tint */
   --accent-foreground: oklch(0.45 0.22 255);
   --destructive: oklch(0.62 0.24 28); /* Apple Crimson Red #FF3B30 */
+  --destructive-foreground: oklch(0.985 0 0);
+  --mono: oklch(0.22 0 0);
+  --mono-foreground: oklch(0.985 0 0);
   --border: oklch(0.91 0.006 250); /* Apple subtle separator */
   --input: oklch(0.91 0.006 250);
   --ring: oklch(0.55 0.22 255); /* Apple focus glow halo */
@@ -125,6 +131,9 @@
   --accent: oklch(0.24 0.03 255);
   --accent-foreground: oklch(0.96 0.005 250);
   --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.985 0 0);
+  --mono: oklch(0.27 0 0);
+  --mono-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.62 0.22 255);
