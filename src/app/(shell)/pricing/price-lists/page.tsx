@@ -5,11 +5,11 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
-import { Coins, PlusCircle, CheckCircle2, XCircle, Sliders, Trash2, AlertCircle, ChevronLeft } from "lucide-react";
+import { Coins, PlusCircle, CheckCircle2, XCircle, Sliders, Trash2, AlertCircle } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
-import { paginateQuery } from "~/server/pagination";
+import { paginateQuery, DEFAULT_PAGE_SIZE } from "~/server/pagination";
+import { PaginationBar } from "~/components/pagination-bar";
 import {
   createPriceList,
   retirePriceList,
@@ -133,7 +133,7 @@ export default async function PriceListsPage({
   const error = resolvedSearchParams?.error;
   const requestedPage = resolvedSearchParams?.page ? Number(resolvedSearchParams.page) : undefined;
 
-  const [{ rows: priceLists, nextCursor }, productTypes, activeProductTypes, policies] =
+  const [{ rows: priceLists, nextCursor }, totalCount, productTypes, activeProductTypes, policies] =
     await Promise.all([
       paginateQuery({ page: requestedPage }, (skip, take) =>
         db.priceList.findMany({
@@ -143,6 +143,7 @@ export default async function PriceListsPage({
           take,
         }),
       ),
+      db.priceList.count(),
       // Dropdown source for the "create price list" form below — every active
       // product type must stay selectable, so this one is deliberately not
       // paginated (a searchable combobox would be the right fix if this list
@@ -151,6 +152,7 @@ export default async function PriceListsPage({
       db.productType.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
       db.productPricingPolicy.findMany(),
     ]);
+  const page = Math.max(Math.trunc(requestedPage ?? 1), 1);
 
   const productTypeById = new Map(productTypes.map((pt) => [pt.id, pt]));
   const policyByProductType = new Map(policies.map((p) => [p.productTypeId, p.mode]));
@@ -398,15 +400,14 @@ export default async function PriceListsPage({
         </div>
       </div>
 
-      {nextCursor !== null && (
-        <div className="pt-2 text-center">
-          <Link
-            href={`/pricing/price-lists?page=${nextCursor}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-          >
-            <span>الصفحة التالية</span>
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Link>
+      {totalCount > DEFAULT_PAGE_SIZE && (
+        <div className="pt-2">
+          <PaginationBar
+            basePath="/pricing/price-lists"
+            page={page}
+            hasNextPage={nextCursor !== null}
+            totalPages={Math.ceil(totalCount / DEFAULT_PAGE_SIZE)}
+          />
         </div>
       )}
     </div>
