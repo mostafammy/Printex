@@ -431,143 +431,160 @@
   transform: scale(1.005);
 }
 
-/* ==== Loading Experience — Motion System ==== */
+/* ==== Loading Experience — UI Progress Master Motion System ==== */
 :root {
-  --loading-core-size: clamp(40px, 8vw, 64px);
-  --dot-a-radius: 34px;
-  --dot-b-radius: 40px;
-  --dot-c-radius: 29px;
+  --loading-core-size: clamp(52px, 11vw, 70px);
+  --dot-a-radius: 44px;
+  --dot-b-radius: 54px;
+  --dot-c-radius: 36px;
+  --dot-d-radius: 64px;
 }
 
 @media (max-width: 480px) {
   :root {
-    --loading-core-size: clamp(36px, 9vw, 50px);
-    --dot-a-radius: 26px;
-    --dot-b-radius: 31px;
-    --dot-c-radius: 22px;
+    --loading-core-size: clamp(44px, 12vw, 56px);
+    --dot-a-radius: 34px;
+    --dot-b-radius: 42px;
+    --dot-c-radius: 28px;
+    --dot-d-radius: 50px;
   }
 }
 
+/* 1. Ambient CMYK Prismatic Aurora */
 @keyframes ambient-breathe {
   0%,
   100% {
-    transform: scale(0.92);
-    opacity: 0.65;
+    transform: scale(0.92) rotate(0deg);
+    opacity: 0.75;
+    filter: blur(44px) hue-rotate(0deg);
   }
   50% {
-    transform: scale(1.08);
-    opacity: 0.95;
+    transform: scale(1.15) rotate(180deg);
+    opacity: 1;
+    filter: blur(52px) hue-rotate(35deg);
   }
 }
 
+/* 2. Core 3D Float & Micro-Drift */
 @keyframes core-drift {
   0% {
-    transform: rotate(-5deg) scale(0.988, 1.012);
+    transform: perspective(900px) rotateX(4deg) rotateY(-6deg) scale(0.985, 1.015);
     animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  16% {
-    transform: rotate(-1.5deg) scale(1.008, 0.992);
+  25% {
+    transform: perspective(900px) rotateX(-5deg) rotateY(4deg) scale(1.015, 0.985);
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  40% {
-    transform: rotate(4.8deg) scale(1.014, 0.986);
-    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
+  50% {
+    transform: perspective(900px) rotateX(6deg) rotateY(7deg) scale(0.99, 1.01);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
-  64% {
-    transform: rotate(1.2deg) scale(0.992, 1.008);
+  75% {
+    transform: perspective(900px) rotateX(-4deg) rotateY(-5deg) scale(1.01, 0.99);
     animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1);
   }
-  84% {
-    transform: rotate(-4.2deg) scale(1.006, 0.994);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
   100% {
-    transform: rotate(-5deg) scale(0.988, 1.012);
-  }
-}
-
-@keyframes dot-orbit-a {
-  0% {
-    transform: rotate(0deg) translateX(var(--dot-a-radius)) rotate(0deg);
-    opacity: 0.65;
-    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
-  }
-  38% {
-    transform: rotate(230deg) translateX(var(--dot-a-radius)) rotate(-230deg);
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  72% {
-    transform: rotate(280deg) translateX(var(--dot-a-radius)) rotate(-280deg);
-    opacity: 0.55;
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
-  }
-  100% {
-    transform: rotate(360deg) translateX(var(--dot-a-radius)) rotate(-360deg);
-    opacity: 0.65;
-  }
-}
-
-@keyframes dot-orbit-b {
-  0% {
-    transform: rotate(150deg) translateX(var(--dot-b-radius)) rotate(-150deg);
-    opacity: 0.88;
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
-  }
-  42% {
-    transform: rotate(-40deg) translateX(var(--dot-b-radius)) rotate(40deg);
-    opacity: 0.58;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  78% {
-    transform: rotate(-170deg) translateX(var(--dot-b-radius)) rotate(170deg);
-    opacity: 1;
-    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
-  }
-  100% {
-    transform: rotate(-210deg) translateX(var(--dot-b-radius)) rotate(210deg);
-    opacity: 0.88;
-  }
-}
-
-@keyframes dot-orbit-c {
-  0% {
-    transform: rotate(255deg) translateX(var(--dot-c-radius)) rotate(-255deg);
-    opacity: 0.55;
-    animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1);
-  }
-  48% {
-    transform: rotate(320deg) translateX(var(--dot-c-radius)) rotate(-320deg);
-    opacity: 0.95;
-    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
-  }
-  82% {
-    transform: rotate(560deg) translateX(var(--dot-c-radius)) rotate(-560deg);
-    opacity: 0.68;
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
-  }
-  100% {
-    transform: rotate(615deg) translateX(var(--dot-c-radius)) rotate(-615deg);
-    opacity: 0.55;
+    transform: perspective(900px) rotateX(4deg) rotateY(-6deg) scale(0.985, 1.015);
   }
 }
 
 @keyframes core-settle {
   0% {
     transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 242, 254, 0.4);
   }
-  45% {
-    transform: scale(1.018);
+  40% {
+    transform: scale(1.12);
+    box-shadow: 0 0 45px 10px rgba(0, 242, 254, 0.7), 0 0 80px 20px rgba(255, 8, 68, 0.4);
   }
   100% {
     transform: scale(1);
+    box-shadow: 0 0 25px 4px rgba(0, 242, 254, 0.3);
   }
 }
 
+/* 3. The 4 CMYK Orbital Photons */
+/* Cyan (A) */
+@keyframes dot-orbit-a {
+  0% {
+    transform: rotate(0deg) translateX(var(--dot-a-radius)) rotate(0deg) scale(0.9);
+    opacity: 0.8;
+  }
+  38% {
+    transform: rotate(210deg) translateX(calc(var(--dot-a-radius) * 1.1)) rotate(-210deg) scale(1.25);
+    opacity: 1;
+  }
+  72% {
+    transform: rotate(290deg) translateX(calc(var(--dot-a-radius) * 0.95)) rotate(-290deg) scale(0.85);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(360deg) translateX(var(--dot-a-radius)) rotate(-360deg) scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+/* Magenta (B) */
+@keyframes dot-orbit-b {
+  0% {
+    transform: rotate(140deg) translateX(var(--dot-b-radius)) rotate(-140deg) scale(1.1);
+    opacity: 0.9;
+  }
+  42% {
+    transform: rotate(-30deg) translateX(calc(var(--dot-b-radius) * 0.9)) rotate(30deg) scale(0.85);
+    opacity: 0.75;
+  }
+  78% {
+    transform: rotate(-160deg) translateX(calc(var(--dot-b-radius) * 1.15)) rotate(160deg) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-220deg) translateX(var(--dot-b-radius)) rotate(220deg) scale(1.1);
+    opacity: 0.9;
+  }
+}
+
+/* Yellow (C) */
+@keyframes dot-orbit-c {
+  0% {
+    transform: rotate(260deg) translateX(var(--dot-c-radius)) rotate(-260deg) scale(0.9);
+    opacity: 0.75;
+  }
+  45% {
+    transform: rotate(340deg) translateX(calc(var(--dot-c-radius) * 1.18)) rotate(-340deg) scale(1.2);
+    opacity: 1;
+  }
+  80% {
+    transform: rotate(570deg) translateX(calc(var(--dot-c-radius) * 0.88)) rotate(-570deg) scale(0.8);
+    opacity: 0.65;
+  }
+  100% {
+    transform: rotate(620deg) translateX(var(--dot-c-radius)) rotate(-620deg) scale(0.9);
+    opacity: 0.75;
+  }
+}
+
+/* Key / Violet (D) */
+@keyframes dot-orbit-d {
+  0% {
+    transform: rotate(45deg) translateX(var(--dot-d-radius)) rotate(-45deg) scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: rotate(235deg) translateX(calc(var(--dot-d-radius) * 1.08)) rotate(-235deg) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(405deg) translateX(var(--dot-d-radius)) rotate(-405deg) scale(1);
+    opacity: 0.85;
+  }
+}
+
+/* Converge animations on completion */
 @keyframes dot-converge-a {
   0% {
     transform: rotate(0deg) translateX(var(--dot-a-radius)) scale(1);
-    opacity: 0.75;
+    opacity: 0.85;
   }
   100% {
     transform: rotate(45deg) translateX(0px) scale(0);
@@ -577,8 +594,8 @@
 
 @keyframes dot-converge-b {
   0% {
-    transform: rotate(150deg) translateX(var(--dot-b-radius)) scale(1);
-    opacity: 0.85;
+    transform: rotate(140deg) translateX(var(--dot-b-radius)) scale(1);
+    opacity: 0.9;
   }
   100% {
     transform: rotate(120deg) translateX(0px) scale(0);
@@ -588,8 +605,8 @@
 
 @keyframes dot-converge-c {
   0% {
-    transform: rotate(255deg) translateX(var(--dot-c-radius)) scale(1);
-    opacity: 0.75;
+    transform: rotate(260deg) translateX(var(--dot-c-radius)) scale(1);
+    opacity: 0.8;
   }
   100% {
     transform: rotate(290deg) translateX(0px) scale(0);
@@ -597,6 +614,122 @@
   }
 }
 
+@keyframes dot-converge-d {
+  0% {
+    transform: rotate(45deg) translateX(var(--dot-d-radius)) scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: rotate(90deg) translateX(0px) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Glass Core Sheen Sweep */
+@keyframes glass-sheen {
+  0% {
+    transform: translateX(-150%) rotate(45deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateX(180%) rotate(45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(180%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* Reticle Rotation & Pulse */
+@keyframes reticle-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Checkmark spring pop on completion */
+@keyframes checkmark-pop {
+  0% {
+    transform: scale(0) rotate(-35deg);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.22) rotate(6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Supernova shockwave burst */
+@keyframes supernova-burst {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* Interactive click shockwave */
+@keyframes shockwave-expand {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+/* Micro-sparkle particle burst */
+@keyframes sparkle-burst {
+  0% {
+    transform: translate(0, 0) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx, 0), var(--ty, 0)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Liquid Neon Progress Bar Flow */
+@keyframes progress-liquid-flow {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+/* Brand shimmer text */
+@keyframes brand-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Container transitions */
 @keyframes loading-container-enter {
   0% {
     opacity: 0;
@@ -644,15 +777,36 @@
   }
 }
 
+/* ====================================================
+   Component Classes
+   ==================================================== */
+
 .loading-container {
   position: fixed;
   inset: 0;
   z-index: 9999;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--background);
   pointer-events: auto;
+  user-select: none;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* Vignette & Frosted Depth on Container */
+.loading-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at center,
+    transparent 20%,
+    color-mix(in oklch, var(--background) 70%, black) 100%
+  );
+  pointer-events: none;
 }
 
 .loading-scene {
@@ -660,22 +814,38 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 220px;
-  height: 220px;
+  width: 260px;
+  height: 240px;
   pointer-events: none;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.4, 1);
+  transform: perspective(1000px)
+    rotateX(calc(var(--tilt-y, 0) * -12deg))
+    rotateY(calc(var(--tilt-x, 0) * 12deg))
+    translateZ(0);
 }
 
+/* 1. Ambient CMYK Prismatic Aurora Glow */
 .loading-ambient {
   position: absolute;
-  width: 240px;
-  height: 240px;
+  width: 280px;
+  height: 280px;
   border-radius: 9999px;
-  background: color-mix(in oklch, var(--primary) 26%, transparent);
-  filter: blur(38px);
+  background: radial-gradient(
+    circle at 45% 45%,
+    rgba(0, 242, 254, 0.42) 0%,
+    rgba(255, 8, 68, 0.38) 35%,
+    rgba(255, 179, 0, 0.32) 65%,
+    rgba(121, 40, 202, 0.38) 85%,
+    transparent 100%
+  );
+  filter: blur(48px);
   pointer-events: none;
   transform: translateZ(0);
 }
 
+/* 2. Core Precision Optical Plate */
 .loading-core {
   position: relative;
   width: var(--loading-core-size);
@@ -683,68 +853,366 @@
   border-radius: var(--radius-2xl);
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--foreground) 90%, var(--card) 10%),
-    color-mix(in oklch, var(--foreground) 76%, var(--card) 24%)
-  );
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.04) 50%,
+    rgba(0, 0, 0, 0.25) 100%
+  ),
+  color-mix(in oklch, var(--card) 85%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
   box-shadow:
-    inset 0 1px 0 0 color-mix(in oklch, var(--card) 30%, transparent),
-    0 2px 6px 0 color-mix(in oklch, var(--foreground) 20%, transparent),
-    0 18px 36px -8px color-mix(in oklch, var(--foreground) 32%, transparent);
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.4),
+    0 4px 16px 0 color-mix(in oklch, var(--foreground) 15%, transparent),
+    0 16px 36px -8px color-mix(in oklch, var(--foreground) 30%, transparent),
+    0 0 28px -2px rgba(0, 242, 254, 0.3);
   pointer-events: none;
   z-index: 2;
-  transform: translateZ(0);
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
+/* Optical glass light sweep across the core */
+.loading-core::after {
+  content: "";
+  position: absolute;
+  inset: -100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 40%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0.05) 60%,
+    transparent 100%
+  );
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+/* 3. The 4 Orbital CMYK Dots */
 .loading-dot {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -3px;
-  margin-left: -3px;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -4px;
   border-radius: 9999px;
-  background: var(--primary);
   pointer-events: none;
   z-index: 3;
   transform: translateZ(0);
 }
 
+/* Dot A: Vibrant Cyan */
+.loading-dot-a {
+  background: #00f2fe;
+  box-shadow:
+    0 0 10px #00f2fe,
+    0 0 20px rgba(0, 242, 254, 0.8),
+    0 0 35px rgba(0, 242, 254, 0.5);
+}
+
+/* Dot B: Radiant Magenta */
+.loading-dot-b {
+  background: #ff0844;
+  box-shadow:
+    0 0 10px #ff0844,
+    0 0 20px rgba(255, 8, 68, 0.8),
+    0 0 35px rgba(255, 8, 68, 0.5);
+}
+
+/* Dot C: Luminous Yellow */
+.loading-dot-c {
+  background: #ffb300;
+  box-shadow:
+    0 0 10px #ffb300,
+    0 0 20px rgba(255, 179, 0, 0.8),
+    0 0 35px rgba(255, 179, 0, 0.5);
+}
+
+/* Dot D: Deep Indigo / Violet (Key) */
+.loading-dot-d {
+  background: #7928ca;
+  box-shadow:
+    0 0 10px #7928ca,
+    0 0 20px rgba(121, 40, 202, 0.8),
+    0 0 35px rgba(121, 40, 202, 0.5);
+}
+
+/* Reticle Crosshair inside Core */
+.loading-reticle {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.75;
+  transition: opacity 0.3s ease;
+}
+
+.loading-reticle svg {
+  width: 58%;
+  height: 58%;
+  stroke: color-mix(in oklch, var(--foreground) 75%, transparent);
+}
+
+/* Completion Checkmark */
+.loading-checkmark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.loading-checkmark svg {
+  width: 48%;
+  height: 48%;
+  stroke: #00f2fe;
+  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.8));
+}
+
+/* Supernova completion burst element */
+.loading-supernova {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border-radius: 9999px;
+  border: 2px solid rgba(0, 242, 254, 0.8);
+  box-shadow: 0 0 30px rgba(255, 8, 68, 0.6), inset 0 0 20px rgba(255, 179, 0, 0.4);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Interactive click shockwave */
+.loading-shockwave {
+  position: fixed;
+  width: 80px;
+  height: 80px;
+  margin-top: -40px;
+  margin-left: -40px;
+  border-radius: 9999px;
+  border: 2px solid rgba(0, 242, 254, 0.8);
+  box-shadow: 0 0 25px rgba(255, 8, 68, 0.7), inset 0 0 15px rgba(255, 179, 0, 0.5);
+  pointer-events: none;
+  z-index: 9998;
+  animation: shockwave-expand 680ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Interactive sparkle particle */
+.loading-sparkle {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  margin-left: -3px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 9998;
+  animation: sparkle-burst 620ms cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+
+/* Dopamine HUD */
+.loading-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 18px;
+  padding: 0 16px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* App Title Shimmer */
+.loading-brand {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(
+    135deg,
+    #00f2fe 0%,
+    #ff0844 33%,
+    #ffb300 66%,
+    #7928ca 100%
+  );
+  background-size: 250% 250%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: brand-shimmer 6s ease infinite;
+}
+
+/* Progress Track & Liquid Neon Bar */
+.loading-progress-track {
+  position: relative;
+  width: 100%;
+  height: 7px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+
+.loading-progress-bar {
+  position: relative;
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    #00f2fe 0%,
+    #ff0844 28%,
+    #ffb300 55%,
+    #7928ca 82%,
+    #00f2fe 100%
+  );
+  background-size: 200% 100%;
+  animation: progress-liquid-flow 3s linear infinite;
+  box-shadow:
+    0 0 12px rgba(0, 242, 254, 0.7),
+    0 0 20px rgba(255, 8, 68, 0.4);
+  transition: width 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.loading-progress-flare {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 10px;
+  height: 100%;
+  border-radius: 9999px;
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff, 0 0 16px rgba(0, 242, 254, 0.9);
+}
+
+/* Status Micro-Copy & Percentage */
+.loading-hud-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.825rem;
+  line-height: 1.25;
+}
+
+.loading-status-text {
+  color: color-mix(in oklch, var(--foreground) 80%, transparent);
+  font-weight: 500;
+  text-align: right;
+  direction: rtl;
+  min-height: 1.3em;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.loading-percentage {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #00f2fe;
+  text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+  letter-spacing: -0.03em;
+}
+
+/* Interactive Tap Chip / Dopamine Booster */
+.loading-interactive-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.725rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: color-mix(in oklch, var(--foreground) 75%, transparent);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.4, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.loading-interactive-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(0, 242, 254, 0.4);
+  transform: translateY(-1px) scale(1.02);
+  color: var(--foreground);
+}
+
+.loading-interactive-chip:active {
+  transform: translateY(0px) scale(0.96);
+}
+
+/* Animations binding in normal motion */
 @media (prefers-reduced-motion: no-preference) {
   .loading-ambient {
-    animation: ambient-breathe 6.2s ease-in-out infinite;
+    animation: ambient-breathe 6.5s ease-in-out infinite;
   }
 
   .loading-core--drift {
-    animation: core-drift 7.4s infinite;
+    animation: core-drift 7.5s infinite;
+  }
+
+  .loading-core--drift::after {
+    animation: glass-sheen 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
   .loading-core--completing {
-    animation: core-settle 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: core-settle 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .loading-reticle {
+    animation: reticle-spin 14s linear infinite;
+  }
+
+  .loading-checkmark {
+    animation: checkmark-pop 520ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .loading-supernova {
+    animation: supernova-burst 580ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .loading-dot-a {
-    animation: dot-orbit-a 4.8s infinite;
+    animation: dot-orbit-a 4.4s infinite;
   }
 
   .loading-dot-b {
-    animation: dot-orbit-b 6.3s infinite;
+    animation: dot-orbit-b 5.8s infinite;
   }
 
   .loading-dot-c {
-    animation: dot-orbit-c 5.5s infinite;
+    animation: dot-orbit-c 4.9s infinite;
+  }
+
+  .loading-dot-d {
+    animation: dot-orbit-d 6.6s infinite;
   }
 
   .loading-dot-a--completing {
-    animation: dot-converge-a 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: dot-converge-a 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .loading-dot-b--completing {
-    animation: dot-converge-b 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: dot-converge-b 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .loading-dot-c--completing {
-    animation: dot-converge-c 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: dot-converge-c 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .loading-dot-d--completing {
+    animation: dot-converge-d 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   .loading-container--awakening {
@@ -758,6 +1226,7 @@
   }
 }
 
+/* Reduced Motion Fallbacks */
 @media (prefers-reduced-motion: reduce) {
   .loading-ambient {
     animation: none;
@@ -770,8 +1239,24 @@
     transform: none;
   }
 
+  .loading-core::after {
+    display: none;
+  }
+
   .loading-dot {
     display: none;
+  }
+
+  .loading-progress-bar {
+    animation: none;
+  }
+
+  .loading-brand {
+    animation: none;
+  }
+
+  .loading-scene {
+    transform: none !important;
   }
 
   .loading-container--awakening {
@@ -796,8 +1281,24 @@
   transform: none;
 }
 
+.loading-container[data-reduced-motion="true"] .loading-core::after {
+  display: none;
+}
+
 .loading-container[data-reduced-motion="true"] .loading-dot {
   display: none;
+}
+
+.loading-container[data-reduced-motion="true"] .loading-progress-bar {
+  animation: none;
+}
+
+.loading-container[data-reduced-motion="true"] .loading-brand {
+  animation: none;
+}
+
+.loading-container[data-reduced-motion="true"] .loading-scene {
+  transform: none !important;
 }
 
 .loading-container[data-reduced-motion="true"].loading-container--awakening {
