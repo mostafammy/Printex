@@ -8,7 +8,7 @@ import { ChevronLeft } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize, ALL_PERMISSIONS } from "~/server/auth";
 import type { Permission } from "~/server/auth";
-import { normalizePage, paginateRows } from "~/server/pagination";
+import { paginateQuery } from "~/server/pagination";
 import {
   createUser,
   deactivateUser,
@@ -150,23 +150,23 @@ export default async function AdminUsersPage({
 
   const params = await searchParams;
   const requestedPage = typeof params.page === "string" ? Number(params.page) : undefined;
-  const { page, pageSize, skip, take } = normalizePage({ page: requestedPage });
 
-  const [userRows, roles, departments] = await Promise.all([
-    db.user.findMany({
-      include: {
-        roles: { include: { role: true } },
-        departments: { include: { department: true } },
-        extraPermissions: true,
-      },
-      orderBy: { username: "asc" },
-      skip,
-      take,
-    }),
+  const [{ rows: users, nextCursor }, roles, departments] = await Promise.all([
+    paginateQuery({ page: requestedPage }, (skip, take) =>
+      db.user.findMany({
+        include: {
+          roles: { include: { role: true } },
+          departments: { include: { department: true } },
+          extraPermissions: true,
+        },
+        orderBy: { username: "asc" },
+        skip,
+        take,
+      }),
+    ),
     db.role.findMany({ orderBy: { name: "asc" } }),
     db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
   ]);
-  const { rows: users, nextCursor } = paginateRows(userRows, page, pageSize);
 
   return (
     <div className="flex flex-col gap-8">
