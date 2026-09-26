@@ -12,6 +12,7 @@ import {
   todayShopLocalDate,
 } from "~/server/finance";
 import { DailyCashSummary } from "~/components/finance/daily-cash-summary";
+import { PaginationBar } from "~/components/pagination-bar";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
@@ -29,6 +30,8 @@ export default async function DailyCashPage({
   const requested = typeof params.date === "string" && params.date ? params.date : null;
   const date = requested ?? (await todayShopLocalDate());
   const methodFilter = typeof params.method === "string" && params.method ? params.method : undefined;
+  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
 
   const timezone = await getShopTimezone();
   const { startUtc, endUtc } = shopLocalDayBoundsUtc(date, timezone);
@@ -40,7 +43,8 @@ export default async function DailyCashPage({
       to: new Date(endUtc.getTime() - 1),
       method: methodFilter,
       includeVoided: false,
-      pageSize: 100,
+      page,
+      pageSize: 25,
     }),
   ]);
 
@@ -135,9 +139,14 @@ export default async function DailyCashPage({
             ))}
           </ul>
         )}
-        {payments.nextCursor !== null && (
-          <p className="mt-4 text-xs text-muted-foreground">…</p>
-        )}
+        <div className="mt-4">
+          <PaginationBar
+            basePath="/finance/daily-cash"
+            page={page}
+            hasNextPage={payments.nextCursor !== null}
+            query={{ date, method: methodFilter }}
+          />
+        </div>
       </section>
     </div>
   );
