@@ -111,6 +111,10 @@ model Customer {
   classification CustomerClassification? @relation(fields: [classificationId], references: [id])
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
+  pricingRules   CustomerPricingRule[]
+  // --- 052-finance reverse relations ---
+  payments       Payment[]
+  customerCredit CustomerCredit?
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -132,9 +136,15 @@ model Order {
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
 
-  workItems WorkItem[]
+  workItems    WorkItem[]
+  // --- 052-finance reverse relations ---
+  payments     Payment[]
+  expenses     Expense[]
+  directCosts  DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
+
+  @@index([customerId])
 }
 
 model WorkItem {
@@ -197,8 +207,20 @@ model WorkItem {
   designVersions          DesignVersion[]
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
+  fileAssets FileAsset[] @relation("FileAssetWorkItem")
+  prices     WorkItemPrice[]
+  pricingStatus PricingStatus?
+  // --- 052-finance reverse relations ---
+  expenses    Expense[]
+  directCosts DirectCost[]
 
   @@index([orderId, state])
+  // Review queue (getReviewQueue) filters on `state` alone; My Queue /
+  // designer workload / eligible-designers filter on `assigneeId` (+ state).
+  // Neither was covered by the existing [orderId, state] index, so both were
+  // sequential-scanning the full WorkItem table at this row count.
+  @@index([state])
+  @@index([assigneeId, state])
 }
 
 /// Admin-configured product catalog (constitution VI: data, not an enum).
@@ -216,8 +238,11 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems    WorkItem[]
-  specVersions SpecVersion[] @relation("SpecVersionProductType")
+  workItems            WorkItem[]
+  specVersions         SpecVersion[]          @relation("SpecVersionProductType")
+  pricingPolicy        ProductPricingPolicy?
+  priceLists           PriceList[]
+  customerPricingRules CustomerPricingRule[]
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).

@@ -367,6 +367,144 @@ exports.Prisma.CustomerPromotionScalarFieldEnum = {
   reversedById: 'reversedById'
 };
 
+exports.Prisma.FileObjectScalarFieldEnum = {
+  id: 'id',
+  storageKey: 'storageKey',
+  sizeBytes: 'sizeBytes',
+  sha256: 'sha256',
+  mimeType: 'mimeType',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileAssetScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  category: 'category',
+  logicalName: 'logicalName',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FileVersionScalarFieldEnum = {
+  id: 'id',
+  fileAssetId: 'fileAssetId',
+  fileObjectId: 'fileObjectId',
+  versionNumber: 'versionNumber',
+  originalName: 'originalName',
+  uploadedById: 'uploadedById',
+  note: 'note',
+  status: 'status',
+  approved: 'approved',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AttachmentScalarFieldEnum = {
+  id: 'id',
+  fileObjectId: 'fileObjectId',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  originalName: 'originalName',
+  kind: 'kind',
+  createdById: 'createdById',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileAuditEventScalarFieldEnum = {
+  id: 'id',
+  actorId: 'actorId',
+  action: 'action',
+  entity: 'entity',
+  entityId: 'entityId',
+  beforeValues: 'beforeValues',
+  afterValues: 'afterValues',
+  reason: 'reason',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FileConfigScalarFieldEnum = {
+  id: 'id',
+  mimeAllowlist: 'mimeAllowlist',
+  maxFileSizeBytes: 'maxFileSizeBytes',
+  departments: 'departments',
+  previewExpirySeconds: 'previewExpirySeconds',
+  updatedAt: 'updatedAt',
+  updatedById: 'updatedById'
+};
+
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  customerId: 'customerId',
+  amount: 'amount',
+  currency: 'currency',
+  method: 'method',
+  source: 'source',
+  note: 'note',
+  occurredAt: 'occurredAt',
+  recordedAt: 'recordedAt',
+  recordedById: 'recordedById',
+  receiptNumber: 'receiptNumber'
+};
+
+exports.Prisma.FinanceVoidScalarFieldEnum = {
+  id: 'id',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  reason: 'reason',
+  voidedById: 'voidedById',
+  voidedAt: 'voidedAt'
+};
+
+exports.Prisma.ExpenseScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  category: 'category',
+  expenseDate: 'expenseDate',
+  employee: 'employee',
+  description: 'description',
+  orderId: 'orderId',
+  workItemId: 'workItemId',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.ExpenseApprovalScalarFieldEnum = {
+  expenseId: 'expenseId',
+  approvedById: 'approvedById',
+  approvedAt: 'approvedAt'
+};
+
+exports.Prisma.DirectCostScalarFieldEnum = {
+  id: 'id',
+  amount: 'amount',
+  costDate: 'costDate',
+  description: 'description',
+  orderId: 'orderId',
+  workItemId: 'workItemId',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.CustomerCreditScalarFieldEnum = {
+  customerId: 'customerId',
+  creditApproved: 'creditApproved',
+  creditLimit: 'creditLimit',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.FinanceConfigScalarFieldEnum = {
+  id: 'id',
+  paymentMethods: 'paymentMethods',
+  paymentSources: 'paymentSources',
+  expenseCategories: 'expenseCategories',
+  approvalThreshold: 'approvalThreshold',
+  shopTimezone: 'shopTimezone',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -464,6 +602,72 @@ exports.Prisma.AuditEventScalarFieldEnum = {
   ipAddress: 'ipAddress',
   userAgent: 'userAgent',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.ProductPricingPolicyScalarFieldEnum = {
+  id: 'id',
+  productTypeId: 'productTypeId',
+  mode: 'mode',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.PriceListScalarFieldEnum = {
+  id: 'id',
+  productTypeId: 'productTypeId',
+  unit: 'unit',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  status: 'status',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.PriceTierScalarFieldEnum = {
+  id: 'id',
+  priceListId: 'priceListId',
+  minimumQuantity: 'minimumQuantity',
+  maximumQuantity: 'maximumQuantity',
+  basePrice: 'basePrice'
+};
+
+exports.Prisma.CustomerPricingRuleScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  productTypeId: 'productTypeId',
+  unit: 'unit',
+  kind: 'kind',
+  fixedPrice: 'fixedPrice',
+  discountPercent: 'discountPercent',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  status: 'status',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WorkItemPriceScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  amount: 'amount',
+  currency: 'currency',
+  source: 'source',
+  quoteBreakdown: 'quoteBreakdown',
+  setById: 'setById',
+  setAt: 'setAt',
+  reason: 'reason',
+  specFingerprint: 'specFingerprint',
+  replacedAt: 'replacedAt'
+};
+
+exports.Prisma.PricingStatusScalarFieldEnum = {
+  workItemId: 'workItemId',
+  status: 'status',
+  waitingSince: 'waitingSince',
+  disputeReason: 'disputeReason',
+  currentPriceId: 'currentPriceId',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -581,6 +785,87 @@ exports.ReturnAttachmentKind = exports.$Enums.ReturnAttachmentKind = {
   FILE: 'FILE'
 };
 
+exports.FileCategory = exports.$Enums.FileCategory = {
+  ORIGINAL: 'ORIGINAL',
+  DESIGN_VERSIONS: 'DESIGN_VERSIONS',
+  REVIEW_PROOF: 'REVIEW_PROOF',
+  APPROVED: 'APPROVED',
+  PRODUCTION: 'PRODUCTION',
+  SUPPORTING: 'SUPPORTING'
+};
+
+exports.FileLifecycleStatus = exports.$Enums.FileLifecycleStatus = {
+  ACTIVE: 'ACTIVE',
+  SUPERSEDED: 'SUPERSEDED',
+  VOID: 'VOID',
+  ARCHIVED: 'ARCHIVED',
+  CORRUPTED: 'CORRUPTED'
+};
+
+exports.AttachmentKind = exports.$Enums.AttachmentKind = {
+  VOICE_NOTE: 'VOICE_NOTE',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE'
+};
+
+exports.AuditAction = exports.$Enums.AuditAction = {
+  CREATE: 'CREATE',
+  UPDATE: 'UPDATE',
+  STATUS_CHANGE: 'STATUS_CHANGE',
+  APPROVE: 'APPROVE',
+  VOID: 'VOID',
+  ARCHIVE: 'ARCHIVE',
+  SUPERSEDE: 'SUPERSEDE'
+};
+
+exports.AuditEntity = exports.$Enums.AuditEntity = {
+  FILE_OBJECT: 'FILE_OBJECT',
+  FILE_ASSET: 'FILE_ASSET',
+  FILE_VERSION: 'FILE_VERSION',
+  ATTACHMENT: 'ATTACHMENT'
+};
+
+exports.FinanceVoidEntity = exports.$Enums.FinanceVoidEntity = {
+  PAYMENT: 'PAYMENT',
+  EXPENSE: 'EXPENSE',
+  DIRECT_COST: 'DIRECT_COST'
+};
+
+exports.PricingMode = exports.$Enums.PricingMode = {
+  FIXED: 'FIXED',
+  VARIABLE: 'VARIABLE'
+};
+
+exports.PricingUnit = exports.$Enums.PricingUnit = {
+  PIECE: 'PIECE',
+  SQUARE_METER: 'SQUARE_METER',
+  LINEAR_METER: 'LINEAR_METER',
+  SHEET: 'SHEET',
+  PACK: 'PACK'
+};
+
+exports.PriceConfigStatus = exports.$Enums.PriceConfigStatus = {
+  ACTIVE: 'ACTIVE',
+  RETIRED: 'RETIRED'
+};
+
+exports.CustomerRuleKind = exports.$Enums.CustomerRuleKind = {
+  FIXED: 'FIXED',
+  PERCENT_DISCOUNT: 'PERCENT_DISCOUNT'
+};
+
+exports.PriceSource = exports.$Enums.PriceSource = {
+  LIST: 'LIST',
+  CUSTOMER_RULE: 'CUSTOMER_RULE',
+  MANUAL: 'MANUAL'
+};
+
+exports.PricingStatusValue = exports.$Enums.PricingStatusValue = {
+  PENDING: 'PENDING',
+  PRICED: 'PRICED',
+  DISPUTED: 'DISPUTED'
+};
+
 exports.Prisma.ModelName = {
   SpecVersion: 'SpecVersion',
   ChangeRequest: 'ChangeRequest',
@@ -601,6 +886,19 @@ exports.Prisma.ModelName = {
   CustomerAddress: 'CustomerAddress',
   CustomerClassification: 'CustomerClassification',
   CustomerPromotion: 'CustomerPromotion',
+  FileObject: 'FileObject',
+  FileAsset: 'FileAsset',
+  FileVersion: 'FileVersion',
+  Attachment: 'Attachment',
+  FileAuditEvent: 'FileAuditEvent',
+  FileConfig: 'FileConfig',
+  Payment: 'Payment',
+  FinanceVoid: 'FinanceVoid',
+  Expense: 'Expense',
+  ExpenseApproval: 'ExpenseApproval',
+  DirectCost: 'DirectCost',
+  CustomerCredit: 'CustomerCredit',
+  FinanceConfig: 'FinanceConfig',
   User: 'User',
   Session: 'Session',
   Account: 'Account',
@@ -610,7 +908,13 @@ exports.Prisma.ModelName = {
   UserRole: 'UserRole',
   UserPermission: 'UserPermission',
   UserDepartment: 'UserDepartment',
-  AuditEvent: 'AuditEvent'
+  AuditEvent: 'AuditEvent',
+  ProductPricingPolicy: 'ProductPricingPolicy',
+  PriceList: 'PriceList',
+  PriceTier: 'PriceTier',
+  CustomerPricingRule: 'CustomerPricingRule',
+  WorkItemPrice: 'WorkItemPrice',
+  PricingStatus: 'PricingStatus'
 };
 
 /**

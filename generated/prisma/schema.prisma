@@ -1,135 +1,3 @@
-// Order Change Control models — specs/016-change-control/data-model.md
-// Multi-file Prisma schema (prismaSchemaFolder preview feature).
-// Relations to models in core.prisma and identity.prisma resolve transparently.
-
-// --- Enums -----------------------------------------------------------------
-
-/// research.md §1/§2. Origin of a specification version (FR-002).
-enum SpecVersionOrigin {
-  INITIAL // created with the Work Item (011 creation paths)
-  BACKFILL // migration backfill or runtime self-heal (FR-005); createdById = null
-  DIRECT_EDIT // editSpec / 011 editWorkItem (US2)
-  CHANGE_REQUEST // approveChangeRequest (US3)
-  ADMIN_OVERRIDE // adminOverrideSpec (US7)
-}
-
-enum ChangeRequestStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  WITHDRAWN
-  CLOSED_BY_CANCELLATION
-}
-
-enum ChangeRequestOutcome {
-  CONTINUE_PRODUCTION
-  REDESIGN
-}
-
-// --- Models ----------------------------------------------------------------
-
-/// One immutable specification snapshot. Append-only: REVOKE UPDATE, DELETE
-/// (manual-sql/016-change-control-constraints.sql). Columns mirror WorkItem's
-/// 011 descriptive fields exactly (types, precision, enum).
-model SpecVersion {
-  id         String            @id @default(cuid())
-  workItemId String
-  workItem   WorkItem          @relation("WorkItemSpecVersions", fields: [workItemId], references: [id])
-  /// 1, 2, 3 … per Work Item, never reused.
-  version    Int
-  origin     SpecVersionOrigin
-
-  productTypeId String?
-  productType   ProductType?           @relation("SpecVersionProductType", fields: [productTypeId], references: [id])
-  description   String?
-  quantity      Int?
-  widthValue    Decimal?               @db.Decimal(10, 2)
-  heightValue   Decimal?               @db.Decimal(10, 2)
-  dimensionUnit WorkItemDimensionUnit?
-  material      String?
-  finishNotes   String?
-
-  /// WorkItem.state when this version was created (FR-002).
-  stateAtCreation WorkItemState
-  /// Required for ADMIN_OVERRIDE and CHANGE_REQUEST (copied from the request); optional otherwise.
-  reason          String?
-  /// Null only for origin = BACKFILL.
-  createdById     String?
-  createdBy       User?         @relation("SpecVersionCreatedBy", fields: [createdById], references: [id])
-  createdAt       DateTime      @default(now())
-
-  /// Back-relations
-  currentFor            WorkItem?       @relation("WorkItemCurrentSpecVersion")
-  baseOfChangeRequests  ChangeRequest[] @relation("ChangeRequestBaseVersion")
-  resultOfChangeRequest ChangeRequest?  @relation("ChangeRequestResultingVersion")
-
-  @@unique([workItemId, version])
-}
-
-/// A customer's requested modification to an IN_PRODUCTION Work Item (US3), or
-/// the auto-approved record of an in-production Admin override (FR-028).
-/// Never deleted. Fields below the divider are written exactly once by the
-/// guarded PENDING → terminal update (research.md §13).
-model ChangeRequest {
-  id                   String              @id @default(cuid())
-  workItemId           String
-  workItem             WorkItem            @relation(fields: [workItemId], references: [id])
-  status               ChangeRequestStatus @default(PENDING)
-  baseSpecVersionId    String
-  baseSpecVersion      SpecVersion         @relation("ChangeRequestBaseVersion", fields: [baseSpecVersionId], references: [id])
-  /// SpecPatch (contracts/change-control.md) — validated by specPatchSchema on
-  /// write AND re-parsed on read; never consumed untyped.
-  proposedPatch        Json
-  requestReason        String
-  requestedById        String
-  requestedBy          User                @relation("ChangeRequestRequestedBy", fields: [requestedById], references: [id])
-  createdAt            DateTime            @default(now())
-  /// Set when createChangeRequest closed an open ACTIVE PhaseTiming segment (FR-012).
-  pausedRunningTimerAt DateTime?
-  isAdminOverride      Boolean             @default(false)
-
-  // ── decision (written once) ─────────────────────────────────────────────
-  decidedById            String?
-  decidedBy              User?                 @relation("ChangeRequestDecidedBy", fields: [decidedById], references: [id])
-  decidedAt              DateTime?
-  /// Rejection/withdrawal reason (required then) or approval note (optional).
-  decisionNote           String?
-  /// Non-null iff status = APPROVED.
-  outcome                ChangeRequestOutcome?
-  resultingSpecVersionId String?               @unique
-  resultingSpecVersion   SpecVersion?          @relation("ChangeRequestResultingVersion", fields: [resultingSpecVersionId], references: [id])
-  /// Non-null iff outcome = REDESIGN.
-  returnId               String?               @unique
-  return                 Return?               @relation(fields: [returnId], references: [id])
-
-  // ── production acknowledgment (outcome = CONTINUE_PRODUCTION only) ──────
-  productionAcknowledgedAt   DateTime?
-  productionAcknowledgedById String?
-  productionAcknowledgedBy   User?     @relation("ChangeRequestAcknowledgedBy", fields: [productionAcknowledgedById], references: [id])
-
-  @@index([workItemId, status])
-  @@index([status, createdAt])
-}
-
-/// Permanent record of a cancellation after production started (US6). Source
-/// record for 052's direct cost (PRD §30). Append-only (REVOKE UPDATE, DELETE).
-model LateCancellation {
-  id                    String        @id @default(cuid())
-  workItemId            String        @unique
-  workItem              WorkItem      @relation(fields: [workItemId], references: [id])
-  stateAtCancellation   WorkItemState
-  reason                String
-  /// Exact decimal, >= 0, entered explicitly (FR-024).
-  costIncurred          Decimal       @db.Decimal(12, 2)
-  /// Configured column, default EGP (constitution VI) — not a UI constant.
-  currency              String        @default("EGP")
-  producedQuantitySoFar Int?
-  costNote              String?
-  createdById           String
-  createdBy             User          @relation("LateCancellationCreatedBy", fields: [createdById], references: [id])
-  createdAt             DateTime      @default(now())
-}
-
 // Core domain models — the Order → WorkItem canonical model (constitution I).
 // Source of truth: specs/002-core-domain-shell/data-model.md
 // Relations to `User` (identity.prisma) work directly across schema files —
@@ -243,6 +111,10 @@ model Customer {
   classification CustomerClassification? @relation(fields: [classificationId], references: [id])
   promotionsFrom CustomerPromotion[]     @relation("PromotionSource")
   promotionsTo   CustomerPromotion[]     @relation("PromotionTarget")
+  pricingRules   CustomerPricingRule[]
+  // --- 052-finance reverse relations ---
+  payments       Payment[]
+  customerCredit CustomerCredit?
 
   @@index([normalizedName])
   @@index([isArchived])
@@ -264,9 +136,15 @@ model Order {
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
 
-  workItems WorkItem[]
+  workItems   WorkItem[]
+  // --- 052-finance reverse relations ---
+  payments    Payment[]
+  expenses    Expense[]
+  directCosts DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
+
+  @@index([customerId])
 }
 
 model WorkItem {
@@ -313,24 +191,25 @@ model WorkItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  /// --- 016-change-control ------------------------------------------------
-  /// Current SpecVersion. Nullable only for the circular insert and the
-  /// window before backfill (research.md §14); non-null for every Work Item
-  /// after backfill (verified by query + contract test).
-  currentSpecVersionId String?           @unique
-  currentSpecVersion   SpecVersion?      @relation("WorkItemCurrentSpecVersion", fields: [currentSpecVersionId], references: [id])
-  specVersions         SpecVersion[]     @relation("WorkItemSpecVersions")
-  changeRequests       ChangeRequest[]
-  lateCancellation     LateCancellation?
-  /// --- end 016-change-control ---------------------------------------------
-
   transitions             WorkItemTransition[]
   phaseTimings            PhaseTiming[]
   designVersions          DesignVersion[]
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
+  fileAssets              FileAsset[]              @relation("FileAssetWorkItem")
+  prices                  WorkItemPrice[]
+  pricingStatus           PricingStatus?
+  // --- 052-finance reverse relations ---
+  expenses                Expense[]
+  directCosts             DirectCost[]
 
   @@index([orderId, state])
+  // Review queue (getReviewQueue) filters on `state` alone; My Queue /
+  // designer workload / eligible-designers filter on `assigneeId` (+ state).
+  // Neither was covered by the existing [orderId, state] index, so both were
+  // sequential-scanning the full WorkItem table at this row count.
+  @@index([state])
+  @@index([assigneeId, state])
 }
 
 /// Admin-configured product catalog (constitution VI: data, not an enum).
@@ -348,8 +227,10 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems    WorkItem[]
-  specVersions SpecVersion[] @relation("SpecVersionProductType")
+  workItems            WorkItem[]
+  pricingPolicy        ProductPricingPolicy?
+  priceLists           PriceList[]
+  customerPricingRules CustomerPricingRule[]
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).
@@ -448,8 +329,7 @@ model Return {
   designVersion      DesignVersion?    @relation(fields: [designVersionId], references: [id])
   createdAt          DateTime          @default(now())
 
-  attachments   ReturnAttachment[]
-  changeRequest ChangeRequest?
+  attachments ReturnAttachment[]
 
   @@index([workItemId, createdAt])
 }
@@ -560,6 +440,310 @@ model CustomerPromotion {
   @@index([targetCustomerId, performedAt])
 }
 
+// File Storage & Versioning models — 050-files
+// Source of truth: specs/050-files/data-model.md
+// Relations to WorkItem (core.prisma) and User (identity.prisma) work across schema files.
+
+enum FileCategory {
+  ORIGINAL
+  DESIGN_VERSIONS
+  REVIEW_PROOF
+  APPROVED
+  PRODUCTION
+  SUPPORTING
+}
+
+enum FileLifecycleStatus {
+  ACTIVE
+  SUPERSEDED
+  VOID
+  ARCHIVED
+  CORRUPTED
+}
+
+enum AttachmentKind {
+  VOICE_NOTE
+  IMAGE
+  FILE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  STATUS_CHANGE
+  APPROVE
+  VOID
+  ARCHIVE
+  SUPERSEDE
+}
+
+enum AuditEntity {
+  FILE_OBJECT
+  FILE_ASSET
+  FILE_VERSION
+  ATTACHMENT
+}
+
+/// Immutable physical bytes, deduplicated by checksum (constitution IV).
+model FileObject {
+  id         String   @id @default(cuid())
+  /// Opaque hash/ID-based key; never customer/folder naming. Unique.
+  storageKey String   @unique
+  /// Required, 0–5 GB inclusive.
+  sizeBytes  BigInt
+  /// Required 64-hex checksum; unique for deduplication.
+  sha256     String   @unique
+  /// Required; validated against configured allowlist.
+  mimeType   String
+  createdAt  DateTime @default(now())
+
+  fileVersions FileVersion[]
+  attachments  Attachment[]
+
+  @@index([sha256])
+}
+
+/// Logical file attached to one Work Item and category.
+model FileAsset {
+  id          String       @id @default(cuid())
+  workItemId  String
+  workItem    WorkItem     @relation("FileAssetWorkItem", fields: [workItemId], references: [id])
+  category    FileCategory
+  /// Display/grouping name; never storage identity.
+  logicalName String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  fileVersions FileVersion[]
+
+  @@unique([workItemId, category, logicalName])
+  @@index([workItemId, category])
+}
+
+/// Immutable upload metadata pointing to a FileObject.
+model FileVersion {
+  id            String              @id @default(cuid())
+  fileAssetId   String
+  fileAsset     FileAsset           @relation(fields: [fileAssetId], references: [id])
+  fileObjectId  String
+  fileObject    FileObject          @relation(fields: [fileObjectId], references: [id])
+  /// Unique per FileAsset, starts at 1, monotonic under concurrency.
+  versionNumber Int
+  /// Display filename; validated, no path traversal.
+  originalName  String
+  uploadedById  String
+  uploadedBy    User                @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
+  /// Optional upload note.
+  note          String?
+  status        FileLifecycleStatus @default(ACTIVE)
+  /// Set only through markApproved; approval owner is 013.
+  approved      Boolean             @default(false)
+  createdAt     DateTime            @default(now())
+
+  @@unique([fileAssetId, versionNumber])
+  @@index([fileAssetId, createdAt])
+}
+
+/// Generic link to an operational entity (rejection, discrepancy, expense, audit event, message).
+model Attachment {
+  id           String              @id @default(cuid())
+  fileObjectId String
+  fileObject   FileObject          @relation(fields: [fileObjectId], references: [id])
+  /// Rejection, discrepancy, expense, audit event, message, or future configured target.
+  entityType   String
+  /// Target identifier; polymorphic and authorized by owning feature.
+  entityId     String
+  /// Display name.
+  originalName String
+  kind         AttachmentKind
+  createdById  String
+  createdBy    User                @relation("ReturnAttachment", fields: [createdById], references: [id])
+  status       FileLifecycleStatus @default(ACTIVE)
+  createdAt    DateTime            @default(now())
+
+  @@index([entityType, entityId])
+  @@index([fileObjectId])
+}
+
+/// Append-only audit trail for all file lifecycle mutations and approvals.
+/// Follows 001 audit.record contract.
+model FileAuditEvent {
+  id           String      @id @default(cuid())
+  actorId      String
+  actor        User        @relation("WorkItemTransitionActor", fields: [actorId], references: [id])
+  action       AuditAction
+  entity       AuditEntity
+  entityId     String
+  beforeValues Json?
+  afterValues  Json?
+  /// Required for VOID, ARCHIVE, SUPERSEDE, APPROVE.
+  reason       String?
+  createdAt    DateTime    @default(now())
+
+  @@index([entity, entityId])
+  @@index([actorId, createdAt])
+}
+
+/// Runtime configuration singleton loaded from config/050-files.yaml at startup.
+model FileConfig {
+  id                   String   @id @default("files-config")
+  /// Required array of MIME type patterns; validated on write.
+  mimeAllowlist        Json
+  /// Required, 1–10 GB inclusive.
+  maxFileSizeBytes     BigInt
+  /// Required array of { name: string, code: string }; managed by Admin UI.
+  departments          Json
+  /// Required, 60–3600.
+  previewExpirySeconds Int
+  updatedAt            DateTime @updatedAt
+  updatedById          String
+  updatedBy            User     @relation("WorkItemTransitionActor", fields: [updatedById], references: [id])
+}
+
+// 052-finance — payments, expenses, direct costs, customer credit, config.
+//
+// Immutability: Payment / Expense / DirectCost / FinanceVoid / ExpenseApproval
+// rows are append-only (constitution III). Corrections are expressed by
+// appending a FinanceVoid row; approval by appending an ExpenseApproval row.
+// No application code path issues UPDATE/DELETE against these tables, and the
+// creating migration raises from BEFORE UPDATE/DELETE triggers (051 pricing
+// precedent); scripts/test-db.mjs additionally REVOKEs UPDATE/DELETE from the
+// test app role so tests can prove the database refuses too (SC-002).
+
+enum FinanceVoidEntity {
+  PAYMENT
+  EXPENSE
+  DIRECT_COST
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  /// Positive Decimal EGP. Never Float (constitution Money).
+  amount        Decimal  @db.Decimal(12, 2)
+  currency      String   @default("EGP")
+  /// Label snapshot of the configured method at record time (FR-003).
+  method        String
+  /// Label snapshot of the configured source/location at record time.
+  source        String
+  note          String?
+  /// Payment date+time, UTC; <= now at insert (FR-002, FR-027).
+  occurredAt    DateTime
+  recordedAt    DateTime @default(now())
+  recordedById  String
+  recordedBy    User     @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
+  /// Sequential per shop; gaps allowed only from rolled-back allocations
+  /// (native autoincrement — Order.number precedent).
+  receiptNumber Int      @unique @default(autoincrement())
+
+  @@index([orderId])
+  @@index([customerId])
+  @@index([occurredAt])
+}
+
+/// Appended correction record — the ONLY lifecycle mutation for money rows.
+/// @@unique([entityType, entityId]) structurally enforces single-void.
+model FinanceVoid {
+  id         String            @id @default(cuid())
+  entityType FinanceVoidEntity
+  entityId   String
+  /// Required non-empty; validated before audit.record (001 reason policy).
+  reason     String
+  voidedById String
+  voidedBy   User              @relation("FinanceVoidedBy", fields: [voidedById], references: [id])
+  voidedAt   DateTime          @default(now())
+
+  @@unique([entityType, entityId])
+  @@index([entityId])
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  /// Positive Decimal EGP.
+  amount      Decimal   @db.Decimal(12, 2)
+  /// Label snapshot of the configured category at record time (FR-014).
+  category    String
+  /// User-chosen calendar date (UTC midnight of that date).
+  expenseDate DateTime
+  /// Responsible employee display name (PRD §31) — may be a non-user.
+  employee    String
+  description String
+  orderId     String?
+  order       Order?    @relation(fields: [orderId], references: [id])
+  workItemId  String?
+  workItem    WorkItem? @relation(fields: [workItemId], references: [id])
+  createdById String
+  createdBy   User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  approval ExpenseApproval?
+
+  @@index([orderId])
+  @@index([expenseDate])
+  @@index([category])
+}
+
+/// Approval is an appended record — the Expense row itself never changes.
+/// At most one approval per expense.
+model ExpenseApproval {
+  expenseId    String   @id
+  expense      Expense  @relation(fields: [expenseId], references: [id])
+  approvedById String
+  approvedBy   User     @relation("ExpenseApprovedBy", fields: [approvedById], references: [id])
+  approvedAt   DateTime @default(now())
+}
+
+model DirectCost {
+  id          String    @id @default(cuid())
+  amount      Decimal   @db.Decimal(12, 2)
+  /// User-chosen calendar date (UTC midnight of that date).
+  costDate    DateTime
+  description String
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  workItemId  String?
+  workItem    WorkItem? @relation(fields: [workItemId], references: [id])
+  createdById String
+  createdBy   User      @relation("DirectCostCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([orderId])
+  @@index([workItemId])
+}
+
+/// Finance-owned credit standing associated with a customer (FR-010) —
+/// NOT a mutation of the 010-owned Customer master row.
+model CustomerCredit {
+  customerId     String   @id
+  customer       Customer @relation(fields: [customerId], references: [id])
+  creditApproved Boolean  @default(false)
+  /// Warn-only in V1 (Clarifications 2026-09-25) — never blocks anything.
+  creditLimit    Decimal? @db.Decimal(12, 2)
+  /// Required non-empty reason (052-local policy, validated pre-audit).
+  updatedById    String
+  updatedBy      User     @relation("CustomerCreditUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime @updatedAt
+}
+
+/// Singleton runtime configuration, seeded from config/052-finance.yaml
+/// (FileConfig precedent). Money rows keep label snapshots — history is
+/// unaffected by config edits.
+model FinanceConfig {
+  id                String   @id @default("finance-config")
+  paymentMethods    Json
+  paymentSources    Json
+  /// [{ label: string, active: boolean }]
+  expenseCategories Json
+  approvalThreshold Decimal  @db.Decimal(12, 2)
+  shopTimezone      String   @default("Africa/Cairo")
+  updatedById       String
+  updatedBy         User     @relation("FinanceConfigUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt         DateTime @updatedAt
+}
+
 // Better Auth models — moved as-is from the original single-file schema.
 // Owned in practice by feature 001 going forward.
 // Extended by 001-identity-access-audit: username plugin fields, lockout
@@ -622,13 +806,23 @@ model User {
   returnsRaised                  Return[]                 @relation("ReturnRaisedBy")
   returnsAssignedToMe            Return[]                 @relation("ReturnAssignedTo")
   vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
-
-  // --- Reverse relations to change-control.prisma (016-change-control) ---
-  specVersionsCreated        SpecVersion[]      @relation("SpecVersionCreatedBy")
-  changeRequestsRequested    ChangeRequest[]    @relation("ChangeRequestRequestedBy")
-  changeRequestsDecided      ChangeRequest[]    @relation("ChangeRequestDecidedBy")
-  changeRequestsAcknowledged ChangeRequest[]    @relation("ChangeRequestAcknowledgedBy")
-  lateCancellations          LateCancellation[] @relation("LateCancellationCreatedBy")
+  fileVersionsUploaded           FileVersion[]            @relation("DesignVersionUploadedBy")
+  attachments                    Attachment[]             @relation("ReturnAttachment")
+  fileAuditEvents                FileAuditEvent[]         @relation("WorkItemTransitionActor")
+  fileConfigsUpdated             FileConfig[]             @relation("WorkItemTransitionActor")
+  pricingPoliciesUpdated         ProductPricingPolicy[]   @relation("PricingPolicyUpdatedBy")
+  priceListsCreated              PriceList[]              @relation("PriceListCreatedBy")
+  pricingRulesCreated            CustomerPricingRule[]    @relation("CustomerRuleCreatedBy")
+  workItemPricesSet              WorkItemPrice[]          @relation("WorkItemPriceSetBy")
+  pricingStatusesUpdated         PricingStatus[]          @relation("PricingStatusUpdatedBy")
+  // --- 052-finance reverse relations ---
+  paymentsRecorded               Payment[]                @relation("PaymentRecordedBy")
+  financeVoided                  FinanceVoid[]            @relation("FinanceVoidedBy")
+  expensesCreated                Expense[]                @relation("ExpenseCreatedBy")
+  expensesApproved               ExpenseApproval[]        @relation("ExpenseApprovedBy")
+  directCostsCreated             DirectCost[]             @relation("DirectCostCreatedBy")
+  creditsUpdated                 CustomerCredit[]         @relation("CustomerCreditUpdatedBy")
+  financeConfigUpdates           FinanceConfig[]          @relation("FinanceConfigUpdatedBy")
 
   @@unique([email])
   @@map("user")
@@ -710,7 +904,7 @@ model RolePermission {
   id         String @id @default(cuid())
   roleId     String
   role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010). Validated at the
+  /// One of the 22 fixed Permission union keys (FR-010). Validated at the
   /// application layer (Zod), not as a DB enum.
   permission String
 
@@ -739,7 +933,7 @@ model UserPermission {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010).
+  /// One of the 22 fixed Permission union keys (FR-010).
   permission  String
   /// The Admin who granted this extra permission. Itself audited via
   /// audit.record() at grant time (FR-022 role.changed event).
@@ -803,6 +997,135 @@ model AuditEvent {
   @@map("audit_event")
 }
 
+// 051 Pricing Engine — historical price configuration and WorkItem pricing state.
+
+enum PricingMode {
+  FIXED
+  VARIABLE
+}
+
+enum PricingUnit {
+  PIECE
+  SQUARE_METER
+  LINEAR_METER
+  SHEET
+  PACK
+}
+
+enum PriceSource {
+  LIST
+  CUSTOMER_RULE
+  MANUAL
+}
+
+enum PricingStatusValue {
+  PENDING
+  PRICED
+  DISPUTED
+}
+
+enum CustomerRuleKind {
+  FIXED
+  PERCENT_DISCOUNT
+}
+
+enum PriceConfigStatus {
+  ACTIVE
+  RETIRED
+}
+
+model ProductPricingPolicy {
+  id            String      @id @default(cuid())
+  productTypeId String      @unique
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  mode          PricingMode
+  updatedById   String
+  updatedBy     User        @relation("PricingPolicyUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt     DateTime    @updatedAt
+}
+
+model PriceList {
+  id            String            @id @default(cuid())
+  productTypeId String
+  productType   ProductType       @relation(fields: [productTypeId], references: [id])
+  unit          PricingUnit
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  status        PriceConfigStatus @default(ACTIVE)
+  createdById   String
+  createdBy     User              @relation("PriceListCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime          @default(now())
+  tiers         PriceTier[]
+
+  @@index([productTypeId, unit, effectiveFrom, effectiveTo])
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+model PriceTier {
+  id              String    @id @default(cuid())
+  priceListId     String
+  priceList       PriceList @relation(fields: [priceListId], references: [id])
+  minimumQuantity Int
+  maximumQuantity Int?
+  basePrice       Decimal   @db.Decimal(12, 2)
+
+  @@index([priceListId, minimumQuantity, maximumQuantity])
+}
+
+model CustomerPricingRule {
+  id              String            @id @default(cuid())
+  customerId      String
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  productTypeId   String
+  productType     ProductType       @relation(fields: [productTypeId], references: [id])
+  unit            PricingUnit
+  kind            CustomerRuleKind
+  fixedPrice      Decimal?          @db.Decimal(12, 2)
+  discountPercent Decimal?          @db.Decimal(5, 2)
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  status          PriceConfigStatus @default(ACTIVE)
+  createdById     String
+  createdBy       User              @relation("CustomerRuleCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime          @default(now())
+
+  @@index([customerId, productTypeId, unit, effectiveFrom, effectiveTo])
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+model WorkItemPrice {
+  id              String      @id @default(cuid())
+  workItemId      String
+  workItem        WorkItem    @relation(fields: [workItemId], references: [id])
+  amount          Decimal     @db.Decimal(12, 2)
+  currency        String      @default("EGP")
+  source          PriceSource
+  quoteBreakdown  Json?
+  setById         String
+  setBy           User        @relation("WorkItemPriceSetBy", fields: [setById], references: [id])
+  setAt           DateTime    @default(now())
+  reason          String?
+  specFingerprint String?
+  replacedAt      DateTime?
+
+  @@index([workItemId, setAt])
+  @@index([workItemId, replacedAt])
+}
+
+model PricingStatus {
+  workItemId     String             @id
+  workItem       WorkItem           @relation(fields: [workItemId], references: [id])
+  status         PricingStatusValue @default(PENDING)
+  waitingSince   DateTime?
+  disputeReason  String?
+  currentPriceId String?
+  updatedById    String?
+  updatedBy      User?              @relation("PricingStatusUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime           @updatedAt
+
+  @@index([status, waitingSince])
+}
+
 // Prisma schema root — multi-file schema (prismaSchemaFolder preview feature).
 // This file holds only the generator and datasource blocks. Domain models live
 // in sibling files under prisma/schema/ (identity.prisma, core.prisma, ...).
@@ -812,6 +1135,7 @@ generator client {
   provider        = "prisma-client-js"
   output          = "../../generated/prisma"
   previewFeatures = ["prismaSchemaFolder"]
+  binaryTargets   = ["native", "darwin-arm64", "windows", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {

@@ -9,12 +9,14 @@
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { testDb } from "../../helpers/testDb";
+import { db } from "~/server/db";
 import { sendBackToDesign } from "~/server/production/sendBack";
 import { startProduction } from "~/server/production/timer";
 import type { Actor, Permission } from "~/server/auth";
 
 afterAll(async () => {
   await testDb.$disconnect();
+  await db.$disconnect();
 });
 
 let _counter = 0;
@@ -36,6 +38,7 @@ function actorFor(departmentIds: string[], permissions: Permission[]): Actor {
 }
 
 beforeAll(async () => {
+  await db.$connect();
   const customer = await testDb.customer.create({ data: { name: unique("Customer") } });
   customerId = customer.id;
   department = await testDb.department.create({ data: { name: unique("Dept-SendBack-Int") } });
@@ -103,6 +106,7 @@ describe("sendBackToDesign (integration, US5)", () => {
     // 1. WorkItem state transitioned to REWORK_REQUIRED
     const reloaded = await testDb.workItem.findUnique({ where: { id: workItem.id } });
     expect(reloaded?.state).toBe("REWORK_REQUIRED");
+    expect(reloaded?.pendingFileRevisionAt).toBeNull();
 
     // 2. Return record exists with category PRODUCTION_ISSUE and originDepartmentId = workItem department
     const returnRow = await testDb.return.findFirst({ where: { workItemId: workItem.id } });
@@ -144,5 +148,47 @@ describe("sendBackToDesign (integration, US5)", () => {
       returnId,
       reason,
     });
+  });
+
+  it("clears pendingFileRevisionAt when sending an IN_PRODUCTION Work Item back to design", async () => {
+    const operator = actorFor([department.id], ["production.operate"]);
+    await seedActorUser(operator, "Production Operator 2");
+
+    const designer = actorFor([], ["design.work"]);
+    await seedActorUser(designer, "Assigned Designer 2");
+
+    const order = await testDb.order.create({
+      data: {
+        number: Number(process.hrtime.bigint() % 1_000_000_000n),
+        customerId,
+        channel: "WALK_IN",
+        priority: "NORMAL",
+        mode: "SEPARATE",
+        createdById: operator.userId,
+      },
+    });
+
+    const pendingAt = new Date();
+    const workItem = await testDb.workItem.create({
+      data: {
+        orderId: order.id,
+        state: "IN_PRODUCTION",
+        departmentId: department.id,
+        assigneeId: designer.userId,
+        pendingFileRevisionAt: pendingAt,
+      },
+    });
+
+    const initial = await testDb.workItem.findUnique({ where: { id: workItem.id } });
+    expect(initial?.pendingFileRevisionAt).toEqual(pendingAt);
+
+    const { returnId } = await sendBackToDesign(operator, workItem.id, {
+      reason: "Artwork dimensions do not match the job specifications",
+    });
+    expect(typeof returnId).toBe("string");
+
+    const reloaded = await testDb.workItem.findUnique({ where: { id: workItem.id } });
+    expect(reloaded?.state).toBe("REWORK_REQUIRED");
+    expect(reloaded?.pendingFileRevisionAt).toBeNull();
   });
 });

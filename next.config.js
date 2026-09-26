@@ -5,6 +5,18 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+	turbopack: {
+		resolveExtensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
+	},
+	webpack(config) {
+		config.resolve.extensionAlias = {
+			...config.resolve.extensionAlias,
+			".js": [".js", ".ts", ".tsx"],
+			".jsx": [".jsx", ".js", ".tsx", ".ts"],
+		};
+		return config;
+	},
+};
 
 export default config;

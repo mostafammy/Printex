@@ -60,6 +60,23 @@ model User {
   returnsRaised          Return[]          @relation("ReturnRaisedBy")
   returnsAssignedToMe    Return[]          @relation("ReturnAssignedTo")
   vendorProductionRecordsCreated VendorProductionRecord[] @relation("VendorProductionRecordCreatedBy")
+  fileVersionsUploaded FileVersion[]          @relation("DesignVersionUploadedBy")
+  attachments          Attachment[]           @relation("ReturnAttachment")
+  fileAuditEvents      FileAuditEvent[]       @relation("WorkItemTransitionActor")
+  fileConfigsUpdated   FileConfig[]           @relation("WorkItemTransitionActor")
+  pricingPoliciesUpdated ProductPricingPolicy[] @relation("PricingPolicyUpdatedBy")
+  priceListsCreated     PriceList[]             @relation("PriceListCreatedBy")
+  pricingRulesCreated   CustomerPricingRule[]  @relation("CustomerRuleCreatedBy")
+  workItemPricesSet     WorkItemPrice[]         @relation("WorkItemPriceSetBy")
+  pricingStatusesUpdated PricingStatus[]        @relation("PricingStatusUpdatedBy")
+  // --- 052-finance reverse relations ---
+  paymentsRecorded   Payment[]          @relation("PaymentRecordedBy")
+  financeVoided      FinanceVoid[]      @relation("FinanceVoidedBy")
+  expensesCreated    Expense[]          @relation("ExpenseCreatedBy")
+  expensesApproved   ExpenseApproval[]  @relation("ExpenseApprovedBy")
+  directCostsCreated DirectCost[]       @relation("DirectCostCreatedBy")
+  creditsUpdated     CustomerCredit[]   @relation("CustomerCreditUpdatedBy")
+  financeConfigUpdates FinanceConfig[]  @relation("FinanceConfigUpdatedBy")
 
   // --- Reverse relations to change-control.prisma (016-change-control) ---
   specVersionsCreated        SpecVersion[]      @relation("SpecVersionCreatedBy")
@@ -148,7 +165,7 @@ model RolePermission {
   id         String @id @default(cuid())
   roleId     String
   role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010). Validated at the
+  /// One of the 22 fixed Permission union keys (FR-010). Validated at the
   /// application layer (Zod), not as a DB enum.
   permission String
 
@@ -177,7 +194,7 @@ model UserPermission {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010).
+  /// One of the 22 fixed Permission union keys (FR-010).
   permission  String
   /// The Admin who granted this extra permission. Itself audited via
   /// audit.record() at grant time (FR-022 role.changed event).

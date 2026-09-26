@@ -6,7 +6,7 @@ import type { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
-import { transitionWorkItem, asUserId, asWorkItemId, DEFAULT_TX_OPTIONS } from "~/server/core";
+import { transitionWorkItem, asUserId, asWorkItemId } from "~/server/core";
 import type { Actor as CoreActor, DomainError } from "~/server/core";
 // Importing the barrel registers 016's guards before any transition here.
 import { LATE_CANCELLATION_REQUIRED } from "~/server/changes";
@@ -99,42 +99,52 @@ export async function cancelOrder(
   actor: Actor,
   orderId: string,
   reason: string,
-): Promise<{ cancelledWorkItemIds: string[]; requiresLateCancellation: string[] }> {
+): Promise<{
+  cancelledWorkItemIds: string[];
+  requiresLateCancellation: string[];
+  failedWorkItemIds: { id: string; reason: string }[];
+}> {
   authorize(actor, "order.cancel");
   const parsedReason = z.string().trim().min(1).parse(reason);
 
   const cancelledWorkItemIds: string[] = [];
   // Items already in production: listed, not silently skipped (016 FR-026).
   const requiresLateCancellation: string[] = [];
+  const failedWorkItemIds: { id: string; reason: string }[] = [];
 
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const workItems = await tx.workItem.findMany({
-      where: { orderId },
-      select: { id: true, state: true },
-    });
-    const nonTerminal = workItems.filter((wi) => !TERMINAL_STATES.has(wi.state));
-
-    for (const wi of nonTerminal) {
-      // Cancelling "the order" is best-effort across its items, not an
-      // all-or-nothing atomic unit — a single item's INVALID_TRANSITION
-      // (e.g. it turned terminal between the read above and this write) is
-      // skipped, not thrown, so the rest of the batch still lands
-      // (contracts/order-entry.md's `cancelOrder`).
-      const result = await transitionWorkItem(tx, {
-        workItemId: asWorkItemId(wi.id),
-        to: "CANCELLED",
-        actor: toCoreActor(actor),
-        reason: parsedReason,
+  await db.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const workItems = await tx.workItem.findMany({
+        where: { orderId },
+        select: { id: true, state: true },
       });
-      if (result.ok) {
-        cancelledWorkItemIds.push(wi.id);
-      } else if (guardCodeOf(result.error) === LATE_CANCELLATION_REQUIRED) {
-        requiresLateCancellation.push(wi.id);
+      const nonTerminal = workItems.filter((wi) => !TERMINAL_STATES.has(wi.state));
+
+      for (const wi of nonTerminal) {
+        // Cancelling "the order" is best-effort across its items, not an
+        // all-or-nothing atomic unit — a single item's INVALID_TRANSITION
+        // (e.g. it turned terminal between the read above and this write) is
+        // skipped, not thrown, so the rest of the batch still lands
+        // (contracts/order-entry.md's `cancelOrder`).
+        const result = await transitionWorkItem(tx, {
+          workItemId: asWorkItemId(wi.id),
+          to: "CANCELLED",
+          actor: toCoreActor(actor),
+          reason: parsedReason,
+        });
+        if (result.ok) {
+          cancelledWorkItemIds.push(wi.id);
+        } else if (guardCodeOf(result.error) === LATE_CANCELLATION_REQUIRED) {
+          requiresLateCancellation.push(wi.id);
+        } else {
+          failedWorkItemIds.push({ id: wi.id, reason: result.error.message });
+        }
       }
-    }
+    },
     // One transition per item in one transaction: Prisma's implicit 5 s
     // budget is too tight for a many-item order over the remote pooler.
-  }, DEFAULT_TX_OPTIONS);
+    { timeout: 20000, maxWait: 10000 },
+  );
 
-  return { cancelledWorkItemIds, requiresLateCancellation };
+  return { cancelledWorkItemIds, requiresLateCancellation, failedWorkItemIds };
 }

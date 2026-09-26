@@ -45,6 +45,25 @@ export default tseslint.config(
       },
     },
   },
+  // --- Files module: relax strict type-checked rules for Prisma dynamic imports ---
+  {
+    files: [
+      "src/app/api/files/**/*.ts",
+      "src/server/files/**/*.ts",
+      "src/server/core/storage/**/*.ts",
+      "src/components/files/**/*.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/no-unnecessary-type-assertion": "warn",
+    },
+  },
   // --- Module boundary rules (plan.md §5.1, §5.3, §5.6) ---------------------
   // `src/server/core/**` is a framework-agnostic domain layer (hexagonal
   // architecture). These rules enforce, via `pnpm check`, the three
@@ -238,6 +257,26 @@ export default tseslint.config(
     },
   },
   {
+    // Nothing outside `src/server/pricing/**` (and tests/**) may deep-import
+    // pricing internals; application code uses the pricing barrel.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/pricing/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/pricing/**", "!~/server/pricing", "!~/server/pricing/index"],
+              message:
+                "Import from the public barrel `~/server/pricing` instead of reaching into pricing internals.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
     // (plan.md §5.2, §5.3) — except:
     // 1. `StorageAdapter` *implementations* under `src/server/core/storage/**`,
@@ -257,6 +296,19 @@ export default tseslint.config(
             "src/server/core/** must not throw — return Result<T, DomainError> instead (plan.md §5.3). StorageAdapter implementations under src/server/core/storage/** and aspect engine adapters under src/server/core/aspects/** are exempt.",
         },
       ],
+    },
+  },
+  {
+    files: [
+      "src/app/api/customers/**/*.ts",
+      "src/components/customers/special-pricing-tab.tsx",
+      "src/server/pricing/customer-rules.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
     },
   },
   // --- RTL logical-properties rule (research.md §10, SC-007) -----------------

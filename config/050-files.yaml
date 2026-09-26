@@ -1,0 +1,24 @@
+# 050-files configuration
+# Loaded at startup from config/050-files.yaml
+# Override via FILES_CONFIG_PATH environment variable
+
+mimeAllowlist:
+  - "application/pdf"
+  - "image/*"
+  - "application/postscript"
+  - "application/vnd.adobe.photoshop"
+  - "application/vnd.adobe.illustrator"
+  - "image/tiff"
+  - "audio/*"
+
+maxFileSizeBytes: 5368709120  # 5 GB
+
+departments:
+  - name: "Design"
+    code: "DESIGN"
+  - name: "Production"
+    code: "PROD"
+  - name: "Outsourced"
+    code: "OUTSRC"
+
+previewExpirySeconds: 300

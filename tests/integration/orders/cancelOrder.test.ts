@@ -5,6 +5,7 @@ import { testDb } from "../../helpers/testDb";
 import { cancelOrder } from "~/server/orders";
 import type { Actor } from "~/server/auth";
 import type { Permission } from "~/server/auth";
+import { registerGuard } from "~/server/core";
 
 afterAll(async () => {
   await testDb.$disconnect();
@@ -24,6 +25,7 @@ const actor: Actor = {
 };
 
 let customerId: string;
+let blockedWorkItemId: string | null = null;
 
 beforeAll(async () => {
   await testDb.user.create({
@@ -38,6 +40,16 @@ beforeAll(async () => {
   });
   const customer = await testDb.customer.create({ data: { name: unique("Customer") } });
   customerId = customer.id;
+
+  registerGuard({ to: "CANCELLED" }, async (ctx) => {
+    if (blockedWorkItemId && ctx.workItem.id === blockedWorkItemId) {
+      return {
+        ok: false,
+        error: { code: "GUARD_FAILED", message: "Cancellation rejected by guard" },
+      };
+    }
+    return { ok: true, value: true };
+  });
 });
 
 describe("cancelOrder (integration)", () => {
@@ -58,9 +70,10 @@ describe("cancelOrder (integration)", () => {
       data: { orderId: order.id, state: "DELIVERED" },
     });
 
-    const { cancelledWorkItemIds } = await cancelOrder(actor, order.id, "customer cancelled entire order");
+    const { cancelledWorkItemIds, failedWorkItemIds } = await cancelOrder(actor, order.id, "customer cancelled entire order");
 
     expect(new Set(cancelledWorkItemIds)).toEqual(new Set([nonTerminal1.id, nonTerminal2.id]));
+    expect(failedWorkItemIds).toEqual([]);
 
     const items = await testDb.workItem.findMany({ where: { orderId: order.id } });
     const byId = new Map(items.map((wi) => [wi.id, wi]));
@@ -78,4 +91,52 @@ describe("cancelOrder (integration)", () => {
     });
     expect(untouchedTransitions).toHaveLength(0);
   });
+
+  it("reports failed Work Item cancellations in failedWorkItemIds while successes land in cancelledWorkItemIds", async () => {
+    const order = await testDb.order.create({
+      data: {
+        customerId,
+        channel: "WALK_IN",
+        priority: "NORMAL",
+        mode: "GROUPED",
+        createdById: actor.userId,
+      },
+    });
+
+    const itemSuccess = await testDb.workItem.create({ data: { orderId: order.id, state: "NEW" } });
+    const itemFail = await testDb.workItem.create({ data: { orderId: order.id, state: "IN_DESIGN" } });
+
+    blockedWorkItemId = itemFail.id;
+
+    try {
+      const { cancelledWorkItemIds, failedWorkItemIds } = await cancelOrder(
+        actor,
+        order.id,
+        "partial cancellation test",
+      );
+
+      expect(cancelledWorkItemIds).toEqual([itemSuccess.id]);
+      expect(failedWorkItemIds).toEqual([
+        { id: itemFail.id, reason: "Cancellation rejected by guard" },
+      ]);
+
+      const items = await testDb.workItem.findMany({ where: { orderId: order.id } });
+      const byId = new Map(items.map((wi) => [wi.id, wi]));
+      expect(byId.get(itemSuccess.id)?.state).toBe("CANCELLED");
+      expect(byId.get(itemFail.id)?.state).toBe("IN_DESIGN");
+
+      const successTransitions = await testDb.workItemTransition.findMany({
+        where: { workItemId: itemSuccess.id },
+      });
+      expect(successTransitions).toHaveLength(1);
+
+      const failTransitions = await testDb.workItemTransition.findMany({
+        where: { workItemId: itemFail.id },
+      });
+      expect(failTransitions).toHaveLength(0);
+    } finally {
+      blockedWorkItemId = null;
+    }
+  });
 });
+

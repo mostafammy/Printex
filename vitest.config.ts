@@ -3,8 +3,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    setupFiles: ["./tests/setup-env.ts"],
     environment: "node",
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
+    fileParallelism: false,
+    maxWorkers: 1,
     // Integration tests hit a real remote Supabase Postgres instance over
     // the network — the default 5s timeout occasionally trips under normal
     // pooler latency, especially with several tests running in parallel.
@@ -13,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "~": fileURLToPath(new URL("./src", import.meta.url)),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
   // tsconfig.json sets `"jsx": "preserve"` for Next's own (SWC) compiler;
