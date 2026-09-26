@@ -10,9 +10,10 @@ import {
   Flame,
   ArrowUpRight,
   Layers,
+  ChevronLeft,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
-import { getReviewQueue } from "~/server/review";
+import { getReviewQueuePage, getReviewQueueStats } from "~/server/review";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -27,12 +28,20 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
-export default async function ReviewQueuePage() {
+export default async function ReviewQueuePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await getActor();
-  const rows = await getReviewQueue(actor);
+  const params = await searchParams;
+  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
 
-  const urgentCount = rows.filter((r) => r.priority === "URGENT").length;
-  const reworkCount = rows.filter((r) => r.isRework).length;
+  const [{ rows, nextCursor }, { totalCount, urgentCount, reworkCount }] = await Promise.all([
+    getReviewQueuePage(actor, { page }),
+    getReviewQueueStats(actor),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -45,7 +54,7 @@ export default async function ReviewQueuePage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-400">
               <CheckCircle2 className="h-3 w-3" />
-              <span>{rows.length} قيد المراجعة</span>
+              <span>صفحة {page}</span>
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -67,7 +76,7 @@ export default async function ReviewQueuePage() {
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold tracking-tight text-foreground">
-              {rows.length}
+              {totalCount}
             </span>
             <span className="text-xs text-muted-foreground">بروفة معلقة</span>
           </div>
@@ -207,6 +216,17 @@ export default async function ReviewQueuePage() {
               </tbody>
             </table>
           </div>
+          {nextCursor !== null && (
+            <div className="border-t border-border/70 p-4 text-center">
+              <Link
+                href={`/review?page=${nextCursor}`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
+              >
+                <span>الصفحة التالية</span>
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>
