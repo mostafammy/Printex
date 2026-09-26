@@ -78,10 +78,10 @@ describe("AuthStrategyFactory", () => {
 });
 
 describe("getAuthEnvironmentConfig", () => {
-  it("returns auth environment configuration", () => {
+  it("returns auth environment configuration with GitHub auth disabled", () => {
     const config = getAuthEnvironmentConfig();
     expect(typeof config.isDevelopment).toBe("boolean");
-    expect(typeof config.isGitHubAuthEnabled).toBe("boolean");
+    expect(config.isGitHubAuthEnabled).toBe(false);
     expect(config.isUsernameAuthEnabled).toBe(true);
   });
 });
