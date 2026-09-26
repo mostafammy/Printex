@@ -58,13 +58,26 @@ export default async function ShellLayout({
   const roleLabel = getRoleLabel(actor.roles);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background selection:bg-primary/20 selection:text-primary">
+    <div className="relative flex min-h-screen flex-col bg-background selection:bg-primary/20 selection:text-primary overflow-x-hidden">
+      {/* Apple Aurora Atmospheric Ambient Mesh Canvas */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        {/* Soft Sapphire / Indigo Orb top-center */}
+        <div className="apple-aurora-orb-1 absolute -top-[18%] start-[20%] h-[680px] w-[680px] rounded-full bg-gradient-to-br from-blue-500/12 via-indigo-500/6 to-transparent blur-[130px] dark:from-blue-600/15 dark:via-indigo-600/8" />
+        {/* Soft Mint / Emerald Orb mid-right */}
+        <div className="apple-aurora-orb-2 absolute top-[35%] end-[5%] h-[560px] w-[560px] rounded-full bg-gradient-to-bl from-teal-500/10 via-emerald-500/6 to-transparent blur-[120px] dark:from-teal-600/10 dark:via-emerald-600/6" />
+        {/* Soft Violet / Pink Orb bottom-left */}
+        <div className="apple-aurora-orb-3 absolute -bottom-[15%] start-[10%] h-[600px] w-[600px] rounded-full bg-gradient-to-tr from-purple-500/10 via-pink-500/6 to-transparent blur-[140px] dark:from-purple-600/12 dark:via-pink-600/6" />
+      </div>
+
       <ShellHeader
         userName={user?.name ?? "مستخدم برينتكس"}
         roleLabel={roleLabel}
       />
       <div className="flex flex-1 overflow-hidden">
-        <aside className="w-64 shrink-0 border-e border-border/60 bg-card/75 backdrop-blur-2xl flex flex-col justify-between overflow-y-auto px-3 py-4 shadow-2xs">
+        <aside className="w-64 shrink-0 border-e border-border/60 bg-card/65 backdrop-blur-2xl flex flex-col justify-between overflow-y-auto px-3 py-4 shadow-2xs">
           <SidebarNav actor={coreActor} />
           <SidebarUserCard
             userName={user?.name ?? "مستخدم برينتكس"}

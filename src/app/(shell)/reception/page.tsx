@@ -93,21 +93,22 @@ export default async function ReceptionQueuePage({
         </div>
 
         {/* Apple Primary & Secondary Action Group */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="default"
             size="sm"
             render={<Link href="/reception/quick-create" />}
-            className="shadow-sm"
+            className="h-9.5 gap-2 px-4 rounded-xl shadow-md shadow-primary/25 font-bold hover:shadow-lg hover:shadow-primary/35 hover:-translate-y-0.5"
           >
-            <Sparkles className="h-4 w-4" />
+            <Sparkles className="h-4 w-4 text-amber-300 animate-pulse" />
             <span>{S.quickCreateLinkLabel}</span>
           </Button>
 
           <Button
-            variant="outline"
+            variant="accent"
             size="sm"
             render={<Link href="/reception/new" />}
+            className="h-9.5 gap-2 px-4 rounded-xl shadow-md shadow-emerald-500/25 font-bold hover:shadow-lg hover:shadow-emerald-500/35 hover:-translate-y-0.5"
           >
             <Plus className="h-4 w-4" />
             <span>{S.newOrderLinkLabel}</span>
@@ -117,80 +118,101 @@ export default async function ReceptionQueuePage({
             variant="outline"
             size="sm"
             render={<Link href="/reception/search" />}
+            className="h-9.5 gap-2 px-4 rounded-xl font-semibold shadow-2xs hover:-translate-y-0.5"
           >
-            <Search className="h-4 w-4" />
+            <Search className="h-4 w-4 text-primary" />
             <span>{S.searchOrdersLinkLabel}</span>
           </Button>
         </div>
       </div>
 
-      {/* Bento Stats Metric Row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="apple-card p-5">
+      {/* Apple VisionOS Bento Stats Metric Row */}
+      <div className="grid grid-cols-2 gap-4.5 lg:grid-cols-4">
+        {/* Card 1: Reception Total */}
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-cyan-500/10 via-card to-card border-cyan-500/25 hover:border-cyan-500/45 hover:shadow-cyan-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               طلبات الاستقبال
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-700 dark:text-cyan-400">
-              <Inbox className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Inbox className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {totalCount}
             </span>
-            <span className="text-xs text-muted-foreground">طلب نشط</span>
+            <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">
+              طلب نشط
+            </span>
           </div>
         </div>
 
-        <div className="apple-card p-5">
+        {/* Card 2: Urgent Orders */}
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              طلبات عاجلة
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <Flame className="h-4 w-4" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">
+                طلبات عاجلة
+              </span>
+              {urgentCount > 0 && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-80" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
+                </span>
+              )}
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white shadow-md shadow-rose-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Flame className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {urgentCount}
             </span>
-            <span className="text-xs text-muted-foreground">أولوية فائقة</span>
+            <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+              أولوية فائقة
+            </span>
           </div>
         </div>
 
-        <div className="apple-card p-5">
+        {/* Card 3: Incomplete Specs */}
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               بيانات غير مكتملة
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
-              <AlertCircle className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <AlertCircle className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {incompleteCount}
             </span>
-            <span className="text-xs text-muted-foreground">تحتاج استكمال</span>
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+              تحتاج استكمال
+            </span>
           </div>
         </div>
 
-        <div className="apple-card p-5">
+        {/* Card 4: In Production */}
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               في مرحلة الإنتاج
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Building className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Building className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {inProductionCount}
             </span>
-            <span className="text-xs text-muted-foreground">في المطبعة</span>
+            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+              في المطبعة
+            </span>
           </div>
         </div>
       </div>
@@ -236,7 +258,11 @@ export default async function ReceptionQueuePage({
                 {rows.map((row: OrderQueueRow) => (
                   <tr
                     key={row.orderId}
-                    className="group transition-colors duration-150 hover:bg-muted/40"
+                    className={`group transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                      row.priority === "URGENT"
+                        ? "bg-rose-500/[0.02] hover:bg-muted/40 shadow-[inset_3px_0_0_#ff3b30]"
+                        : "hover:bg-muted/40"
+                    }`}
                   >
                     {/* Order Number */}
                     <td className="px-5 py-4">
@@ -244,7 +270,7 @@ export default async function ReceptionQueuePage({
                         href={`/orders/${row.orderId}`}
                         className="group/link inline-flex items-center gap-1.5 font-mono text-xs font-bold text-foreground hover:text-primary transition-colors"
                       >
-                        <span className="rounded-md border border-border/70 bg-muted/50 px-2 py-1">
+                        <span className="rounded-lg border border-border/70 bg-card/80 px-2.5 py-1 shadow-2xs group-hover/link:border-primary/40 group-hover/link:text-primary transition-all">
                           #{row.orderNumber}
                         </span>
                         <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/link:opacity-100" />
@@ -253,11 +279,11 @@ export default async function ReceptionQueuePage({
 
                     {/* Customer */}
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-cyan-500/15 to-primary/15 text-xs font-bold text-cyan-700 dark:text-cyan-400 border border-cyan-500/20 shadow-2xs">
                           {row.customerName.charAt(0) || "ع"}
                         </div>
-                        <span className="font-semibold text-foreground">
+                        <span className="font-bold text-foreground text-sm">
                           {row.customerName}
                         </span>
                       </div>
@@ -265,7 +291,7 @@ export default async function ReceptionQueuePage({
 
                     {/* Channel */}
                     <td className="px-5 py-4">
-                      <span className="inline-flex items-center gap-1 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground">
+                      <span className="inline-flex items-center gap-1 rounded-xl border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-semibold text-foreground">
                         {CHANNEL_LABELS[row.channel] ?? row.channel}
                       </span>
                     </td>
@@ -274,19 +300,19 @@ export default async function ReceptionQueuePage({
                     <td className="px-5 py-4">
                       <div className="flex flex-wrap items-center gap-1.5">
                         {row.priority === "URGENT" && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-xs font-semibold text-rose-600 dark:text-rose-400 shadow-2xs">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-500/15 to-orange-500/15 border border-rose-500/30 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-2xs">
                             <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
                             {S.badgeUrgent}
                           </span>
                         )}
                         {row.isComplete === false && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400 shadow-2xs">
-                            <AlertCircle className="h-3 w-3" />
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 shadow-2xs">
+                            <AlertCircle className="h-3.5 w-3.5" />
                             {S.badgeIncomplete}
                           </span>
                         )}
                         {row.priority !== "URGENT" && row.isComplete !== false && (
-                          <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                          <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                             عادي
                           </span>
                         )}
@@ -295,9 +321,24 @@ export default async function ReceptionQueuePage({
 
                     {/* Status */}
                     <td className="px-5 py-4">
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {STATUS_LABELS[row.status] ?? row.status}
-                      </span>
+                      {row.status === "IN_PRODUCTION" ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 shadow-2xs">
+                          <span className="relative flex h-2 w-2">
+                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-80" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-500" />
+                          </span>
+                          {STATUS_LABELS[row.status] ?? row.status}
+                        </span>
+                      ) : row.status === "DELIVERED" || row.status === "COMPLETED" ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {STATUS_LABELS[row.status] ?? row.status}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                          {STATUS_LABELS[row.status] ?? row.status}
+                        </span>
+                      )}
                     </td>
 
                     {/* Toggle Priority Action */}
@@ -315,15 +356,15 @@ export default async function ReceptionQueuePage({
                           size="sm"
                           className={
                             row.priority === "URGENT"
-                              ? "border-slate-300 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                              : "border-rose-300 text-rose-600 hover:bg-rose-50 hover:border-rose-400 dark:border-rose-800 dark:hover:bg-rose-950/30"
+                              ? "border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-slate-800 font-semibold"
+                              : "border-rose-400/50 bg-rose-500/5 text-rose-600 hover:bg-rose-500/15 hover:border-rose-500 font-bold dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/40"
                           }
                         >
                           {row.priority === "URGENT" ? (
                             S.makeNormalButton
                           ) : (
                             <>
-                              <Flame className="h-3.5 w-3.5" />
+                              <Flame className="h-3.5 w-3.5 text-rose-500 animate-pulse" />
                               <span>{S.makeUrgentButton}</span>
                             </>
                           )}

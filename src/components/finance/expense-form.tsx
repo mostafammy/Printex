@@ -20,14 +20,14 @@ export async function ExpenseForm() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <details className="group apple-card overflow-hidden">
+    <details className="group apple-bento-card overflow-hidden border-border/70">
       <summary className="flex cursor-pointer select-none items-center justify-between p-5 text-sm font-bold text-foreground hover:bg-muted/30 transition-colors">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <PlusCircle className="h-5 w-5" />
           </div>
           <div>
-            <span>تسجيل مصروف جديد</span>
+            <span className="text-base font-bold">تسجيل مصروف جديد</span>
             <p className="text-xs font-normal text-muted-foreground">
               إضافة مصروف تشغيلي أو صيانة أو مشتريات مع إرفاق الإيصال
             </p>

@@ -195,10 +195,10 @@
 
 /* Apple Liquid Glass & Material Utilities */
 .apple-glass {
-  background: color-mix(in oklch, var(--card) 78%, transparent);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+  background: color-mix(in oklch, var(--card) 75%, transparent);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
 }
 
 .apple-card {
@@ -206,20 +206,226 @@
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   box-shadow:
-    0 1px 3px 0 rgba(0, 0, 0, 0.03),
-    0 8px 24px -4px rgba(0, 0, 0, 0.04);
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    0 1px 2px 0 rgba(0, 0, 0, 0.02),
+    0 6px 20px -3px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .apple-card:hover {
   box-shadow:
-    0 4px 12px 0 rgba(0, 0, 0, 0.04),
-    0 16px 36px -4px rgba(0, 0, 0, 0.08);
+    0 8px 24px -2px rgba(0, 0, 0, 0.05),
+    0 20px 48px -6px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--primary) 25%, var(--border));
+}
+
+/* Apple VisionOS Luminous Bento Card */
+.apple-bento-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  border-radius: 1.35rem;
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px -1px rgba(0, 0, 0, 0.03),
+    0 10px 32px -4px rgba(0, 0, 0, 0.04);
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-bento-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .apple-bento-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+}
+
+.apple-bento-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 30px -4px rgba(0, 0, 0, 0.06),
+    0 24px 60px -8px rgba(0, 0, 0, 0.1);
+}
+
+.apple-bento-card:hover::before {
+  opacity: 1;
+}
+
+.apple-bento-card:active {
+  transform: translateY(-1px) scale(0.995);
+  transition-duration: 0.08s;
+}
+
+/* Luminous Accent Glows */
+.apple-glow-blue {
+  box-shadow: 0 8px 32px -4px rgba(0, 113, 227, 0.22);
+}
+
+.apple-glow-emerald {
+  box-shadow: 0 8px 32px -4px rgba(52, 199, 89, 0.22);
+}
+
+.apple-glow-purple {
+  box-shadow: 0 8px 32px -4px rgba(175, 82, 222, 0.22);
+}
+
+.apple-glow-amber {
+  box-shadow: 0 8px 32px -4px rgba(255, 149, 0, 0.22);
+}
+
+.apple-glow-rose {
+  box-shadow: 0 8px 32px -4px rgba(255, 59, 48, 0.22);
 }
 
 .apple-glow {
   box-shadow: 0 0 28px -4px color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+/* Apple Spring Timing Helper */
+.apple-spring {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Micro Shimmer Light Sweep */
+@keyframes apple-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.apple-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.apple-shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg) translateX(-150%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.apple-shimmer-sweep:hover::after {
+  animation: apple-shimmer 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Apple Aurora Floating Dynamics */
+@keyframes apple-aurora-float-1 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(32px, -24px) scale(1.08);
+  }
+}
+
+@keyframes apple-aurora-float-2 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-30px, 28px) scale(1.12);
+  }
+}
+
+@keyframes apple-aurora-float-3 {
+  0%, 100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(24px, 20px) scale(0.95);
+  }
+}
+
+.apple-aurora-orb-1 {
+  animation: apple-aurora-float-1 22s ease-in-out infinite;
+  will-change: transform;
+}
+
+.apple-aurora-orb-2 {
+  animation: apple-aurora-float-2 28s ease-in-out infinite;
+  will-change: transform;
+}
+
+.apple-aurora-orb-3 {
+  animation: apple-aurora-float-3 25s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apple-aurora-orb-1,
+  .apple-aurora-orb-2,
+  .apple-aurora-orb-3 {
+    animation: none;
+  }
+}
+
+.apple-glow-cyan {
+  box-shadow: 0 8px 32px -4px rgba(14, 165, 233, 0.25);
+}
+
+/* Apple Interactive List Row with Micro-Lift */
+.apple-interactive-row {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-interactive-row:hover {
+  background-color: color-mix(in oklch, var(--muted) 45%, transparent);
+  transform: translateX(-2px);
+}
+
+[dir="rtl"] .apple-interactive-row:hover {
+  transform: translateX(2px);
+}
+
+/* Apple Hardware Dropzone */
+.apple-dropzone {
+  position: relative;
+  border: 2px dashed color-mix(in oklch, var(--border) 90%, transparent);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-dropzone:hover {
+  border-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 4%, transparent);
+  transform: scale(1.005);
 }
 
 /* ==== Loading Experience — Motion System ==== */

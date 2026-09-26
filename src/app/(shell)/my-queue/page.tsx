@@ -119,77 +119,93 @@ export default async function MyQueuePage() {
         )}
       </div>
 
-      {/* Bento Stats Metric Row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* Apple VisionOS Bento Stats Metric Row */}
+      <div className="grid grid-cols-2 gap-4.5 lg:grid-cols-4">
         {/* Card 1: Total Queue */}
-        <div className="apple-card p-5">
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-indigo-500/10 via-card to-card border-indigo-500/25 hover:border-indigo-500/45 hover:shadow-indigo-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               إجمالي الطابور
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-              <Layers className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Layers className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {rows.length}
             </span>
-            <span className="text-xs text-muted-foreground">مهمة عمل</span>
+            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+              مهام قيد الانتظار
+            </span>
           </div>
         </div>
 
         {/* Card 2: Active Timers */}
-        <div className="apple-card p-5">
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25 hover:border-emerald-500/45 hover:shadow-emerald-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
-              قيد التنفيذ الآن
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Clock className="h-4 w-4" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">
+                قيد التنفيذ الآن
+              </span>
+              {activeTimersCount > 0 && (
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+              )}
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Clock className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {activeTimersCount}
             </span>
-            <span className="text-xs text-muted-foreground">مؤقت نشط</span>
+            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+              مؤقت نشط
+            </span>
           </div>
         </div>
 
         {/* Card 3: Urgent Tasks */}
-        <div className="apple-card p-5">
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               مهام عاجلة
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
-              <Flame className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-rose-500 to-red-600 text-white shadow-md shadow-rose-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <Flame className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {urgentCount}
             </span>
-            <span className="text-xs text-muted-foreground">أولوية قصوى</span>
+            <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+              أولوية فائقة
+            </span>
           </div>
         </div>
 
         {/* Card 4: Rework Required */}
-        <div className="apple-card p-5">
+        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">
+            <span className="text-xs font-semibold text-muted-foreground">
               إعادة تعديل
             </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
-              <RotateCcw className="h-4 w-4" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/30 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <RotateCcw className="h-5 w-5" />
             </div>
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold tracking-tight text-foreground">
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
               {reworkCount}
             </span>
-            <span className="text-xs text-muted-foreground">تعديلات مطلوبة</span>
+            <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+              تعديلات مطلوبة
+            </span>
           </div>
         </div>
       </div>
@@ -237,36 +253,45 @@ export default async function MyQueuePage() {
                   }) => (
                     <tr
                       key={row.workItemId}
-                      className={`group transition-colors duration-150 ${
+                      className={`group transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                         row.hasOpenTimer
-                          ? "bg-primary/[0.03] dark:bg-primary/[0.06]"
-                          : "hover:bg-muted/40"
+                          ? "bg-emerald-500/[0.04] dark:bg-emerald-500/[0.08] shadow-[inset_3px_0_0_#34c759]"
+                          : row.priority === "URGENT"
+                            ? "bg-rose-500/[0.02] hover:bg-muted/40 shadow-[inset_3px_0_0_#ff3b30]"
+                            : "hover:bg-muted/40"
                       }`}
                     >
                       {/* Customer & Order Number */}
                       <td className="px-5 py-4">
-                        <Link
-                          href={`/orders/${row.orderId}`}
-                          className="group/link flex items-center gap-2 font-semibold text-foreground hover:text-primary transition-colors"
-                        >
-                          <span>{row.customerName}</span>
-                          <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/link:opacity-100" />
-                        </Link>
-                        <div className="mt-0.5 inline-flex items-center font-mono text-xs text-muted-foreground">
-                          #{row.orderNumber}
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-primary/15 to-indigo-500/15 text-xs font-bold text-primary border border-primary/20 shadow-2xs">
+                            {row.customerName.charAt(0) || "ع"}
+                          </div>
+                          <div>
+                            <Link
+                              href={`/orders/${row.orderId}`}
+                              className="group/link flex items-center gap-1.5 font-bold text-foreground hover:text-primary transition-colors text-sm"
+                            >
+                              <span>{row.customerName}</span>
+                              <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover/link:opacity-100" />
+                            </Link>
+                            <div className="mt-0.5 inline-flex items-center rounded-md border border-border/60 bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-muted-foreground">
+                              #{row.orderNumber}
+                            </div>
+                          </div>
                         </div>
                       </td>
 
                       {/* Product Type */}
                       <td className="px-5 py-4">
-                        <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground">
+                        <span className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card/60 px-3 py-1 text-xs font-semibold text-foreground shadow-2xs">
                           {row.productTypeName ?? S.myQueueNoProductType}
                         </span>
                       </td>
 
                       {/* Due Date */}
                       <td className="px-5 py-4">
-                        <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                           <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
                           <span>{formatDate(row.dueDate)}</span>
                         </div>
@@ -276,25 +301,25 @@ export default async function MyQueuePage() {
                       <td className="px-5 py-4">
                         <div className="flex flex-wrap items-center gap-1.5">
                           {row.priority === "URGENT" && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-xs font-semibold text-rose-600 dark:text-rose-400 shadow-2xs">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-500/15 to-orange-500/15 border border-rose-500/30 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-2xs">
                               <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
                               {S.badgeUrgent}
                             </span>
                           )}
                           {row.isRework && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:text-amber-400 shadow-2xs">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 shadow-2xs">
                               <RotateCcw className="h-3 w-3" />
                               {S.myQueueBadgeRework}
                             </span>
                           )}
                           {row.priority !== "URGENT" && !row.isRework && (
-                            <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                            <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/40 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
                               عادي
                             </span>
                           )}
                         </div>
                         {row.rejectionDetails && (
-                          <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400 bg-rose-500/5 rounded-md px-2 py-1 border border-rose-500/15 max-w-xs">
+                          <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400 bg-rose-500/5 rounded-lg px-2.5 py-1.5 border border-rose-500/20 max-w-xs">
                             {row.rejectionDetails.explanation ??
                               row.rejectionDetails.category}
                           </p>
@@ -305,16 +330,16 @@ export default async function MyQueuePage() {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
                           {row.hasOpenTimer && (
-                            <span className="relative flex h-2 w-2">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
                             </span>
                           )}
                           <span
-                            className={`rounded-md px-2.5 py-1 font-mono text-xs font-medium tabular-nums ${
+                            className={`rounded-xl px-3 py-1 font-mono text-xs tabular-nums transition-all ${
                               row.hasOpenTimer
-                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/25 font-bold"
-                                : "bg-muted/60 text-muted-foreground"
+                                ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-bold shadow-xs shadow-emerald-500/10"
+                                : "bg-muted/60 text-muted-foreground font-medium"
                             }`}
                           >
                             {formatDuration(durations.activeTimeMs)}
@@ -343,8 +368,8 @@ export default async function MyQueuePage() {
                             size="sm"
                             className={
                               row.hasOpenTimer
-                                ? "border-amber-500/40 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
-                                : undefined
+                                ? "border-amber-500/50 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400 font-bold shadow-xs"
+                                : "font-bold shadow-sm"
                             }
                           >
                             {row.hasOpenTimer ? (

@@ -116,32 +116,32 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   return (
     <Link
       href={item.href}
-      className={`group relative flex items-center justify-between rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 active:scale-[0.98] ${
+      className={`group relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
         isActive
-          ? "bg-primary/10 text-primary font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-          : "text-foreground/80 hover:bg-black/[0.04] dark:hover:bg-white/[0.05] hover:text-foreground"
+          ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:from-primary/25 dark:via-primary/15"
+          : "text-foreground/80 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-foreground hover:translate-x-[-2px]"
       }`}
     >
       <div className="flex items-center gap-3">
         <div
-          className={`flex h-8 w-8 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105 ${
+          className={`flex h-8.5 w-8.5 items-center justify-center rounded-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110 group-hover:rotate-2 ${
             isActive
-              ? "bg-primary text-primary-foreground shadow-xs shadow-primary/30"
-              : colorInfo.bg
+              ? "bg-gradient-to-tr from-primary to-indigo-600 text-white shadow-md shadow-primary/35"
+              : `${colorInfo.bg} shadow-2xs`
           }`}
         >
           <IconComponent className="h-4 w-4" />
         </div>
-        <span className="tracking-tight">{item.label}</span>
+        <span className="tracking-tight text-[13.5px]">{item.label}</span>
       </div>
 
       {isActive ? (
         <div
           aria-hidden="true"
-          className="h-4 w-1 rounded-full bg-primary"
+          className="h-5 w-1.5 rounded-full bg-gradient-to-b from-primary to-indigo-600 shadow-[0_0_10px_rgba(0,113,227,0.7)] animate-pulse"
         />
       ) : (
-        <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 transition-opacity duration-150 group-hover:opacity-100" />
+        <ChevronLeft className="h-4 w-4 text-muted-foreground/30 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-[-2px]" />
       )}
     </Link>
   );

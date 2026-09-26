@@ -52,17 +52,20 @@ export default async function ExpensesPage({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Hero Expenses Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
-        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-emerald-500/10 to-teal-500/5 blur-2xl pointer-events-none" />
+      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-emerald-500/[0.06] via-card to-card border-emerald-500/25">
+        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-transparent blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
-              <Receipt className="h-7 w-7" />
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 apple-glow-emerald">
+              <Receipt className="h-8 w-8" />
+              <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-teal-400 ring-2 ring-card">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              </span>
             </div>
             <div className="flex flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                   {S.expensesHeading}
                 </h1>
                 {filter.orderId && (
@@ -75,7 +78,7 @@ export default async function ExpensesPage({
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                إدارة ومتابعة المصروفات التشغيلية للمطبعة والطلبات
+                إدارة ومتابعة المصروفات التشغيلية للمطبعة والطلبات واعتماد النفقات
               </p>
             </div>
           </div>
@@ -86,7 +89,7 @@ export default async function ExpensesPage({
       <ExpenseForm />
 
       {/* ── Filters Toolbar Card ── */}
-      <div className="apple-card p-4 sm:p-5">
+      <div className="apple-bento-card p-5 border-border/70">
         <form method="get" className="flex flex-wrap items-end gap-3 text-xs">
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-muted-foreground">{S.expenseDate} (من)</span>
@@ -130,7 +133,7 @@ export default async function ExpensesPage({
           {Boolean(filter.from ?? filter.to ?? filter.category ?? filter.employee) && (
             <Link
               href="/finance/expenses"
-              className="inline-flex items-center gap-1 rounded-xl border border-border/70 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+              className="inline-flex items-center gap-1 rounded-xl border border-border/70 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted active:scale-95 transition-all"
             >
               <X className="h-3.5 w-3.5" />
               <span>إعادة ضبط</span>

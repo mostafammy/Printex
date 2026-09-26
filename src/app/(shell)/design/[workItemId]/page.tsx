@@ -14,7 +14,6 @@ import {
   Clock,
   Layers,
   FileCheck,
-  User,
   Sparkles,
   AlertCircle,
 } from "lucide-react";
@@ -138,40 +137,53 @@ export default async function DesignWorkspacePage({
       </div>
 
       {/* ── Hero Workspace Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
-        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-indigo-500/10 to-purple-500/5 blur-2xl pointer-events-none" />
+      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-purple-500/[0.06] via-card to-card border-purple-500/25">
+        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-purple-500/15 via-indigo-500/10 to-transparent blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/25">
-              <Palette className="h-7 w-7" />
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25 apple-glow-purple">
+              <Palette className="h-8 w-8" />
+              <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-card">
+                <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+              </span>
             </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
                   {workItem.description ?? `صنف #${workItem.id.slice(-6)}`}
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 border border-purple-500/25 px-3 py-0.5 text-xs font-bold text-purple-600 dark:text-purple-400">
                   <Sparkles className="h-3 w-3" />
                   <span>{workItem.state}</span>
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {S.designWorkspacePageTitle} — الطلب #{workItem.order.number}
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <span>{S.designWorkspacePageTitle}</span>
+                <span>·</span>
+                <span className="font-mono font-semibold text-foreground">
+                  الطلب #{workItem.order.number}
+                </span>
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-3 py-1.5 text-foreground shadow-2xs">
-              <User className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">{S.tableHeaderCustomer}:</span>
-              <span className="font-semibold">{workItem.order.customer.name}</span>
+          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card/90 px-3.5 py-2 text-foreground shadow-2xs">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 font-bold text-2xs">
+                {workItem.order.customer.name.slice(0, 1)}
+              </div>
+              <div>
+                <span className="text-2xs text-muted-foreground block">{S.tableHeaderCustomer}</span>
+                <span className="font-bold">{workItem.order.customer.name}</span>
+              </div>
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-3 py-1.5 text-foreground shadow-2xs">
-              <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-muted-foreground">{S.productTypeLabel}:</span>
-              <span className="font-semibold">{workItem.productType?.name ?? S.productTypeNone}</span>
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card/90 px-3.5 py-2 text-foreground shadow-2xs">
+              <Layers className="h-4 w-4 text-purple-500" />
+              <div>
+                <span className="text-2xs text-muted-foreground block">{S.productTypeLabel}</span>
+                <span className="font-bold">{workItem.productType?.name ?? S.productTypeNone}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -182,10 +194,10 @@ export default async function DesignWorkspacePage({
         {/* Left Column: Upload New Version & Mark Complete */}
         <div className="flex flex-col gap-6 lg:col-span-7">
           {/* Upload card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="apple-bento-card p-6 sm:p-7 border-border/70">
             <div className="mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
                   <UploadCloud className="h-5 w-5" />
                 </div>
                 <div>
@@ -207,16 +219,18 @@ export default async function DesignWorkspacePage({
                   <label className="text-xs font-semibold text-foreground">
                     {S.designVersionFileLabel}
                   </label>
-                  <div className="relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-muted/20 p-6 text-center transition-colors hover:border-primary/50 hover:bg-primary/5">
-                    <UploadCloud className="mb-2 h-8 w-8 text-muted-foreground/80" />
+                  <div className="apple-dropzone rounded-2xl p-7 text-center cursor-pointer">
+                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                      <UploadCloud className="h-6 w-6" />
+                    </div>
                     <input
                       name="file"
                       type="file"
                       required
-                      className="cursor-pointer text-xs text-muted-foreground file:ms-0 file:me-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground hover:file:bg-primary/90"
+                      className="cursor-pointer text-xs text-muted-foreground file:ms-0 file:me-3 file:rounded-xl file:border-0 file:bg-primary file:px-3.5 file:py-1.5 file:text-xs file:font-semibold file:text-primary-foreground hover:file:brightness-105 active:file:scale-95 transition-all"
                     />
-                    <span className="mt-2 text-2xs text-muted-foreground">
-                      يدعم كافة صيغ الطباعة والتصميم حتى 50MB
+                    <span className="mt-2 block text-2xs text-muted-foreground">
+                      يدعم كافة صيغ الطباعة والتصميم الاحترافية حتى 50MB
                     </span>
                   </div>
                 </div>
@@ -241,16 +255,16 @@ export default async function DesignWorkspacePage({
                 </div>
               </form>
             ) : (
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-medium text-amber-700 dark:text-amber-300">
+              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4 text-xs font-medium text-amber-700 dark:text-amber-300">
                 <p>{S.uploadDesignVersionNotInDesignNote}</p>
               </div>
             )}
           </section>
 
           {/* Mark design complete action card */}
-          <section className="apple-card p-6 sm:p-7">
-            <div className="mb-4 flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+          <section className="apple-bento-card p-6 sm:p-7 border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] via-card to-card">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
@@ -270,7 +284,11 @@ export default async function DesignWorkspacePage({
                   type="submit"
                   variant="default"
                   disabled={!canMarkComplete}
-                  className={`w-full sm:w-auto ${canMarkComplete ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20" : ""}`}
+                  className={`w-full sm:w-auto ${
+                    canMarkComplete
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 apple-glow-emerald"
+                      : ""
+                  }`}
                 >
                   <FileCheck className="h-4 w-4" />
                   <span>{S.markDesignCompleteButton}</span>
@@ -287,10 +305,10 @@ export default async function DesignWorkspacePage({
 
         {/* Right Column: Version History */}
         <div className="flex flex-col gap-6 lg:col-span-5">
-          <section className="apple-card flex flex-col p-6 sm:p-7 h-full">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+          <section className="apple-bento-card flex flex-col p-6 sm:p-7 h-full border-border/70">
+            <div className="mb-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
                   <Layers className="h-5 w-5" />
                 </div>
                 <div>
@@ -306,14 +324,14 @@ export default async function DesignWorkspacePage({
 
             {versions.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center py-12 text-center">
-                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
-                  <Layers className="h-6 w-6" />
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
+                  <Layers className="h-7 w-7" />
                 </div>
-                <p className="text-sm font-medium text-foreground">
+                <p className="text-sm font-bold text-foreground">
                   {S.designVersionHistoryEmpty}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  قم برفع الإصدار الأول لبدء دورة العمل والمراجعة.
+                <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+                  قم برفع الإصدار الأول لبدء دورة العمل والمراجعة مع العميل.
                 </p>
               </div>
             ) : (
@@ -321,30 +339,31 @@ export default async function DesignWorkspacePage({
                 {versions.map((v, idx) => (
                   <div
                     key={v.id}
-                    className={`relative rounded-2xl border p-4 transition-all ${
+                    className={`relative rounded-2xl border p-4.5 transition-all ${
                       idx === 0
-                        ? "border-primary/30 bg-primary/5 shadow-2xs"
-                        : "border-border/60 bg-muted/20"
+                        ? "border-primary/30 bg-primary/5 shadow-2xs apple-glow-blue"
+                        : "border-border/60 bg-muted/20 hover:border-border/90 hover:bg-muted/30"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <span
-                          className={`inline-flex items-center rounded-lg px-2.5 py-1 font-mono text-xs font-bold ${
+                          className={`inline-flex items-center rounded-xl px-2.5 py-1 font-mono text-xs font-bold ${
                             idx === 0
-                              ? "bg-primary text-primary-foreground"
+                              ? "bg-primary text-primary-foreground shadow-xs"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {S.designVersionLabel} {v.version}
                         </span>
-                        <span className="font-semibold text-sm text-foreground truncate max-w-[180px]">
+                        <span className="font-bold text-sm text-foreground truncate max-w-[190px]">
                           {v.fileName}
                         </span>
                       </div>
                       {idx === 0 && (
-                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-2xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          الأحدث
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-2xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>الأحدث</span>
                         </span>
                       )}
                     </div>
