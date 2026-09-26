@@ -1,0 +1,58 @@
+# 053-notifications configuration
+# Loaded at startup from config/053-notifications.yaml
+# Override via NOTIFICATIONS_CONFIG_PATH environment variable
+#
+# These values are the SEED only. The runtime source of truth is the
+# `DelayThreshold` table, which an Admin edits through
+# /admin/notifications (constitution VI — thresholds are configuration, not
+# code). The migration seeds one `DelayThreshold` row per phase from exactly
+# the numbers below, so a fresh database is already alerting before anyone
+# opens the Admin screen.
+
+# Delay thresholds per measured phase, in minutes. These are the Clarification
+# defaults agreed for V1: design 4h, review 1h, pricing 2h, production 8h,
+# collection 24h. `null` disables a phase (no breach is ever detected for it).
+
+thresholds:
+  DESIGN: 240
+  REVIEW: 60
+  PRICING: 120
+  PRODUCTION: 480
+  COLLECTION: 1440
+
+# How often the in-process scheduler runs a delay tick. Constant, not
+# configurable: a shop LAN does not need it tuned, and one more knob is one
+# more thing to get wrong (notification-stream.md §Client contract rule 3).
+scheduler:
+  intervalMinutes: 5
+
+  # Lease lifetime. A tick holds the lease while it runs; a lease past this
+  # is reclaimable, so a process killed mid-tick does not block the next one
+  # forever. Sized well above a normal tick so a slow tick never loses its
+  # own lease (research.md §Decision: the scheduler runs in-process behind a
+  # persisted lease).
+  leaseSeconds: 120
+
+  # Maximum outbox events one batch claims. Sized for a shop's daily volume;
+  # a larger backlog simply drains over several batches.
+  outboxBatchLimit: 100
+
+  # Attempts before a failing event stops being retried and is surfaced on
+  # the Admin thresholds screen (FR-008).
+  maxAttempts: 5
+
+# Real-time transport (notification-stream.md). The stream is a hint channel
+# only — delivery is persisted, so every value here affects immediacy, never
+# whether a notification arrives.
+stream:
+  # Comment keep-alive ping interval, seconds. Keeps intermediaries from
+  # reaping an idle LAN connection.
+  pingSeconds: 25
+
+  # Client-side polling interval used when the stream is unavailable
+  # (FR-029/FR-030). A constant, not configuration.
+  pollSeconds: 15
+
+  # Runaway guard only. A shop has tens of users and a few tabs each; this
+  # exists so a bug cannot exhaust file descriptors, not to ration capacity.
+  maxConnections: 500

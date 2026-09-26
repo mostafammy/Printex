@@ -1,0 +1,242 @@
+// 053-notifications — additive schema (data-model.md).
+//
+// Six new tables, plus the processing columns on 002's `NotificationEvent`
+// (that model itself stays in core.prisma; only this feature writes those
+// columns — 002's contract reserves them for 053).
+//
+// The two constraints that make the spec's hard guarantees *structural*
+// rather than conventional — never "optimize away":
+//   - Notification @@unique([sourceEventId, userId])   → FR-007, SC-002
+//   - DelayBreach  @@unique([workItemId, phase, breachSequence]) → SC-003
+//
+// Additive only. No table here shadows or replaces an existing model's
+// source of truth: a Notification is a *pointer* to an event, and delay
+// state is derived from PhaseTiming / PricingStatus, never stored
+// (constitution III, FR-059, FR-060).
+
+/// Outbox processing marker. PENDING / PROCESSED / FAILED / UNMAPPED.
+///
+/// PENDING and PROCESSED are opposite answers to "was this event delivered?"
+/// on the SAME column — that is why 053 reuses 002's already-reserved
+/// `deliveryStatus` rather than adding a parallel pair, which would leave
+/// two columns each claiming to answer it (A-001, research.md §Decision: the
+/// outbox's own reserved columns).
+enum DeliveryStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  UNMAPPED
+}
+
+/// Visual weight of a notification. Drives how a row is drawn, never who it
+/// is delivered to and never what order anything happens in.
+enum NotificationSeverity {
+  INFO
+  ACTION
+  URGENT
+}
+
+enum SchedulerOutcome {
+  RUNNING
+  OK
+  ERROR
+}
+
+/// One row per (outbox event, recipient).
+model Notification {
+  id String @id @default(cuid())
+
+  /// The bell's read axis and the page's scope axis. Every read path filters
+  /// on this; a user may only ever see their own rows (FR-025).
+  userId   String
+  user     User   @relation("NotificationRecipient", fields: [userId], references: [id])
+
+  /// The outbox row that produced this. Retained, not cascaded: a notification
+  /// outlives the event it points at, and the event is the audit trail.
+  sourceEventId String
+  sourceEvent   NotificationEvent @relation(fields: [sourceEventId], references: [id])
+
+  /// Canonical catalog type — never a raw emitter string, so a type filter
+  /// on the page behaves the same regardless of which spelling 012/013/014
+  /// used (FR-011, research.md §4).
+  type String
+
+  // --- write-once content (FR-018) --------------------------------------
+  // Captured at processing time, not re-derived on read. A notification is a
+  // statement about a moment: a later change to the Work Item or an edit to
+  // the catalog must never rewrite what an employee was already told.
+  title   String
+  body    String?
+  /// Deep link resolved at processing time; null when the entry has no
+  /// target or the target has since left the reader's scope (FR-022, FR-025).
+  linkHref String?
+  /// Mirrors the event's entity. Polymorphic, so deliberately not a relation.
+  entityType String?
+  entityId   String?
+
+  severity NotificationSeverity
+
+  // --- the only mutable columns ------------------------------------------
+  /// null = unread. The bell counts `readAt IS NULL` (FR-014).
+  readAt DateTime?
+  /// Archival only (FR-024). Never a hard delete — constitution III.
+  archivedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([sourceEventId, userId])
+  @@index([userId, readAt, createdAt(sort: Desc)])
+  @@index([userId, type, createdAt(sort: Desc)])
+  @@index([sourceEventId])
+  @@index([userId])
+  @@map("notification")
+}
+
+/// FR-017: the per-catalog-type recipient redirect that makes delivery
+/// configuration rather than code.
+///
+/// SEMANTICS (data-model.md §NotificationTypeOverride): this is a UNION
+/// with the catalog default, never a replacement. A non-empty array *adds*
+/// recipients; it cannot remove the catalog's own. Clearing an override is a
+/// DELETE of this row, never an empty array — under union semantics an empty
+/// array is indistinguishable from "no override".
+model NotificationTypeOverride {
+  id String @id @default(cuid())
+
+  /// Canonical catalog type (never an alias, never a raw emitter string).
+  /// An override for a type with no catalog entry is a VALIDATION error, not
+  /// a dormant row (contract §setRecipientOverride).
+  type String @unique
+
+  userIds        String[] @default([])
+  roles          String[] @default([])
+  departmentIds  String[] @default([])
+  permissions    String[] @default([])
+
+  /// Null until the first Admin write (seeded/absent rows have no editor).
+  updatedById String?
+  updatedBy   User?   @relation("NotificationTypeOverrideUpdatedBy", fields: [updatedById], references: [id])
+
+  updatedAt DateTime @updatedAt
+
+  @@map("notification_type_override")
+}
+
+/// Per-phase alerting configuration. One row per phase (FR-035); seeded by
+/// the migration from config/053-notifications.yaml; editable by an Admin
+/// through /admin/notifications (constitution VI).
+model DelayThreshold {
+  id String @id @default(cuid())
+
+  phase DelayPhase @unique
+
+  /// null disables the phase — no breach is ever detected for it.
+  /// Backed by a DB CHECK as well as Zod (data-model.md §Migration notes).
+  thresholdMinutes Int?
+
+  alertRoles         String[] @default([])
+  alertPermissions   String[] @default([])
+  alertDepartmentIds String[] @default([])
+
+  /// Accepted and stored but inactive in V1 (FR-047): null = no escalation
+  /// tier. Must exceed thresholdMinutes when both are set.
+  escalationMinutes Int?
+
+  updatedById String?
+  updatedBy   User?   @relation("DelayThresholdUpdatedBy", fields: [updatedById], references: [id])
+
+  updatedAt DateTime @updatedAt
+
+  @@map("delay_threshold")
+}
+
+/// The five measured phases. A fixed code vocabulary, NOT Admin-configurable
+/// data: a new *threshold* is a row, but a new *axis to measure* needs a new
+/// age source and a new derivation rule, so it is a code change. Same
+/// reasoning as 001's frozen permission keys (constitution VI).
+enum DelayPhase {
+  DESIGN
+  REVIEW
+  PRICING
+  PRODUCTION
+  COLLECTION
+}
+
+/// One row per (Work Item, phase, breach occurrence). The unique triple is
+/// what makes "one alert per breach, not one per tick" a schema property:
+/// the scheduler's second tick over an unchanged breach attempts an insert
+/// that already exists, and the catch is the duplicate alert's only defence
+/// (SC-003, research.md §Decision: DelayBreach is a persisted fact).
+model DelayBreach {
+  id String @id @default(cuid())
+
+  workItemId String
+  workItem   WorkItem @relation(fields: [workItemId], references: [id])
+
+  phase DelayPhase
+
+  /// 1 for the first breach of this (workItem, phase); increments when the
+  /// Work Item leaves the phase and returns (FR-044).
+  breachSequence Int
+
+  /// Snapshot of the threshold in force when the breach happened, so
+  /// lowering a threshold later does not rewrite what the alert said.
+  thresholdMinutes Int
+
+  escalated   Boolean   @default(false)
+  escalatedAt DateTime?
+
+  /// Set in the SAME transaction that creates the alert rows (FR-042/043).
+  /// A breach with no notification is legitimate and specified: a phase whose
+  /// recipient arrays are all empty.
+  notifiedAt DateTime?
+
+  detectedAt DateTime @default(now())
+
+  @@unique([workItemId, phase, breachSequence])
+  @@index([workItemId, phase])
+  @@map("delay_breach")
+}
+
+/// Operational telemetry for one scheduler tick. Append-only in practice: a
+/// row is inserted at start and completed in place.
+///
+/// Unlike Notification and DelayBreach this is transient telemetry rather than
+/// an operational record, so in-place completion and a retention cleanup are
+/// both acceptable — explicitly NOT subject to FR-024, which governs
+/// notifications (data-model.md §SchedulerRun).
+model SchedulerRun {
+  id String @id @default(cuid())
+
+  /// The process instance (hostname/pid/boot id). Carries the identity 001's
+  /// `AuditEvent.actorId` cannot express, since a tick has no signed-in user.
+  ownerId String
+
+  startedAt  DateTime        @default(now())
+  finishedAt DateTime?
+  outcome    SchedulerOutcome @default(RUNNING)
+
+  evaluated Int @default(0)
+  flagged    Int @default(0)
+  alerted    Int @default(0)
+  escalated  Int @default(0)
+
+  error String?
+
+  @@index([startedAt(sort: Desc)])
+  @@map("scheduler_run")
+}
+
+/// The persisted mutex guarding `runDelayTick()`. Exactly one row, created by
+/// the migration (research.md §Decision: both idempotency layers).
+///
+/// This is the one table 053 legitimately mutates on every tick — it is a
+/// lock, not a record. Acquired by a single conditional UPDATE, so two
+/// instances racing produce exactly one winner.
+model SchedulerLease {
+  id String @id
+
+  ownerId    String
+  acquiredAt DateTime
+  expiresAt  DateTime
+}

@@ -240,6 +240,60 @@ export type UserDepartment = $Result.DefaultSelection<Prisma.$UserDepartmentPayl
  */
 export type AuditEvent = $Result.DefaultSelection<Prisma.$AuditEventPayload>
 /**
+ * Model Notification
+ * One row per (outbox event, recipient).
+ */
+export type Notification = $Result.DefaultSelection<Prisma.$NotificationPayload>
+/**
+ * Model NotificationTypeOverride
+ * FR-017: the per-catalog-type recipient redirect that makes delivery
+ * configuration rather than code.
+ * 
+ * SEMANTICS (data-model.md §NotificationTypeOverride): this is a UNION
+ * with the catalog default, never a replacement. A non-empty array *adds*
+ * recipients; it cannot remove the catalog's own. Clearing an override is a
+ * DELETE of this row, never an empty array — under union semantics an empty
+ * array is indistinguishable from "no override".
+ */
+export type NotificationTypeOverride = $Result.DefaultSelection<Prisma.$NotificationTypeOverridePayload>
+/**
+ * Model DelayThreshold
+ * Per-phase alerting configuration. One row per phase (FR-035); seeded by
+ * the migration from config/053-notifications.yaml; editable by an Admin
+ * through /admin/notifications (constitution VI).
+ */
+export type DelayThreshold = $Result.DefaultSelection<Prisma.$DelayThresholdPayload>
+/**
+ * Model DelayBreach
+ * One row per (Work Item, phase, breach occurrence). The unique triple is
+ * what makes "one alert per breach, not one per tick" a schema property:
+ * the scheduler's second tick over an unchanged breach attempts an insert
+ * that already exists, and the catch is the duplicate alert's only defence
+ * (SC-003, research.md §Decision: DelayBreach is a persisted fact).
+ */
+export type DelayBreach = $Result.DefaultSelection<Prisma.$DelayBreachPayload>
+/**
+ * Model SchedulerRun
+ * Operational telemetry for one scheduler tick. Append-only in practice: a
+ * row is inserted at start and completed in place.
+ * 
+ * Unlike Notification and DelayBreach this is transient telemetry rather than
+ * an operational record, so in-place completion and a retention cleanup are
+ * both acceptable — explicitly NOT subject to FR-024, which governs
+ * notifications (data-model.md §SchedulerRun).
+ */
+export type SchedulerRun = $Result.DefaultSelection<Prisma.$SchedulerRunPayload>
+/**
+ * Model SchedulerLease
+ * The persisted mutex guarding `runDelayTick()`. Exactly one row, created by
+ * the migration (research.md §Decision: both idempotency layers).
+ * 
+ * This is the one table 053 legitimately mutates on every tick — it is a
+ * lock, not a record. Acquired by a single conditional UPDATE, so two
+ * instances racing produce exactly one winner.
+ */
+export type SchedulerLease = $Result.DefaultSelection<Prisma.$SchedulerLeasePayload>
+/**
  * Model ProductPricingPolicy
  * 
  */
@@ -427,6 +481,45 @@ export const FinanceVoidEntity: {
 export type FinanceVoidEntity = (typeof FinanceVoidEntity)[keyof typeof FinanceVoidEntity]
 
 
+export const DeliveryStatus: {
+  PENDING: 'PENDING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED',
+  UNMAPPED: 'UNMAPPED'
+};
+
+export type DeliveryStatus = (typeof DeliveryStatus)[keyof typeof DeliveryStatus]
+
+
+export const NotificationSeverity: {
+  INFO: 'INFO',
+  ACTION: 'ACTION',
+  URGENT: 'URGENT'
+};
+
+export type NotificationSeverity = (typeof NotificationSeverity)[keyof typeof NotificationSeverity]
+
+
+export const SchedulerOutcome: {
+  RUNNING: 'RUNNING',
+  OK: 'OK',
+  ERROR: 'ERROR'
+};
+
+export type SchedulerOutcome = (typeof SchedulerOutcome)[keyof typeof SchedulerOutcome]
+
+
+export const DelayPhase: {
+  DESIGN: 'DESIGN',
+  REVIEW: 'REVIEW',
+  PRICING: 'PRICING',
+  PRODUCTION: 'PRODUCTION',
+  COLLECTION: 'COLLECTION'
+};
+
+export type DelayPhase = (typeof DelayPhase)[keyof typeof DelayPhase]
+
+
 export const PricingMode: {
   FIXED: 'FIXED',
   VARIABLE: 'VARIABLE'
@@ -536,6 +629,22 @@ export const AuditEntity: typeof $Enums.AuditEntity
 export type FinanceVoidEntity = $Enums.FinanceVoidEntity
 
 export const FinanceVoidEntity: typeof $Enums.FinanceVoidEntity
+
+export type DeliveryStatus = $Enums.DeliveryStatus
+
+export const DeliveryStatus: typeof $Enums.DeliveryStatus
+
+export type NotificationSeverity = $Enums.NotificationSeverity
+
+export const NotificationSeverity: typeof $Enums.NotificationSeverity
+
+export type SchedulerOutcome = $Enums.SchedulerOutcome
+
+export const SchedulerOutcome: typeof $Enums.SchedulerOutcome
+
+export type DelayPhase = $Enums.DelayPhase
+
+export const DelayPhase: typeof $Enums.DelayPhase
 
 export type PricingMode = $Enums.PricingMode
 
@@ -1068,6 +1177,66 @@ export class PrismaClient<
     * ```
     */
   get auditEvent(): Prisma.AuditEventDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.notification`: Exposes CRUD operations for the **Notification** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Notifications
+    * const notifications = await prisma.notification.findMany()
+    * ```
+    */
+  get notification(): Prisma.NotificationDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.notificationTypeOverride`: Exposes CRUD operations for the **NotificationTypeOverride** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more NotificationTypeOverrides
+    * const notificationTypeOverrides = await prisma.notificationTypeOverride.findMany()
+    * ```
+    */
+  get notificationTypeOverride(): Prisma.NotificationTypeOverrideDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.delayThreshold`: Exposes CRUD operations for the **DelayThreshold** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DelayThresholds
+    * const delayThresholds = await prisma.delayThreshold.findMany()
+    * ```
+    */
+  get delayThreshold(): Prisma.DelayThresholdDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.delayBreach`: Exposes CRUD operations for the **DelayBreach** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DelayBreaches
+    * const delayBreaches = await prisma.delayBreach.findMany()
+    * ```
+    */
+  get delayBreach(): Prisma.DelayBreachDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.schedulerRun`: Exposes CRUD operations for the **SchedulerRun** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SchedulerRuns
+    * const schedulerRuns = await prisma.schedulerRun.findMany()
+    * ```
+    */
+  get schedulerRun(): Prisma.SchedulerRunDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.schedulerLease`: Exposes CRUD operations for the **SchedulerLease** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SchedulerLeases
+    * const schedulerLeases = await prisma.schedulerLease.findMany()
+    * ```
+    */
+  get schedulerLease(): Prisma.SchedulerLeaseDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.productPricingPolicy`: Exposes CRUD operations for the **ProductPricingPolicy** model.
@@ -1608,6 +1777,12 @@ export namespace Prisma {
     UserPermission: 'UserPermission',
     UserDepartment: 'UserDepartment',
     AuditEvent: 'AuditEvent',
+    Notification: 'Notification',
+    NotificationTypeOverride: 'NotificationTypeOverride',
+    DelayThreshold: 'DelayThreshold',
+    DelayBreach: 'DelayBreach',
+    SchedulerRun: 'SchedulerRun',
+    SchedulerLease: 'SchedulerLease',
     ProductPricingPolicy: 'ProductPricingPolicy',
     PriceList: 'PriceList',
     PriceTier: 'PriceTier',
@@ -1632,7 +1807,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus"
+      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "notification" | "notificationTypeOverride" | "delayThreshold" | "delayBreach" | "schedulerRun" | "schedulerLease" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -4522,6 +4697,450 @@ export namespace Prisma {
           }
         }
       }
+      Notification: {
+        payload: Prisma.$NotificationPayload<ExtArgs>
+        fields: Prisma.NotificationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.NotificationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.NotificationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          findFirst: {
+            args: Prisma.NotificationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.NotificationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          findMany: {
+            args: Prisma.NotificationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>[]
+          }
+          create: {
+            args: Prisma.NotificationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          createMany: {
+            args: Prisma.NotificationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.NotificationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>[]
+          }
+          delete: {
+            args: Prisma.NotificationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          update: {
+            args: Prisma.NotificationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          deleteMany: {
+            args: Prisma.NotificationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.NotificationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.NotificationUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>[]
+          }
+          upsert: {
+            args: Prisma.NotificationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationPayload>
+          }
+          aggregate: {
+            args: Prisma.NotificationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateNotification>
+          }
+          groupBy: {
+            args: Prisma.NotificationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<NotificationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.NotificationCountArgs<ExtArgs>
+            result: $Utils.Optional<NotificationCountAggregateOutputType> | number
+          }
+        }
+      }
+      NotificationTypeOverride: {
+        payload: Prisma.$NotificationTypeOverridePayload<ExtArgs>
+        fields: Prisma.NotificationTypeOverrideFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.NotificationTypeOverrideFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.NotificationTypeOverrideFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          findFirst: {
+            args: Prisma.NotificationTypeOverrideFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.NotificationTypeOverrideFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          findMany: {
+            args: Prisma.NotificationTypeOverrideFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>[]
+          }
+          create: {
+            args: Prisma.NotificationTypeOverrideCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          createMany: {
+            args: Prisma.NotificationTypeOverrideCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.NotificationTypeOverrideCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>[]
+          }
+          delete: {
+            args: Prisma.NotificationTypeOverrideDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          update: {
+            args: Prisma.NotificationTypeOverrideUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          deleteMany: {
+            args: Prisma.NotificationTypeOverrideDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.NotificationTypeOverrideUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.NotificationTypeOverrideUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>[]
+          }
+          upsert: {
+            args: Prisma.NotificationTypeOverrideUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$NotificationTypeOverridePayload>
+          }
+          aggregate: {
+            args: Prisma.NotificationTypeOverrideAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateNotificationTypeOverride>
+          }
+          groupBy: {
+            args: Prisma.NotificationTypeOverrideGroupByArgs<ExtArgs>
+            result: $Utils.Optional<NotificationTypeOverrideGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.NotificationTypeOverrideCountArgs<ExtArgs>
+            result: $Utils.Optional<NotificationTypeOverrideCountAggregateOutputType> | number
+          }
+        }
+      }
+      DelayThreshold: {
+        payload: Prisma.$DelayThresholdPayload<ExtArgs>
+        fields: Prisma.DelayThresholdFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DelayThresholdFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DelayThresholdFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          findFirst: {
+            args: Prisma.DelayThresholdFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DelayThresholdFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          findMany: {
+            args: Prisma.DelayThresholdFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>[]
+          }
+          create: {
+            args: Prisma.DelayThresholdCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          createMany: {
+            args: Prisma.DelayThresholdCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DelayThresholdCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>[]
+          }
+          delete: {
+            args: Prisma.DelayThresholdDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          update: {
+            args: Prisma.DelayThresholdUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          deleteMany: {
+            args: Prisma.DelayThresholdDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DelayThresholdUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DelayThresholdUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>[]
+          }
+          upsert: {
+            args: Prisma.DelayThresholdUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayThresholdPayload>
+          }
+          aggregate: {
+            args: Prisma.DelayThresholdAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDelayThreshold>
+          }
+          groupBy: {
+            args: Prisma.DelayThresholdGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DelayThresholdGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DelayThresholdCountArgs<ExtArgs>
+            result: $Utils.Optional<DelayThresholdCountAggregateOutputType> | number
+          }
+        }
+      }
+      DelayBreach: {
+        payload: Prisma.$DelayBreachPayload<ExtArgs>
+        fields: Prisma.DelayBreachFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DelayBreachFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DelayBreachFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          findFirst: {
+            args: Prisma.DelayBreachFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DelayBreachFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          findMany: {
+            args: Prisma.DelayBreachFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>[]
+          }
+          create: {
+            args: Prisma.DelayBreachCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          createMany: {
+            args: Prisma.DelayBreachCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DelayBreachCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>[]
+          }
+          delete: {
+            args: Prisma.DelayBreachDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          update: {
+            args: Prisma.DelayBreachUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          deleteMany: {
+            args: Prisma.DelayBreachDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DelayBreachUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DelayBreachUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>[]
+          }
+          upsert: {
+            args: Prisma.DelayBreachUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DelayBreachPayload>
+          }
+          aggregate: {
+            args: Prisma.DelayBreachAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDelayBreach>
+          }
+          groupBy: {
+            args: Prisma.DelayBreachGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DelayBreachGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DelayBreachCountArgs<ExtArgs>
+            result: $Utils.Optional<DelayBreachCountAggregateOutputType> | number
+          }
+        }
+      }
+      SchedulerRun: {
+        payload: Prisma.$SchedulerRunPayload<ExtArgs>
+        fields: Prisma.SchedulerRunFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SchedulerRunFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SchedulerRunFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          findFirst: {
+            args: Prisma.SchedulerRunFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SchedulerRunFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          findMany: {
+            args: Prisma.SchedulerRunFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>[]
+          }
+          create: {
+            args: Prisma.SchedulerRunCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          createMany: {
+            args: Prisma.SchedulerRunCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SchedulerRunCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>[]
+          }
+          delete: {
+            args: Prisma.SchedulerRunDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          update: {
+            args: Prisma.SchedulerRunUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          deleteMany: {
+            args: Prisma.SchedulerRunDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SchedulerRunUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SchedulerRunUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>[]
+          }
+          upsert: {
+            args: Prisma.SchedulerRunUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerRunPayload>
+          }
+          aggregate: {
+            args: Prisma.SchedulerRunAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSchedulerRun>
+          }
+          groupBy: {
+            args: Prisma.SchedulerRunGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SchedulerRunGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SchedulerRunCountArgs<ExtArgs>
+            result: $Utils.Optional<SchedulerRunCountAggregateOutputType> | number
+          }
+        }
+      }
+      SchedulerLease: {
+        payload: Prisma.$SchedulerLeasePayload<ExtArgs>
+        fields: Prisma.SchedulerLeaseFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SchedulerLeaseFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SchedulerLeaseFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          findFirst: {
+            args: Prisma.SchedulerLeaseFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SchedulerLeaseFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          findMany: {
+            args: Prisma.SchedulerLeaseFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>[]
+          }
+          create: {
+            args: Prisma.SchedulerLeaseCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          createMany: {
+            args: Prisma.SchedulerLeaseCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SchedulerLeaseCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>[]
+          }
+          delete: {
+            args: Prisma.SchedulerLeaseDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          update: {
+            args: Prisma.SchedulerLeaseUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          deleteMany: {
+            args: Prisma.SchedulerLeaseDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SchedulerLeaseUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SchedulerLeaseUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>[]
+          }
+          upsert: {
+            args: Prisma.SchedulerLeaseUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SchedulerLeasePayload>
+          }
+          aggregate: {
+            args: Prisma.SchedulerLeaseAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSchedulerLease>
+          }
+          groupBy: {
+            args: Prisma.SchedulerLeaseGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SchedulerLeaseGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SchedulerLeaseCountArgs<ExtArgs>
+            result: $Utils.Optional<SchedulerLeaseCountAggregateOutputType> | number
+          }
+        }
+      }
       ProductPricingPolicy: {
         payload: Prisma.$ProductPricingPolicyPayload<ExtArgs>
         fields: Prisma.ProductPricingPolicyFieldRefs
@@ -5101,6 +5720,12 @@ export namespace Prisma {
     userPermission?: UserPermissionOmit
     userDepartment?: UserDepartmentOmit
     auditEvent?: AuditEventOmit
+    notification?: NotificationOmit
+    notificationTypeOverride?: NotificationTypeOverrideOmit
+    delayThreshold?: DelayThresholdOmit
+    delayBreach?: DelayBreachOmit
+    schedulerRun?: SchedulerRunOmit
+    schedulerLease?: SchedulerLeaseOmit
     productPricingPolicy?: ProductPricingPolicyOmit
     priceList?: PriceListOmit
     priceTier?: PriceTierOmit
@@ -5397,6 +6022,7 @@ export namespace Prisma {
     prices: number
     expenses: number
     directCosts: number
+    delayBreaches: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5409,6 +6035,7 @@ export namespace Prisma {
     prices?: boolean | WorkItemCountOutputTypeCountPricesArgs
     expenses?: boolean | WorkItemCountOutputTypeCountExpensesArgs
     directCosts?: boolean | WorkItemCountOutputTypeCountDirectCostsArgs
+    delayBreaches?: boolean | WorkItemCountOutputTypeCountDelayBreachesArgs
   }
 
   // Custom InputTypes
@@ -5483,6 +6110,13 @@ export namespace Prisma {
    */
   export type WorkItemCountOutputTypeCountDirectCostsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DirectCostWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountDelayBreachesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DelayBreachWhereInput
   }
 
 
@@ -5594,6 +6228,37 @@ export namespace Prisma {
    */
   export type ReturnCountOutputTypeCountAttachmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ReturnAttachmentWhereInput
+  }
+
+
+  /**
+   * Count Type NotificationEventCountOutputType
+   */
+
+  export type NotificationEventCountOutputType = {
+    notifications: number
+  }
+
+  export type NotificationEventCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    notifications?: boolean | NotificationEventCountOutputTypeCountNotificationsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * NotificationEventCountOutputType without action
+   */
+  export type NotificationEventCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationEventCountOutputType
+     */
+    select?: NotificationEventCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * NotificationEventCountOutputType without action
+   */
+  export type NotificationEventCountOutputTypeCountNotificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationWhereInput
   }
 
 
@@ -5736,6 +6401,9 @@ export namespace Prisma {
     directCostsCreated: number
     creditsUpdated: number
     financeConfigUpdates: number
+    notifications: number
+    thresholdUpdates: number
+    recipientOverrideUpdates: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5771,6 +6439,9 @@ export namespace Prisma {
     directCostsCreated?: boolean | UserCountOutputTypeCountDirectCostsCreatedArgs
     creditsUpdated?: boolean | UserCountOutputTypeCountCreditsUpdatedArgs
     financeConfigUpdates?: boolean | UserCountOutputTypeCountFinanceConfigUpdatesArgs
+    notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
+    thresholdUpdates?: boolean | UserCountOutputTypeCountThresholdUpdatesArgs
+    recipientOverrideUpdates?: boolean | UserCountOutputTypeCountRecipientOverrideUpdatesArgs
   }
 
   // Custom InputTypes
@@ -6006,6 +6677,27 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountFinanceConfigUpdatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: FinanceConfigWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountNotificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountThresholdUpdatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DelayThresholdWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountRecipientOverrideUpdatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationTypeOverrideWhereInput
   }
 
 
@@ -10230,6 +10922,7 @@ export namespace Prisma {
     pricingStatus?: boolean | WorkItem$pricingStatusArgs<ExtArgs>
     expenses?: boolean | WorkItem$expensesArgs<ExtArgs>
     directCosts?: boolean | WorkItem$directCostsArgs<ExtArgs>
+    delayBreaches?: boolean | WorkItem$delayBreachesArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -10329,6 +11022,7 @@ export namespace Prisma {
     pricingStatus?: boolean | WorkItem$pricingStatusArgs<ExtArgs>
     expenses?: boolean | WorkItem$expensesArgs<ExtArgs>
     directCosts?: boolean | WorkItem$directCostsArgs<ExtArgs>
+    delayBreaches?: boolean | WorkItem$delayBreachesArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10361,6 +11055,7 @@ export namespace Prisma {
       pricingStatus: Prisma.$PricingStatusPayload<ExtArgs> | null
       expenses: Prisma.$ExpensePayload<ExtArgs>[]
       directCosts: Prisma.$DirectCostPayload<ExtArgs>[]
+      delayBreaches: Prisma.$DelayBreachPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -10821,6 +11516,7 @@ export namespace Prisma {
     pricingStatus<T extends WorkItem$pricingStatusArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$pricingStatusArgs<ExtArgs>>): Prisma__PricingStatusClient<$Result.GetResult<Prisma.$PricingStatusPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     expenses<T extends WorkItem$expensesArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$expensesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpensePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     directCosts<T extends WorkItem$directCostsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$directCostsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectCostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    delayBreaches<T extends WorkItem$delayBreachesArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$delayBreachesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11556,6 +12252,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DirectCostScalarFieldEnum | DirectCostScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.delayBreaches
+   */
+  export type WorkItem$delayBreachesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    where?: DelayBreachWhereInput
+    orderBy?: DelayBreachOrderByWithRelationInput | DelayBreachOrderByWithRelationInput[]
+    cursor?: DelayBreachWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DelayBreachScalarFieldEnum | DelayBreachScalarFieldEnum[]
   }
 
   /**
@@ -19759,8 +20479,18 @@ export namespace Prisma {
 
   export type AggregateNotificationEvent = {
     _count: NotificationEventCountAggregateOutputType | null
+    _avg: NotificationEventAvgAggregateOutputType | null
+    _sum: NotificationEventSumAggregateOutputType | null
     _min: NotificationEventMinAggregateOutputType | null
     _max: NotificationEventMaxAggregateOutputType | null
+  }
+
+  export type NotificationEventAvgAggregateOutputType = {
+    attemptCount: number | null
+  }
+
+  export type NotificationEventSumAggregateOutputType = {
+    attemptCount: number | null
   }
 
   export type NotificationEventMinAggregateOutputType = {
@@ -19770,7 +20500,10 @@ export namespace Prisma {
     entityId: string | null
     createdAt: Date | null
     deliveredAt: Date | null
-    deliveryStatus: string | null
+    deliveryStatus: $Enums.DeliveryStatus | null
+    attemptCount: number | null
+    lastAttemptAt: Date | null
+    lastError: string | null
   }
 
   export type NotificationEventMaxAggregateOutputType = {
@@ -19780,7 +20513,10 @@ export namespace Prisma {
     entityId: string | null
     createdAt: Date | null
     deliveredAt: Date | null
-    deliveryStatus: string | null
+    deliveryStatus: $Enums.DeliveryStatus | null
+    attemptCount: number | null
+    lastAttemptAt: Date | null
+    lastError: string | null
   }
 
   export type NotificationEventCountAggregateOutputType = {
@@ -19795,9 +20531,21 @@ export namespace Prisma {
     createdAt: number
     deliveredAt: number
     deliveryStatus: number
+    attemptCount: number
+    lastAttemptAt: number
+    lastError: number
+    recipientPermissions: number
     _all: number
   }
 
+
+  export type NotificationEventAvgAggregateInputType = {
+    attemptCount?: true
+  }
+
+  export type NotificationEventSumAggregateInputType = {
+    attemptCount?: true
+  }
 
   export type NotificationEventMinAggregateInputType = {
     id?: true
@@ -19807,6 +20555,9 @@ export namespace Prisma {
     createdAt?: true
     deliveredAt?: true
     deliveryStatus?: true
+    attemptCount?: true
+    lastAttemptAt?: true
+    lastError?: true
   }
 
   export type NotificationEventMaxAggregateInputType = {
@@ -19817,6 +20568,9 @@ export namespace Prisma {
     createdAt?: true
     deliveredAt?: true
     deliveryStatus?: true
+    attemptCount?: true
+    lastAttemptAt?: true
+    lastError?: true
   }
 
   export type NotificationEventCountAggregateInputType = {
@@ -19831,6 +20585,10 @@ export namespace Prisma {
     createdAt?: true
     deliveredAt?: true
     deliveryStatus?: true
+    attemptCount?: true
+    lastAttemptAt?: true
+    lastError?: true
+    recipientPermissions?: true
     _all?: true
   }
 
@@ -19872,6 +20630,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: NotificationEventAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: NotificationEventSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: NotificationEventMinAggregateInputType
@@ -19902,6 +20672,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: NotificationEventCountAggregateInputType | true
+    _avg?: NotificationEventAvgAggregateInputType
+    _sum?: NotificationEventSumAggregateInputType
     _min?: NotificationEventMinAggregateInputType
     _max?: NotificationEventMaxAggregateInputType
   }
@@ -19917,8 +20689,14 @@ export namespace Prisma {
     payload: JsonValue | null
     createdAt: Date
     deliveredAt: Date | null
-    deliveryStatus: string | null
+    deliveryStatus: $Enums.DeliveryStatus | null
+    attemptCount: number
+    lastAttemptAt: Date | null
+    lastError: string | null
+    recipientPermissions: string[]
     _count: NotificationEventCountAggregateOutputType | null
+    _avg: NotificationEventAvgAggregateOutputType | null
+    _sum: NotificationEventSumAggregateOutputType | null
     _min: NotificationEventMinAggregateOutputType | null
     _max: NotificationEventMaxAggregateOutputType | null
   }
@@ -19949,6 +20727,12 @@ export namespace Prisma {
     createdAt?: boolean
     deliveredAt?: boolean
     deliveryStatus?: boolean
+    attemptCount?: boolean
+    lastAttemptAt?: boolean
+    lastError?: boolean
+    recipientPermissions?: boolean
+    notifications?: boolean | NotificationEvent$notificationsArgs<ExtArgs>
+    _count?: boolean | NotificationEventCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["notificationEvent"]>
 
   export type NotificationEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -19963,6 +20747,10 @@ export namespace Prisma {
     createdAt?: boolean
     deliveredAt?: boolean
     deliveryStatus?: boolean
+    attemptCount?: boolean
+    lastAttemptAt?: boolean
+    lastError?: boolean
+    recipientPermissions?: boolean
   }, ExtArgs["result"]["notificationEvent"]>
 
   export type NotificationEventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -19977,6 +20765,10 @@ export namespace Prisma {
     createdAt?: boolean
     deliveredAt?: boolean
     deliveryStatus?: boolean
+    attemptCount?: boolean
+    lastAttemptAt?: boolean
+    lastError?: boolean
+    recipientPermissions?: boolean
   }, ExtArgs["result"]["notificationEvent"]>
 
   export type NotificationEventSelectScalar = {
@@ -19991,13 +20783,30 @@ export namespace Prisma {
     createdAt?: boolean
     deliveredAt?: boolean
     deliveryStatus?: boolean
+    attemptCount?: boolean
+    lastAttemptAt?: boolean
+    lastError?: boolean
+    recipientPermissions?: boolean
   }
 
-  export type NotificationEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "type" | "entityType" | "entityId" | "recipientUserIds" | "recipientRoles" | "recipientDepartmentIds" | "payload" | "createdAt" | "deliveredAt" | "deliveryStatus", ExtArgs["result"]["notificationEvent"]>
+  export type NotificationEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "type" | "entityType" | "entityId" | "recipientUserIds" | "recipientRoles" | "recipientDepartmentIds" | "payload" | "createdAt" | "deliveredAt" | "deliveryStatus" | "attemptCount" | "lastAttemptAt" | "lastError" | "recipientPermissions", ExtArgs["result"]["notificationEvent"]>
+  export type NotificationEventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    notifications?: boolean | NotificationEvent$notificationsArgs<ExtArgs>
+    _count?: boolean | NotificationEventCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type NotificationEventIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type NotificationEventIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
 
   export type $NotificationEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "NotificationEvent"
-    objects: {}
+    objects: {
+      /**
+       * 053's notifications. The outbox row is the delivery audit trail and is
+       * retained after processing (FR-063), so this is a plain reference, never
+       * a cascade.
+       */
+      notifications: Prisma.$NotificationPayload<ExtArgs>[]
+    }
     scalars: $Extensions.GetPayloadResult<{
       id: string
       /**
@@ -20012,13 +20821,31 @@ export namespace Prisma {
       payload: Prisma.JsonValue | null
       createdAt: Date
       /**
-       * Left null; written by 053.
+       * Set once when 053 has fully processed this event; null = unprocessed.
+       * 002 reserved this column for 053; 053 reuses it rather than adding a
+       * parallel marker, so one row has exactly one answer to "was this
+       * delivered?" (003-free — see specs/053-notifications/data-model.md
+       * §NotificationEvent, A-001).
        */
       deliveredAt: Date | null
       /**
-       * Left null; written by 053.
+       * PENDING / PROCESSED / FAILED / UNMAPPED. 002 shipped this as `String?`
+       * and never wrote it, so the retype is a safe ALTER (every existing row is
+       * NULL). The migration backfills NULL → PENDING BEFORE adding the claim
+       * index — without it the claim predicate silently skips every event the
+       * live features (012/013/014/015/016) have already recorded.
        */
-      deliveryStatus: string | null
+      deliveryStatus: $Enums.DeliveryStatus | null
+      /**
+       * 053-only processing columns. No emitter writes these.
+       */
+      attemptCount: number
+      lastAttemptAt: Date | null
+      lastError: string | null
+      /**
+       * Fourth addressing mode (FR-016, additive to 002's three).
+       */
+      recipientPermissions: string[]
     }, ExtArgs["result"]["notificationEvent"]>
     composites: {}
   }
@@ -20413,6 +21240,7 @@ export namespace Prisma {
    */
   export interface Prisma__NotificationEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    notifications<T extends NotificationEvent$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, NotificationEvent$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -20452,7 +21280,11 @@ export namespace Prisma {
     readonly payload: FieldRef<"NotificationEvent", 'Json'>
     readonly createdAt: FieldRef<"NotificationEvent", 'DateTime'>
     readonly deliveredAt: FieldRef<"NotificationEvent", 'DateTime'>
-    readonly deliveryStatus: FieldRef<"NotificationEvent", 'String'>
+    readonly deliveryStatus: FieldRef<"NotificationEvent", 'DeliveryStatus'>
+    readonly attemptCount: FieldRef<"NotificationEvent", 'Int'>
+    readonly lastAttemptAt: FieldRef<"NotificationEvent", 'DateTime'>
+    readonly lastError: FieldRef<"NotificationEvent", 'String'>
+    readonly recipientPermissions: FieldRef<"NotificationEvent", 'String[]'>
   }
     
 
@@ -20469,6 +21301,10 @@ export namespace Prisma {
      * Omit specific fields from the NotificationEvent
      */
     omit?: NotificationEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
     /**
      * Filter, which NotificationEvent to fetch.
      */
@@ -20488,6 +21324,10 @@ export namespace Prisma {
      */
     omit?: NotificationEventOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
+    /**
      * Filter, which NotificationEvent to fetch.
      */
     where: NotificationEventWhereUniqueInput
@@ -20505,6 +21345,10 @@ export namespace Prisma {
      * Omit specific fields from the NotificationEvent
      */
     omit?: NotificationEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
     /**
      * Filter, which NotificationEvent to fetch.
      */
@@ -20554,6 +21398,10 @@ export namespace Prisma {
      */
     omit?: NotificationEventOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
+    /**
      * Filter, which NotificationEvent to fetch.
      */
     where?: NotificationEventWhereInput
@@ -20602,6 +21450,10 @@ export namespace Prisma {
      */
     omit?: NotificationEventOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
+    /**
      * Filter, which NotificationEvents to fetch.
      */
     where?: NotificationEventWhereInput
@@ -20644,6 +21496,10 @@ export namespace Prisma {
      * Omit specific fields from the NotificationEvent
      */
     omit?: NotificationEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
     /**
      * The data needed to create a NotificationEvent.
      */
@@ -20692,6 +21548,10 @@ export namespace Prisma {
      * Omit specific fields from the NotificationEvent
      */
     omit?: NotificationEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
     /**
      * The data needed to update a NotificationEvent.
      */
@@ -20759,6 +21619,10 @@ export namespace Prisma {
      */
     omit?: NotificationEventOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
+    /**
      * The filter to search for the NotificationEvent to update in case it exists.
      */
     where: NotificationEventWhereUniqueInput
@@ -20785,6 +21649,10 @@ export namespace Prisma {
      */
     omit?: NotificationEventOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
+    /**
      * Filter which NotificationEvent to delete.
      */
     where: NotificationEventWhereUniqueInput
@@ -20805,6 +21673,30 @@ export namespace Prisma {
   }
 
   /**
+   * NotificationEvent.notifications
+   */
+  export type NotificationEvent$notificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    where?: NotificationWhereInput
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    cursor?: NotificationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
    * NotificationEvent without action
    */
   export type NotificationEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -20816,6 +21708,10 @@ export namespace Prisma {
      * Omit specific fields from the NotificationEvent
      */
     omit?: NotificationEventOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationEventInclude<ExtArgs> | null
   }
 
 
@@ -40224,6 +41120,9 @@ export namespace Prisma {
     directCostsCreated?: boolean | User$directCostsCreatedArgs<ExtArgs>
     creditsUpdated?: boolean | User$creditsUpdatedArgs<ExtArgs>
     financeConfigUpdates?: boolean | User$financeConfigUpdatesArgs<ExtArgs>
+    notifications?: boolean | User$notificationsArgs<ExtArgs>
+    thresholdUpdates?: boolean | User$thresholdUpdatesArgs<ExtArgs>
+    recipientOverrideUpdates?: boolean | User$recipientOverrideUpdatesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -40306,6 +41205,9 @@ export namespace Prisma {
     directCostsCreated?: boolean | User$directCostsCreatedArgs<ExtArgs>
     creditsUpdated?: boolean | User$creditsUpdatedArgs<ExtArgs>
     financeConfigUpdates?: boolean | User$financeConfigUpdatesArgs<ExtArgs>
+    notifications?: boolean | User$notificationsArgs<ExtArgs>
+    thresholdUpdates?: boolean | User$thresholdUpdatesArgs<ExtArgs>
+    recipientOverrideUpdates?: boolean | User$recipientOverrideUpdatesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -40346,6 +41248,9 @@ export namespace Prisma {
       directCostsCreated: Prisma.$DirectCostPayload<ExtArgs>[]
       creditsUpdated: Prisma.$CustomerCreditPayload<ExtArgs>[]
       financeConfigUpdates: Prisma.$FinanceConfigPayload<ExtArgs>[]
+      notifications: Prisma.$NotificationPayload<ExtArgs>[]
+      thresholdUpdates: Prisma.$DelayThresholdPayload<ExtArgs>[]
+      recipientOverrideUpdates: Prisma.$NotificationTypeOverridePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -40786,6 +41691,9 @@ export namespace Prisma {
     directCostsCreated<T extends User$directCostsCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$directCostsCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectCostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     creditsUpdated<T extends User$creditsUpdatedArgs<ExtArgs> = {}>(args?: Subset<T, User$creditsUpdatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CustomerCreditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     financeConfigUpdates<T extends User$financeConfigUpdatesArgs<ExtArgs> = {}>(args?: Subset<T, User$financeConfigUpdatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    notifications<T extends User$notificationsArgs<ExtArgs> = {}>(args?: Subset<T, User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    thresholdUpdates<T extends User$thresholdUpdatesArgs<ExtArgs> = {}>(args?: Subset<T, User$thresholdUpdatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    recipientOverrideUpdates<T extends User$recipientOverrideUpdatesArgs<ExtArgs> = {}>(args?: Subset<T, User$recipientOverrideUpdatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -41980,6 +42888,78 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: FinanceConfigScalarFieldEnum | FinanceConfigScalarFieldEnum[]
+  }
+
+  /**
+   * User.notifications
+   */
+  export type User$notificationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    where?: NotificationWhereInput
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    cursor?: NotificationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * User.thresholdUpdates
+   */
+  export type User$thresholdUpdatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    where?: DelayThresholdWhereInput
+    orderBy?: DelayThresholdOrderByWithRelationInput | DelayThresholdOrderByWithRelationInput[]
+    cursor?: DelayThresholdWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DelayThresholdScalarFieldEnum | DelayThresholdScalarFieldEnum[]
+  }
+
+  /**
+   * User.recipientOverrideUpdates
+   */
+  export type User$recipientOverrideUpdatesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    where?: NotificationTypeOverrideWhereInput
+    orderBy?: NotificationTypeOverrideOrderByWithRelationInput | NotificationTypeOverrideOrderByWithRelationInput[]
+    cursor?: NotificationTypeOverrideWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: NotificationTypeOverrideScalarFieldEnum | NotificationTypeOverrideScalarFieldEnum[]
   }
 
   /**
@@ -46551,7 +47531,7 @@ export namespace Prisma {
       id: string
       roleId: string
       /**
-       * One of the 21 fixed Permission union keys (FR-010). Validated at the
+       * One of the 22 fixed Permission union keys (FR-010). Validated at the
        * application layer (Zod), not as a DB enum.
        */
       permission: string
@@ -48656,7 +49636,7 @@ export namespace Prisma {
       id: string
       userId: string
       /**
-       * One of the 21 fixed Permission union keys (FR-010).
+       * One of the 22 fixed Permission union keys (FR-010).
        */
       permission: string
       /**
@@ -51728,6 +52708,6726 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: AuditEventInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model Notification
+   */
+
+  export type AggregateNotification = {
+    _count: NotificationCountAggregateOutputType | null
+    _min: NotificationMinAggregateOutputType | null
+    _max: NotificationMaxAggregateOutputType | null
+  }
+
+  export type NotificationMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    sourceEventId: string | null
+    type: string | null
+    title: string | null
+    body: string | null
+    linkHref: string | null
+    entityType: string | null
+    entityId: string | null
+    severity: $Enums.NotificationSeverity | null
+    readAt: Date | null
+    archivedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type NotificationMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    sourceEventId: string | null
+    type: string | null
+    title: string | null
+    body: string | null
+    linkHref: string | null
+    entityType: string | null
+    entityId: string | null
+    severity: $Enums.NotificationSeverity | null
+    readAt: Date | null
+    archivedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type NotificationCountAggregateOutputType = {
+    id: number
+    userId: number
+    sourceEventId: number
+    type: number
+    title: number
+    body: number
+    linkHref: number
+    entityType: number
+    entityId: number
+    severity: number
+    readAt: number
+    archivedAt: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type NotificationMinAggregateInputType = {
+    id?: true
+    userId?: true
+    sourceEventId?: true
+    type?: true
+    title?: true
+    body?: true
+    linkHref?: true
+    entityType?: true
+    entityId?: true
+    severity?: true
+    readAt?: true
+    archivedAt?: true
+    createdAt?: true
+  }
+
+  export type NotificationMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    sourceEventId?: true
+    type?: true
+    title?: true
+    body?: true
+    linkHref?: true
+    entityType?: true
+    entityId?: true
+    severity?: true
+    readAt?: true
+    archivedAt?: true
+    createdAt?: true
+  }
+
+  export type NotificationCountAggregateInputType = {
+    id?: true
+    userId?: true
+    sourceEventId?: true
+    type?: true
+    title?: true
+    body?: true
+    linkHref?: true
+    entityType?: true
+    entityId?: true
+    severity?: true
+    readAt?: true
+    archivedAt?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type NotificationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Notification to aggregate.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Notifications
+    **/
+    _count?: true | NotificationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: NotificationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: NotificationMaxAggregateInputType
+  }
+
+  export type GetNotificationAggregateType<T extends NotificationAggregateArgs> = {
+        [P in keyof T & keyof AggregateNotification]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateNotification[P]>
+      : GetScalarType<T[P], AggregateNotification[P]>
+  }
+
+
+
+
+  export type NotificationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationWhereInput
+    orderBy?: NotificationOrderByWithAggregationInput | NotificationOrderByWithAggregationInput[]
+    by: NotificationScalarFieldEnum[] | NotificationScalarFieldEnum
+    having?: NotificationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: NotificationCountAggregateInputType | true
+    _min?: NotificationMinAggregateInputType
+    _max?: NotificationMaxAggregateInputType
+  }
+
+  export type NotificationGroupByOutputType = {
+    id: string
+    userId: string
+    sourceEventId: string
+    type: string
+    title: string
+    body: string | null
+    linkHref: string | null
+    entityType: string | null
+    entityId: string | null
+    severity: $Enums.NotificationSeverity
+    readAt: Date | null
+    archivedAt: Date | null
+    createdAt: Date
+    _count: NotificationCountAggregateOutputType | null
+    _min: NotificationMinAggregateOutputType | null
+    _max: NotificationMaxAggregateOutputType | null
+  }
+
+  type GetNotificationGroupByPayload<T extends NotificationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<NotificationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof NotificationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], NotificationGroupByOutputType[P]>
+            : GetScalarType<T[P], NotificationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type NotificationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    sourceEventId?: boolean
+    type?: boolean
+    title?: boolean
+    body?: boolean
+    linkHref?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    severity?: boolean
+    readAt?: boolean
+    archivedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["notification"]>
+
+  export type NotificationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    sourceEventId?: boolean
+    type?: boolean
+    title?: boolean
+    body?: boolean
+    linkHref?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    severity?: boolean
+    readAt?: boolean
+    archivedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["notification"]>
+
+  export type NotificationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    sourceEventId?: boolean
+    type?: boolean
+    title?: boolean
+    body?: boolean
+    linkHref?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    severity?: boolean
+    readAt?: boolean
+    archivedAt?: boolean
+    createdAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["notification"]>
+
+  export type NotificationSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    sourceEventId?: boolean
+    type?: boolean
+    title?: boolean
+    body?: boolean
+    linkHref?: boolean
+    entityType?: boolean
+    entityId?: boolean
+    severity?: boolean
+    readAt?: boolean
+    archivedAt?: boolean
+    createdAt?: boolean
+  }
+
+  export type NotificationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "sourceEventId" | "type" | "title" | "body" | "linkHref" | "entityType" | "entityId" | "severity" | "readAt" | "archivedAt" | "createdAt", ExtArgs["result"]["notification"]>
+  export type NotificationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }
+  export type NotificationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }
+  export type NotificationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+    sourceEvent?: boolean | NotificationEventDefaultArgs<ExtArgs>
+  }
+
+  export type $NotificationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Notification"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+      sourceEvent: Prisma.$NotificationEventPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * The bell's read axis and the page's scope axis. Every read path filters
+       * on this; a user may only ever see their own rows (FR-025).
+       */
+      userId: string
+      /**
+       * The outbox row that produced this. Retained, not cascaded: a notification
+       * outlives the event it points at, and the event is the audit trail.
+       */
+      sourceEventId: string
+      /**
+       * Canonical catalog type — never a raw emitter string, so a type filter
+       * on the page behaves the same regardless of which spelling 012/013/014
+       * used (FR-011, research.md §4).
+       */
+      type: string
+      title: string
+      body: string | null
+      /**
+       * Deep link resolved at processing time; null when the entry has no
+       * target or the target has since left the reader's scope (FR-022, FR-025).
+       */
+      linkHref: string | null
+      /**
+       * Mirrors the event's entity. Polymorphic, so deliberately not a relation.
+       */
+      entityType: string | null
+      entityId: string | null
+      severity: $Enums.NotificationSeverity
+      /**
+       * null = unread. The bell counts `readAt IS NULL` (FR-014).
+       */
+      readAt: Date | null
+      /**
+       * Archival only (FR-024). Never a hard delete — constitution III.
+       */
+      archivedAt: Date | null
+      createdAt: Date
+    }, ExtArgs["result"]["notification"]>
+    composites: {}
+  }
+
+  type NotificationGetPayload<S extends boolean | null | undefined | NotificationDefaultArgs> = $Result.GetResult<Prisma.$NotificationPayload, S>
+
+  type NotificationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<NotificationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: NotificationCountAggregateInputType | true
+    }
+
+  export interface NotificationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Notification'], meta: { name: 'Notification' } }
+    /**
+     * Find zero or one Notification that matches the filter.
+     * @param {NotificationFindUniqueArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends NotificationFindUniqueArgs>(args: SelectSubset<T, NotificationFindUniqueArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Notification that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {NotificationFindUniqueOrThrowArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends NotificationFindUniqueOrThrowArgs>(args: SelectSubset<T, NotificationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Notification that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindFirstArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends NotificationFindFirstArgs>(args?: SelectSubset<T, NotificationFindFirstArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Notification that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindFirstOrThrowArgs} args - Arguments to find a Notification
+     * @example
+     * // Get one Notification
+     * const notification = await prisma.notification.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends NotificationFindFirstOrThrowArgs>(args?: SelectSubset<T, NotificationFindFirstOrThrowArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Notifications that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Notifications
+     * const notifications = await prisma.notification.findMany()
+     * 
+     * // Get first 10 Notifications
+     * const notifications = await prisma.notification.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const notificationWithIdOnly = await prisma.notification.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends NotificationFindManyArgs>(args?: SelectSubset<T, NotificationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Notification.
+     * @param {NotificationCreateArgs} args - Arguments to create a Notification.
+     * @example
+     * // Create one Notification
+     * const Notification = await prisma.notification.create({
+     *   data: {
+     *     // ... data to create a Notification
+     *   }
+     * })
+     * 
+     */
+    create<T extends NotificationCreateArgs>(args: SelectSubset<T, NotificationCreateArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Notifications.
+     * @param {NotificationCreateManyArgs} args - Arguments to create many Notifications.
+     * @example
+     * // Create many Notifications
+     * const notification = await prisma.notification.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends NotificationCreateManyArgs>(args?: SelectSubset<T, NotificationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Notifications and returns the data saved in the database.
+     * @param {NotificationCreateManyAndReturnArgs} args - Arguments to create many Notifications.
+     * @example
+     * // Create many Notifications
+     * const notification = await prisma.notification.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Notifications and only return the `id`
+     * const notificationWithIdOnly = await prisma.notification.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends NotificationCreateManyAndReturnArgs>(args?: SelectSubset<T, NotificationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Notification.
+     * @param {NotificationDeleteArgs} args - Arguments to delete one Notification.
+     * @example
+     * // Delete one Notification
+     * const Notification = await prisma.notification.delete({
+     *   where: {
+     *     // ... filter to delete one Notification
+     *   }
+     * })
+     * 
+     */
+    delete<T extends NotificationDeleteArgs>(args: SelectSubset<T, NotificationDeleteArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Notification.
+     * @param {NotificationUpdateArgs} args - Arguments to update one Notification.
+     * @example
+     * // Update one Notification
+     * const notification = await prisma.notification.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends NotificationUpdateArgs>(args: SelectSubset<T, NotificationUpdateArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Notifications.
+     * @param {NotificationDeleteManyArgs} args - Arguments to filter Notifications to delete.
+     * @example
+     * // Delete a few Notifications
+     * const { count } = await prisma.notification.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends NotificationDeleteManyArgs>(args?: SelectSubset<T, NotificationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Notifications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Notifications
+     * const notification = await prisma.notification.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends NotificationUpdateManyArgs>(args: SelectSubset<T, NotificationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Notifications and returns the data updated in the database.
+     * @param {NotificationUpdateManyAndReturnArgs} args - Arguments to update many Notifications.
+     * @example
+     * // Update many Notifications
+     * const notification = await prisma.notification.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Notifications and only return the `id`
+     * const notificationWithIdOnly = await prisma.notification.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends NotificationUpdateManyAndReturnArgs>(args: SelectSubset<T, NotificationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Notification.
+     * @param {NotificationUpsertArgs} args - Arguments to update or create a Notification.
+     * @example
+     * // Update or create a Notification
+     * const notification = await prisma.notification.upsert({
+     *   create: {
+     *     // ... data to create a Notification
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Notification we want to update
+     *   }
+     * })
+     */
+    upsert<T extends NotificationUpsertArgs>(args: SelectSubset<T, NotificationUpsertArgs<ExtArgs>>): Prisma__NotificationClient<$Result.GetResult<Prisma.$NotificationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Notifications.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationCountArgs} args - Arguments to filter Notifications to count.
+     * @example
+     * // Count the number of Notifications
+     * const count = await prisma.notification.count({
+     *   where: {
+     *     // ... the filter for the Notifications we want to count
+     *   }
+     * })
+    **/
+    count<T extends NotificationCountArgs>(
+      args?: Subset<T, NotificationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], NotificationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Notification.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends NotificationAggregateArgs>(args: Subset<T, NotificationAggregateArgs>): Prisma.PrismaPromise<GetNotificationAggregateType<T>>
+
+    /**
+     * Group by Notification.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends NotificationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: NotificationGroupByArgs['orderBy'] }
+        : { orderBy?: NotificationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, NotificationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNotificationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Notification model
+   */
+  readonly fields: NotificationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Notification.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__NotificationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    sourceEvent<T extends NotificationEventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, NotificationEventDefaultArgs<ExtArgs>>): Prisma__NotificationEventClient<$Result.GetResult<Prisma.$NotificationEventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Notification model
+   */
+  interface NotificationFieldRefs {
+    readonly id: FieldRef<"Notification", 'String'>
+    readonly userId: FieldRef<"Notification", 'String'>
+    readonly sourceEventId: FieldRef<"Notification", 'String'>
+    readonly type: FieldRef<"Notification", 'String'>
+    readonly title: FieldRef<"Notification", 'String'>
+    readonly body: FieldRef<"Notification", 'String'>
+    readonly linkHref: FieldRef<"Notification", 'String'>
+    readonly entityType: FieldRef<"Notification", 'String'>
+    readonly entityId: FieldRef<"Notification", 'String'>
+    readonly severity: FieldRef<"Notification", 'NotificationSeverity'>
+    readonly readAt: FieldRef<"Notification", 'DateTime'>
+    readonly archivedAt: FieldRef<"Notification", 'DateTime'>
+    readonly createdAt: FieldRef<"Notification", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Notification findUnique
+   */
+  export type NotificationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification findUniqueOrThrow
+   */
+  export type NotificationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification findFirst
+   */
+  export type NotificationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Notifications.
+     */
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification findFirstOrThrow
+   */
+  export type NotificationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notification to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Notifications.
+     */
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification findMany
+   */
+  export type NotificationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter, which Notifications to fetch.
+     */
+    where?: NotificationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Notifications to fetch.
+     */
+    orderBy?: NotificationOrderByWithRelationInput | NotificationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Notifications.
+     */
+    cursor?: NotificationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Notifications from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Notifications.
+     */
+    skip?: number
+    distinct?: NotificationScalarFieldEnum | NotificationScalarFieldEnum[]
+  }
+
+  /**
+   * Notification create
+   */
+  export type NotificationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Notification.
+     */
+    data: XOR<NotificationCreateInput, NotificationUncheckedCreateInput>
+  }
+
+  /**
+   * Notification createMany
+   */
+  export type NotificationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Notifications.
+     */
+    data: NotificationCreateManyInput | NotificationCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Notification createManyAndReturn
+   */
+  export type NotificationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * The data used to create many Notifications.
+     */
+    data: NotificationCreateManyInput | NotificationCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Notification update
+   */
+  export type NotificationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Notification.
+     */
+    data: XOR<NotificationUpdateInput, NotificationUncheckedUpdateInput>
+    /**
+     * Choose, which Notification to update.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification updateMany
+   */
+  export type NotificationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Notifications.
+     */
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyInput>
+    /**
+     * Filter which Notifications to update
+     */
+    where?: NotificationWhereInput
+    /**
+     * Limit how many Notifications to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Notification updateManyAndReturn
+   */
+  export type NotificationUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * The data used to update Notifications.
+     */
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyInput>
+    /**
+     * Filter which Notifications to update
+     */
+    where?: NotificationWhereInput
+    /**
+     * Limit how many Notifications to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Notification upsert
+   */
+  export type NotificationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Notification to update in case it exists.
+     */
+    where: NotificationWhereUniqueInput
+    /**
+     * In case the Notification found by the `where` argument doesn't exist, create a new Notification with this data.
+     */
+    create: XOR<NotificationCreateInput, NotificationUncheckedCreateInput>
+    /**
+     * In case the Notification was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<NotificationUpdateInput, NotificationUncheckedUpdateInput>
+  }
+
+  /**
+   * Notification delete
+   */
+  export type NotificationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+    /**
+     * Filter which Notification to delete.
+     */
+    where: NotificationWhereUniqueInput
+  }
+
+  /**
+   * Notification deleteMany
+   */
+  export type NotificationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Notifications to delete
+     */
+    where?: NotificationWhereInput
+    /**
+     * Limit how many Notifications to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Notification without action
+   */
+  export type NotificationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Notification
+     */
+    select?: NotificationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Notification
+     */
+    omit?: NotificationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model NotificationTypeOverride
+   */
+
+  export type AggregateNotificationTypeOverride = {
+    _count: NotificationTypeOverrideCountAggregateOutputType | null
+    _min: NotificationTypeOverrideMinAggregateOutputType | null
+    _max: NotificationTypeOverrideMaxAggregateOutputType | null
+  }
+
+  export type NotificationTypeOverrideMinAggregateOutputType = {
+    id: string | null
+    type: string | null
+    updatedById: string | null
+    updatedAt: Date | null
+  }
+
+  export type NotificationTypeOverrideMaxAggregateOutputType = {
+    id: string | null
+    type: string | null
+    updatedById: string | null
+    updatedAt: Date | null
+  }
+
+  export type NotificationTypeOverrideCountAggregateOutputType = {
+    id: number
+    type: number
+    userIds: number
+    roles: number
+    departmentIds: number
+    permissions: number
+    updatedById: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type NotificationTypeOverrideMinAggregateInputType = {
+    id?: true
+    type?: true
+    updatedById?: true
+    updatedAt?: true
+  }
+
+  export type NotificationTypeOverrideMaxAggregateInputType = {
+    id?: true
+    type?: true
+    updatedById?: true
+    updatedAt?: true
+  }
+
+  export type NotificationTypeOverrideCountAggregateInputType = {
+    id?: true
+    type?: true
+    userIds?: true
+    roles?: true
+    departmentIds?: true
+    permissions?: true
+    updatedById?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type NotificationTypeOverrideAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which NotificationTypeOverride to aggregate.
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NotificationTypeOverrides to fetch.
+     */
+    orderBy?: NotificationTypeOverrideOrderByWithRelationInput | NotificationTypeOverrideOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: NotificationTypeOverrideWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NotificationTypeOverrides from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NotificationTypeOverrides.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned NotificationTypeOverrides
+    **/
+    _count?: true | NotificationTypeOverrideCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: NotificationTypeOverrideMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: NotificationTypeOverrideMaxAggregateInputType
+  }
+
+  export type GetNotificationTypeOverrideAggregateType<T extends NotificationTypeOverrideAggregateArgs> = {
+        [P in keyof T & keyof AggregateNotificationTypeOverride]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateNotificationTypeOverride[P]>
+      : GetScalarType<T[P], AggregateNotificationTypeOverride[P]>
+  }
+
+
+
+
+  export type NotificationTypeOverrideGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: NotificationTypeOverrideWhereInput
+    orderBy?: NotificationTypeOverrideOrderByWithAggregationInput | NotificationTypeOverrideOrderByWithAggregationInput[]
+    by: NotificationTypeOverrideScalarFieldEnum[] | NotificationTypeOverrideScalarFieldEnum
+    having?: NotificationTypeOverrideScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: NotificationTypeOverrideCountAggregateInputType | true
+    _min?: NotificationTypeOverrideMinAggregateInputType
+    _max?: NotificationTypeOverrideMaxAggregateInputType
+  }
+
+  export type NotificationTypeOverrideGroupByOutputType = {
+    id: string
+    type: string
+    userIds: string[]
+    roles: string[]
+    departmentIds: string[]
+    permissions: string[]
+    updatedById: string | null
+    updatedAt: Date
+    _count: NotificationTypeOverrideCountAggregateOutputType | null
+    _min: NotificationTypeOverrideMinAggregateOutputType | null
+    _max: NotificationTypeOverrideMaxAggregateOutputType | null
+  }
+
+  type GetNotificationTypeOverrideGroupByPayload<T extends NotificationTypeOverrideGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<NotificationTypeOverrideGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof NotificationTypeOverrideGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], NotificationTypeOverrideGroupByOutputType[P]>
+            : GetScalarType<T[P], NotificationTypeOverrideGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type NotificationTypeOverrideSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    userIds?: boolean
+    roles?: boolean
+    departmentIds?: boolean
+    permissions?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["notificationTypeOverride"]>
+
+  export type NotificationTypeOverrideSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    userIds?: boolean
+    roles?: boolean
+    departmentIds?: boolean
+    permissions?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["notificationTypeOverride"]>
+
+  export type NotificationTypeOverrideSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    type?: boolean
+    userIds?: boolean
+    roles?: boolean
+    departmentIds?: boolean
+    permissions?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["notificationTypeOverride"]>
+
+  export type NotificationTypeOverrideSelectScalar = {
+    id?: boolean
+    type?: boolean
+    userIds?: boolean
+    roles?: boolean
+    departmentIds?: boolean
+    permissions?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+  }
+
+  export type NotificationTypeOverrideOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "type" | "userIds" | "roles" | "departmentIds" | "permissions" | "updatedById" | "updatedAt", ExtArgs["result"]["notificationTypeOverride"]>
+  export type NotificationTypeOverrideInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }
+  export type NotificationTypeOverrideIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }
+  export type NotificationTypeOverrideIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | NotificationTypeOverride$updatedByArgs<ExtArgs>
+  }
+
+  export type $NotificationTypeOverridePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "NotificationTypeOverride"
+    objects: {
+      updatedBy: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * Canonical catalog type (never an alias, never a raw emitter string).
+       * An override for a type with no catalog entry is a VALIDATION error, not
+       * a dormant row (contract §setRecipientOverride).
+       */
+      type: string
+      userIds: string[]
+      roles: string[]
+      departmentIds: string[]
+      permissions: string[]
+      /**
+       * Null until the first Admin write (seeded/absent rows have no editor).
+       */
+      updatedById: string | null
+      updatedAt: Date
+    }, ExtArgs["result"]["notificationTypeOverride"]>
+    composites: {}
+  }
+
+  type NotificationTypeOverrideGetPayload<S extends boolean | null | undefined | NotificationTypeOverrideDefaultArgs> = $Result.GetResult<Prisma.$NotificationTypeOverridePayload, S>
+
+  type NotificationTypeOverrideCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<NotificationTypeOverrideFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: NotificationTypeOverrideCountAggregateInputType | true
+    }
+
+  export interface NotificationTypeOverrideDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['NotificationTypeOverride'], meta: { name: 'NotificationTypeOverride' } }
+    /**
+     * Find zero or one NotificationTypeOverride that matches the filter.
+     * @param {NotificationTypeOverrideFindUniqueArgs} args - Arguments to find a NotificationTypeOverride
+     * @example
+     * // Get one NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends NotificationTypeOverrideFindUniqueArgs>(args: SelectSubset<T, NotificationTypeOverrideFindUniqueArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one NotificationTypeOverride that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {NotificationTypeOverrideFindUniqueOrThrowArgs} args - Arguments to find a NotificationTypeOverride
+     * @example
+     * // Get one NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends NotificationTypeOverrideFindUniqueOrThrowArgs>(args: SelectSubset<T, NotificationTypeOverrideFindUniqueOrThrowArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first NotificationTypeOverride that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideFindFirstArgs} args - Arguments to find a NotificationTypeOverride
+     * @example
+     * // Get one NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends NotificationTypeOverrideFindFirstArgs>(args?: SelectSubset<T, NotificationTypeOverrideFindFirstArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first NotificationTypeOverride that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideFindFirstOrThrowArgs} args - Arguments to find a NotificationTypeOverride
+     * @example
+     * // Get one NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends NotificationTypeOverrideFindFirstOrThrowArgs>(args?: SelectSubset<T, NotificationTypeOverrideFindFirstOrThrowArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more NotificationTypeOverrides that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all NotificationTypeOverrides
+     * const notificationTypeOverrides = await prisma.notificationTypeOverride.findMany()
+     * 
+     * // Get first 10 NotificationTypeOverrides
+     * const notificationTypeOverrides = await prisma.notificationTypeOverride.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const notificationTypeOverrideWithIdOnly = await prisma.notificationTypeOverride.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends NotificationTypeOverrideFindManyArgs>(args?: SelectSubset<T, NotificationTypeOverrideFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a NotificationTypeOverride.
+     * @param {NotificationTypeOverrideCreateArgs} args - Arguments to create a NotificationTypeOverride.
+     * @example
+     * // Create one NotificationTypeOverride
+     * const NotificationTypeOverride = await prisma.notificationTypeOverride.create({
+     *   data: {
+     *     // ... data to create a NotificationTypeOverride
+     *   }
+     * })
+     * 
+     */
+    create<T extends NotificationTypeOverrideCreateArgs>(args: SelectSubset<T, NotificationTypeOverrideCreateArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many NotificationTypeOverrides.
+     * @param {NotificationTypeOverrideCreateManyArgs} args - Arguments to create many NotificationTypeOverrides.
+     * @example
+     * // Create many NotificationTypeOverrides
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends NotificationTypeOverrideCreateManyArgs>(args?: SelectSubset<T, NotificationTypeOverrideCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many NotificationTypeOverrides and returns the data saved in the database.
+     * @param {NotificationTypeOverrideCreateManyAndReturnArgs} args - Arguments to create many NotificationTypeOverrides.
+     * @example
+     * // Create many NotificationTypeOverrides
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many NotificationTypeOverrides and only return the `id`
+     * const notificationTypeOverrideWithIdOnly = await prisma.notificationTypeOverride.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends NotificationTypeOverrideCreateManyAndReturnArgs>(args?: SelectSubset<T, NotificationTypeOverrideCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a NotificationTypeOverride.
+     * @param {NotificationTypeOverrideDeleteArgs} args - Arguments to delete one NotificationTypeOverride.
+     * @example
+     * // Delete one NotificationTypeOverride
+     * const NotificationTypeOverride = await prisma.notificationTypeOverride.delete({
+     *   where: {
+     *     // ... filter to delete one NotificationTypeOverride
+     *   }
+     * })
+     * 
+     */
+    delete<T extends NotificationTypeOverrideDeleteArgs>(args: SelectSubset<T, NotificationTypeOverrideDeleteArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one NotificationTypeOverride.
+     * @param {NotificationTypeOverrideUpdateArgs} args - Arguments to update one NotificationTypeOverride.
+     * @example
+     * // Update one NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends NotificationTypeOverrideUpdateArgs>(args: SelectSubset<T, NotificationTypeOverrideUpdateArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more NotificationTypeOverrides.
+     * @param {NotificationTypeOverrideDeleteManyArgs} args - Arguments to filter NotificationTypeOverrides to delete.
+     * @example
+     * // Delete a few NotificationTypeOverrides
+     * const { count } = await prisma.notificationTypeOverride.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends NotificationTypeOverrideDeleteManyArgs>(args?: SelectSubset<T, NotificationTypeOverrideDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more NotificationTypeOverrides.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many NotificationTypeOverrides
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends NotificationTypeOverrideUpdateManyArgs>(args: SelectSubset<T, NotificationTypeOverrideUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more NotificationTypeOverrides and returns the data updated in the database.
+     * @param {NotificationTypeOverrideUpdateManyAndReturnArgs} args - Arguments to update many NotificationTypeOverrides.
+     * @example
+     * // Update many NotificationTypeOverrides
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more NotificationTypeOverrides and only return the `id`
+     * const notificationTypeOverrideWithIdOnly = await prisma.notificationTypeOverride.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends NotificationTypeOverrideUpdateManyAndReturnArgs>(args: SelectSubset<T, NotificationTypeOverrideUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one NotificationTypeOverride.
+     * @param {NotificationTypeOverrideUpsertArgs} args - Arguments to update or create a NotificationTypeOverride.
+     * @example
+     * // Update or create a NotificationTypeOverride
+     * const notificationTypeOverride = await prisma.notificationTypeOverride.upsert({
+     *   create: {
+     *     // ... data to create a NotificationTypeOverride
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the NotificationTypeOverride we want to update
+     *   }
+     * })
+     */
+    upsert<T extends NotificationTypeOverrideUpsertArgs>(args: SelectSubset<T, NotificationTypeOverrideUpsertArgs<ExtArgs>>): Prisma__NotificationTypeOverrideClient<$Result.GetResult<Prisma.$NotificationTypeOverridePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of NotificationTypeOverrides.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideCountArgs} args - Arguments to filter NotificationTypeOverrides to count.
+     * @example
+     * // Count the number of NotificationTypeOverrides
+     * const count = await prisma.notificationTypeOverride.count({
+     *   where: {
+     *     // ... the filter for the NotificationTypeOverrides we want to count
+     *   }
+     * })
+    **/
+    count<T extends NotificationTypeOverrideCountArgs>(
+      args?: Subset<T, NotificationTypeOverrideCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], NotificationTypeOverrideCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a NotificationTypeOverride.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends NotificationTypeOverrideAggregateArgs>(args: Subset<T, NotificationTypeOverrideAggregateArgs>): Prisma.PrismaPromise<GetNotificationTypeOverrideAggregateType<T>>
+
+    /**
+     * Group by NotificationTypeOverride.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {NotificationTypeOverrideGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends NotificationTypeOverrideGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: NotificationTypeOverrideGroupByArgs['orderBy'] }
+        : { orderBy?: NotificationTypeOverrideGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, NotificationTypeOverrideGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNotificationTypeOverrideGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the NotificationTypeOverride model
+   */
+  readonly fields: NotificationTypeOverrideFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for NotificationTypeOverride.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__NotificationTypeOverrideClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    updatedBy<T extends NotificationTypeOverride$updatedByArgs<ExtArgs> = {}>(args?: Subset<T, NotificationTypeOverride$updatedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the NotificationTypeOverride model
+   */
+  interface NotificationTypeOverrideFieldRefs {
+    readonly id: FieldRef<"NotificationTypeOverride", 'String'>
+    readonly type: FieldRef<"NotificationTypeOverride", 'String'>
+    readonly userIds: FieldRef<"NotificationTypeOverride", 'String[]'>
+    readonly roles: FieldRef<"NotificationTypeOverride", 'String[]'>
+    readonly departmentIds: FieldRef<"NotificationTypeOverride", 'String[]'>
+    readonly permissions: FieldRef<"NotificationTypeOverride", 'String[]'>
+    readonly updatedById: FieldRef<"NotificationTypeOverride", 'String'>
+    readonly updatedAt: FieldRef<"NotificationTypeOverride", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * NotificationTypeOverride findUnique
+   */
+  export type NotificationTypeOverrideFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter, which NotificationTypeOverride to fetch.
+     */
+    where: NotificationTypeOverrideWhereUniqueInput
+  }
+
+  /**
+   * NotificationTypeOverride findUniqueOrThrow
+   */
+  export type NotificationTypeOverrideFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter, which NotificationTypeOverride to fetch.
+     */
+    where: NotificationTypeOverrideWhereUniqueInput
+  }
+
+  /**
+   * NotificationTypeOverride findFirst
+   */
+  export type NotificationTypeOverrideFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter, which NotificationTypeOverride to fetch.
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NotificationTypeOverrides to fetch.
+     */
+    orderBy?: NotificationTypeOverrideOrderByWithRelationInput | NotificationTypeOverrideOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for NotificationTypeOverrides.
+     */
+    cursor?: NotificationTypeOverrideWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NotificationTypeOverrides from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NotificationTypeOverrides.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of NotificationTypeOverrides.
+     */
+    distinct?: NotificationTypeOverrideScalarFieldEnum | NotificationTypeOverrideScalarFieldEnum[]
+  }
+
+  /**
+   * NotificationTypeOverride findFirstOrThrow
+   */
+  export type NotificationTypeOverrideFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter, which NotificationTypeOverride to fetch.
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NotificationTypeOverrides to fetch.
+     */
+    orderBy?: NotificationTypeOverrideOrderByWithRelationInput | NotificationTypeOverrideOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for NotificationTypeOverrides.
+     */
+    cursor?: NotificationTypeOverrideWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NotificationTypeOverrides from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NotificationTypeOverrides.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of NotificationTypeOverrides.
+     */
+    distinct?: NotificationTypeOverrideScalarFieldEnum | NotificationTypeOverrideScalarFieldEnum[]
+  }
+
+  /**
+   * NotificationTypeOverride findMany
+   */
+  export type NotificationTypeOverrideFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter, which NotificationTypeOverrides to fetch.
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of NotificationTypeOverrides to fetch.
+     */
+    orderBy?: NotificationTypeOverrideOrderByWithRelationInput | NotificationTypeOverrideOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing NotificationTypeOverrides.
+     */
+    cursor?: NotificationTypeOverrideWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` NotificationTypeOverrides from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` NotificationTypeOverrides.
+     */
+    skip?: number
+    distinct?: NotificationTypeOverrideScalarFieldEnum | NotificationTypeOverrideScalarFieldEnum[]
+  }
+
+  /**
+   * NotificationTypeOverride create
+   */
+  export type NotificationTypeOverrideCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * The data needed to create a NotificationTypeOverride.
+     */
+    data: XOR<NotificationTypeOverrideCreateInput, NotificationTypeOverrideUncheckedCreateInput>
+  }
+
+  /**
+   * NotificationTypeOverride createMany
+   */
+  export type NotificationTypeOverrideCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many NotificationTypeOverrides.
+     */
+    data: NotificationTypeOverrideCreateManyInput | NotificationTypeOverrideCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * NotificationTypeOverride createManyAndReturn
+   */
+  export type NotificationTypeOverrideCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * The data used to create many NotificationTypeOverrides.
+     */
+    data: NotificationTypeOverrideCreateManyInput | NotificationTypeOverrideCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * NotificationTypeOverride update
+   */
+  export type NotificationTypeOverrideUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * The data needed to update a NotificationTypeOverride.
+     */
+    data: XOR<NotificationTypeOverrideUpdateInput, NotificationTypeOverrideUncheckedUpdateInput>
+    /**
+     * Choose, which NotificationTypeOverride to update.
+     */
+    where: NotificationTypeOverrideWhereUniqueInput
+  }
+
+  /**
+   * NotificationTypeOverride updateMany
+   */
+  export type NotificationTypeOverrideUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update NotificationTypeOverrides.
+     */
+    data: XOR<NotificationTypeOverrideUpdateManyMutationInput, NotificationTypeOverrideUncheckedUpdateManyInput>
+    /**
+     * Filter which NotificationTypeOverrides to update
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * Limit how many NotificationTypeOverrides to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * NotificationTypeOverride updateManyAndReturn
+   */
+  export type NotificationTypeOverrideUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * The data used to update NotificationTypeOverrides.
+     */
+    data: XOR<NotificationTypeOverrideUpdateManyMutationInput, NotificationTypeOverrideUncheckedUpdateManyInput>
+    /**
+     * Filter which NotificationTypeOverrides to update
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * Limit how many NotificationTypeOverrides to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * NotificationTypeOverride upsert
+   */
+  export type NotificationTypeOverrideUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * The filter to search for the NotificationTypeOverride to update in case it exists.
+     */
+    where: NotificationTypeOverrideWhereUniqueInput
+    /**
+     * In case the NotificationTypeOverride found by the `where` argument doesn't exist, create a new NotificationTypeOverride with this data.
+     */
+    create: XOR<NotificationTypeOverrideCreateInput, NotificationTypeOverrideUncheckedCreateInput>
+    /**
+     * In case the NotificationTypeOverride was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<NotificationTypeOverrideUpdateInput, NotificationTypeOverrideUncheckedUpdateInput>
+  }
+
+  /**
+   * NotificationTypeOverride delete
+   */
+  export type NotificationTypeOverrideDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+    /**
+     * Filter which NotificationTypeOverride to delete.
+     */
+    where: NotificationTypeOverrideWhereUniqueInput
+  }
+
+  /**
+   * NotificationTypeOverride deleteMany
+   */
+  export type NotificationTypeOverrideDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which NotificationTypeOverrides to delete
+     */
+    where?: NotificationTypeOverrideWhereInput
+    /**
+     * Limit how many NotificationTypeOverrides to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * NotificationTypeOverride.updatedBy
+   */
+  export type NotificationTypeOverride$updatedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * NotificationTypeOverride without action
+   */
+  export type NotificationTypeOverrideDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the NotificationTypeOverride
+     */
+    select?: NotificationTypeOverrideSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the NotificationTypeOverride
+     */
+    omit?: NotificationTypeOverrideOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: NotificationTypeOverrideInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model DelayThreshold
+   */
+
+  export type AggregateDelayThreshold = {
+    _count: DelayThresholdCountAggregateOutputType | null
+    _avg: DelayThresholdAvgAggregateOutputType | null
+    _sum: DelayThresholdSumAggregateOutputType | null
+    _min: DelayThresholdMinAggregateOutputType | null
+    _max: DelayThresholdMaxAggregateOutputType | null
+  }
+
+  export type DelayThresholdAvgAggregateOutputType = {
+    thresholdMinutes: number | null
+    escalationMinutes: number | null
+  }
+
+  export type DelayThresholdSumAggregateOutputType = {
+    thresholdMinutes: number | null
+    escalationMinutes: number | null
+  }
+
+  export type DelayThresholdMinAggregateOutputType = {
+    id: string | null
+    phase: $Enums.DelayPhase | null
+    thresholdMinutes: number | null
+    escalationMinutes: number | null
+    updatedById: string | null
+    updatedAt: Date | null
+  }
+
+  export type DelayThresholdMaxAggregateOutputType = {
+    id: string | null
+    phase: $Enums.DelayPhase | null
+    thresholdMinutes: number | null
+    escalationMinutes: number | null
+    updatedById: string | null
+    updatedAt: Date | null
+  }
+
+  export type DelayThresholdCountAggregateOutputType = {
+    id: number
+    phase: number
+    thresholdMinutes: number
+    alertRoles: number
+    alertPermissions: number
+    alertDepartmentIds: number
+    escalationMinutes: number
+    updatedById: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type DelayThresholdAvgAggregateInputType = {
+    thresholdMinutes?: true
+    escalationMinutes?: true
+  }
+
+  export type DelayThresholdSumAggregateInputType = {
+    thresholdMinutes?: true
+    escalationMinutes?: true
+  }
+
+  export type DelayThresholdMinAggregateInputType = {
+    id?: true
+    phase?: true
+    thresholdMinutes?: true
+    escalationMinutes?: true
+    updatedById?: true
+    updatedAt?: true
+  }
+
+  export type DelayThresholdMaxAggregateInputType = {
+    id?: true
+    phase?: true
+    thresholdMinutes?: true
+    escalationMinutes?: true
+    updatedById?: true
+    updatedAt?: true
+  }
+
+  export type DelayThresholdCountAggregateInputType = {
+    id?: true
+    phase?: true
+    thresholdMinutes?: true
+    alertRoles?: true
+    alertPermissions?: true
+    alertDepartmentIds?: true
+    escalationMinutes?: true
+    updatedById?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type DelayThresholdAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DelayThreshold to aggregate.
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayThresholds to fetch.
+     */
+    orderBy?: DelayThresholdOrderByWithRelationInput | DelayThresholdOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DelayThresholdWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayThresholds from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayThresholds.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DelayThresholds
+    **/
+    _count?: true | DelayThresholdCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DelayThresholdAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DelayThresholdSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DelayThresholdMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DelayThresholdMaxAggregateInputType
+  }
+
+  export type GetDelayThresholdAggregateType<T extends DelayThresholdAggregateArgs> = {
+        [P in keyof T & keyof AggregateDelayThreshold]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDelayThreshold[P]>
+      : GetScalarType<T[P], AggregateDelayThreshold[P]>
+  }
+
+
+
+
+  export type DelayThresholdGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DelayThresholdWhereInput
+    orderBy?: DelayThresholdOrderByWithAggregationInput | DelayThresholdOrderByWithAggregationInput[]
+    by: DelayThresholdScalarFieldEnum[] | DelayThresholdScalarFieldEnum
+    having?: DelayThresholdScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DelayThresholdCountAggregateInputType | true
+    _avg?: DelayThresholdAvgAggregateInputType
+    _sum?: DelayThresholdSumAggregateInputType
+    _min?: DelayThresholdMinAggregateInputType
+    _max?: DelayThresholdMaxAggregateInputType
+  }
+
+  export type DelayThresholdGroupByOutputType = {
+    id: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes: number | null
+    alertRoles: string[]
+    alertPermissions: string[]
+    alertDepartmentIds: string[]
+    escalationMinutes: number | null
+    updatedById: string | null
+    updatedAt: Date
+    _count: DelayThresholdCountAggregateOutputType | null
+    _avg: DelayThresholdAvgAggregateOutputType | null
+    _sum: DelayThresholdSumAggregateOutputType | null
+    _min: DelayThresholdMinAggregateOutputType | null
+    _max: DelayThresholdMaxAggregateOutputType | null
+  }
+
+  type GetDelayThresholdGroupByPayload<T extends DelayThresholdGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DelayThresholdGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DelayThresholdGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DelayThresholdGroupByOutputType[P]>
+            : GetScalarType<T[P], DelayThresholdGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DelayThresholdSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phase?: boolean
+    thresholdMinutes?: boolean
+    alertRoles?: boolean
+    alertPermissions?: boolean
+    alertDepartmentIds?: boolean
+    escalationMinutes?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["delayThreshold"]>
+
+  export type DelayThresholdSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phase?: boolean
+    thresholdMinutes?: boolean
+    alertRoles?: boolean
+    alertPermissions?: boolean
+    alertDepartmentIds?: boolean
+    escalationMinutes?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["delayThreshold"]>
+
+  export type DelayThresholdSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    phase?: boolean
+    thresholdMinutes?: boolean
+    alertRoles?: boolean
+    alertPermissions?: boolean
+    alertDepartmentIds?: boolean
+    escalationMinutes?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }, ExtArgs["result"]["delayThreshold"]>
+
+  export type DelayThresholdSelectScalar = {
+    id?: boolean
+    phase?: boolean
+    thresholdMinutes?: boolean
+    alertRoles?: boolean
+    alertPermissions?: boolean
+    alertDepartmentIds?: boolean
+    escalationMinutes?: boolean
+    updatedById?: boolean
+    updatedAt?: boolean
+  }
+
+  export type DelayThresholdOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "phase" | "thresholdMinutes" | "alertRoles" | "alertPermissions" | "alertDepartmentIds" | "escalationMinutes" | "updatedById" | "updatedAt", ExtArgs["result"]["delayThreshold"]>
+  export type DelayThresholdInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }
+  export type DelayThresholdIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }
+  export type DelayThresholdIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    updatedBy?: boolean | DelayThreshold$updatedByArgs<ExtArgs>
+  }
+
+  export type $DelayThresholdPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DelayThreshold"
+    objects: {
+      updatedBy: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      phase: $Enums.DelayPhase
+      /**
+       * null disables the phase — no breach is ever detected for it.
+       * Backed by a DB CHECK as well as Zod (data-model.md §Migration notes).
+       */
+      thresholdMinutes: number | null
+      alertRoles: string[]
+      alertPermissions: string[]
+      alertDepartmentIds: string[]
+      /**
+       * Accepted and stored but inactive in V1 (FR-047): null = no escalation
+       * tier. Must exceed thresholdMinutes when both are set.
+       */
+      escalationMinutes: number | null
+      updatedById: string | null
+      updatedAt: Date
+    }, ExtArgs["result"]["delayThreshold"]>
+    composites: {}
+  }
+
+  type DelayThresholdGetPayload<S extends boolean | null | undefined | DelayThresholdDefaultArgs> = $Result.GetResult<Prisma.$DelayThresholdPayload, S>
+
+  type DelayThresholdCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DelayThresholdFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DelayThresholdCountAggregateInputType | true
+    }
+
+  export interface DelayThresholdDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DelayThreshold'], meta: { name: 'DelayThreshold' } }
+    /**
+     * Find zero or one DelayThreshold that matches the filter.
+     * @param {DelayThresholdFindUniqueArgs} args - Arguments to find a DelayThreshold
+     * @example
+     * // Get one DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DelayThresholdFindUniqueArgs>(args: SelectSubset<T, DelayThresholdFindUniqueArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DelayThreshold that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DelayThresholdFindUniqueOrThrowArgs} args - Arguments to find a DelayThreshold
+     * @example
+     * // Get one DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DelayThresholdFindUniqueOrThrowArgs>(args: SelectSubset<T, DelayThresholdFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DelayThreshold that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdFindFirstArgs} args - Arguments to find a DelayThreshold
+     * @example
+     * // Get one DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DelayThresholdFindFirstArgs>(args?: SelectSubset<T, DelayThresholdFindFirstArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DelayThreshold that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdFindFirstOrThrowArgs} args - Arguments to find a DelayThreshold
+     * @example
+     * // Get one DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DelayThresholdFindFirstOrThrowArgs>(args?: SelectSubset<T, DelayThresholdFindFirstOrThrowArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DelayThresholds that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DelayThresholds
+     * const delayThresholds = await prisma.delayThreshold.findMany()
+     * 
+     * // Get first 10 DelayThresholds
+     * const delayThresholds = await prisma.delayThreshold.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const delayThresholdWithIdOnly = await prisma.delayThreshold.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DelayThresholdFindManyArgs>(args?: SelectSubset<T, DelayThresholdFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DelayThreshold.
+     * @param {DelayThresholdCreateArgs} args - Arguments to create a DelayThreshold.
+     * @example
+     * // Create one DelayThreshold
+     * const DelayThreshold = await prisma.delayThreshold.create({
+     *   data: {
+     *     // ... data to create a DelayThreshold
+     *   }
+     * })
+     * 
+     */
+    create<T extends DelayThresholdCreateArgs>(args: SelectSubset<T, DelayThresholdCreateArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DelayThresholds.
+     * @param {DelayThresholdCreateManyArgs} args - Arguments to create many DelayThresholds.
+     * @example
+     * // Create many DelayThresholds
+     * const delayThreshold = await prisma.delayThreshold.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DelayThresholdCreateManyArgs>(args?: SelectSubset<T, DelayThresholdCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DelayThresholds and returns the data saved in the database.
+     * @param {DelayThresholdCreateManyAndReturnArgs} args - Arguments to create many DelayThresholds.
+     * @example
+     * // Create many DelayThresholds
+     * const delayThreshold = await prisma.delayThreshold.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DelayThresholds and only return the `id`
+     * const delayThresholdWithIdOnly = await prisma.delayThreshold.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DelayThresholdCreateManyAndReturnArgs>(args?: SelectSubset<T, DelayThresholdCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DelayThreshold.
+     * @param {DelayThresholdDeleteArgs} args - Arguments to delete one DelayThreshold.
+     * @example
+     * // Delete one DelayThreshold
+     * const DelayThreshold = await prisma.delayThreshold.delete({
+     *   where: {
+     *     // ... filter to delete one DelayThreshold
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DelayThresholdDeleteArgs>(args: SelectSubset<T, DelayThresholdDeleteArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DelayThreshold.
+     * @param {DelayThresholdUpdateArgs} args - Arguments to update one DelayThreshold.
+     * @example
+     * // Update one DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DelayThresholdUpdateArgs>(args: SelectSubset<T, DelayThresholdUpdateArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DelayThresholds.
+     * @param {DelayThresholdDeleteManyArgs} args - Arguments to filter DelayThresholds to delete.
+     * @example
+     * // Delete a few DelayThresholds
+     * const { count } = await prisma.delayThreshold.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DelayThresholdDeleteManyArgs>(args?: SelectSubset<T, DelayThresholdDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DelayThresholds.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DelayThresholds
+     * const delayThreshold = await prisma.delayThreshold.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DelayThresholdUpdateManyArgs>(args: SelectSubset<T, DelayThresholdUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DelayThresholds and returns the data updated in the database.
+     * @param {DelayThresholdUpdateManyAndReturnArgs} args - Arguments to update many DelayThresholds.
+     * @example
+     * // Update many DelayThresholds
+     * const delayThreshold = await prisma.delayThreshold.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DelayThresholds and only return the `id`
+     * const delayThresholdWithIdOnly = await prisma.delayThreshold.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DelayThresholdUpdateManyAndReturnArgs>(args: SelectSubset<T, DelayThresholdUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DelayThreshold.
+     * @param {DelayThresholdUpsertArgs} args - Arguments to update or create a DelayThreshold.
+     * @example
+     * // Update or create a DelayThreshold
+     * const delayThreshold = await prisma.delayThreshold.upsert({
+     *   create: {
+     *     // ... data to create a DelayThreshold
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DelayThreshold we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DelayThresholdUpsertArgs>(args: SelectSubset<T, DelayThresholdUpsertArgs<ExtArgs>>): Prisma__DelayThresholdClient<$Result.GetResult<Prisma.$DelayThresholdPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DelayThresholds.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdCountArgs} args - Arguments to filter DelayThresholds to count.
+     * @example
+     * // Count the number of DelayThresholds
+     * const count = await prisma.delayThreshold.count({
+     *   where: {
+     *     // ... the filter for the DelayThresholds we want to count
+     *   }
+     * })
+    **/
+    count<T extends DelayThresholdCountArgs>(
+      args?: Subset<T, DelayThresholdCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DelayThresholdCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DelayThreshold.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DelayThresholdAggregateArgs>(args: Subset<T, DelayThresholdAggregateArgs>): Prisma.PrismaPromise<GetDelayThresholdAggregateType<T>>
+
+    /**
+     * Group by DelayThreshold.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayThresholdGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DelayThresholdGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DelayThresholdGroupByArgs['orderBy'] }
+        : { orderBy?: DelayThresholdGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DelayThresholdGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDelayThresholdGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DelayThreshold model
+   */
+  readonly fields: DelayThresholdFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DelayThreshold.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DelayThresholdClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    updatedBy<T extends DelayThreshold$updatedByArgs<ExtArgs> = {}>(args?: Subset<T, DelayThreshold$updatedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DelayThreshold model
+   */
+  interface DelayThresholdFieldRefs {
+    readonly id: FieldRef<"DelayThreshold", 'String'>
+    readonly phase: FieldRef<"DelayThreshold", 'DelayPhase'>
+    readonly thresholdMinutes: FieldRef<"DelayThreshold", 'Int'>
+    readonly alertRoles: FieldRef<"DelayThreshold", 'String[]'>
+    readonly alertPermissions: FieldRef<"DelayThreshold", 'String[]'>
+    readonly alertDepartmentIds: FieldRef<"DelayThreshold", 'String[]'>
+    readonly escalationMinutes: FieldRef<"DelayThreshold", 'Int'>
+    readonly updatedById: FieldRef<"DelayThreshold", 'String'>
+    readonly updatedAt: FieldRef<"DelayThreshold", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DelayThreshold findUnique
+   */
+  export type DelayThresholdFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayThreshold to fetch.
+     */
+    where: DelayThresholdWhereUniqueInput
+  }
+
+  /**
+   * DelayThreshold findUniqueOrThrow
+   */
+  export type DelayThresholdFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayThreshold to fetch.
+     */
+    where: DelayThresholdWhereUniqueInput
+  }
+
+  /**
+   * DelayThreshold findFirst
+   */
+  export type DelayThresholdFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayThreshold to fetch.
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayThresholds to fetch.
+     */
+    orderBy?: DelayThresholdOrderByWithRelationInput | DelayThresholdOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DelayThresholds.
+     */
+    cursor?: DelayThresholdWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayThresholds from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayThresholds.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DelayThresholds.
+     */
+    distinct?: DelayThresholdScalarFieldEnum | DelayThresholdScalarFieldEnum[]
+  }
+
+  /**
+   * DelayThreshold findFirstOrThrow
+   */
+  export type DelayThresholdFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayThreshold to fetch.
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayThresholds to fetch.
+     */
+    orderBy?: DelayThresholdOrderByWithRelationInput | DelayThresholdOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DelayThresholds.
+     */
+    cursor?: DelayThresholdWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayThresholds from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayThresholds.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DelayThresholds.
+     */
+    distinct?: DelayThresholdScalarFieldEnum | DelayThresholdScalarFieldEnum[]
+  }
+
+  /**
+   * DelayThreshold findMany
+   */
+  export type DelayThresholdFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayThresholds to fetch.
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayThresholds to fetch.
+     */
+    orderBy?: DelayThresholdOrderByWithRelationInput | DelayThresholdOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DelayThresholds.
+     */
+    cursor?: DelayThresholdWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayThresholds from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayThresholds.
+     */
+    skip?: number
+    distinct?: DelayThresholdScalarFieldEnum | DelayThresholdScalarFieldEnum[]
+  }
+
+  /**
+   * DelayThreshold create
+   */
+  export type DelayThresholdCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DelayThreshold.
+     */
+    data: XOR<DelayThresholdCreateInput, DelayThresholdUncheckedCreateInput>
+  }
+
+  /**
+   * DelayThreshold createMany
+   */
+  export type DelayThresholdCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DelayThresholds.
+     */
+    data: DelayThresholdCreateManyInput | DelayThresholdCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DelayThreshold createManyAndReturn
+   */
+  export type DelayThresholdCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * The data used to create many DelayThresholds.
+     */
+    data: DelayThresholdCreateManyInput | DelayThresholdCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DelayThreshold update
+   */
+  export type DelayThresholdUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DelayThreshold.
+     */
+    data: XOR<DelayThresholdUpdateInput, DelayThresholdUncheckedUpdateInput>
+    /**
+     * Choose, which DelayThreshold to update.
+     */
+    where: DelayThresholdWhereUniqueInput
+  }
+
+  /**
+   * DelayThreshold updateMany
+   */
+  export type DelayThresholdUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DelayThresholds.
+     */
+    data: XOR<DelayThresholdUpdateManyMutationInput, DelayThresholdUncheckedUpdateManyInput>
+    /**
+     * Filter which DelayThresholds to update
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * Limit how many DelayThresholds to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DelayThreshold updateManyAndReturn
+   */
+  export type DelayThresholdUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * The data used to update DelayThresholds.
+     */
+    data: XOR<DelayThresholdUpdateManyMutationInput, DelayThresholdUncheckedUpdateManyInput>
+    /**
+     * Filter which DelayThresholds to update
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * Limit how many DelayThresholds to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DelayThreshold upsert
+   */
+  export type DelayThresholdUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DelayThreshold to update in case it exists.
+     */
+    where: DelayThresholdWhereUniqueInput
+    /**
+     * In case the DelayThreshold found by the `where` argument doesn't exist, create a new DelayThreshold with this data.
+     */
+    create: XOR<DelayThresholdCreateInput, DelayThresholdUncheckedCreateInput>
+    /**
+     * In case the DelayThreshold was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DelayThresholdUpdateInput, DelayThresholdUncheckedUpdateInput>
+  }
+
+  /**
+   * DelayThreshold delete
+   */
+  export type DelayThresholdDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+    /**
+     * Filter which DelayThreshold to delete.
+     */
+    where: DelayThresholdWhereUniqueInput
+  }
+
+  /**
+   * DelayThreshold deleteMany
+   */
+  export type DelayThresholdDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DelayThresholds to delete
+     */
+    where?: DelayThresholdWhereInput
+    /**
+     * Limit how many DelayThresholds to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DelayThreshold.updatedBy
+   */
+  export type DelayThreshold$updatedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * DelayThreshold without action
+   */
+  export type DelayThresholdDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayThreshold
+     */
+    select?: DelayThresholdSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayThreshold
+     */
+    omit?: DelayThresholdOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayThresholdInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model DelayBreach
+   */
+
+  export type AggregateDelayBreach = {
+    _count: DelayBreachCountAggregateOutputType | null
+    _avg: DelayBreachAvgAggregateOutputType | null
+    _sum: DelayBreachSumAggregateOutputType | null
+    _min: DelayBreachMinAggregateOutputType | null
+    _max: DelayBreachMaxAggregateOutputType | null
+  }
+
+  export type DelayBreachAvgAggregateOutputType = {
+    breachSequence: number | null
+    thresholdMinutes: number | null
+  }
+
+  export type DelayBreachSumAggregateOutputType = {
+    breachSequence: number | null
+    thresholdMinutes: number | null
+  }
+
+  export type DelayBreachMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    phase: $Enums.DelayPhase | null
+    breachSequence: number | null
+    thresholdMinutes: number | null
+    escalated: boolean | null
+    escalatedAt: Date | null
+    notifiedAt: Date | null
+    detectedAt: Date | null
+  }
+
+  export type DelayBreachMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    phase: $Enums.DelayPhase | null
+    breachSequence: number | null
+    thresholdMinutes: number | null
+    escalated: boolean | null
+    escalatedAt: Date | null
+    notifiedAt: Date | null
+    detectedAt: Date | null
+  }
+
+  export type DelayBreachCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    phase: number
+    breachSequence: number
+    thresholdMinutes: number
+    escalated: number
+    escalatedAt: number
+    notifiedAt: number
+    detectedAt: number
+    _all: number
+  }
+
+
+  export type DelayBreachAvgAggregateInputType = {
+    breachSequence?: true
+    thresholdMinutes?: true
+  }
+
+  export type DelayBreachSumAggregateInputType = {
+    breachSequence?: true
+    thresholdMinutes?: true
+  }
+
+  export type DelayBreachMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    phase?: true
+    breachSequence?: true
+    thresholdMinutes?: true
+    escalated?: true
+    escalatedAt?: true
+    notifiedAt?: true
+    detectedAt?: true
+  }
+
+  export type DelayBreachMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    phase?: true
+    breachSequence?: true
+    thresholdMinutes?: true
+    escalated?: true
+    escalatedAt?: true
+    notifiedAt?: true
+    detectedAt?: true
+  }
+
+  export type DelayBreachCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    phase?: true
+    breachSequence?: true
+    thresholdMinutes?: true
+    escalated?: true
+    escalatedAt?: true
+    notifiedAt?: true
+    detectedAt?: true
+    _all?: true
+  }
+
+  export type DelayBreachAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DelayBreach to aggregate.
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayBreaches to fetch.
+     */
+    orderBy?: DelayBreachOrderByWithRelationInput | DelayBreachOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DelayBreachWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayBreaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayBreaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DelayBreaches
+    **/
+    _count?: true | DelayBreachCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DelayBreachAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DelayBreachSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DelayBreachMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DelayBreachMaxAggregateInputType
+  }
+
+  export type GetDelayBreachAggregateType<T extends DelayBreachAggregateArgs> = {
+        [P in keyof T & keyof AggregateDelayBreach]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDelayBreach[P]>
+      : GetScalarType<T[P], AggregateDelayBreach[P]>
+  }
+
+
+
+
+  export type DelayBreachGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DelayBreachWhereInput
+    orderBy?: DelayBreachOrderByWithAggregationInput | DelayBreachOrderByWithAggregationInput[]
+    by: DelayBreachScalarFieldEnum[] | DelayBreachScalarFieldEnum
+    having?: DelayBreachScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DelayBreachCountAggregateInputType | true
+    _avg?: DelayBreachAvgAggregateInputType
+    _sum?: DelayBreachSumAggregateInputType
+    _min?: DelayBreachMinAggregateInputType
+    _max?: DelayBreachMaxAggregateInputType
+  }
+
+  export type DelayBreachGroupByOutputType = {
+    id: string
+    workItemId: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated: boolean
+    escalatedAt: Date | null
+    notifiedAt: Date | null
+    detectedAt: Date
+    _count: DelayBreachCountAggregateOutputType | null
+    _avg: DelayBreachAvgAggregateOutputType | null
+    _sum: DelayBreachSumAggregateOutputType | null
+    _min: DelayBreachMinAggregateOutputType | null
+    _max: DelayBreachMaxAggregateOutputType | null
+  }
+
+  type GetDelayBreachGroupByPayload<T extends DelayBreachGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DelayBreachGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DelayBreachGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DelayBreachGroupByOutputType[P]>
+            : GetScalarType<T[P], DelayBreachGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DelayBreachSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    phase?: boolean
+    breachSequence?: boolean
+    thresholdMinutes?: boolean
+    escalated?: boolean
+    escalatedAt?: boolean
+    notifiedAt?: boolean
+    detectedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["delayBreach"]>
+
+  export type DelayBreachSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    phase?: boolean
+    breachSequence?: boolean
+    thresholdMinutes?: boolean
+    escalated?: boolean
+    escalatedAt?: boolean
+    notifiedAt?: boolean
+    detectedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["delayBreach"]>
+
+  export type DelayBreachSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    phase?: boolean
+    breachSequence?: boolean
+    thresholdMinutes?: boolean
+    escalated?: boolean
+    escalatedAt?: boolean
+    notifiedAt?: boolean
+    detectedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["delayBreach"]>
+
+  export type DelayBreachSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    phase?: boolean
+    breachSequence?: boolean
+    thresholdMinutes?: boolean
+    escalated?: boolean
+    escalatedAt?: boolean
+    notifiedAt?: boolean
+    detectedAt?: boolean
+  }
+
+  export type DelayBreachOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "phase" | "breachSequence" | "thresholdMinutes" | "escalated" | "escalatedAt" | "notifiedAt" | "detectedAt", ExtArgs["result"]["delayBreach"]>
+  export type DelayBreachInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }
+  export type DelayBreachIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }
+  export type DelayBreachIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+  }
+
+  export type $DelayBreachPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DelayBreach"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      phase: $Enums.DelayPhase
+      /**
+       * 1 for the first breach of this (workItem, phase); increments when the
+       * Work Item leaves the phase and returns (FR-044).
+       */
+      breachSequence: number
+      /**
+       * Snapshot of the threshold in force when the breach happened, so
+       * lowering a threshold later does not rewrite what the alert said.
+       */
+      thresholdMinutes: number
+      escalated: boolean
+      escalatedAt: Date | null
+      /**
+       * Set in the SAME transaction that creates the alert rows (FR-042/043).
+       * A breach with no notification is legitimate and specified: a phase whose
+       * recipient arrays are all empty.
+       */
+      notifiedAt: Date | null
+      detectedAt: Date
+    }, ExtArgs["result"]["delayBreach"]>
+    composites: {}
+  }
+
+  type DelayBreachGetPayload<S extends boolean | null | undefined | DelayBreachDefaultArgs> = $Result.GetResult<Prisma.$DelayBreachPayload, S>
+
+  type DelayBreachCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DelayBreachFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DelayBreachCountAggregateInputType | true
+    }
+
+  export interface DelayBreachDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DelayBreach'], meta: { name: 'DelayBreach' } }
+    /**
+     * Find zero or one DelayBreach that matches the filter.
+     * @param {DelayBreachFindUniqueArgs} args - Arguments to find a DelayBreach
+     * @example
+     * // Get one DelayBreach
+     * const delayBreach = await prisma.delayBreach.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DelayBreachFindUniqueArgs>(args: SelectSubset<T, DelayBreachFindUniqueArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DelayBreach that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DelayBreachFindUniqueOrThrowArgs} args - Arguments to find a DelayBreach
+     * @example
+     * // Get one DelayBreach
+     * const delayBreach = await prisma.delayBreach.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DelayBreachFindUniqueOrThrowArgs>(args: SelectSubset<T, DelayBreachFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DelayBreach that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachFindFirstArgs} args - Arguments to find a DelayBreach
+     * @example
+     * // Get one DelayBreach
+     * const delayBreach = await prisma.delayBreach.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DelayBreachFindFirstArgs>(args?: SelectSubset<T, DelayBreachFindFirstArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DelayBreach that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachFindFirstOrThrowArgs} args - Arguments to find a DelayBreach
+     * @example
+     * // Get one DelayBreach
+     * const delayBreach = await prisma.delayBreach.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DelayBreachFindFirstOrThrowArgs>(args?: SelectSubset<T, DelayBreachFindFirstOrThrowArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DelayBreaches that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DelayBreaches
+     * const delayBreaches = await prisma.delayBreach.findMany()
+     * 
+     * // Get first 10 DelayBreaches
+     * const delayBreaches = await prisma.delayBreach.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const delayBreachWithIdOnly = await prisma.delayBreach.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DelayBreachFindManyArgs>(args?: SelectSubset<T, DelayBreachFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DelayBreach.
+     * @param {DelayBreachCreateArgs} args - Arguments to create a DelayBreach.
+     * @example
+     * // Create one DelayBreach
+     * const DelayBreach = await prisma.delayBreach.create({
+     *   data: {
+     *     // ... data to create a DelayBreach
+     *   }
+     * })
+     * 
+     */
+    create<T extends DelayBreachCreateArgs>(args: SelectSubset<T, DelayBreachCreateArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DelayBreaches.
+     * @param {DelayBreachCreateManyArgs} args - Arguments to create many DelayBreaches.
+     * @example
+     * // Create many DelayBreaches
+     * const delayBreach = await prisma.delayBreach.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DelayBreachCreateManyArgs>(args?: SelectSubset<T, DelayBreachCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DelayBreaches and returns the data saved in the database.
+     * @param {DelayBreachCreateManyAndReturnArgs} args - Arguments to create many DelayBreaches.
+     * @example
+     * // Create many DelayBreaches
+     * const delayBreach = await prisma.delayBreach.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DelayBreaches and only return the `id`
+     * const delayBreachWithIdOnly = await prisma.delayBreach.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DelayBreachCreateManyAndReturnArgs>(args?: SelectSubset<T, DelayBreachCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DelayBreach.
+     * @param {DelayBreachDeleteArgs} args - Arguments to delete one DelayBreach.
+     * @example
+     * // Delete one DelayBreach
+     * const DelayBreach = await prisma.delayBreach.delete({
+     *   where: {
+     *     // ... filter to delete one DelayBreach
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DelayBreachDeleteArgs>(args: SelectSubset<T, DelayBreachDeleteArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DelayBreach.
+     * @param {DelayBreachUpdateArgs} args - Arguments to update one DelayBreach.
+     * @example
+     * // Update one DelayBreach
+     * const delayBreach = await prisma.delayBreach.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DelayBreachUpdateArgs>(args: SelectSubset<T, DelayBreachUpdateArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DelayBreaches.
+     * @param {DelayBreachDeleteManyArgs} args - Arguments to filter DelayBreaches to delete.
+     * @example
+     * // Delete a few DelayBreaches
+     * const { count } = await prisma.delayBreach.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DelayBreachDeleteManyArgs>(args?: SelectSubset<T, DelayBreachDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DelayBreaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DelayBreaches
+     * const delayBreach = await prisma.delayBreach.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DelayBreachUpdateManyArgs>(args: SelectSubset<T, DelayBreachUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DelayBreaches and returns the data updated in the database.
+     * @param {DelayBreachUpdateManyAndReturnArgs} args - Arguments to update many DelayBreaches.
+     * @example
+     * // Update many DelayBreaches
+     * const delayBreach = await prisma.delayBreach.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DelayBreaches and only return the `id`
+     * const delayBreachWithIdOnly = await prisma.delayBreach.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DelayBreachUpdateManyAndReturnArgs>(args: SelectSubset<T, DelayBreachUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DelayBreach.
+     * @param {DelayBreachUpsertArgs} args - Arguments to update or create a DelayBreach.
+     * @example
+     * // Update or create a DelayBreach
+     * const delayBreach = await prisma.delayBreach.upsert({
+     *   create: {
+     *     // ... data to create a DelayBreach
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DelayBreach we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DelayBreachUpsertArgs>(args: SelectSubset<T, DelayBreachUpsertArgs<ExtArgs>>): Prisma__DelayBreachClient<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DelayBreaches.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachCountArgs} args - Arguments to filter DelayBreaches to count.
+     * @example
+     * // Count the number of DelayBreaches
+     * const count = await prisma.delayBreach.count({
+     *   where: {
+     *     // ... the filter for the DelayBreaches we want to count
+     *   }
+     * })
+    **/
+    count<T extends DelayBreachCountArgs>(
+      args?: Subset<T, DelayBreachCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DelayBreachCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DelayBreach.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DelayBreachAggregateArgs>(args: Subset<T, DelayBreachAggregateArgs>): Prisma.PrismaPromise<GetDelayBreachAggregateType<T>>
+
+    /**
+     * Group by DelayBreach.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DelayBreachGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DelayBreachGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DelayBreachGroupByArgs['orderBy'] }
+        : { orderBy?: DelayBreachGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DelayBreachGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDelayBreachGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DelayBreach model
+   */
+  readonly fields: DelayBreachFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DelayBreach.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DelayBreachClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DelayBreach model
+   */
+  interface DelayBreachFieldRefs {
+    readonly id: FieldRef<"DelayBreach", 'String'>
+    readonly workItemId: FieldRef<"DelayBreach", 'String'>
+    readonly phase: FieldRef<"DelayBreach", 'DelayPhase'>
+    readonly breachSequence: FieldRef<"DelayBreach", 'Int'>
+    readonly thresholdMinutes: FieldRef<"DelayBreach", 'Int'>
+    readonly escalated: FieldRef<"DelayBreach", 'Boolean'>
+    readonly escalatedAt: FieldRef<"DelayBreach", 'DateTime'>
+    readonly notifiedAt: FieldRef<"DelayBreach", 'DateTime'>
+    readonly detectedAt: FieldRef<"DelayBreach", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DelayBreach findUnique
+   */
+  export type DelayBreachFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayBreach to fetch.
+     */
+    where: DelayBreachWhereUniqueInput
+  }
+
+  /**
+   * DelayBreach findUniqueOrThrow
+   */
+  export type DelayBreachFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayBreach to fetch.
+     */
+    where: DelayBreachWhereUniqueInput
+  }
+
+  /**
+   * DelayBreach findFirst
+   */
+  export type DelayBreachFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayBreach to fetch.
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayBreaches to fetch.
+     */
+    orderBy?: DelayBreachOrderByWithRelationInput | DelayBreachOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DelayBreaches.
+     */
+    cursor?: DelayBreachWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayBreaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayBreaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DelayBreaches.
+     */
+    distinct?: DelayBreachScalarFieldEnum | DelayBreachScalarFieldEnum[]
+  }
+
+  /**
+   * DelayBreach findFirstOrThrow
+   */
+  export type DelayBreachFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayBreach to fetch.
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayBreaches to fetch.
+     */
+    orderBy?: DelayBreachOrderByWithRelationInput | DelayBreachOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DelayBreaches.
+     */
+    cursor?: DelayBreachWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayBreaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayBreaches.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DelayBreaches.
+     */
+    distinct?: DelayBreachScalarFieldEnum | DelayBreachScalarFieldEnum[]
+  }
+
+  /**
+   * DelayBreach findMany
+   */
+  export type DelayBreachFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter, which DelayBreaches to fetch.
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DelayBreaches to fetch.
+     */
+    orderBy?: DelayBreachOrderByWithRelationInput | DelayBreachOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DelayBreaches.
+     */
+    cursor?: DelayBreachWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DelayBreaches from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DelayBreaches.
+     */
+    skip?: number
+    distinct?: DelayBreachScalarFieldEnum | DelayBreachScalarFieldEnum[]
+  }
+
+  /**
+   * DelayBreach create
+   */
+  export type DelayBreachCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DelayBreach.
+     */
+    data: XOR<DelayBreachCreateInput, DelayBreachUncheckedCreateInput>
+  }
+
+  /**
+   * DelayBreach createMany
+   */
+  export type DelayBreachCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DelayBreaches.
+     */
+    data: DelayBreachCreateManyInput | DelayBreachCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DelayBreach createManyAndReturn
+   */
+  export type DelayBreachCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * The data used to create many DelayBreaches.
+     */
+    data: DelayBreachCreateManyInput | DelayBreachCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DelayBreach update
+   */
+  export type DelayBreachUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DelayBreach.
+     */
+    data: XOR<DelayBreachUpdateInput, DelayBreachUncheckedUpdateInput>
+    /**
+     * Choose, which DelayBreach to update.
+     */
+    where: DelayBreachWhereUniqueInput
+  }
+
+  /**
+   * DelayBreach updateMany
+   */
+  export type DelayBreachUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DelayBreaches.
+     */
+    data: XOR<DelayBreachUpdateManyMutationInput, DelayBreachUncheckedUpdateManyInput>
+    /**
+     * Filter which DelayBreaches to update
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * Limit how many DelayBreaches to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DelayBreach updateManyAndReturn
+   */
+  export type DelayBreachUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * The data used to update DelayBreaches.
+     */
+    data: XOR<DelayBreachUpdateManyMutationInput, DelayBreachUncheckedUpdateManyInput>
+    /**
+     * Filter which DelayBreaches to update
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * Limit how many DelayBreaches to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DelayBreach upsert
+   */
+  export type DelayBreachUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DelayBreach to update in case it exists.
+     */
+    where: DelayBreachWhereUniqueInput
+    /**
+     * In case the DelayBreach found by the `where` argument doesn't exist, create a new DelayBreach with this data.
+     */
+    create: XOR<DelayBreachCreateInput, DelayBreachUncheckedCreateInput>
+    /**
+     * In case the DelayBreach was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DelayBreachUpdateInput, DelayBreachUncheckedUpdateInput>
+  }
+
+  /**
+   * DelayBreach delete
+   */
+  export type DelayBreachDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+    /**
+     * Filter which DelayBreach to delete.
+     */
+    where: DelayBreachWhereUniqueInput
+  }
+
+  /**
+   * DelayBreach deleteMany
+   */
+  export type DelayBreachDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DelayBreaches to delete
+     */
+    where?: DelayBreachWhereInput
+    /**
+     * Limit how many DelayBreaches to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DelayBreach without action
+   */
+  export type DelayBreachDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DelayBreach
+     */
+    select?: DelayBreachSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DelayBreach
+     */
+    omit?: DelayBreachOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DelayBreachInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SchedulerRun
+   */
+
+  export type AggregateSchedulerRun = {
+    _count: SchedulerRunCountAggregateOutputType | null
+    _avg: SchedulerRunAvgAggregateOutputType | null
+    _sum: SchedulerRunSumAggregateOutputType | null
+    _min: SchedulerRunMinAggregateOutputType | null
+    _max: SchedulerRunMaxAggregateOutputType | null
+  }
+
+  export type SchedulerRunAvgAggregateOutputType = {
+    evaluated: number | null
+    flagged: number | null
+    alerted: number | null
+    escalated: number | null
+  }
+
+  export type SchedulerRunSumAggregateOutputType = {
+    evaluated: number | null
+    flagged: number | null
+    alerted: number | null
+    escalated: number | null
+  }
+
+  export type SchedulerRunMinAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    outcome: $Enums.SchedulerOutcome | null
+    evaluated: number | null
+    flagged: number | null
+    alerted: number | null
+    escalated: number | null
+    error: string | null
+  }
+
+  export type SchedulerRunMaxAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    outcome: $Enums.SchedulerOutcome | null
+    evaluated: number | null
+    flagged: number | null
+    alerted: number | null
+    escalated: number | null
+    error: string | null
+  }
+
+  export type SchedulerRunCountAggregateOutputType = {
+    id: number
+    ownerId: number
+    startedAt: number
+    finishedAt: number
+    outcome: number
+    evaluated: number
+    flagged: number
+    alerted: number
+    escalated: number
+    error: number
+    _all: number
+  }
+
+
+  export type SchedulerRunAvgAggregateInputType = {
+    evaluated?: true
+    flagged?: true
+    alerted?: true
+    escalated?: true
+  }
+
+  export type SchedulerRunSumAggregateInputType = {
+    evaluated?: true
+    flagged?: true
+    alerted?: true
+    escalated?: true
+  }
+
+  export type SchedulerRunMinAggregateInputType = {
+    id?: true
+    ownerId?: true
+    startedAt?: true
+    finishedAt?: true
+    outcome?: true
+    evaluated?: true
+    flagged?: true
+    alerted?: true
+    escalated?: true
+    error?: true
+  }
+
+  export type SchedulerRunMaxAggregateInputType = {
+    id?: true
+    ownerId?: true
+    startedAt?: true
+    finishedAt?: true
+    outcome?: true
+    evaluated?: true
+    flagged?: true
+    alerted?: true
+    escalated?: true
+    error?: true
+  }
+
+  export type SchedulerRunCountAggregateInputType = {
+    id?: true
+    ownerId?: true
+    startedAt?: true
+    finishedAt?: true
+    outcome?: true
+    evaluated?: true
+    flagged?: true
+    alerted?: true
+    escalated?: true
+    error?: true
+    _all?: true
+  }
+
+  export type SchedulerRunAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SchedulerRun to aggregate.
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerRuns to fetch.
+     */
+    orderBy?: SchedulerRunOrderByWithRelationInput | SchedulerRunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SchedulerRunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerRuns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerRuns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SchedulerRuns
+    **/
+    _count?: true | SchedulerRunCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SchedulerRunAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SchedulerRunSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SchedulerRunMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SchedulerRunMaxAggregateInputType
+  }
+
+  export type GetSchedulerRunAggregateType<T extends SchedulerRunAggregateArgs> = {
+        [P in keyof T & keyof AggregateSchedulerRun]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSchedulerRun[P]>
+      : GetScalarType<T[P], AggregateSchedulerRun[P]>
+  }
+
+
+
+
+  export type SchedulerRunGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SchedulerRunWhereInput
+    orderBy?: SchedulerRunOrderByWithAggregationInput | SchedulerRunOrderByWithAggregationInput[]
+    by: SchedulerRunScalarFieldEnum[] | SchedulerRunScalarFieldEnum
+    having?: SchedulerRunScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SchedulerRunCountAggregateInputType | true
+    _avg?: SchedulerRunAvgAggregateInputType
+    _sum?: SchedulerRunSumAggregateInputType
+    _min?: SchedulerRunMinAggregateInputType
+    _max?: SchedulerRunMaxAggregateInputType
+  }
+
+  export type SchedulerRunGroupByOutputType = {
+    id: string
+    ownerId: string
+    startedAt: Date
+    finishedAt: Date | null
+    outcome: $Enums.SchedulerOutcome
+    evaluated: number
+    flagged: number
+    alerted: number
+    escalated: number
+    error: string | null
+    _count: SchedulerRunCountAggregateOutputType | null
+    _avg: SchedulerRunAvgAggregateOutputType | null
+    _sum: SchedulerRunSumAggregateOutputType | null
+    _min: SchedulerRunMinAggregateOutputType | null
+    _max: SchedulerRunMaxAggregateOutputType | null
+  }
+
+  type GetSchedulerRunGroupByPayload<T extends SchedulerRunGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SchedulerRunGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SchedulerRunGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SchedulerRunGroupByOutputType[P]>
+            : GetScalarType<T[P], SchedulerRunGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SchedulerRunSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    outcome?: boolean
+    evaluated?: boolean
+    flagged?: boolean
+    alerted?: boolean
+    escalated?: boolean
+    error?: boolean
+  }, ExtArgs["result"]["schedulerRun"]>
+
+  export type SchedulerRunSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    outcome?: boolean
+    evaluated?: boolean
+    flagged?: boolean
+    alerted?: boolean
+    escalated?: boolean
+    error?: boolean
+  }, ExtArgs["result"]["schedulerRun"]>
+
+  export type SchedulerRunSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    outcome?: boolean
+    evaluated?: boolean
+    flagged?: boolean
+    alerted?: boolean
+    escalated?: boolean
+    error?: boolean
+  }, ExtArgs["result"]["schedulerRun"]>
+
+  export type SchedulerRunSelectScalar = {
+    id?: boolean
+    ownerId?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    outcome?: boolean
+    evaluated?: boolean
+    flagged?: boolean
+    alerted?: boolean
+    escalated?: boolean
+    error?: boolean
+  }
+
+  export type SchedulerRunOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "startedAt" | "finishedAt" | "outcome" | "evaluated" | "flagged" | "alerted" | "escalated" | "error", ExtArgs["result"]["schedulerRun"]>
+
+  export type $SchedulerRunPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SchedulerRun"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      /**
+       * The process instance (hostname/pid/boot id). Carries the identity 001's
+       * `AuditEvent.actorId` cannot express, since a tick has no signed-in user.
+       */
+      ownerId: string
+      startedAt: Date
+      finishedAt: Date | null
+      outcome: $Enums.SchedulerOutcome
+      evaluated: number
+      flagged: number
+      alerted: number
+      escalated: number
+      error: string | null
+    }, ExtArgs["result"]["schedulerRun"]>
+    composites: {}
+  }
+
+  type SchedulerRunGetPayload<S extends boolean | null | undefined | SchedulerRunDefaultArgs> = $Result.GetResult<Prisma.$SchedulerRunPayload, S>
+
+  type SchedulerRunCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SchedulerRunFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SchedulerRunCountAggregateInputType | true
+    }
+
+  export interface SchedulerRunDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SchedulerRun'], meta: { name: 'SchedulerRun' } }
+    /**
+     * Find zero or one SchedulerRun that matches the filter.
+     * @param {SchedulerRunFindUniqueArgs} args - Arguments to find a SchedulerRun
+     * @example
+     * // Get one SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SchedulerRunFindUniqueArgs>(args: SelectSubset<T, SchedulerRunFindUniqueArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SchedulerRun that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SchedulerRunFindUniqueOrThrowArgs} args - Arguments to find a SchedulerRun
+     * @example
+     * // Get one SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SchedulerRunFindUniqueOrThrowArgs>(args: SelectSubset<T, SchedulerRunFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SchedulerRun that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunFindFirstArgs} args - Arguments to find a SchedulerRun
+     * @example
+     * // Get one SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SchedulerRunFindFirstArgs>(args?: SelectSubset<T, SchedulerRunFindFirstArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SchedulerRun that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunFindFirstOrThrowArgs} args - Arguments to find a SchedulerRun
+     * @example
+     * // Get one SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SchedulerRunFindFirstOrThrowArgs>(args?: SelectSubset<T, SchedulerRunFindFirstOrThrowArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SchedulerRuns that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SchedulerRuns
+     * const schedulerRuns = await prisma.schedulerRun.findMany()
+     * 
+     * // Get first 10 SchedulerRuns
+     * const schedulerRuns = await prisma.schedulerRun.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const schedulerRunWithIdOnly = await prisma.schedulerRun.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SchedulerRunFindManyArgs>(args?: SelectSubset<T, SchedulerRunFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SchedulerRun.
+     * @param {SchedulerRunCreateArgs} args - Arguments to create a SchedulerRun.
+     * @example
+     * // Create one SchedulerRun
+     * const SchedulerRun = await prisma.schedulerRun.create({
+     *   data: {
+     *     // ... data to create a SchedulerRun
+     *   }
+     * })
+     * 
+     */
+    create<T extends SchedulerRunCreateArgs>(args: SelectSubset<T, SchedulerRunCreateArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SchedulerRuns.
+     * @param {SchedulerRunCreateManyArgs} args - Arguments to create many SchedulerRuns.
+     * @example
+     * // Create many SchedulerRuns
+     * const schedulerRun = await prisma.schedulerRun.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SchedulerRunCreateManyArgs>(args?: SelectSubset<T, SchedulerRunCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SchedulerRuns and returns the data saved in the database.
+     * @param {SchedulerRunCreateManyAndReturnArgs} args - Arguments to create many SchedulerRuns.
+     * @example
+     * // Create many SchedulerRuns
+     * const schedulerRun = await prisma.schedulerRun.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SchedulerRuns and only return the `id`
+     * const schedulerRunWithIdOnly = await prisma.schedulerRun.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SchedulerRunCreateManyAndReturnArgs>(args?: SelectSubset<T, SchedulerRunCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SchedulerRun.
+     * @param {SchedulerRunDeleteArgs} args - Arguments to delete one SchedulerRun.
+     * @example
+     * // Delete one SchedulerRun
+     * const SchedulerRun = await prisma.schedulerRun.delete({
+     *   where: {
+     *     // ... filter to delete one SchedulerRun
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SchedulerRunDeleteArgs>(args: SelectSubset<T, SchedulerRunDeleteArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SchedulerRun.
+     * @param {SchedulerRunUpdateArgs} args - Arguments to update one SchedulerRun.
+     * @example
+     * // Update one SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SchedulerRunUpdateArgs>(args: SelectSubset<T, SchedulerRunUpdateArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SchedulerRuns.
+     * @param {SchedulerRunDeleteManyArgs} args - Arguments to filter SchedulerRuns to delete.
+     * @example
+     * // Delete a few SchedulerRuns
+     * const { count } = await prisma.schedulerRun.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SchedulerRunDeleteManyArgs>(args?: SelectSubset<T, SchedulerRunDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SchedulerRuns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SchedulerRuns
+     * const schedulerRun = await prisma.schedulerRun.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SchedulerRunUpdateManyArgs>(args: SelectSubset<T, SchedulerRunUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SchedulerRuns and returns the data updated in the database.
+     * @param {SchedulerRunUpdateManyAndReturnArgs} args - Arguments to update many SchedulerRuns.
+     * @example
+     * // Update many SchedulerRuns
+     * const schedulerRun = await prisma.schedulerRun.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SchedulerRuns and only return the `id`
+     * const schedulerRunWithIdOnly = await prisma.schedulerRun.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SchedulerRunUpdateManyAndReturnArgs>(args: SelectSubset<T, SchedulerRunUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SchedulerRun.
+     * @param {SchedulerRunUpsertArgs} args - Arguments to update or create a SchedulerRun.
+     * @example
+     * // Update or create a SchedulerRun
+     * const schedulerRun = await prisma.schedulerRun.upsert({
+     *   create: {
+     *     // ... data to create a SchedulerRun
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SchedulerRun we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SchedulerRunUpsertArgs>(args: SelectSubset<T, SchedulerRunUpsertArgs<ExtArgs>>): Prisma__SchedulerRunClient<$Result.GetResult<Prisma.$SchedulerRunPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SchedulerRuns.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunCountArgs} args - Arguments to filter SchedulerRuns to count.
+     * @example
+     * // Count the number of SchedulerRuns
+     * const count = await prisma.schedulerRun.count({
+     *   where: {
+     *     // ... the filter for the SchedulerRuns we want to count
+     *   }
+     * })
+    **/
+    count<T extends SchedulerRunCountArgs>(
+      args?: Subset<T, SchedulerRunCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SchedulerRunCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SchedulerRun.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SchedulerRunAggregateArgs>(args: Subset<T, SchedulerRunAggregateArgs>): Prisma.PrismaPromise<GetSchedulerRunAggregateType<T>>
+
+    /**
+     * Group by SchedulerRun.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerRunGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SchedulerRunGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SchedulerRunGroupByArgs['orderBy'] }
+        : { orderBy?: SchedulerRunGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SchedulerRunGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSchedulerRunGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SchedulerRun model
+   */
+  readonly fields: SchedulerRunFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SchedulerRun.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SchedulerRunClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SchedulerRun model
+   */
+  interface SchedulerRunFieldRefs {
+    readonly id: FieldRef<"SchedulerRun", 'String'>
+    readonly ownerId: FieldRef<"SchedulerRun", 'String'>
+    readonly startedAt: FieldRef<"SchedulerRun", 'DateTime'>
+    readonly finishedAt: FieldRef<"SchedulerRun", 'DateTime'>
+    readonly outcome: FieldRef<"SchedulerRun", 'SchedulerOutcome'>
+    readonly evaluated: FieldRef<"SchedulerRun", 'Int'>
+    readonly flagged: FieldRef<"SchedulerRun", 'Int'>
+    readonly alerted: FieldRef<"SchedulerRun", 'Int'>
+    readonly escalated: FieldRef<"SchedulerRun", 'Int'>
+    readonly error: FieldRef<"SchedulerRun", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SchedulerRun findUnique
+   */
+  export type SchedulerRunFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerRun to fetch.
+     */
+    where: SchedulerRunWhereUniqueInput
+  }
+
+  /**
+   * SchedulerRun findUniqueOrThrow
+   */
+  export type SchedulerRunFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerRun to fetch.
+     */
+    where: SchedulerRunWhereUniqueInput
+  }
+
+  /**
+   * SchedulerRun findFirst
+   */
+  export type SchedulerRunFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerRun to fetch.
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerRuns to fetch.
+     */
+    orderBy?: SchedulerRunOrderByWithRelationInput | SchedulerRunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SchedulerRuns.
+     */
+    cursor?: SchedulerRunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerRuns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerRuns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SchedulerRuns.
+     */
+    distinct?: SchedulerRunScalarFieldEnum | SchedulerRunScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerRun findFirstOrThrow
+   */
+  export type SchedulerRunFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerRun to fetch.
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerRuns to fetch.
+     */
+    orderBy?: SchedulerRunOrderByWithRelationInput | SchedulerRunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SchedulerRuns.
+     */
+    cursor?: SchedulerRunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerRuns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerRuns.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SchedulerRuns.
+     */
+    distinct?: SchedulerRunScalarFieldEnum | SchedulerRunScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerRun findMany
+   */
+  export type SchedulerRunFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerRuns to fetch.
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerRuns to fetch.
+     */
+    orderBy?: SchedulerRunOrderByWithRelationInput | SchedulerRunOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SchedulerRuns.
+     */
+    cursor?: SchedulerRunWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerRuns from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerRuns.
+     */
+    skip?: number
+    distinct?: SchedulerRunScalarFieldEnum | SchedulerRunScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerRun create
+   */
+  export type SchedulerRunCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SchedulerRun.
+     */
+    data: XOR<SchedulerRunCreateInput, SchedulerRunUncheckedCreateInput>
+  }
+
+  /**
+   * SchedulerRun createMany
+   */
+  export type SchedulerRunCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SchedulerRuns.
+     */
+    data: SchedulerRunCreateManyInput | SchedulerRunCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SchedulerRun createManyAndReturn
+   */
+  export type SchedulerRunCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * The data used to create many SchedulerRuns.
+     */
+    data: SchedulerRunCreateManyInput | SchedulerRunCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SchedulerRun update
+   */
+  export type SchedulerRunUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SchedulerRun.
+     */
+    data: XOR<SchedulerRunUpdateInput, SchedulerRunUncheckedUpdateInput>
+    /**
+     * Choose, which SchedulerRun to update.
+     */
+    where: SchedulerRunWhereUniqueInput
+  }
+
+  /**
+   * SchedulerRun updateMany
+   */
+  export type SchedulerRunUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SchedulerRuns.
+     */
+    data: XOR<SchedulerRunUpdateManyMutationInput, SchedulerRunUncheckedUpdateManyInput>
+    /**
+     * Filter which SchedulerRuns to update
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * Limit how many SchedulerRuns to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerRun updateManyAndReturn
+   */
+  export type SchedulerRunUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * The data used to update SchedulerRuns.
+     */
+    data: XOR<SchedulerRunUpdateManyMutationInput, SchedulerRunUncheckedUpdateManyInput>
+    /**
+     * Filter which SchedulerRuns to update
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * Limit how many SchedulerRuns to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerRun upsert
+   */
+  export type SchedulerRunUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SchedulerRun to update in case it exists.
+     */
+    where: SchedulerRunWhereUniqueInput
+    /**
+     * In case the SchedulerRun found by the `where` argument doesn't exist, create a new SchedulerRun with this data.
+     */
+    create: XOR<SchedulerRunCreateInput, SchedulerRunUncheckedCreateInput>
+    /**
+     * In case the SchedulerRun was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SchedulerRunUpdateInput, SchedulerRunUncheckedUpdateInput>
+  }
+
+  /**
+   * SchedulerRun delete
+   */
+  export type SchedulerRunDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+    /**
+     * Filter which SchedulerRun to delete.
+     */
+    where: SchedulerRunWhereUniqueInput
+  }
+
+  /**
+   * SchedulerRun deleteMany
+   */
+  export type SchedulerRunDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SchedulerRuns to delete
+     */
+    where?: SchedulerRunWhereInput
+    /**
+     * Limit how many SchedulerRuns to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerRun without action
+   */
+  export type SchedulerRunDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerRun
+     */
+    select?: SchedulerRunSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerRun
+     */
+    omit?: SchedulerRunOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SchedulerLease
+   */
+
+  export type AggregateSchedulerLease = {
+    _count: SchedulerLeaseCountAggregateOutputType | null
+    _min: SchedulerLeaseMinAggregateOutputType | null
+    _max: SchedulerLeaseMaxAggregateOutputType | null
+  }
+
+  export type SchedulerLeaseMinAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    acquiredAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type SchedulerLeaseMaxAggregateOutputType = {
+    id: string | null
+    ownerId: string | null
+    acquiredAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type SchedulerLeaseCountAggregateOutputType = {
+    id: number
+    ownerId: number
+    acquiredAt: number
+    expiresAt: number
+    _all: number
+  }
+
+
+  export type SchedulerLeaseMinAggregateInputType = {
+    id?: true
+    ownerId?: true
+    acquiredAt?: true
+    expiresAt?: true
+  }
+
+  export type SchedulerLeaseMaxAggregateInputType = {
+    id?: true
+    ownerId?: true
+    acquiredAt?: true
+    expiresAt?: true
+  }
+
+  export type SchedulerLeaseCountAggregateInputType = {
+    id?: true
+    ownerId?: true
+    acquiredAt?: true
+    expiresAt?: true
+    _all?: true
+  }
+
+  export type SchedulerLeaseAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SchedulerLease to aggregate.
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerLeases to fetch.
+     */
+    orderBy?: SchedulerLeaseOrderByWithRelationInput | SchedulerLeaseOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SchedulerLeaseWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerLeases from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerLeases.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SchedulerLeases
+    **/
+    _count?: true | SchedulerLeaseCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SchedulerLeaseMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SchedulerLeaseMaxAggregateInputType
+  }
+
+  export type GetSchedulerLeaseAggregateType<T extends SchedulerLeaseAggregateArgs> = {
+        [P in keyof T & keyof AggregateSchedulerLease]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSchedulerLease[P]>
+      : GetScalarType<T[P], AggregateSchedulerLease[P]>
+  }
+
+
+
+
+  export type SchedulerLeaseGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SchedulerLeaseWhereInput
+    orderBy?: SchedulerLeaseOrderByWithAggregationInput | SchedulerLeaseOrderByWithAggregationInput[]
+    by: SchedulerLeaseScalarFieldEnum[] | SchedulerLeaseScalarFieldEnum
+    having?: SchedulerLeaseScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SchedulerLeaseCountAggregateInputType | true
+    _min?: SchedulerLeaseMinAggregateInputType
+    _max?: SchedulerLeaseMaxAggregateInputType
+  }
+
+  export type SchedulerLeaseGroupByOutputType = {
+    id: string
+    ownerId: string
+    acquiredAt: Date
+    expiresAt: Date
+    _count: SchedulerLeaseCountAggregateOutputType | null
+    _min: SchedulerLeaseMinAggregateOutputType | null
+    _max: SchedulerLeaseMaxAggregateOutputType | null
+  }
+
+  type GetSchedulerLeaseGroupByPayload<T extends SchedulerLeaseGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SchedulerLeaseGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SchedulerLeaseGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SchedulerLeaseGroupByOutputType[P]>
+            : GetScalarType<T[P], SchedulerLeaseGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SchedulerLeaseSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    acquiredAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["schedulerLease"]>
+
+  export type SchedulerLeaseSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    acquiredAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["schedulerLease"]>
+
+  export type SchedulerLeaseSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ownerId?: boolean
+    acquiredAt?: boolean
+    expiresAt?: boolean
+  }, ExtArgs["result"]["schedulerLease"]>
+
+  export type SchedulerLeaseSelectScalar = {
+    id?: boolean
+    ownerId?: boolean
+    acquiredAt?: boolean
+    expiresAt?: boolean
+  }
+
+  export type SchedulerLeaseOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ownerId" | "acquiredAt" | "expiresAt", ExtArgs["result"]["schedulerLease"]>
+
+  export type $SchedulerLeasePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SchedulerLease"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      ownerId: string
+      acquiredAt: Date
+      expiresAt: Date
+    }, ExtArgs["result"]["schedulerLease"]>
+    composites: {}
+  }
+
+  type SchedulerLeaseGetPayload<S extends boolean | null | undefined | SchedulerLeaseDefaultArgs> = $Result.GetResult<Prisma.$SchedulerLeasePayload, S>
+
+  type SchedulerLeaseCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SchedulerLeaseFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SchedulerLeaseCountAggregateInputType | true
+    }
+
+  export interface SchedulerLeaseDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SchedulerLease'], meta: { name: 'SchedulerLease' } }
+    /**
+     * Find zero or one SchedulerLease that matches the filter.
+     * @param {SchedulerLeaseFindUniqueArgs} args - Arguments to find a SchedulerLease
+     * @example
+     * // Get one SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SchedulerLeaseFindUniqueArgs>(args: SelectSubset<T, SchedulerLeaseFindUniqueArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SchedulerLease that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SchedulerLeaseFindUniqueOrThrowArgs} args - Arguments to find a SchedulerLease
+     * @example
+     * // Get one SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SchedulerLeaseFindUniqueOrThrowArgs>(args: SelectSubset<T, SchedulerLeaseFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SchedulerLease that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseFindFirstArgs} args - Arguments to find a SchedulerLease
+     * @example
+     * // Get one SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SchedulerLeaseFindFirstArgs>(args?: SelectSubset<T, SchedulerLeaseFindFirstArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SchedulerLease that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseFindFirstOrThrowArgs} args - Arguments to find a SchedulerLease
+     * @example
+     * // Get one SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SchedulerLeaseFindFirstOrThrowArgs>(args?: SelectSubset<T, SchedulerLeaseFindFirstOrThrowArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SchedulerLeases that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SchedulerLeases
+     * const schedulerLeases = await prisma.schedulerLease.findMany()
+     * 
+     * // Get first 10 SchedulerLeases
+     * const schedulerLeases = await prisma.schedulerLease.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const schedulerLeaseWithIdOnly = await prisma.schedulerLease.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SchedulerLeaseFindManyArgs>(args?: SelectSubset<T, SchedulerLeaseFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SchedulerLease.
+     * @param {SchedulerLeaseCreateArgs} args - Arguments to create a SchedulerLease.
+     * @example
+     * // Create one SchedulerLease
+     * const SchedulerLease = await prisma.schedulerLease.create({
+     *   data: {
+     *     // ... data to create a SchedulerLease
+     *   }
+     * })
+     * 
+     */
+    create<T extends SchedulerLeaseCreateArgs>(args: SelectSubset<T, SchedulerLeaseCreateArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SchedulerLeases.
+     * @param {SchedulerLeaseCreateManyArgs} args - Arguments to create many SchedulerLeases.
+     * @example
+     * // Create many SchedulerLeases
+     * const schedulerLease = await prisma.schedulerLease.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SchedulerLeaseCreateManyArgs>(args?: SelectSubset<T, SchedulerLeaseCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SchedulerLeases and returns the data saved in the database.
+     * @param {SchedulerLeaseCreateManyAndReturnArgs} args - Arguments to create many SchedulerLeases.
+     * @example
+     * // Create many SchedulerLeases
+     * const schedulerLease = await prisma.schedulerLease.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SchedulerLeases and only return the `id`
+     * const schedulerLeaseWithIdOnly = await prisma.schedulerLease.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SchedulerLeaseCreateManyAndReturnArgs>(args?: SelectSubset<T, SchedulerLeaseCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SchedulerLease.
+     * @param {SchedulerLeaseDeleteArgs} args - Arguments to delete one SchedulerLease.
+     * @example
+     * // Delete one SchedulerLease
+     * const SchedulerLease = await prisma.schedulerLease.delete({
+     *   where: {
+     *     // ... filter to delete one SchedulerLease
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SchedulerLeaseDeleteArgs>(args: SelectSubset<T, SchedulerLeaseDeleteArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SchedulerLease.
+     * @param {SchedulerLeaseUpdateArgs} args - Arguments to update one SchedulerLease.
+     * @example
+     * // Update one SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SchedulerLeaseUpdateArgs>(args: SelectSubset<T, SchedulerLeaseUpdateArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SchedulerLeases.
+     * @param {SchedulerLeaseDeleteManyArgs} args - Arguments to filter SchedulerLeases to delete.
+     * @example
+     * // Delete a few SchedulerLeases
+     * const { count } = await prisma.schedulerLease.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SchedulerLeaseDeleteManyArgs>(args?: SelectSubset<T, SchedulerLeaseDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SchedulerLeases.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SchedulerLeases
+     * const schedulerLease = await prisma.schedulerLease.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SchedulerLeaseUpdateManyArgs>(args: SelectSubset<T, SchedulerLeaseUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SchedulerLeases and returns the data updated in the database.
+     * @param {SchedulerLeaseUpdateManyAndReturnArgs} args - Arguments to update many SchedulerLeases.
+     * @example
+     * // Update many SchedulerLeases
+     * const schedulerLease = await prisma.schedulerLease.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SchedulerLeases and only return the `id`
+     * const schedulerLeaseWithIdOnly = await prisma.schedulerLease.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SchedulerLeaseUpdateManyAndReturnArgs>(args: SelectSubset<T, SchedulerLeaseUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SchedulerLease.
+     * @param {SchedulerLeaseUpsertArgs} args - Arguments to update or create a SchedulerLease.
+     * @example
+     * // Update or create a SchedulerLease
+     * const schedulerLease = await prisma.schedulerLease.upsert({
+     *   create: {
+     *     // ... data to create a SchedulerLease
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SchedulerLease we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SchedulerLeaseUpsertArgs>(args: SelectSubset<T, SchedulerLeaseUpsertArgs<ExtArgs>>): Prisma__SchedulerLeaseClient<$Result.GetResult<Prisma.$SchedulerLeasePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SchedulerLeases.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseCountArgs} args - Arguments to filter SchedulerLeases to count.
+     * @example
+     * // Count the number of SchedulerLeases
+     * const count = await prisma.schedulerLease.count({
+     *   where: {
+     *     // ... the filter for the SchedulerLeases we want to count
+     *   }
+     * })
+    **/
+    count<T extends SchedulerLeaseCountArgs>(
+      args?: Subset<T, SchedulerLeaseCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SchedulerLeaseCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SchedulerLease.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SchedulerLeaseAggregateArgs>(args: Subset<T, SchedulerLeaseAggregateArgs>): Prisma.PrismaPromise<GetSchedulerLeaseAggregateType<T>>
+
+    /**
+     * Group by SchedulerLease.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SchedulerLeaseGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SchedulerLeaseGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SchedulerLeaseGroupByArgs['orderBy'] }
+        : { orderBy?: SchedulerLeaseGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SchedulerLeaseGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSchedulerLeaseGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SchedulerLease model
+   */
+  readonly fields: SchedulerLeaseFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SchedulerLease.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SchedulerLeaseClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SchedulerLease model
+   */
+  interface SchedulerLeaseFieldRefs {
+    readonly id: FieldRef<"SchedulerLease", 'String'>
+    readonly ownerId: FieldRef<"SchedulerLease", 'String'>
+    readonly acquiredAt: FieldRef<"SchedulerLease", 'DateTime'>
+    readonly expiresAt: FieldRef<"SchedulerLease", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SchedulerLease findUnique
+   */
+  export type SchedulerLeaseFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerLease to fetch.
+     */
+    where: SchedulerLeaseWhereUniqueInput
+  }
+
+  /**
+   * SchedulerLease findUniqueOrThrow
+   */
+  export type SchedulerLeaseFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerLease to fetch.
+     */
+    where: SchedulerLeaseWhereUniqueInput
+  }
+
+  /**
+   * SchedulerLease findFirst
+   */
+  export type SchedulerLeaseFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerLease to fetch.
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerLeases to fetch.
+     */
+    orderBy?: SchedulerLeaseOrderByWithRelationInput | SchedulerLeaseOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SchedulerLeases.
+     */
+    cursor?: SchedulerLeaseWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerLeases from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerLeases.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SchedulerLeases.
+     */
+    distinct?: SchedulerLeaseScalarFieldEnum | SchedulerLeaseScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerLease findFirstOrThrow
+   */
+  export type SchedulerLeaseFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerLease to fetch.
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerLeases to fetch.
+     */
+    orderBy?: SchedulerLeaseOrderByWithRelationInput | SchedulerLeaseOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SchedulerLeases.
+     */
+    cursor?: SchedulerLeaseWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerLeases from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerLeases.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SchedulerLeases.
+     */
+    distinct?: SchedulerLeaseScalarFieldEnum | SchedulerLeaseScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerLease findMany
+   */
+  export type SchedulerLeaseFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter, which SchedulerLeases to fetch.
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SchedulerLeases to fetch.
+     */
+    orderBy?: SchedulerLeaseOrderByWithRelationInput | SchedulerLeaseOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SchedulerLeases.
+     */
+    cursor?: SchedulerLeaseWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SchedulerLeases from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SchedulerLeases.
+     */
+    skip?: number
+    distinct?: SchedulerLeaseScalarFieldEnum | SchedulerLeaseScalarFieldEnum[]
+  }
+
+  /**
+   * SchedulerLease create
+   */
+  export type SchedulerLeaseCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * The data needed to create a SchedulerLease.
+     */
+    data: XOR<SchedulerLeaseCreateInput, SchedulerLeaseUncheckedCreateInput>
+  }
+
+  /**
+   * SchedulerLease createMany
+   */
+  export type SchedulerLeaseCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SchedulerLeases.
+     */
+    data: SchedulerLeaseCreateManyInput | SchedulerLeaseCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SchedulerLease createManyAndReturn
+   */
+  export type SchedulerLeaseCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * The data used to create many SchedulerLeases.
+     */
+    data: SchedulerLeaseCreateManyInput | SchedulerLeaseCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SchedulerLease update
+   */
+  export type SchedulerLeaseUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * The data needed to update a SchedulerLease.
+     */
+    data: XOR<SchedulerLeaseUpdateInput, SchedulerLeaseUncheckedUpdateInput>
+    /**
+     * Choose, which SchedulerLease to update.
+     */
+    where: SchedulerLeaseWhereUniqueInput
+  }
+
+  /**
+   * SchedulerLease updateMany
+   */
+  export type SchedulerLeaseUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SchedulerLeases.
+     */
+    data: XOR<SchedulerLeaseUpdateManyMutationInput, SchedulerLeaseUncheckedUpdateManyInput>
+    /**
+     * Filter which SchedulerLeases to update
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * Limit how many SchedulerLeases to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerLease updateManyAndReturn
+   */
+  export type SchedulerLeaseUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * The data used to update SchedulerLeases.
+     */
+    data: XOR<SchedulerLeaseUpdateManyMutationInput, SchedulerLeaseUncheckedUpdateManyInput>
+    /**
+     * Filter which SchedulerLeases to update
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * Limit how many SchedulerLeases to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerLease upsert
+   */
+  export type SchedulerLeaseUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * The filter to search for the SchedulerLease to update in case it exists.
+     */
+    where: SchedulerLeaseWhereUniqueInput
+    /**
+     * In case the SchedulerLease found by the `where` argument doesn't exist, create a new SchedulerLease with this data.
+     */
+    create: XOR<SchedulerLeaseCreateInput, SchedulerLeaseUncheckedCreateInput>
+    /**
+     * In case the SchedulerLease was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SchedulerLeaseUpdateInput, SchedulerLeaseUncheckedUpdateInput>
+  }
+
+  /**
+   * SchedulerLease delete
+   */
+  export type SchedulerLeaseDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
+    /**
+     * Filter which SchedulerLease to delete.
+     */
+    where: SchedulerLeaseWhereUniqueInput
+  }
+
+  /**
+   * SchedulerLease deleteMany
+   */
+  export type SchedulerLeaseDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SchedulerLeases to delete
+     */
+    where?: SchedulerLeaseWhereInput
+    /**
+     * Limit how many SchedulerLeases to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SchedulerLease without action
+   */
+  export type SchedulerLeaseDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SchedulerLease
+     */
+    select?: SchedulerLeaseSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SchedulerLease
+     */
+    omit?: SchedulerLeaseOmit<ExtArgs> | null
   }
 
 
@@ -58717,7 +66417,11 @@ export namespace Prisma {
     payload: 'payload',
     createdAt: 'createdAt',
     deliveredAt: 'deliveredAt',
-    deliveryStatus: 'deliveryStatus'
+    deliveryStatus: 'deliveryStatus',
+    attemptCount: 'attemptCount',
+    lastAttemptAt: 'lastAttemptAt',
+    lastError: 'lastError',
+    recipientPermissions: 'recipientPermissions'
   };
 
   export type NotificationEventScalarFieldEnum = (typeof NotificationEventScalarFieldEnum)[keyof typeof NotificationEventScalarFieldEnum]
@@ -59080,6 +66784,95 @@ export namespace Prisma {
   export type AuditEventScalarFieldEnum = (typeof AuditEventScalarFieldEnum)[keyof typeof AuditEventScalarFieldEnum]
 
 
+  export const NotificationScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    sourceEventId: 'sourceEventId',
+    type: 'type',
+    title: 'title',
+    body: 'body',
+    linkHref: 'linkHref',
+    entityType: 'entityType',
+    entityId: 'entityId',
+    severity: 'severity',
+    readAt: 'readAt',
+    archivedAt: 'archivedAt',
+    createdAt: 'createdAt'
+  };
+
+  export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+  export const NotificationTypeOverrideScalarFieldEnum: {
+    id: 'id',
+    type: 'type',
+    userIds: 'userIds',
+    roles: 'roles',
+    departmentIds: 'departmentIds',
+    permissions: 'permissions',
+    updatedById: 'updatedById',
+    updatedAt: 'updatedAt'
+  };
+
+  export type NotificationTypeOverrideScalarFieldEnum = (typeof NotificationTypeOverrideScalarFieldEnum)[keyof typeof NotificationTypeOverrideScalarFieldEnum]
+
+
+  export const DelayThresholdScalarFieldEnum: {
+    id: 'id',
+    phase: 'phase',
+    thresholdMinutes: 'thresholdMinutes',
+    alertRoles: 'alertRoles',
+    alertPermissions: 'alertPermissions',
+    alertDepartmentIds: 'alertDepartmentIds',
+    escalationMinutes: 'escalationMinutes',
+    updatedById: 'updatedById',
+    updatedAt: 'updatedAt'
+  };
+
+  export type DelayThresholdScalarFieldEnum = (typeof DelayThresholdScalarFieldEnum)[keyof typeof DelayThresholdScalarFieldEnum]
+
+
+  export const DelayBreachScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    phase: 'phase',
+    breachSequence: 'breachSequence',
+    thresholdMinutes: 'thresholdMinutes',
+    escalated: 'escalated',
+    escalatedAt: 'escalatedAt',
+    notifiedAt: 'notifiedAt',
+    detectedAt: 'detectedAt'
+  };
+
+  export type DelayBreachScalarFieldEnum = (typeof DelayBreachScalarFieldEnum)[keyof typeof DelayBreachScalarFieldEnum]
+
+
+  export const SchedulerRunScalarFieldEnum: {
+    id: 'id',
+    ownerId: 'ownerId',
+    startedAt: 'startedAt',
+    finishedAt: 'finishedAt',
+    outcome: 'outcome',
+    evaluated: 'evaluated',
+    flagged: 'flagged',
+    alerted: 'alerted',
+    escalated: 'escalated',
+    error: 'error'
+  };
+
+  export type SchedulerRunScalarFieldEnum = (typeof SchedulerRunScalarFieldEnum)[keyof typeof SchedulerRunScalarFieldEnum]
+
+
+  export const SchedulerLeaseScalarFieldEnum: {
+    id: 'id',
+    ownerId: 'ownerId',
+    acquiredAt: 'acquiredAt',
+    expiresAt: 'expiresAt'
+  };
+
+  export type SchedulerLeaseScalarFieldEnum = (typeof SchedulerLeaseScalarFieldEnum)[keyof typeof SchedulerLeaseScalarFieldEnum]
+
+
   export const ProductPricingPolicyScalarFieldEnum: {
     id: 'id',
     productTypeId: 'productTypeId',
@@ -59407,6 +67200,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'DeliveryStatus'
+   */
+  export type EnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'DeliveryStatus[]'
+   */
+  export type ListEnumDeliveryStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DeliveryStatus[]'>
+    
+
+
+  /**
    * Reference to a field of type 'BigInt'
    */
   export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
@@ -59501,6 +67308,48 @@ export namespace Prisma {
    * Reference to a field of type 'FinanceVoidEntity[]'
    */
   export type ListEnumFinanceVoidEntityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FinanceVoidEntity[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'NotificationSeverity'
+   */
+  export type EnumNotificationSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationSeverity'>
+    
+
+
+  /**
+   * Reference to a field of type 'NotificationSeverity[]'
+   */
+  export type ListEnumNotificationSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'NotificationSeverity[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'DelayPhase'
+   */
+  export type EnumDelayPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DelayPhase'>
+    
+
+
+  /**
+   * Reference to a field of type 'DelayPhase[]'
+   */
+  export type ListEnumDelayPhaseFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DelayPhase[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'SchedulerOutcome'
+   */
+  export type EnumSchedulerOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SchedulerOutcome'>
+    
+
+
+  /**
+   * Reference to a field of type 'SchedulerOutcome[]'
+   */
+  export type ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SchedulerOutcome[]'>
     
 
 
@@ -59904,6 +67753,7 @@ export namespace Prisma {
     pricingStatus?: XOR<PricingStatusNullableScalarRelationFilter, PricingStatusWhereInput> | null
     expenses?: ExpenseListRelationFilter
     directCosts?: DirectCostListRelationFilter
+    delayBreaches?: DelayBreachListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -59942,6 +67792,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusOrderByWithRelationInput
     expenses?: ExpenseOrderByRelationAggregateInput
     directCosts?: DirectCostOrderByRelationAggregateInput
+    delayBreaches?: DelayBreachOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -59983,6 +67834,7 @@ export namespace Prisma {
     pricingStatus?: XOR<PricingStatusNullableScalarRelationFilter, PricingStatusWhereInput> | null
     expenses?: ExpenseListRelationFilter
     directCosts?: DirectCostListRelationFilter
+    delayBreaches?: DelayBreachListRelationFilter
   }, "id">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -60620,7 +68472,12 @@ export namespace Prisma {
     payload?: JsonNullableFilter<"NotificationEvent">
     createdAt?: DateTimeFilter<"NotificationEvent"> | Date | string
     deliveredAt?: DateTimeNullableFilter<"NotificationEvent"> | Date | string | null
-    deliveryStatus?: StringNullableFilter<"NotificationEvent"> | string | null
+    deliveryStatus?: EnumDeliveryStatusNullableFilter<"NotificationEvent"> | $Enums.DeliveryStatus | null
+    attemptCount?: IntFilter<"NotificationEvent"> | number
+    lastAttemptAt?: DateTimeNullableFilter<"NotificationEvent"> | Date | string | null
+    lastError?: StringNullableFilter<"NotificationEvent"> | string | null
+    recipientPermissions?: StringNullableListFilter<"NotificationEvent">
+    notifications?: NotificationListRelationFilter
   }
 
   export type NotificationEventOrderByWithRelationInput = {
@@ -60635,6 +68492,11 @@ export namespace Prisma {
     createdAt?: SortOrder
     deliveredAt?: SortOrderInput | SortOrder
     deliveryStatus?: SortOrderInput | SortOrder
+    attemptCount?: SortOrder
+    lastAttemptAt?: SortOrderInput | SortOrder
+    lastError?: SortOrderInput | SortOrder
+    recipientPermissions?: SortOrder
+    notifications?: NotificationOrderByRelationAggregateInput
   }
 
   export type NotificationEventWhereUniqueInput = Prisma.AtLeast<{
@@ -60651,7 +68513,12 @@ export namespace Prisma {
     payload?: JsonNullableFilter<"NotificationEvent">
     createdAt?: DateTimeFilter<"NotificationEvent"> | Date | string
     deliveredAt?: DateTimeNullableFilter<"NotificationEvent"> | Date | string | null
-    deliveryStatus?: StringNullableFilter<"NotificationEvent"> | string | null
+    deliveryStatus?: EnumDeliveryStatusNullableFilter<"NotificationEvent"> | $Enums.DeliveryStatus | null
+    attemptCount?: IntFilter<"NotificationEvent"> | number
+    lastAttemptAt?: DateTimeNullableFilter<"NotificationEvent"> | Date | string | null
+    lastError?: StringNullableFilter<"NotificationEvent"> | string | null
+    recipientPermissions?: StringNullableListFilter<"NotificationEvent">
+    notifications?: NotificationListRelationFilter
   }, "id">
 
   export type NotificationEventOrderByWithAggregationInput = {
@@ -60666,9 +68533,15 @@ export namespace Prisma {
     createdAt?: SortOrder
     deliveredAt?: SortOrderInput | SortOrder
     deliveryStatus?: SortOrderInput | SortOrder
+    attemptCount?: SortOrder
+    lastAttemptAt?: SortOrderInput | SortOrder
+    lastError?: SortOrderInput | SortOrder
+    recipientPermissions?: SortOrder
     _count?: NotificationEventCountOrderByAggregateInput
+    _avg?: NotificationEventAvgOrderByAggregateInput
     _max?: NotificationEventMaxOrderByAggregateInput
     _min?: NotificationEventMinOrderByAggregateInput
+    _sum?: NotificationEventSumOrderByAggregateInput
   }
 
   export type NotificationEventScalarWhereWithAggregatesInput = {
@@ -60685,7 +68558,11 @@ export namespace Prisma {
     payload?: JsonNullableWithAggregatesFilter<"NotificationEvent">
     createdAt?: DateTimeWithAggregatesFilter<"NotificationEvent"> | Date | string
     deliveredAt?: DateTimeNullableWithAggregatesFilter<"NotificationEvent"> | Date | string | null
-    deliveryStatus?: StringNullableWithAggregatesFilter<"NotificationEvent"> | string | null
+    deliveryStatus?: EnumDeliveryStatusNullableWithAggregatesFilter<"NotificationEvent"> | $Enums.DeliveryStatus | null
+    attemptCount?: IntWithAggregatesFilter<"NotificationEvent"> | number
+    lastAttemptAt?: DateTimeNullableWithAggregatesFilter<"NotificationEvent"> | Date | string | null
+    lastError?: StringNullableWithAggregatesFilter<"NotificationEvent"> | string | null
+    recipientPermissions?: StringNullableListFilter<"NotificationEvent">
   }
 
   export type CustomerPhoneWhereInput = {
@@ -61940,6 +69817,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostListRelationFilter
     creditsUpdated?: CustomerCreditListRelationFilter
     financeConfigUpdates?: FinanceConfigListRelationFilter
+    notifications?: NotificationListRelationFilter
+    thresholdUpdates?: DelayThresholdListRelationFilter
+    recipientOverrideUpdates?: NotificationTypeOverrideListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -61987,6 +69867,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostOrderByRelationAggregateInput
     creditsUpdated?: CustomerCreditOrderByRelationAggregateInput
     financeConfigUpdates?: FinanceConfigOrderByRelationAggregateInput
+    notifications?: NotificationOrderByRelationAggregateInput
+    thresholdUpdates?: DelayThresholdOrderByRelationAggregateInput
+    recipientOverrideUpdates?: NotificationTypeOverrideOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -62037,6 +69920,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostListRelationFilter
     creditsUpdated?: CustomerCreditListRelationFilter
     financeConfigUpdates?: FinanceConfigListRelationFilter
+    notifications?: NotificationListRelationFilter
+    thresholdUpdates?: DelayThresholdListRelationFilter
+    recipientOverrideUpdates?: NotificationTypeOverrideListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -62643,6 +70529,456 @@ export namespace Prisma {
     ipAddress?: StringNullableWithAggregatesFilter<"AuditEvent"> | string | null
     userAgent?: StringNullableWithAggregatesFilter<"AuditEvent"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"AuditEvent"> | Date | string
+  }
+
+  export type NotificationWhereInput = {
+    AND?: NotificationWhereInput | NotificationWhereInput[]
+    OR?: NotificationWhereInput[]
+    NOT?: NotificationWhereInput | NotificationWhereInput[]
+    id?: StringFilter<"Notification"> | string
+    userId?: StringFilter<"Notification"> | string
+    sourceEventId?: StringFilter<"Notification"> | string
+    type?: StringFilter<"Notification"> | string
+    title?: StringFilter<"Notification"> | string
+    body?: StringNullableFilter<"Notification"> | string | null
+    linkHref?: StringNullableFilter<"Notification"> | string | null
+    entityType?: StringNullableFilter<"Notification"> | string | null
+    entityId?: StringNullableFilter<"Notification"> | string | null
+    severity?: EnumNotificationSeverityFilter<"Notification"> | $Enums.NotificationSeverity
+    readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    archivedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    sourceEvent?: XOR<NotificationEventScalarRelationFilter, NotificationEventWhereInput>
+  }
+
+  export type NotificationOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    sourceEventId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    body?: SortOrderInput | SortOrder
+    linkHref?: SortOrderInput | SortOrder
+    entityType?: SortOrderInput | SortOrder
+    entityId?: SortOrderInput | SortOrder
+    severity?: SortOrder
+    readAt?: SortOrderInput | SortOrder
+    archivedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+    sourceEvent?: NotificationEventOrderByWithRelationInput
+  }
+
+  export type NotificationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    sourceEventId_userId?: NotificationSourceEventIdUserIdCompoundUniqueInput
+    AND?: NotificationWhereInput | NotificationWhereInput[]
+    OR?: NotificationWhereInput[]
+    NOT?: NotificationWhereInput | NotificationWhereInput[]
+    userId?: StringFilter<"Notification"> | string
+    sourceEventId?: StringFilter<"Notification"> | string
+    type?: StringFilter<"Notification"> | string
+    title?: StringFilter<"Notification"> | string
+    body?: StringNullableFilter<"Notification"> | string | null
+    linkHref?: StringNullableFilter<"Notification"> | string | null
+    entityType?: StringNullableFilter<"Notification"> | string | null
+    entityId?: StringNullableFilter<"Notification"> | string | null
+    severity?: EnumNotificationSeverityFilter<"Notification"> | $Enums.NotificationSeverity
+    readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    archivedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    sourceEvent?: XOR<NotificationEventScalarRelationFilter, NotificationEventWhereInput>
+  }, "id" | "sourceEventId_userId">
+
+  export type NotificationOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    sourceEventId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    body?: SortOrderInput | SortOrder
+    linkHref?: SortOrderInput | SortOrder
+    entityType?: SortOrderInput | SortOrder
+    entityId?: SortOrderInput | SortOrder
+    severity?: SortOrder
+    readAt?: SortOrderInput | SortOrder
+    archivedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: NotificationCountOrderByAggregateInput
+    _max?: NotificationMaxOrderByAggregateInput
+    _min?: NotificationMinOrderByAggregateInput
+  }
+
+  export type NotificationScalarWhereWithAggregatesInput = {
+    AND?: NotificationScalarWhereWithAggregatesInput | NotificationScalarWhereWithAggregatesInput[]
+    OR?: NotificationScalarWhereWithAggregatesInput[]
+    NOT?: NotificationScalarWhereWithAggregatesInput | NotificationScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Notification"> | string
+    userId?: StringWithAggregatesFilter<"Notification"> | string
+    sourceEventId?: StringWithAggregatesFilter<"Notification"> | string
+    type?: StringWithAggregatesFilter<"Notification"> | string
+    title?: StringWithAggregatesFilter<"Notification"> | string
+    body?: StringNullableWithAggregatesFilter<"Notification"> | string | null
+    linkHref?: StringNullableWithAggregatesFilter<"Notification"> | string | null
+    entityType?: StringNullableWithAggregatesFilter<"Notification"> | string | null
+    entityId?: StringNullableWithAggregatesFilter<"Notification"> | string | null
+    severity?: EnumNotificationSeverityWithAggregatesFilter<"Notification"> | $Enums.NotificationSeverity
+    readAt?: DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
+    archivedAt?: DateTimeNullableWithAggregatesFilter<"Notification"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"Notification"> | Date | string
+  }
+
+  export type NotificationTypeOverrideWhereInput = {
+    AND?: NotificationTypeOverrideWhereInput | NotificationTypeOverrideWhereInput[]
+    OR?: NotificationTypeOverrideWhereInput[]
+    NOT?: NotificationTypeOverrideWhereInput | NotificationTypeOverrideWhereInput[]
+    id?: StringFilter<"NotificationTypeOverride"> | string
+    type?: StringFilter<"NotificationTypeOverride"> | string
+    userIds?: StringNullableListFilter<"NotificationTypeOverride">
+    roles?: StringNullableListFilter<"NotificationTypeOverride">
+    departmentIds?: StringNullableListFilter<"NotificationTypeOverride">
+    permissions?: StringNullableListFilter<"NotificationTypeOverride">
+    updatedById?: StringNullableFilter<"NotificationTypeOverride"> | string | null
+    updatedAt?: DateTimeFilter<"NotificationTypeOverride"> | Date | string
+    updatedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }
+
+  export type NotificationTypeOverrideOrderByWithRelationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    userIds?: SortOrder
+    roles?: SortOrder
+    departmentIds?: SortOrder
+    permissions?: SortOrder
+    updatedById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: UserOrderByWithRelationInput
+  }
+
+  export type NotificationTypeOverrideWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    type?: string
+    AND?: NotificationTypeOverrideWhereInput | NotificationTypeOverrideWhereInput[]
+    OR?: NotificationTypeOverrideWhereInput[]
+    NOT?: NotificationTypeOverrideWhereInput | NotificationTypeOverrideWhereInput[]
+    userIds?: StringNullableListFilter<"NotificationTypeOverride">
+    roles?: StringNullableListFilter<"NotificationTypeOverride">
+    departmentIds?: StringNullableListFilter<"NotificationTypeOverride">
+    permissions?: StringNullableListFilter<"NotificationTypeOverride">
+    updatedById?: StringNullableFilter<"NotificationTypeOverride"> | string | null
+    updatedAt?: DateTimeFilter<"NotificationTypeOverride"> | Date | string
+    updatedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }, "id" | "type">
+
+  export type NotificationTypeOverrideOrderByWithAggregationInput = {
+    id?: SortOrder
+    type?: SortOrder
+    userIds?: SortOrder
+    roles?: SortOrder
+    departmentIds?: SortOrder
+    permissions?: SortOrder
+    updatedById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    _count?: NotificationTypeOverrideCountOrderByAggregateInput
+    _max?: NotificationTypeOverrideMaxOrderByAggregateInput
+    _min?: NotificationTypeOverrideMinOrderByAggregateInput
+  }
+
+  export type NotificationTypeOverrideScalarWhereWithAggregatesInput = {
+    AND?: NotificationTypeOverrideScalarWhereWithAggregatesInput | NotificationTypeOverrideScalarWhereWithAggregatesInput[]
+    OR?: NotificationTypeOverrideScalarWhereWithAggregatesInput[]
+    NOT?: NotificationTypeOverrideScalarWhereWithAggregatesInput | NotificationTypeOverrideScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"NotificationTypeOverride"> | string
+    type?: StringWithAggregatesFilter<"NotificationTypeOverride"> | string
+    userIds?: StringNullableListFilter<"NotificationTypeOverride">
+    roles?: StringNullableListFilter<"NotificationTypeOverride">
+    departmentIds?: StringNullableListFilter<"NotificationTypeOverride">
+    permissions?: StringNullableListFilter<"NotificationTypeOverride">
+    updatedById?: StringNullableWithAggregatesFilter<"NotificationTypeOverride"> | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"NotificationTypeOverride"> | Date | string
+  }
+
+  export type DelayThresholdWhereInput = {
+    AND?: DelayThresholdWhereInput | DelayThresholdWhereInput[]
+    OR?: DelayThresholdWhereInput[]
+    NOT?: DelayThresholdWhereInput | DelayThresholdWhereInput[]
+    id?: StringFilter<"DelayThreshold"> | string
+    phase?: EnumDelayPhaseFilter<"DelayThreshold"> | $Enums.DelayPhase
+    thresholdMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    alertRoles?: StringNullableListFilter<"DelayThreshold">
+    alertPermissions?: StringNullableListFilter<"DelayThreshold">
+    alertDepartmentIds?: StringNullableListFilter<"DelayThreshold">
+    escalationMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    updatedById?: StringNullableFilter<"DelayThreshold"> | string | null
+    updatedAt?: DateTimeFilter<"DelayThreshold"> | Date | string
+    updatedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }
+
+  export type DelayThresholdOrderByWithRelationInput = {
+    id?: SortOrder
+    phase?: SortOrder
+    thresholdMinutes?: SortOrderInput | SortOrder
+    alertRoles?: SortOrder
+    alertPermissions?: SortOrder
+    alertDepartmentIds?: SortOrder
+    escalationMinutes?: SortOrderInput | SortOrder
+    updatedById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    updatedBy?: UserOrderByWithRelationInput
+  }
+
+  export type DelayThresholdWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    phase?: $Enums.DelayPhase
+    AND?: DelayThresholdWhereInput | DelayThresholdWhereInput[]
+    OR?: DelayThresholdWhereInput[]
+    NOT?: DelayThresholdWhereInput | DelayThresholdWhereInput[]
+    thresholdMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    alertRoles?: StringNullableListFilter<"DelayThreshold">
+    alertPermissions?: StringNullableListFilter<"DelayThreshold">
+    alertDepartmentIds?: StringNullableListFilter<"DelayThreshold">
+    escalationMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    updatedById?: StringNullableFilter<"DelayThreshold"> | string | null
+    updatedAt?: DateTimeFilter<"DelayThreshold"> | Date | string
+    updatedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }, "id" | "phase">
+
+  export type DelayThresholdOrderByWithAggregationInput = {
+    id?: SortOrder
+    phase?: SortOrder
+    thresholdMinutes?: SortOrderInput | SortOrder
+    alertRoles?: SortOrder
+    alertPermissions?: SortOrder
+    alertDepartmentIds?: SortOrder
+    escalationMinutes?: SortOrderInput | SortOrder
+    updatedById?: SortOrderInput | SortOrder
+    updatedAt?: SortOrder
+    _count?: DelayThresholdCountOrderByAggregateInput
+    _avg?: DelayThresholdAvgOrderByAggregateInput
+    _max?: DelayThresholdMaxOrderByAggregateInput
+    _min?: DelayThresholdMinOrderByAggregateInput
+    _sum?: DelayThresholdSumOrderByAggregateInput
+  }
+
+  export type DelayThresholdScalarWhereWithAggregatesInput = {
+    AND?: DelayThresholdScalarWhereWithAggregatesInput | DelayThresholdScalarWhereWithAggregatesInput[]
+    OR?: DelayThresholdScalarWhereWithAggregatesInput[]
+    NOT?: DelayThresholdScalarWhereWithAggregatesInput | DelayThresholdScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DelayThreshold"> | string
+    phase?: EnumDelayPhaseWithAggregatesFilter<"DelayThreshold"> | $Enums.DelayPhase
+    thresholdMinutes?: IntNullableWithAggregatesFilter<"DelayThreshold"> | number | null
+    alertRoles?: StringNullableListFilter<"DelayThreshold">
+    alertPermissions?: StringNullableListFilter<"DelayThreshold">
+    alertDepartmentIds?: StringNullableListFilter<"DelayThreshold">
+    escalationMinutes?: IntNullableWithAggregatesFilter<"DelayThreshold"> | number | null
+    updatedById?: StringNullableWithAggregatesFilter<"DelayThreshold"> | string | null
+    updatedAt?: DateTimeWithAggregatesFilter<"DelayThreshold"> | Date | string
+  }
+
+  export type DelayBreachWhereInput = {
+    AND?: DelayBreachWhereInput | DelayBreachWhereInput[]
+    OR?: DelayBreachWhereInput[]
+    NOT?: DelayBreachWhereInput | DelayBreachWhereInput[]
+    id?: StringFilter<"DelayBreach"> | string
+    workItemId?: StringFilter<"DelayBreach"> | string
+    phase?: EnumDelayPhaseFilter<"DelayBreach"> | $Enums.DelayPhase
+    breachSequence?: IntFilter<"DelayBreach"> | number
+    thresholdMinutes?: IntFilter<"DelayBreach"> | number
+    escalated?: BoolFilter<"DelayBreach"> | boolean
+    escalatedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    notifiedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    detectedAt?: DateTimeFilter<"DelayBreach"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+  }
+
+  export type DelayBreachOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    phase?: SortOrder
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalated?: SortOrder
+    escalatedAt?: SortOrderInput | SortOrder
+    notifiedAt?: SortOrderInput | SortOrder
+    detectedAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+  }
+
+  export type DelayBreachWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    workItemId_phase_breachSequence?: DelayBreachWorkItemIdPhaseBreachSequenceCompoundUniqueInput
+    AND?: DelayBreachWhereInput | DelayBreachWhereInput[]
+    OR?: DelayBreachWhereInput[]
+    NOT?: DelayBreachWhereInput | DelayBreachWhereInput[]
+    workItemId?: StringFilter<"DelayBreach"> | string
+    phase?: EnumDelayPhaseFilter<"DelayBreach"> | $Enums.DelayPhase
+    breachSequence?: IntFilter<"DelayBreach"> | number
+    thresholdMinutes?: IntFilter<"DelayBreach"> | number
+    escalated?: BoolFilter<"DelayBreach"> | boolean
+    escalatedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    notifiedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    detectedAt?: DateTimeFilter<"DelayBreach"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+  }, "id" | "workItemId_phase_breachSequence">
+
+  export type DelayBreachOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    phase?: SortOrder
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalated?: SortOrder
+    escalatedAt?: SortOrderInput | SortOrder
+    notifiedAt?: SortOrderInput | SortOrder
+    detectedAt?: SortOrder
+    _count?: DelayBreachCountOrderByAggregateInput
+    _avg?: DelayBreachAvgOrderByAggregateInput
+    _max?: DelayBreachMaxOrderByAggregateInput
+    _min?: DelayBreachMinOrderByAggregateInput
+    _sum?: DelayBreachSumOrderByAggregateInput
+  }
+
+  export type DelayBreachScalarWhereWithAggregatesInput = {
+    AND?: DelayBreachScalarWhereWithAggregatesInput | DelayBreachScalarWhereWithAggregatesInput[]
+    OR?: DelayBreachScalarWhereWithAggregatesInput[]
+    NOT?: DelayBreachScalarWhereWithAggregatesInput | DelayBreachScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DelayBreach"> | string
+    workItemId?: StringWithAggregatesFilter<"DelayBreach"> | string
+    phase?: EnumDelayPhaseWithAggregatesFilter<"DelayBreach"> | $Enums.DelayPhase
+    breachSequence?: IntWithAggregatesFilter<"DelayBreach"> | number
+    thresholdMinutes?: IntWithAggregatesFilter<"DelayBreach"> | number
+    escalated?: BoolWithAggregatesFilter<"DelayBreach"> | boolean
+    escalatedAt?: DateTimeNullableWithAggregatesFilter<"DelayBreach"> | Date | string | null
+    notifiedAt?: DateTimeNullableWithAggregatesFilter<"DelayBreach"> | Date | string | null
+    detectedAt?: DateTimeWithAggregatesFilter<"DelayBreach"> | Date | string
+  }
+
+  export type SchedulerRunWhereInput = {
+    AND?: SchedulerRunWhereInput | SchedulerRunWhereInput[]
+    OR?: SchedulerRunWhereInput[]
+    NOT?: SchedulerRunWhereInput | SchedulerRunWhereInput[]
+    id?: StringFilter<"SchedulerRun"> | string
+    ownerId?: StringFilter<"SchedulerRun"> | string
+    startedAt?: DateTimeFilter<"SchedulerRun"> | Date | string
+    finishedAt?: DateTimeNullableFilter<"SchedulerRun"> | Date | string | null
+    outcome?: EnumSchedulerOutcomeFilter<"SchedulerRun"> | $Enums.SchedulerOutcome
+    evaluated?: IntFilter<"SchedulerRun"> | number
+    flagged?: IntFilter<"SchedulerRun"> | number
+    alerted?: IntFilter<"SchedulerRun"> | number
+    escalated?: IntFilter<"SchedulerRun"> | number
+    error?: StringNullableFilter<"SchedulerRun"> | string | null
+  }
+
+  export type SchedulerRunOrderByWithRelationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrderInput | SortOrder
+    outcome?: SortOrder
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+    error?: SortOrderInput | SortOrder
+  }
+
+  export type SchedulerRunWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SchedulerRunWhereInput | SchedulerRunWhereInput[]
+    OR?: SchedulerRunWhereInput[]
+    NOT?: SchedulerRunWhereInput | SchedulerRunWhereInput[]
+    ownerId?: StringFilter<"SchedulerRun"> | string
+    startedAt?: DateTimeFilter<"SchedulerRun"> | Date | string
+    finishedAt?: DateTimeNullableFilter<"SchedulerRun"> | Date | string | null
+    outcome?: EnumSchedulerOutcomeFilter<"SchedulerRun"> | $Enums.SchedulerOutcome
+    evaluated?: IntFilter<"SchedulerRun"> | number
+    flagged?: IntFilter<"SchedulerRun"> | number
+    alerted?: IntFilter<"SchedulerRun"> | number
+    escalated?: IntFilter<"SchedulerRun"> | number
+    error?: StringNullableFilter<"SchedulerRun"> | string | null
+  }, "id">
+
+  export type SchedulerRunOrderByWithAggregationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrderInput | SortOrder
+    outcome?: SortOrder
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+    error?: SortOrderInput | SortOrder
+    _count?: SchedulerRunCountOrderByAggregateInput
+    _avg?: SchedulerRunAvgOrderByAggregateInput
+    _max?: SchedulerRunMaxOrderByAggregateInput
+    _min?: SchedulerRunMinOrderByAggregateInput
+    _sum?: SchedulerRunSumOrderByAggregateInput
+  }
+
+  export type SchedulerRunScalarWhereWithAggregatesInput = {
+    AND?: SchedulerRunScalarWhereWithAggregatesInput | SchedulerRunScalarWhereWithAggregatesInput[]
+    OR?: SchedulerRunScalarWhereWithAggregatesInput[]
+    NOT?: SchedulerRunScalarWhereWithAggregatesInput | SchedulerRunScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SchedulerRun"> | string
+    ownerId?: StringWithAggregatesFilter<"SchedulerRun"> | string
+    startedAt?: DateTimeWithAggregatesFilter<"SchedulerRun"> | Date | string
+    finishedAt?: DateTimeNullableWithAggregatesFilter<"SchedulerRun"> | Date | string | null
+    outcome?: EnumSchedulerOutcomeWithAggregatesFilter<"SchedulerRun"> | $Enums.SchedulerOutcome
+    evaluated?: IntWithAggregatesFilter<"SchedulerRun"> | number
+    flagged?: IntWithAggregatesFilter<"SchedulerRun"> | number
+    alerted?: IntWithAggregatesFilter<"SchedulerRun"> | number
+    escalated?: IntWithAggregatesFilter<"SchedulerRun"> | number
+    error?: StringNullableWithAggregatesFilter<"SchedulerRun"> | string | null
+  }
+
+  export type SchedulerLeaseWhereInput = {
+    AND?: SchedulerLeaseWhereInput | SchedulerLeaseWhereInput[]
+    OR?: SchedulerLeaseWhereInput[]
+    NOT?: SchedulerLeaseWhereInput | SchedulerLeaseWhereInput[]
+    id?: StringFilter<"SchedulerLease"> | string
+    ownerId?: StringFilter<"SchedulerLease"> | string
+    acquiredAt?: DateTimeFilter<"SchedulerLease"> | Date | string
+    expiresAt?: DateTimeFilter<"SchedulerLease"> | Date | string
+  }
+
+  export type SchedulerLeaseOrderByWithRelationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    acquiredAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type SchedulerLeaseWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: SchedulerLeaseWhereInput | SchedulerLeaseWhereInput[]
+    OR?: SchedulerLeaseWhereInput[]
+    NOT?: SchedulerLeaseWhereInput | SchedulerLeaseWhereInput[]
+    ownerId?: StringFilter<"SchedulerLease"> | string
+    acquiredAt?: DateTimeFilter<"SchedulerLease"> | Date | string
+    expiresAt?: DateTimeFilter<"SchedulerLease"> | Date | string
+  }, "id">
+
+  export type SchedulerLeaseOrderByWithAggregationInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    acquiredAt?: SortOrder
+    expiresAt?: SortOrder
+    _count?: SchedulerLeaseCountOrderByAggregateInput
+    _max?: SchedulerLeaseMaxOrderByAggregateInput
+    _min?: SchedulerLeaseMinOrderByAggregateInput
+  }
+
+  export type SchedulerLeaseScalarWhereWithAggregatesInput = {
+    AND?: SchedulerLeaseScalarWhereWithAggregatesInput | SchedulerLeaseScalarWhereWithAggregatesInput[]
+    OR?: SchedulerLeaseScalarWhereWithAggregatesInput[]
+    NOT?: SchedulerLeaseScalarWhereWithAggregatesInput | SchedulerLeaseScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SchedulerLease"> | string
+    ownerId?: StringWithAggregatesFilter<"SchedulerLease"> | string
+    acquiredAt?: DateTimeWithAggregatesFilter<"SchedulerLease"> | Date | string
+    expiresAt?: DateTimeWithAggregatesFilter<"SchedulerLease"> | Date | string
   }
 
   export type ProductPricingPolicyWhereInput = {
@@ -63414,6 +71750,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -63448,6 +71785,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -63482,6 +71820,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -63516,6 +71855,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -64179,7 +72519,12 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     deliveredAt?: Date | string | null
-    deliveryStatus?: string | null
+    deliveryStatus?: $Enums.DeliveryStatus | null
+    attemptCount?: number
+    lastAttemptAt?: Date | string | null
+    lastError?: string | null
+    recipientPermissions?: NotificationEventCreaterecipientPermissionsInput | string[]
+    notifications?: NotificationCreateNestedManyWithoutSourceEventInput
   }
 
   export type NotificationEventUncheckedCreateInput = {
@@ -64193,7 +72538,12 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     deliveredAt?: Date | string | null
-    deliveryStatus?: string | null
+    deliveryStatus?: $Enums.DeliveryStatus | null
+    attemptCount?: number
+    lastAttemptAt?: Date | string | null
+    lastError?: string | null
+    recipientPermissions?: NotificationEventCreaterecipientPermissionsInput | string[]
+    notifications?: NotificationUncheckedCreateNestedManyWithoutSourceEventInput
   }
 
   export type NotificationEventUpdateInput = {
@@ -64207,7 +72557,12 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
+    notifications?: NotificationUpdateManyWithoutSourceEventNestedInput
   }
 
   export type NotificationEventUncheckedUpdateInput = {
@@ -64221,7 +72576,12 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
+    notifications?: NotificationUncheckedUpdateManyWithoutSourceEventNestedInput
   }
 
   export type NotificationEventCreateManyInput = {
@@ -64235,7 +72595,11 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     deliveredAt?: Date | string | null
-    deliveryStatus?: string | null
+    deliveryStatus?: $Enums.DeliveryStatus | null
+    attemptCount?: number
+    lastAttemptAt?: Date | string | null
+    lastError?: string | null
+    recipientPermissions?: NotificationEventCreaterecipientPermissionsInput | string[]
   }
 
   export type NotificationEventUpdateManyMutationInput = {
@@ -64249,7 +72613,11 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
   }
 
   export type NotificationEventUncheckedUpdateManyInput = {
@@ -64263,7 +72631,11 @@ export namespace Prisma {
     payload?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
   }
 
   export type CustomerPhoneCreateInput = {
@@ -65541,6 +73913,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -65588,6 +73963,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUpdateInput = {
@@ -65635,6 +74013,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -65682,6 +74063,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -66313,6 +74697,498 @@ export namespace Prisma {
     ipAddress?: NullableStringFieldUpdateOperationsInput | string | null
     userAgent?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationCreateInput = {
+    id?: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+    user: UserCreateNestedOneWithoutNotificationsInput
+    sourceEvent: NotificationEventCreateNestedOneWithoutNotificationsInput
+  }
+
+  export type NotificationUncheckedCreateInput = {
+    id?: string
+    userId: string
+    sourceEventId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutNotificationsNestedInput
+    sourceEvent?: NotificationEventUpdateOneRequiredWithoutNotificationsNestedInput
+  }
+
+  export type NotificationUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    sourceEventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationCreateManyInput = {
+    id?: string
+    userId: string
+    sourceEventId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    sourceEventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideCreateInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedAt?: Date | string
+    updatedBy?: UserCreateNestedOneWithoutRecipientOverrideUpdatesInput
+  }
+
+  export type NotificationTypeOverrideUncheckedCreateInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedById?: string | null
+    updatedAt?: Date | string
+  }
+
+  export type NotificationTypeOverrideUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: UserUpdateOneWithoutRecipientOverrideUpdatesNestedInput
+  }
+
+  export type NotificationTypeOverrideUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideCreateManyInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedById?: string | null
+    updatedAt?: Date | string
+  }
+
+  export type NotificationTypeOverrideUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdCreateInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedAt?: Date | string
+    updatedBy?: UserCreateNestedOneWithoutThresholdUpdatesInput
+  }
+
+  export type DelayThresholdUncheckedCreateInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedById?: string | null
+    updatedAt?: Date | string
+  }
+
+  export type DelayThresholdUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: UserUpdateOneWithoutThresholdUpdatesNestedInput
+  }
+
+  export type DelayThresholdUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdCreateManyInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedById?: string | null
+    updatedAt?: Date | string
+  }
+
+  export type DelayThresholdUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedById?: NullableStringFieldUpdateOperationsInput | string | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayBreachCreateInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutDelayBreachesInput
+  }
+
+  export type DelayBreachUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
+  }
+
+  export type DelayBreachUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutDelayBreachesNestedInput
+  }
+
+  export type DelayBreachUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayBreachCreateManyInput = {
+    id?: string
+    workItemId: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
+  }
+
+  export type DelayBreachUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayBreachUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SchedulerRunCreateInput = {
+    id?: string
+    ownerId: string
+    startedAt?: Date | string
+    finishedAt?: Date | string | null
+    outcome?: $Enums.SchedulerOutcome
+    evaluated?: number
+    flagged?: number
+    alerted?: number
+    escalated?: number
+    error?: string | null
+  }
+
+  export type SchedulerRunUncheckedCreateInput = {
+    id?: string
+    ownerId: string
+    startedAt?: Date | string
+    finishedAt?: Date | string | null
+    outcome?: $Enums.SchedulerOutcome
+    evaluated?: number
+    flagged?: number
+    alerted?: number
+    escalated?: number
+    error?: string | null
+  }
+
+  export type SchedulerRunUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outcome?: EnumSchedulerOutcomeFieldUpdateOperationsInput | $Enums.SchedulerOutcome
+    evaluated?: IntFieldUpdateOperationsInput | number
+    flagged?: IntFieldUpdateOperationsInput | number
+    alerted?: IntFieldUpdateOperationsInput | number
+    escalated?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type SchedulerRunUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outcome?: EnumSchedulerOutcomeFieldUpdateOperationsInput | $Enums.SchedulerOutcome
+    evaluated?: IntFieldUpdateOperationsInput | number
+    flagged?: IntFieldUpdateOperationsInput | number
+    alerted?: IntFieldUpdateOperationsInput | number
+    escalated?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type SchedulerRunCreateManyInput = {
+    id?: string
+    ownerId: string
+    startedAt?: Date | string
+    finishedAt?: Date | string | null
+    outcome?: $Enums.SchedulerOutcome
+    evaluated?: number
+    flagged?: number
+    alerted?: number
+    escalated?: number
+    error?: string | null
+  }
+
+  export type SchedulerRunUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outcome?: EnumSchedulerOutcomeFieldUpdateOperationsInput | $Enums.SchedulerOutcome
+    evaluated?: IntFieldUpdateOperationsInput | number
+    flagged?: IntFieldUpdateOperationsInput | number
+    alerted?: IntFieldUpdateOperationsInput | number
+    escalated?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type SchedulerRunUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    startedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    outcome?: EnumSchedulerOutcomeFieldUpdateOperationsInput | $Enums.SchedulerOutcome
+    evaluated?: IntFieldUpdateOperationsInput | number
+    flagged?: IntFieldUpdateOperationsInput | number
+    alerted?: IntFieldUpdateOperationsInput | number
+    escalated?: IntFieldUpdateOperationsInput | number
+    error?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type SchedulerLeaseCreateInput = {
+    id: string
+    ownerId: string
+    acquiredAt: Date | string
+    expiresAt: Date | string
+  }
+
+  export type SchedulerLeaseUncheckedCreateInput = {
+    id: string
+    ownerId: string
+    acquiredAt: Date | string
+    expiresAt: Date | string
+  }
+
+  export type SchedulerLeaseUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    acquiredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SchedulerLeaseUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    acquiredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SchedulerLeaseCreateManyInput = {
+    id: string
+    ownerId: string
+    acquiredAt: Date | string
+    expiresAt: Date | string
+  }
+
+  export type SchedulerLeaseUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    acquiredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SchedulerLeaseUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ownerId?: StringFieldUpdateOperationsInput | string
+    acquiredAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ProductPricingPolicyCreateInput = {
@@ -67325,6 +76201,12 @@ export namespace Prisma {
     isNot?: PricingStatusWhereInput | null
   }
 
+  export type DelayBreachListRelationFilter = {
+    every?: DelayBreachWhereInput
+    some?: DelayBreachWhereInput
+    none?: DelayBreachWhereInput
+  }
+
   export type WorkItemTransitionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -67346,6 +76228,10 @@ export namespace Prisma {
   }
 
   export type WorkItemPriceOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DelayBreachOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -67924,6 +76810,23 @@ export namespace Prisma {
     isEmpty?: boolean
   }
 
+  export type EnumDeliveryStatusNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.DeliveryStatus | EnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    in?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel> | $Enums.DeliveryStatus | null
+  }
+
+  export type NotificationListRelationFilter = {
+    every?: NotificationWhereInput
+    some?: NotificationWhereInput
+    none?: NotificationWhereInput
+  }
+
+  export type NotificationOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type NotificationEventCountOrderByAggregateInput = {
     id?: SortOrder
     type?: SortOrder
@@ -67936,6 +76839,14 @@ export namespace Prisma {
     createdAt?: SortOrder
     deliveredAt?: SortOrder
     deliveryStatus?: SortOrder
+    attemptCount?: SortOrder
+    lastAttemptAt?: SortOrder
+    lastError?: SortOrder
+    recipientPermissions?: SortOrder
+  }
+
+  export type NotificationEventAvgOrderByAggregateInput = {
+    attemptCount?: SortOrder
   }
 
   export type NotificationEventMaxOrderByAggregateInput = {
@@ -67946,6 +76857,9 @@ export namespace Prisma {
     createdAt?: SortOrder
     deliveredAt?: SortOrder
     deliveryStatus?: SortOrder
+    attemptCount?: SortOrder
+    lastAttemptAt?: SortOrder
+    lastError?: SortOrder
   }
 
   export type NotificationEventMinOrderByAggregateInput = {
@@ -67956,6 +76870,23 @@ export namespace Prisma {
     createdAt?: SortOrder
     deliveredAt?: SortOrder
     deliveryStatus?: SortOrder
+    attemptCount?: SortOrder
+    lastAttemptAt?: SortOrder
+    lastError?: SortOrder
+  }
+
+  export type NotificationEventSumOrderByAggregateInput = {
+    attemptCount?: SortOrder
+  }
+
+  export type EnumDeliveryStatusNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DeliveryStatus | EnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    in?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumDeliveryStatusNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeliveryStatus | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel>
+    _max?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel>
   }
 
   export type CustomerPhoneCountOrderByAggregateInput = {
@@ -68900,6 +77831,18 @@ export namespace Prisma {
     none?: FinanceConfigWhereInput
   }
 
+  export type DelayThresholdListRelationFilter = {
+    every?: DelayThresholdWhereInput
+    some?: DelayThresholdWhereInput
+    none?: DelayThresholdWhereInput
+  }
+
+  export type NotificationTypeOverrideListRelationFilter = {
+    every?: NotificationTypeOverrideWhereInput
+    some?: NotificationTypeOverrideWhereInput
+    none?: NotificationTypeOverrideWhereInput
+  }
+
   export type SessionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -68949,6 +77892,14 @@ export namespace Prisma {
   }
 
   export type FinanceConfigOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DelayThresholdOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type NotificationTypeOverrideOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -69284,6 +78235,306 @@ export namespace Prisma {
     ipAddress?: SortOrder
     userAgent?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type EnumNotificationSeverityFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationSeverity | EnumNotificationSeverityFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationSeverityFilter<$PrismaModel> | $Enums.NotificationSeverity
+  }
+
+  export type NotificationEventScalarRelationFilter = {
+    is?: NotificationEventWhereInput
+    isNot?: NotificationEventWhereInput
+  }
+
+  export type NotificationSourceEventIdUserIdCompoundUniqueInput = {
+    sourceEventId: string
+    userId: string
+  }
+
+  export type NotificationCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    sourceEventId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    body?: SortOrder
+    linkHref?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    severity?: SortOrder
+    readAt?: SortOrder
+    archivedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NotificationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    sourceEventId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    body?: SortOrder
+    linkHref?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    severity?: SortOrder
+    readAt?: SortOrder
+    archivedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type NotificationMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    sourceEventId?: SortOrder
+    type?: SortOrder
+    title?: SortOrder
+    body?: SortOrder
+    linkHref?: SortOrder
+    entityType?: SortOrder
+    entityId?: SortOrder
+    severity?: SortOrder
+    readAt?: SortOrder
+    archivedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type EnumNotificationSeverityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationSeverity | EnumNotificationSeverityFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationSeverityWithAggregatesFilter<$PrismaModel> | $Enums.NotificationSeverity
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumNotificationSeverityFilter<$PrismaModel>
+    _max?: NestedEnumNotificationSeverityFilter<$PrismaModel>
+  }
+
+  export type NotificationTypeOverrideCountOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    userIds?: SortOrder
+    roles?: SortOrder
+    departmentIds?: SortOrder
+    permissions?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type NotificationTypeOverrideMaxOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type NotificationTypeOverrideMinOrderByAggregateInput = {
+    id?: SortOrder
+    type?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type EnumDelayPhaseFilter<$PrismaModel = never> = {
+    equals?: $Enums.DelayPhase | EnumDelayPhaseFieldRefInput<$PrismaModel>
+    in?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    not?: NestedEnumDelayPhaseFilter<$PrismaModel> | $Enums.DelayPhase
+  }
+
+  export type DelayThresholdCountOrderByAggregateInput = {
+    id?: SortOrder
+    phase?: SortOrder
+    thresholdMinutes?: SortOrder
+    alertRoles?: SortOrder
+    alertPermissions?: SortOrder
+    alertDepartmentIds?: SortOrder
+    escalationMinutes?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DelayThresholdAvgOrderByAggregateInput = {
+    thresholdMinutes?: SortOrder
+    escalationMinutes?: SortOrder
+  }
+
+  export type DelayThresholdMaxOrderByAggregateInput = {
+    id?: SortOrder
+    phase?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalationMinutes?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DelayThresholdMinOrderByAggregateInput = {
+    id?: SortOrder
+    phase?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalationMinutes?: SortOrder
+    updatedById?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DelayThresholdSumOrderByAggregateInput = {
+    thresholdMinutes?: SortOrder
+    escalationMinutes?: SortOrder
+  }
+
+  export type EnumDelayPhaseWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DelayPhase | EnumDelayPhaseFieldRefInput<$PrismaModel>
+    in?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    not?: NestedEnumDelayPhaseWithAggregatesFilter<$PrismaModel> | $Enums.DelayPhase
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDelayPhaseFilter<$PrismaModel>
+    _max?: NestedEnumDelayPhaseFilter<$PrismaModel>
+  }
+
+  export type DelayBreachWorkItemIdPhaseBreachSequenceCompoundUniqueInput = {
+    workItemId: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+  }
+
+  export type DelayBreachCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    phase?: SortOrder
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalated?: SortOrder
+    escalatedAt?: SortOrder
+    notifiedAt?: SortOrder
+    detectedAt?: SortOrder
+  }
+
+  export type DelayBreachAvgOrderByAggregateInput = {
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+  }
+
+  export type DelayBreachMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    phase?: SortOrder
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalated?: SortOrder
+    escalatedAt?: SortOrder
+    notifiedAt?: SortOrder
+    detectedAt?: SortOrder
+  }
+
+  export type DelayBreachMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    phase?: SortOrder
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+    escalated?: SortOrder
+    escalatedAt?: SortOrder
+    notifiedAt?: SortOrder
+    detectedAt?: SortOrder
+  }
+
+  export type DelayBreachSumOrderByAggregateInput = {
+    breachSequence?: SortOrder
+    thresholdMinutes?: SortOrder
+  }
+
+  export type EnumSchedulerOutcomeFilter<$PrismaModel = never> = {
+    equals?: $Enums.SchedulerOutcome | EnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    in?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    not?: NestedEnumSchedulerOutcomeFilter<$PrismaModel> | $Enums.SchedulerOutcome
+  }
+
+  export type SchedulerRunCountOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    outcome?: SortOrder
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+    error?: SortOrder
+  }
+
+  export type SchedulerRunAvgOrderByAggregateInput = {
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+  }
+
+  export type SchedulerRunMaxOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    outcome?: SortOrder
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+    error?: SortOrder
+  }
+
+  export type SchedulerRunMinOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    outcome?: SortOrder
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+    error?: SortOrder
+  }
+
+  export type SchedulerRunSumOrderByAggregateInput = {
+    evaluated?: SortOrder
+    flagged?: SortOrder
+    alerted?: SortOrder
+    escalated?: SortOrder
+  }
+
+  export type EnumSchedulerOutcomeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SchedulerOutcome | EnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    in?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    not?: NestedEnumSchedulerOutcomeWithAggregatesFilter<$PrismaModel> | $Enums.SchedulerOutcome
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumSchedulerOutcomeFilter<$PrismaModel>
+    _max?: NestedEnumSchedulerOutcomeFilter<$PrismaModel>
+  }
+
+  export type SchedulerLeaseCountOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    acquiredAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type SchedulerLeaseMaxOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    acquiredAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type SchedulerLeaseMinOrderByAggregateInput = {
+    id?: SortOrder
+    ownerId?: SortOrder
+    acquiredAt?: SortOrder
+    expiresAt?: SortOrder
   }
 
   export type EnumPricingModeFilter<$PrismaModel = never> = {
@@ -70473,6 +79724,13 @@ export namespace Prisma {
     connect?: DirectCostWhereUniqueInput | DirectCostWhereUniqueInput[]
   }
 
+  export type DelayBreachCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput> | DelayBreachCreateWithoutWorkItemInput[] | DelayBreachUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DelayBreachCreateOrConnectWithoutWorkItemInput | DelayBreachCreateOrConnectWithoutWorkItemInput[]
+    createMany?: DelayBreachCreateManyWorkItemInputEnvelope
+    connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+  }
+
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -70540,6 +79798,13 @@ export namespace Prisma {
     connectOrCreate?: DirectCostCreateOrConnectWithoutWorkItemInput | DirectCostCreateOrConnectWithoutWorkItemInput[]
     createMany?: DirectCostCreateManyWorkItemInputEnvelope
     connect?: DirectCostWhereUniqueInput | DirectCostWhereUniqueInput[]
+  }
+
+  export type DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput> | DelayBreachCreateWithoutWorkItemInput[] | DelayBreachUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DelayBreachCreateOrConnectWithoutWorkItemInput | DelayBreachCreateOrConnectWithoutWorkItemInput[]
+    createMany?: DelayBreachCreateManyWorkItemInputEnvelope
+    connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
   }
 
   export type EnumWorkItemStateFieldUpdateOperationsInput = {
@@ -70740,6 +80005,20 @@ export namespace Prisma {
     deleteMany?: DirectCostScalarWhereInput | DirectCostScalarWhereInput[]
   }
 
+  export type DelayBreachUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput> | DelayBreachCreateWithoutWorkItemInput[] | DelayBreachUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DelayBreachCreateOrConnectWithoutWorkItemInput | DelayBreachCreateOrConnectWithoutWorkItemInput[]
+    upsert?: DelayBreachUpsertWithWhereUniqueWithoutWorkItemInput | DelayBreachUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: DelayBreachCreateManyWorkItemInputEnvelope
+    set?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    disconnect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    delete?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    update?: DelayBreachUpdateWithWhereUniqueWithoutWorkItemInput | DelayBreachUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: DelayBreachUpdateManyWithWhereWithoutWorkItemInput | DelayBreachUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
+  }
+
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -70874,6 +80153,20 @@ export namespace Prisma {
     update?: DirectCostUpdateWithWhereUniqueWithoutWorkItemInput | DirectCostUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: DirectCostUpdateManyWithWhereWithoutWorkItemInput | DirectCostUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: DirectCostScalarWhereInput | DirectCostScalarWhereInput[]
+  }
+
+  export type DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput> | DelayBreachCreateWithoutWorkItemInput[] | DelayBreachUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: DelayBreachCreateOrConnectWithoutWorkItemInput | DelayBreachCreateOrConnectWithoutWorkItemInput[]
+    upsert?: DelayBreachUpsertWithWhereUniqueWithoutWorkItemInput | DelayBreachUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: DelayBreachCreateManyWorkItemInputEnvelope
+    set?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    disconnect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    delete?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+    update?: DelayBreachUpdateWithWhereUniqueWithoutWorkItemInput | DelayBreachUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: DelayBreachUpdateManyWithWhereWithoutWorkItemInput | DelayBreachUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
   }
 
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
@@ -71378,6 +80671,24 @@ export namespace Prisma {
     set: string[]
   }
 
+  export type NotificationEventCreaterecipientPermissionsInput = {
+    set: string[]
+  }
+
+  export type NotificationCreateNestedManyWithoutSourceEventInput = {
+    create?: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput> | NotificationCreateWithoutSourceEventInput[] | NotificationUncheckedCreateWithoutSourceEventInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutSourceEventInput | NotificationCreateOrConnectWithoutSourceEventInput[]
+    createMany?: NotificationCreateManySourceEventInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type NotificationUncheckedCreateNestedManyWithoutSourceEventInput = {
+    create?: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput> | NotificationCreateWithoutSourceEventInput[] | NotificationUncheckedCreateWithoutSourceEventInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutSourceEventInput | NotificationCreateOrConnectWithoutSourceEventInput[]
+    createMany?: NotificationCreateManySourceEventInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
   export type NotificationEventUpdaterecipientUserIdsInput = {
     set?: string[]
     push?: string | string[]
@@ -71391,6 +80702,43 @@ export namespace Prisma {
   export type NotificationEventUpdaterecipientDepartmentIdsInput = {
     set?: string[]
     push?: string | string[]
+  }
+
+  export type NullableEnumDeliveryStatusFieldUpdateOperationsInput = {
+    set?: $Enums.DeliveryStatus | null
+  }
+
+  export type NotificationEventUpdaterecipientPermissionsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type NotificationUpdateManyWithoutSourceEventNestedInput = {
+    create?: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput> | NotificationCreateWithoutSourceEventInput[] | NotificationUncheckedCreateWithoutSourceEventInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutSourceEventInput | NotificationCreateOrConnectWithoutSourceEventInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutSourceEventInput | NotificationUpsertWithWhereUniqueWithoutSourceEventInput[]
+    createMany?: NotificationCreateManySourceEventInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutSourceEventInput | NotificationUpdateWithWhereUniqueWithoutSourceEventInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutSourceEventInput | NotificationUpdateManyWithWhereWithoutSourceEventInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type NotificationUncheckedUpdateManyWithoutSourceEventNestedInput = {
+    create?: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput> | NotificationCreateWithoutSourceEventInput[] | NotificationUncheckedCreateWithoutSourceEventInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutSourceEventInput | NotificationCreateOrConnectWithoutSourceEventInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutSourceEventInput | NotificationUpsertWithWhereUniqueWithoutSourceEventInput[]
+    createMany?: NotificationCreateManySourceEventInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutSourceEventInput | NotificationUpdateWithWhereUniqueWithoutSourceEventInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutSourceEventInput | NotificationUpdateManyWithWhereWithoutSourceEventInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
   }
 
   export type CustomerCreateNestedOneWithoutPhonesInput = {
@@ -72241,6 +81589,27 @@ export namespace Prisma {
     connect?: FinanceConfigWhereUniqueInput | FinanceConfigWhereUniqueInput[]
   }
 
+  export type NotificationCreateNestedManyWithoutUserInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type DelayThresholdCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput> | DelayThresholdCreateWithoutUpdatedByInput[] | DelayThresholdUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: DelayThresholdCreateOrConnectWithoutUpdatedByInput | DelayThresholdCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: DelayThresholdCreateManyUpdatedByInputEnvelope
+    connect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+  }
+
+  export type NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput> | NotificationTypeOverrideCreateWithoutUpdatedByInput[] | NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput | NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: NotificationTypeOverrideCreateManyUpdatedByInputEnvelope
+    connect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -72463,6 +81832,27 @@ export namespace Prisma {
     connectOrCreate?: FinanceConfigCreateOrConnectWithoutUpdatedByInput | FinanceConfigCreateOrConnectWithoutUpdatedByInput[]
     createMany?: FinanceConfigCreateManyUpdatedByInputEnvelope
     connect?: FinanceConfigWhereUniqueInput | FinanceConfigWhereUniqueInput[]
+  }
+
+  export type NotificationUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+  }
+
+  export type DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput> | DelayThresholdCreateWithoutUpdatedByInput[] | DelayThresholdUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: DelayThresholdCreateOrConnectWithoutUpdatedByInput | DelayThresholdCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: DelayThresholdCreateManyUpdatedByInputEnvelope
+    connect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+  }
+
+  export type NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput> | NotificationTypeOverrideCreateWithoutUpdatedByInput[] | NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput | NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: NotificationTypeOverrideCreateManyUpdatedByInputEnvelope
+    connect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -72913,6 +82303,48 @@ export namespace Prisma {
     deleteMany?: FinanceConfigScalarWhereInput | FinanceConfigScalarWhereInput[]
   }
 
+  export type NotificationUpdateManyWithoutUserNestedInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutUserInput | NotificationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutUserInput | NotificationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutUserInput | NotificationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type DelayThresholdUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput> | DelayThresholdCreateWithoutUpdatedByInput[] | DelayThresholdUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: DelayThresholdCreateOrConnectWithoutUpdatedByInput | DelayThresholdCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: DelayThresholdUpsertWithWhereUniqueWithoutUpdatedByInput | DelayThresholdUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: DelayThresholdCreateManyUpdatedByInputEnvelope
+    set?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    disconnect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    delete?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    connect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    update?: DelayThresholdUpdateWithWhereUniqueWithoutUpdatedByInput | DelayThresholdUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: DelayThresholdUpdateManyWithWhereWithoutUpdatedByInput | DelayThresholdUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: DelayThresholdScalarWhereInput | DelayThresholdScalarWhereInput[]
+  }
+
+  export type NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput> | NotificationTypeOverrideCreateWithoutUpdatedByInput[] | NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput | NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: NotificationTypeOverrideUpsertWithWhereUniqueWithoutUpdatedByInput | NotificationTypeOverrideUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: NotificationTypeOverrideCreateManyUpdatedByInputEnvelope
+    set?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    disconnect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    delete?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    connect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    update?: NotificationTypeOverrideUpdateWithWhereUniqueWithoutUpdatedByInput | NotificationTypeOverrideUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: NotificationTypeOverrideUpdateManyWithWhereWithoutUpdatedByInput | NotificationTypeOverrideUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: NotificationTypeOverrideScalarWhereInput | NotificationTypeOverrideScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -73361,6 +82793,48 @@ export namespace Prisma {
     deleteMany?: FinanceConfigScalarWhereInput | FinanceConfigScalarWhereInput[]
   }
 
+  export type NotificationUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput> | NotificationCreateWithoutUserInput[] | NotificationUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: NotificationCreateOrConnectWithoutUserInput | NotificationCreateOrConnectWithoutUserInput[]
+    upsert?: NotificationUpsertWithWhereUniqueWithoutUserInput | NotificationUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: NotificationCreateManyUserInputEnvelope
+    set?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    disconnect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    delete?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    connect?: NotificationWhereUniqueInput | NotificationWhereUniqueInput[]
+    update?: NotificationUpdateWithWhereUniqueWithoutUserInput | NotificationUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: NotificationUpdateManyWithWhereWithoutUserInput | NotificationUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+  }
+
+  export type DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput> | DelayThresholdCreateWithoutUpdatedByInput[] | DelayThresholdUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: DelayThresholdCreateOrConnectWithoutUpdatedByInput | DelayThresholdCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: DelayThresholdUpsertWithWhereUniqueWithoutUpdatedByInput | DelayThresholdUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: DelayThresholdCreateManyUpdatedByInputEnvelope
+    set?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    disconnect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    delete?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    connect?: DelayThresholdWhereUniqueInput | DelayThresholdWhereUniqueInput[]
+    update?: DelayThresholdUpdateWithWhereUniqueWithoutUpdatedByInput | DelayThresholdUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: DelayThresholdUpdateManyWithWhereWithoutUpdatedByInput | DelayThresholdUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: DelayThresholdScalarWhereInput | DelayThresholdScalarWhereInput[]
+  }
+
+  export type NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput> | NotificationTypeOverrideCreateWithoutUpdatedByInput[] | NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput | NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: NotificationTypeOverrideUpsertWithWhereUniqueWithoutUpdatedByInput | NotificationTypeOverrideUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: NotificationTypeOverrideCreateManyUpdatedByInputEnvelope
+    set?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    disconnect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    delete?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    connect?: NotificationTypeOverrideWhereUniqueInput | NotificationTypeOverrideWhereUniqueInput[]
+    update?: NotificationTypeOverrideUpdateWithWhereUniqueWithoutUpdatedByInput | NotificationTypeOverrideUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: NotificationTypeOverrideUpdateManyWithWhereWithoutUpdatedByInput | NotificationTypeOverrideUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: NotificationTypeOverrideScalarWhereInput | NotificationTypeOverrideScalarWhereInput[]
+  }
+
   export type UserCreateNestedOneWithoutSessionsInput = {
     create?: XOR<UserCreateWithoutSessionsInput, UserUncheckedCreateWithoutSessionsInput>
     connectOrCreate?: UserCreateOrConnectWithoutSessionsInput
@@ -73594,6 +83068,155 @@ export namespace Prisma {
     delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAuditEventsInput, UserUpdateWithoutAuditEventsInput>, UserUncheckedUpdateWithoutAuditEventsInput>
+  }
+
+  export type UserCreateNestedOneWithoutNotificationsInput = {
+    create?: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutNotificationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type NotificationEventCreateNestedOneWithoutNotificationsInput = {
+    create?: XOR<NotificationEventCreateWithoutNotificationsInput, NotificationEventUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: NotificationEventCreateOrConnectWithoutNotificationsInput
+    connect?: NotificationEventWhereUniqueInput
+  }
+
+  export type EnumNotificationSeverityFieldUpdateOperationsInput = {
+    set?: $Enums.NotificationSeverity
+  }
+
+  export type UserUpdateOneRequiredWithoutNotificationsNestedInput = {
+    create?: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutNotificationsInput
+    upsert?: UserUpsertWithoutNotificationsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutNotificationsInput, UserUpdateWithoutNotificationsInput>, UserUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type NotificationEventUpdateOneRequiredWithoutNotificationsNestedInput = {
+    create?: XOR<NotificationEventCreateWithoutNotificationsInput, NotificationEventUncheckedCreateWithoutNotificationsInput>
+    connectOrCreate?: NotificationEventCreateOrConnectWithoutNotificationsInput
+    upsert?: NotificationEventUpsertWithoutNotificationsInput
+    connect?: NotificationEventWhereUniqueInput
+    update?: XOR<XOR<NotificationEventUpdateToOneWithWhereWithoutNotificationsInput, NotificationEventUpdateWithoutNotificationsInput>, NotificationEventUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type NotificationTypeOverrideCreateuserIdsInput = {
+    set: string[]
+  }
+
+  export type NotificationTypeOverrideCreaterolesInput = {
+    set: string[]
+  }
+
+  export type NotificationTypeOverrideCreatedepartmentIdsInput = {
+    set: string[]
+  }
+
+  export type NotificationTypeOverrideCreatepermissionsInput = {
+    set: string[]
+  }
+
+  export type UserCreateNestedOneWithoutRecipientOverrideUpdatesInput = {
+    create?: XOR<UserCreateWithoutRecipientOverrideUpdatesInput, UserUncheckedCreateWithoutRecipientOverrideUpdatesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRecipientOverrideUpdatesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type NotificationTypeOverrideUpdateuserIdsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type NotificationTypeOverrideUpdaterolesInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type NotificationTypeOverrideUpdatedepartmentIdsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type NotificationTypeOverrideUpdatepermissionsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type UserUpdateOneWithoutRecipientOverrideUpdatesNestedInput = {
+    create?: XOR<UserCreateWithoutRecipientOverrideUpdatesInput, UserUncheckedCreateWithoutRecipientOverrideUpdatesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutRecipientOverrideUpdatesInput
+    upsert?: UserUpsertWithoutRecipientOverrideUpdatesInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutRecipientOverrideUpdatesInput, UserUpdateWithoutRecipientOverrideUpdatesInput>, UserUncheckedUpdateWithoutRecipientOverrideUpdatesInput>
+  }
+
+  export type DelayThresholdCreatealertRolesInput = {
+    set: string[]
+  }
+
+  export type DelayThresholdCreatealertPermissionsInput = {
+    set: string[]
+  }
+
+  export type DelayThresholdCreatealertDepartmentIdsInput = {
+    set: string[]
+  }
+
+  export type UserCreateNestedOneWithoutThresholdUpdatesInput = {
+    create?: XOR<UserCreateWithoutThresholdUpdatesInput, UserUncheckedCreateWithoutThresholdUpdatesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutThresholdUpdatesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumDelayPhaseFieldUpdateOperationsInput = {
+    set?: $Enums.DelayPhase
+  }
+
+  export type DelayThresholdUpdatealertRolesInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type DelayThresholdUpdatealertPermissionsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type DelayThresholdUpdatealertDepartmentIdsInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
+  export type UserUpdateOneWithoutThresholdUpdatesNestedInput = {
+    create?: XOR<UserCreateWithoutThresholdUpdatesInput, UserUncheckedCreateWithoutThresholdUpdatesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutThresholdUpdatesInput
+    upsert?: UserUpsertWithoutThresholdUpdatesInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutThresholdUpdatesInput, UserUpdateWithoutThresholdUpdatesInput>, UserUncheckedUpdateWithoutThresholdUpdatesInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutDelayBreachesInput = {
+    create?: XOR<WorkItemCreateWithoutDelayBreachesInput, WorkItemUncheckedCreateWithoutDelayBreachesInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutDelayBreachesInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutDelayBreachesNestedInput = {
+    create?: XOR<WorkItemCreateWithoutDelayBreachesInput, WorkItemUncheckedCreateWithoutDelayBreachesInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutDelayBreachesInput
+    upsert?: WorkItemUpsertWithoutDelayBreachesInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutDelayBreachesInput, WorkItemUpdateWithoutDelayBreachesInput>, WorkItemUncheckedUpdateWithoutDelayBreachesInput>
+  }
+
+  export type EnumSchedulerOutcomeFieldUpdateOperationsInput = {
+    set?: $Enums.SchedulerOutcome
   }
 
   export type ProductTypeCreateNestedOneWithoutPricingPolicyInput = {
@@ -74235,6 +83858,23 @@ export namespace Prisma {
     _min?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
     _max?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
   }
+
+  export type NestedEnumDeliveryStatusNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.DeliveryStatus | EnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    in?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel> | $Enums.DeliveryStatus | null
+  }
+
+  export type NestedEnumDeliveryStatusNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DeliveryStatus | EnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    in?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.DeliveryStatus[] | ListEnumDeliveryStatusFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumDeliveryStatusNullableWithAggregatesFilter<$PrismaModel> | $Enums.DeliveryStatus | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel>
+    _max?: NestedEnumDeliveryStatusNullableFilter<$PrismaModel>
+  }
   export type NestedJsonFilter<$PrismaModel = never> =
     | PatchUndefined<
         Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -74415,6 +84055,57 @@ export namespace Prisma {
     _max?: NestedEnumFinanceVoidEntityFilter<$PrismaModel>
   }
 
+  export type NestedEnumNotificationSeverityFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationSeverity | EnumNotificationSeverityFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationSeverityFilter<$PrismaModel> | $Enums.NotificationSeverity
+  }
+
+  export type NestedEnumNotificationSeverityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.NotificationSeverity | EnumNotificationSeverityFieldRefInput<$PrismaModel>
+    in?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.NotificationSeverity[] | ListEnumNotificationSeverityFieldRefInput<$PrismaModel>
+    not?: NestedEnumNotificationSeverityWithAggregatesFilter<$PrismaModel> | $Enums.NotificationSeverity
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumNotificationSeverityFilter<$PrismaModel>
+    _max?: NestedEnumNotificationSeverityFilter<$PrismaModel>
+  }
+
+  export type NestedEnumDelayPhaseFilter<$PrismaModel = never> = {
+    equals?: $Enums.DelayPhase | EnumDelayPhaseFieldRefInput<$PrismaModel>
+    in?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    not?: NestedEnumDelayPhaseFilter<$PrismaModel> | $Enums.DelayPhase
+  }
+
+  export type NestedEnumDelayPhaseWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DelayPhase | EnumDelayPhaseFieldRefInput<$PrismaModel>
+    in?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DelayPhase[] | ListEnumDelayPhaseFieldRefInput<$PrismaModel>
+    not?: NestedEnumDelayPhaseWithAggregatesFilter<$PrismaModel> | $Enums.DelayPhase
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDelayPhaseFilter<$PrismaModel>
+    _max?: NestedEnumDelayPhaseFilter<$PrismaModel>
+  }
+
+  export type NestedEnumSchedulerOutcomeFilter<$PrismaModel = never> = {
+    equals?: $Enums.SchedulerOutcome | EnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    in?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    not?: NestedEnumSchedulerOutcomeFilter<$PrismaModel> | $Enums.SchedulerOutcome
+  }
+
+  export type NestedEnumSchedulerOutcomeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SchedulerOutcome | EnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    in?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SchedulerOutcome[] | ListEnumSchedulerOutcomeFieldRefInput<$PrismaModel>
+    not?: NestedEnumSchedulerOutcomeWithAggregatesFilter<$PrismaModel> | $Enums.SchedulerOutcome
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumSchedulerOutcomeFilter<$PrismaModel>
+    _max?: NestedEnumSchedulerOutcomeFilter<$PrismaModel>
+  }
+
   export type NestedEnumPricingModeFilter<$PrismaModel = never> = {
     equals?: $Enums.PricingMode | EnumPricingModeFieldRefInput<$PrismaModel>
     in?: $Enums.PricingMode[] | ListEnumPricingModeFieldRefInput<$PrismaModel>
@@ -74548,6 +84239,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -74581,6 +84273,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -75435,6 +85128,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -75481,6 +85177,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -75519,6 +85218,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -75552,6 +85252,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -75774,6 +85475,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -75820,6 +85524,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -76055,6 +85762,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -76101,6 +85811,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -76425,6 +86138,38 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DelayBreachCreateWithoutWorkItemInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
+  }
+
+  export type DelayBreachUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
+  }
+
+  export type DelayBreachCreateOrConnectWithoutWorkItemInput = {
+    where: DelayBreachWhereUniqueInput
+    create: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type DelayBreachCreateManyWorkItemInputEnvelope = {
+    data: DelayBreachCreateManyWorkItemInput | DelayBreachCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
   export type OrderUpsertWithoutWorkItemsInput = {
     update: XOR<OrderUpdateWithoutWorkItemsInput, OrderUncheckedUpdateWithoutWorkItemsInput>
     create: XOR<OrderCreateWithoutWorkItemsInput, OrderUncheckedCreateWithoutWorkItemsInput>
@@ -76592,6 +86337,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -76638,6 +86386,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -76901,6 +86652,37 @@ export namespace Prisma {
     data: XOR<DirectCostUpdateManyMutationInput, DirectCostUncheckedUpdateManyWithoutWorkItemInput>
   }
 
+  export type DelayBreachUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: DelayBreachWhereUniqueInput
+    update: XOR<DelayBreachUpdateWithoutWorkItemInput, DelayBreachUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<DelayBreachCreateWithoutWorkItemInput, DelayBreachUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type DelayBreachUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: DelayBreachWhereUniqueInput
+    data: XOR<DelayBreachUpdateWithoutWorkItemInput, DelayBreachUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type DelayBreachUpdateManyWithWhereWithoutWorkItemInput = {
+    where: DelayBreachScalarWhereInput
+    data: XOR<DelayBreachUpdateManyMutationInput, DelayBreachUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type DelayBreachScalarWhereInput = {
+    AND?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
+    OR?: DelayBreachScalarWhereInput[]
+    NOT?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
+    id?: StringFilter<"DelayBreach"> | string
+    workItemId?: StringFilter<"DelayBreach"> | string
+    phase?: EnumDelayPhaseFilter<"DelayBreach"> | $Enums.DelayPhase
+    breachSequence?: IntFilter<"DelayBreach"> | number
+    thresholdMinutes?: IntFilter<"DelayBreach"> | number
+    escalated?: BoolFilter<"DelayBreach"> | boolean
+    escalatedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    notifiedAt?: DateTimeNullableFilter<"DelayBreach"> | Date | string | null
+    detectedAt?: DateTimeFilter<"DelayBreach"> | Date | string
+  }
+
   export type DepartmentCreateWithoutProductTypesInput = {
     id?: string
     name: string
@@ -76959,6 +86741,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -76992,6 +86775,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -77244,6 +87028,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -77277,6 +87062,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -77328,6 +87114,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -77374,6 +87163,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -77423,6 +87215,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -77456,6 +87249,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -77513,6 +87307,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -77559,6 +87356,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -77592,6 +87392,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -77625,6 +87426,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -77676,6 +87478,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -77722,6 +87527,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -77771,6 +87579,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -77804,6 +87613,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -77861,6 +87671,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -77907,6 +87720,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -77940,6 +87756,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
@@ -77973,6 +87790,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
@@ -78024,6 +87842,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -78070,6 +87891,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
@@ -78121,6 +87945,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
@@ -78167,6 +87994,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
@@ -78252,6 +88082,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
@@ -78285,6 +88116,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsUploadedInput = {
@@ -78342,6 +88174,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -78388,6 +88223,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsApprovedInput = {
@@ -78445,6 +88283,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
@@ -78491,6 +88332,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
@@ -78540,6 +88384,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutReturnsInput = {
@@ -78573,6 +88418,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutReturnsInput = {
@@ -78624,6 +88470,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsRaisedInput = {
@@ -78670,6 +88519,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsRaisedInput = {
@@ -78748,6 +88600,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
@@ -78794,6 +88649,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
@@ -78910,6 +88768,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutReturnsInput = {
@@ -78943,6 +88802,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutReturnsRaisedInput = {
@@ -79000,6 +88860,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
@@ -79046,6 +88909,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutReturnsInput = {
@@ -79136,6 +89002,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
@@ -79182,6 +89051,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DesignVersionUpsertWithoutReturnsInput = {
@@ -79356,6 +89228,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutVendorProductionRecordsInput = {
@@ -79389,6 +89262,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutVendorProductionRecordsInput = {
@@ -79440,6 +89314,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput = {
@@ -79486,6 +89363,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput = {
@@ -79535,6 +89415,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput = {
@@ -79568,6 +89449,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutVendorProductionRecordsCreatedInput = {
@@ -79625,6 +89507,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput = {
@@ -79671,6 +89556,84 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type NotificationCreateWithoutSourceEventInput = {
+    id?: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+    user: UserCreateNestedOneWithoutNotificationsInput
+  }
+
+  export type NotificationUncheckedCreateWithoutSourceEventInput = {
+    id?: string
+    userId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationCreateOrConnectWithoutSourceEventInput = {
+    where: NotificationWhereUniqueInput
+    create: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput>
+  }
+
+  export type NotificationCreateManySourceEventInputEnvelope = {
+    data: NotificationCreateManySourceEventInput | NotificationCreateManySourceEventInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type NotificationUpsertWithWhereUniqueWithoutSourceEventInput = {
+    where: NotificationWhereUniqueInput
+    update: XOR<NotificationUpdateWithoutSourceEventInput, NotificationUncheckedUpdateWithoutSourceEventInput>
+    create: XOR<NotificationCreateWithoutSourceEventInput, NotificationUncheckedCreateWithoutSourceEventInput>
+  }
+
+  export type NotificationUpdateWithWhereUniqueWithoutSourceEventInput = {
+    where: NotificationWhereUniqueInput
+    data: XOR<NotificationUpdateWithoutSourceEventInput, NotificationUncheckedUpdateWithoutSourceEventInput>
+  }
+
+  export type NotificationUpdateManyWithWhereWithoutSourceEventInput = {
+    where: NotificationScalarWhereInput
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyWithoutSourceEventInput>
+  }
+
+  export type NotificationScalarWhereInput = {
+    AND?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+    OR?: NotificationScalarWhereInput[]
+    NOT?: NotificationScalarWhereInput | NotificationScalarWhereInput[]
+    id?: StringFilter<"Notification"> | string
+    userId?: StringFilter<"Notification"> | string
+    sourceEventId?: StringFilter<"Notification"> | string
+    type?: StringFilter<"Notification"> | string
+    title?: StringFilter<"Notification"> | string
+    body?: StringNullableFilter<"Notification"> | string | null
+    linkHref?: StringNullableFilter<"Notification"> | string | null
+    entityType?: StringNullableFilter<"Notification"> | string | null
+    entityId?: StringNullableFilter<"Notification"> | string | null
+    severity?: EnumNotificationSeverityFilter<"Notification"> | $Enums.NotificationSeverity
+    readAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    archivedAt?: DateTimeNullableFilter<"Notification"> | Date | string | null
+    createdAt?: DateTimeFilter<"Notification"> | Date | string
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -80299,6 +90262,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutFileAssetsInput = {
@@ -80332,6 +90296,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutFileAssetsInput = {
@@ -80415,6 +90380,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutFileAssetsInput = {
@@ -80448,6 +90414,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type FileVersionUpsertWithWhereUniqueWithoutFileAssetInput = {
@@ -80558,6 +90525,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileVersionsUploadedInput = {
@@ -80604,6 +90574,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileVersionsUploadedInput = {
@@ -80726,6 +90699,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileVersionsUploadedInput = {
@@ -80772,6 +90748,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type FileObjectCreateWithoutAttachmentsInput = {
@@ -80843,6 +90822,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -80889,6 +90871,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -80982,6 +90967,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -81028,6 +91016,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutFileAuditEventsInput = {
@@ -81074,6 +91065,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileAuditEventsInput = {
@@ -81120,6 +91114,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileAuditEventsInput = {
@@ -81182,6 +91179,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileAuditEventsInput = {
@@ -81228,6 +91228,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutFileConfigsUpdatedInput = {
@@ -81274,6 +91277,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileConfigsUpdatedInput = {
@@ -81320,6 +91326,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileConfigsUpdatedInput = {
@@ -81382,6 +91391,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileConfigsUpdatedInput = {
@@ -81428,6 +91440,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type OrderCreateWithoutPaymentsInput = {
@@ -81554,6 +91569,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPaymentsRecordedInput = {
@@ -81600,6 +91618,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPaymentsRecordedInput = {
@@ -81753,6 +91774,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPaymentsRecordedInput = {
@@ -81799,6 +91823,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceVoidedInput = {
@@ -81845,6 +91872,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceVoidedInput = {
@@ -81891,6 +91921,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceVoidedInput = {
@@ -81953,6 +91986,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceVoidedInput = {
@@ -81999,6 +92035,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type OrderCreateWithoutExpensesInput = {
@@ -82067,6 +92106,7 @@ export namespace Prisma {
     prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutExpensesInput = {
@@ -82100,6 +92140,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutExpensesInput = {
@@ -82151,6 +92192,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesCreatedInput = {
@@ -82197,6 +92241,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesCreatedInput = {
@@ -82301,6 +92348,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutExpensesInput = {
@@ -82334,6 +92382,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutExpensesCreatedInput = {
@@ -82391,6 +92440,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesCreatedInput = {
@@ -82437,6 +92489,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type ExpenseApprovalUpsertWithoutExpenseInput = {
@@ -82535,6 +92590,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesApprovedInput = {
@@ -82581,6 +92639,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesApprovedInput = {
@@ -82680,6 +92741,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesApprovedInput = {
@@ -82726,6 +92790,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type OrderCreateWithoutDirectCostsInput = {
@@ -82794,6 +92861,7 @@ export namespace Prisma {
     prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDirectCostsInput = {
@@ -82827,6 +92895,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDirectCostsInput = {
@@ -82878,6 +92947,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDirectCostsCreatedInput = {
@@ -82924,6 +92996,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDirectCostsCreatedInput = {
@@ -83013,6 +93088,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDirectCostsInput = {
@@ -83046,6 +93122,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDirectCostsCreatedInput = {
@@ -83103,6 +93180,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDirectCostsCreatedInput = {
@@ -83149,6 +93229,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type CustomerCreateWithoutCustomerCreditInput = {
@@ -83240,6 +93323,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreditsUpdatedInput = {
@@ -83286,6 +93372,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreditsUpdatedInput = {
@@ -83399,6 +93488,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreditsUpdatedInput = {
@@ -83445,6 +93537,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceConfigUpdatesInput = {
@@ -83491,6 +93586,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceConfigUpdatesInput = {
@@ -83537,6 +93635,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceConfigUpdatesInput = {
@@ -83599,6 +93700,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceConfigUpdatesInput = {
@@ -83645,6 +93749,9 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type SessionCreateWithoutUserInput = {
@@ -83914,6 +94021,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -83947,6 +94055,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -84689,6 +94798,108 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type NotificationCreateWithoutUserInput = {
+    id?: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+    sourceEvent: NotificationEventCreateNestedOneWithoutNotificationsInput
+  }
+
+  export type NotificationUncheckedCreateWithoutUserInput = {
+    id?: string
+    sourceEventId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationCreateOrConnectWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    create: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput>
+  }
+
+  export type NotificationCreateManyUserInputEnvelope = {
+    data: NotificationCreateManyUserInput | NotificationCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DelayThresholdCreateWithoutUpdatedByInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedAt?: Date | string
+  }
+
+  export type DelayThresholdUncheckedCreateWithoutUpdatedByInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedAt?: Date | string
+  }
+
+  export type DelayThresholdCreateOrConnectWithoutUpdatedByInput = {
+    where: DelayThresholdWhereUniqueInput
+    create: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type DelayThresholdCreateManyUpdatedByInputEnvelope = {
+    data: DelayThresholdCreateManyUpdatedByInput | DelayThresholdCreateManyUpdatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type NotificationTypeOverrideCreateWithoutUpdatedByInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedAt?: Date | string
+  }
+
+  export type NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedAt?: Date | string
+  }
+
+  export type NotificationTypeOverrideCreateOrConnectWithoutUpdatedByInput = {
+    where: NotificationTypeOverrideWhereUniqueInput
+    create: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type NotificationTypeOverrideCreateManyUpdatedByInputEnvelope = {
+    data: NotificationTypeOverrideCreateManyUpdatedByInput | NotificationTypeOverrideCreateManyUpdatedByInput[]
+    skipDuplicates?: boolean
+  }
+
   export type SessionUpsertWithWhereUniqueWithoutUserInput = {
     where: SessionWhereUniqueInput
     update: XOR<SessionUpdateWithoutUserInput, SessionUncheckedUpdateWithoutUserInput>
@@ -85370,6 +95581,83 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"FinanceConfig"> | Date | string
   }
 
+  export type NotificationUpsertWithWhereUniqueWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    update: XOR<NotificationUpdateWithoutUserInput, NotificationUncheckedUpdateWithoutUserInput>
+    create: XOR<NotificationCreateWithoutUserInput, NotificationUncheckedCreateWithoutUserInput>
+  }
+
+  export type NotificationUpdateWithWhereUniqueWithoutUserInput = {
+    where: NotificationWhereUniqueInput
+    data: XOR<NotificationUpdateWithoutUserInput, NotificationUncheckedUpdateWithoutUserInput>
+  }
+
+  export type NotificationUpdateManyWithWhereWithoutUserInput = {
+    where: NotificationScalarWhereInput
+    data: XOR<NotificationUpdateManyMutationInput, NotificationUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type DelayThresholdUpsertWithWhereUniqueWithoutUpdatedByInput = {
+    where: DelayThresholdWhereUniqueInput
+    update: XOR<DelayThresholdUpdateWithoutUpdatedByInput, DelayThresholdUncheckedUpdateWithoutUpdatedByInput>
+    create: XOR<DelayThresholdCreateWithoutUpdatedByInput, DelayThresholdUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type DelayThresholdUpdateWithWhereUniqueWithoutUpdatedByInput = {
+    where: DelayThresholdWhereUniqueInput
+    data: XOR<DelayThresholdUpdateWithoutUpdatedByInput, DelayThresholdUncheckedUpdateWithoutUpdatedByInput>
+  }
+
+  export type DelayThresholdUpdateManyWithWhereWithoutUpdatedByInput = {
+    where: DelayThresholdScalarWhereInput
+    data: XOR<DelayThresholdUpdateManyMutationInput, DelayThresholdUncheckedUpdateManyWithoutUpdatedByInput>
+  }
+
+  export type DelayThresholdScalarWhereInput = {
+    AND?: DelayThresholdScalarWhereInput | DelayThresholdScalarWhereInput[]
+    OR?: DelayThresholdScalarWhereInput[]
+    NOT?: DelayThresholdScalarWhereInput | DelayThresholdScalarWhereInput[]
+    id?: StringFilter<"DelayThreshold"> | string
+    phase?: EnumDelayPhaseFilter<"DelayThreshold"> | $Enums.DelayPhase
+    thresholdMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    alertRoles?: StringNullableListFilter<"DelayThreshold">
+    alertPermissions?: StringNullableListFilter<"DelayThreshold">
+    alertDepartmentIds?: StringNullableListFilter<"DelayThreshold">
+    escalationMinutes?: IntNullableFilter<"DelayThreshold"> | number | null
+    updatedById?: StringNullableFilter<"DelayThreshold"> | string | null
+    updatedAt?: DateTimeFilter<"DelayThreshold"> | Date | string
+  }
+
+  export type NotificationTypeOverrideUpsertWithWhereUniqueWithoutUpdatedByInput = {
+    where: NotificationTypeOverrideWhereUniqueInput
+    update: XOR<NotificationTypeOverrideUpdateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedUpdateWithoutUpdatedByInput>
+    create: XOR<NotificationTypeOverrideCreateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type NotificationTypeOverrideUpdateWithWhereUniqueWithoutUpdatedByInput = {
+    where: NotificationTypeOverrideWhereUniqueInput
+    data: XOR<NotificationTypeOverrideUpdateWithoutUpdatedByInput, NotificationTypeOverrideUncheckedUpdateWithoutUpdatedByInput>
+  }
+
+  export type NotificationTypeOverrideUpdateManyWithWhereWithoutUpdatedByInput = {
+    where: NotificationTypeOverrideScalarWhereInput
+    data: XOR<NotificationTypeOverrideUpdateManyMutationInput, NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByInput>
+  }
+
+  export type NotificationTypeOverrideScalarWhereInput = {
+    AND?: NotificationTypeOverrideScalarWhereInput | NotificationTypeOverrideScalarWhereInput[]
+    OR?: NotificationTypeOverrideScalarWhereInput[]
+    NOT?: NotificationTypeOverrideScalarWhereInput | NotificationTypeOverrideScalarWhereInput[]
+    id?: StringFilter<"NotificationTypeOverride"> | string
+    type?: StringFilter<"NotificationTypeOverride"> | string
+    userIds?: StringNullableListFilter<"NotificationTypeOverride">
+    roles?: StringNullableListFilter<"NotificationTypeOverride">
+    departmentIds?: StringNullableListFilter<"NotificationTypeOverride">
+    permissions?: StringNullableListFilter<"NotificationTypeOverride">
+    updatedById?: StringNullableFilter<"NotificationTypeOverride"> | string | null
+    updatedAt?: DateTimeFilter<"NotificationTypeOverride"> | Date | string
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -85414,6 +95702,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -85460,6 +95751,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -85522,6 +95816,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -85568,6 +95865,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -85614,6 +95914,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -85660,6 +95963,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -85722,6 +96028,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -85768,6 +96077,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -85943,6 +96255,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -85989,6 +96304,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -86072,6 +96390,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -86118,6 +96439,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -86191,6 +96515,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -86237,6 +96564,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -86288,6 +96618,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -86334,6 +96667,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -86396,6 +96732,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -86442,6 +96781,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -86499,6 +96841,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -86545,6 +96890,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -86591,6 +96939,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -86637,6 +96988,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -86726,6 +97080,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -86772,6 +97129,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -86851,6 +97211,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -86897,6 +97260,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -86959,6 +97325,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -87005,6 +97374,885 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserCreateWithoutNotificationsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutNotificationsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutNotificationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+  }
+
+  export type NotificationEventCreateWithoutNotificationsInput = {
+    id?: string
+    type: string
+    entityType: string
+    entityId: string
+    recipientUserIds?: NotificationEventCreaterecipientUserIdsInput | string[]
+    recipientRoles?: NotificationEventCreaterecipientRolesInput | string[]
+    recipientDepartmentIds?: NotificationEventCreaterecipientDepartmentIdsInput | string[]
+    payload?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    deliveredAt?: Date | string | null
+    deliveryStatus?: $Enums.DeliveryStatus | null
+    attemptCount?: number
+    lastAttemptAt?: Date | string | null
+    lastError?: string | null
+    recipientPermissions?: NotificationEventCreaterecipientPermissionsInput | string[]
+  }
+
+  export type NotificationEventUncheckedCreateWithoutNotificationsInput = {
+    id?: string
+    type: string
+    entityType: string
+    entityId: string
+    recipientUserIds?: NotificationEventCreaterecipientUserIdsInput | string[]
+    recipientRoles?: NotificationEventCreaterecipientRolesInput | string[]
+    recipientDepartmentIds?: NotificationEventCreaterecipientDepartmentIdsInput | string[]
+    payload?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: Date | string
+    deliveredAt?: Date | string | null
+    deliveryStatus?: $Enums.DeliveryStatus | null
+    attemptCount?: number
+    lastAttemptAt?: Date | string | null
+    lastError?: string | null
+    recipientPermissions?: NotificationEventCreaterecipientPermissionsInput | string[]
+  }
+
+  export type NotificationEventCreateOrConnectWithoutNotificationsInput = {
+    where: NotificationEventWhereUniqueInput
+    create: XOR<NotificationEventCreateWithoutNotificationsInput, NotificationEventUncheckedCreateWithoutNotificationsInput>
+  }
+
+  export type UserUpsertWithoutNotificationsInput = {
+    update: XOR<UserUpdateWithoutNotificationsInput, UserUncheckedUpdateWithoutNotificationsInput>
+    create: XOR<UserCreateWithoutNotificationsInput, UserUncheckedCreateWithoutNotificationsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutNotificationsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutNotificationsInput, UserUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type UserUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type NotificationEventUpsertWithoutNotificationsInput = {
+    update: XOR<NotificationEventUpdateWithoutNotificationsInput, NotificationEventUncheckedUpdateWithoutNotificationsInput>
+    create: XOR<NotificationEventCreateWithoutNotificationsInput, NotificationEventUncheckedCreateWithoutNotificationsInput>
+    where?: NotificationEventWhereInput
+  }
+
+  export type NotificationEventUpdateToOneWithWhereWithoutNotificationsInput = {
+    where?: NotificationEventWhereInput
+    data: XOR<NotificationEventUpdateWithoutNotificationsInput, NotificationEventUncheckedUpdateWithoutNotificationsInput>
+  }
+
+  export type NotificationEventUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    recipientUserIds?: NotificationEventUpdaterecipientUserIdsInput | string[]
+    recipientRoles?: NotificationEventUpdaterecipientRolesInput | string[]
+    recipientDepartmentIds?: NotificationEventUpdaterecipientDepartmentIdsInput | string[]
+    payload?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
+  }
+
+  export type NotificationEventUncheckedUpdateWithoutNotificationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    entityType?: StringFieldUpdateOperationsInput | string
+    entityId?: StringFieldUpdateOperationsInput | string
+    recipientUserIds?: NotificationEventUpdaterecipientUserIdsInput | string[]
+    recipientRoles?: NotificationEventUpdaterecipientRolesInput | string[]
+    recipientDepartmentIds?: NotificationEventUpdaterecipientDepartmentIdsInput | string[]
+    payload?: NullableJsonNullValueInput | InputJsonValue
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableEnumDeliveryStatusFieldUpdateOperationsInput | $Enums.DeliveryStatus | null
+    attemptCount?: IntFieldUpdateOperationsInput | number
+    lastAttemptAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    lastError?: NullableStringFieldUpdateOperationsInput | string | null
+    recipientPermissions?: NotificationEventUpdaterecipientPermissionsInput | string[]
+  }
+
+  export type UserCreateWithoutRecipientOverrideUpdatesInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutRecipientOverrideUpdatesInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutRecipientOverrideUpdatesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutRecipientOverrideUpdatesInput, UserUncheckedCreateWithoutRecipientOverrideUpdatesInput>
+  }
+
+  export type UserUpsertWithoutRecipientOverrideUpdatesInput = {
+    update: XOR<UserUpdateWithoutRecipientOverrideUpdatesInput, UserUncheckedUpdateWithoutRecipientOverrideUpdatesInput>
+    create: XOR<UserCreateWithoutRecipientOverrideUpdatesInput, UserUncheckedCreateWithoutRecipientOverrideUpdatesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutRecipientOverrideUpdatesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutRecipientOverrideUpdatesInput, UserUncheckedUpdateWithoutRecipientOverrideUpdatesInput>
+  }
+
+  export type UserUpdateWithoutRecipientOverrideUpdatesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutRecipientOverrideUpdatesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserCreateWithoutThresholdUpdatesInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutThresholdUpdatesInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutThresholdUpdatesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutThresholdUpdatesInput, UserUncheckedCreateWithoutThresholdUpdatesInput>
+  }
+
+  export type UserUpsertWithoutThresholdUpdatesInput = {
+    update: XOR<UserUpdateWithoutThresholdUpdatesInput, UserUncheckedUpdateWithoutThresholdUpdatesInput>
+    create: XOR<UserCreateWithoutThresholdUpdatesInput, UserUncheckedCreateWithoutThresholdUpdatesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutThresholdUpdatesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutThresholdUpdatesInput, UserUncheckedUpdateWithoutThresholdUpdatesInput>
+  }
+
+  export type UserUpdateWithoutThresholdUpdatesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutThresholdUpdatesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+  }
+
+  export type WorkItemCreateWithoutDelayBreachesInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutDelayBreachesInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutDelayBreachesInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutDelayBreachesInput, WorkItemUncheckedCreateWithoutDelayBreachesInput>
+  }
+
+  export type WorkItemUpsertWithoutDelayBreachesInput = {
+    update: XOR<WorkItemUpdateWithoutDelayBreachesInput, WorkItemUncheckedUpdateWithoutDelayBreachesInput>
+    create: XOR<WorkItemCreateWithoutDelayBreachesInput, WorkItemUncheckedCreateWithoutDelayBreachesInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutDelayBreachesInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutDelayBreachesInput, WorkItemUncheckedUpdateWithoutDelayBreachesInput>
+  }
+
+  export type WorkItemUpdateWithoutDelayBreachesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutDelayBreachesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type ProductTypeCreateWithoutPricingPolicyInput = {
@@ -87084,6 +98332,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingPoliciesUpdatedInput = {
@@ -87130,6 +98381,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingPoliciesUpdatedInput = {
@@ -87231,6 +98485,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingPoliciesUpdatedInput = {
@@ -87277,6 +98534,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type ProductTypeCreateWithoutPriceListsInput = {
@@ -87356,6 +98616,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPriceListsCreatedInput = {
@@ -87402,6 +98665,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPriceListsCreatedInput = {
@@ -87527,6 +98793,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPriceListsCreatedInput = {
@@ -87573,6 +98842,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type PriceTierUpsertWithWhereUniqueWithoutPriceListInput = {
@@ -87784,6 +99056,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingRulesCreatedInput = {
@@ -87830,6 +99105,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingRulesCreatedInput = {
@@ -87982,6 +99260,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingRulesCreatedInput = {
@@ -88028,6 +99309,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricesInput = {
@@ -88061,6 +99345,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPricesInput = {
@@ -88094,6 +99379,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPricesInput = {
@@ -88145,6 +99431,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemPricesSetInput = {
@@ -88191,6 +99480,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemPricesSetInput = {
@@ -88240,6 +99532,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPricesInput = {
@@ -88273,6 +99566,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemPricesSetInput = {
@@ -88330,6 +99624,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemPricesSetInput = {
@@ -88376,6 +99673,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricingStatusInput = {
@@ -88409,6 +99709,7 @@ export namespace Prisma {
     prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPricingStatusInput = {
@@ -88442,6 +99743,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPricingStatusInput = {
@@ -88493,6 +99795,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingStatusesUpdatedInput = {
@@ -88539,6 +99844,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingStatusesUpdatedInput = {
@@ -88588,6 +99896,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPricingStatusInput = {
@@ -88621,6 +99930,7 @@ export namespace Prisma {
     prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPricingStatusesUpdatedInput = {
@@ -88678,6 +99988,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingStatusesUpdatedInput = {
@@ -88724,6 +100037,9 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -88807,6 +100123,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -88840,6 +100157,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -89364,6 +100682,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -89397,6 +100716,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -89627,6 +100947,17 @@ export namespace Prisma {
     orderId: string
     createdById: string
     createdAt?: Date | string
+  }
+
+  export type DelayBreachCreateManyWorkItemInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    breachSequence: number
+    thresholdMinutes: number
+    escalated?: boolean
+    escalatedAt?: Date | string | null
+    notifiedAt?: Date | string | null
+    detectedAt?: Date | string
   }
 
   export type WorkItemTransitionUpdateWithoutWorkItemInput = {
@@ -89931,6 +101262,39 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type DelayBreachUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayBreachUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayBreachUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    breachSequence?: IntFieldUpdateOperationsInput | number
+    thresholdMinutes?: IntFieldUpdateOperationsInput | number
+    escalated?: BoolFieldUpdateOperationsInput | boolean
+    escalatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    notifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WorkItemCreateManyProductTypeInput = {
     id?: string
     orderId: string
@@ -90009,6 +101373,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -90042,6 +101407,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -90228,6 +101594,66 @@ export namespace Prisma {
     fileName?: StringFieldUpdateOperationsInput | string
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     sizeBytes?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationCreateManySourceEventInput = {
+    id?: string
+    userId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type NotificationUpdateWithoutSourceEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutNotificationsNestedInput
+  }
+
+  export type NotificationUncheckedUpdateWithoutSourceEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateManyWithoutSourceEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -90776,6 +102202,42 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
+  export type NotificationCreateManyUserInput = {
+    id?: string
+    sourceEventId: string
+    type: string
+    title: string
+    body?: string | null
+    linkHref?: string | null
+    entityType?: string | null
+    entityId?: string | null
+    severity: $Enums.NotificationSeverity
+    readAt?: Date | string | null
+    archivedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type DelayThresholdCreateManyUpdatedByInput = {
+    id?: string
+    phase: $Enums.DelayPhase
+    thresholdMinutes?: number | null
+    alertRoles?: DelayThresholdCreatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdCreatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdCreatealertDepartmentIdsInput | string[]
+    escalationMinutes?: number | null
+    updatedAt?: Date | string
+  }
+
+  export type NotificationTypeOverrideCreateManyUpdatedByInput = {
+    id?: string
+    type: string
+    userIds?: NotificationTypeOverrideCreateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideCreaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideCreatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideCreatepermissionsInput | string[]
+    updatedAt?: Date | string
+  }
+
   export type SessionUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -91036,6 +102498,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -91069,6 +102532,7 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -91834,6 +103298,114 @@ export namespace Prisma {
     expenseCategories?: JsonNullValueInput | InputJsonValue
     approvalThreshold?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     shopTimezone?: StringFieldUpdateOperationsInput | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sourceEvent?: NotificationEventUpdateOneRequiredWithoutNotificationsNestedInput
+  }
+
+  export type NotificationUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sourceEventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    sourceEventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    body?: NullableStringFieldUpdateOperationsInput | string | null
+    linkHref?: NullableStringFieldUpdateOperationsInput | string | null
+    entityType?: NullableStringFieldUpdateOperationsInput | string | null
+    entityId?: NullableStringFieldUpdateOperationsInput | string | null
+    severity?: EnumNotificationSeverityFieldUpdateOperationsInput | $Enums.NotificationSeverity
+    readAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    archivedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdUncheckedUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DelayThresholdUncheckedUpdateManyWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    phase?: EnumDelayPhaseFieldUpdateOperationsInput | $Enums.DelayPhase
+    thresholdMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    alertRoles?: DelayThresholdUpdatealertRolesInput | string[]
+    alertPermissions?: DelayThresholdUpdatealertPermissionsInput | string[]
+    alertDepartmentIds?: DelayThresholdUpdatealertDepartmentIdsInput | string[]
+    escalationMinutes?: NullableIntFieldUpdateOperationsInput | number | null
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideUncheckedUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    userIds?: NotificationTypeOverrideUpdateuserIdsInput | string[]
+    roles?: NotificationTypeOverrideUpdaterolesInput | string[]
+    departmentIds?: NotificationTypeOverrideUpdatedepartmentIdsInput | string[]
+    permissions?: NotificationTypeOverrideUpdatepermissionsInput | string[]
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

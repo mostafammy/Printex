@@ -77,6 +77,10 @@ model User {
   directCostsCreated DirectCost[]       @relation("DirectCostCreatedBy")
   creditsUpdated     CustomerCredit[]   @relation("CustomerCreditUpdatedBy")
   financeConfigUpdates FinanceConfig[]  @relation("FinanceConfigUpdatedBy")
+  // --- 053-notifications reverse relations ---
+  notifications        Notification[]             @relation("NotificationRecipient")
+  thresholdUpdates     DelayThreshold[]           @relation("DelayThresholdUpdatedBy")
+  recipientOverrideUpdates NotificationTypeOverride[] @relation("NotificationTypeOverrideUpdatedBy")
 
   @@unique([email])
   @@map("user")
