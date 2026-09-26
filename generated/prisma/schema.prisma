@@ -896,7 +896,7 @@ model RolePermission {
   id         String @id @default(cuid())
   roleId     String
   role       Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010). Validated at the
+  /// One of the 22 fixed Permission union keys (FR-010). Validated at the
   /// application layer (Zod), not as a DB enum.
   permission String
 
@@ -925,7 +925,7 @@ model UserPermission {
   id          String   @id @default(cuid())
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// One of the 21 fixed Permission union keys (FR-010).
+  /// One of the 22 fixed Permission union keys (FR-010).
   permission  String
   /// The Admin who granted this extra permission. Itself audited via
   /// audit.record() at grant time (FR-022 role.changed event).
@@ -1127,6 +1127,7 @@ generator client {
   provider        = "prisma-client-js"
   output          = "../../generated/prisma"
   previewFeatures = ["prismaSchemaFolder"]
+  binaryTargets   = ["native", "darwin-arm64", "windows"]
 }
 
 datasource db {
