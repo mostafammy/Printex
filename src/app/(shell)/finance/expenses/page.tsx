@@ -142,6 +142,7 @@ export default async function ExpensesPage({
       {/* ── Expenses List ── */}
       <ExpensesList
         rows={result.rows}
+        page={filter.page ?? 1}
         nextPage={result.nextCursor}
         filters={{
           from: filter.from,
