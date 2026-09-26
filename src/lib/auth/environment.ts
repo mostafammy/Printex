@@ -11,10 +11,8 @@ export interface AuthEnvironmentConfig {
 
 export function getAuthEnvironmentConfig(): AuthEnvironmentConfig {
   const isDev = process.env.NODE_ENV !== "production";
-  // Development uses GitHub OAuth; production focuses on username/password.
-  // Can also be explicitly enabled via NEXT_PUBLIC_ENABLE_GITHUB_AUTH if required.
-  const isGitHubAuthEnabled =
-    isDev || process.env.NEXT_PUBLIC_ENABLE_GITHUB_AUTH === "true";
+  // GitHub OAuth is disabled. Authentication is strictly username and password.
+  const isGitHubAuthEnabled = false;
 
   return {
     isDevelopment: isDev,
