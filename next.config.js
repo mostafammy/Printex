@@ -6,6 +6,9 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+	turbopack: {
+		resolveExtensions: [".tsx", ".ts", ".jsx", ".js", ".json"],
+	},
 	webpack(config) {
 		config.resolve.extensionAlias = {
 			...config.resolve.extensionAlias,
