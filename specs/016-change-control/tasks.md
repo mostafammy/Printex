@@ -689,8 +689,10 @@ has the same effects as an approved CR (FR-027–028).
   - §5 (054)
   - the `change.approve` key (T003)
   - the new schema file (T001/T002)
-- [ ] T076 Manual quickstart QA, blocked on T002 like every prior feature's final task. Walk through
+- [X] T076 Manual quickstart QA, blocked on T002 like every prior feature's final task. Walk through
   quickstart.md Scenarios 0–7 against a running dev server with the six seeded roles.
+  Done as headless browser QA: Scenarios 0, 1, 3, 4 walked end to end; 2, 5, 6, 7 rest on their
+  integration tests (owner accepted this split).
 
 ---
 
