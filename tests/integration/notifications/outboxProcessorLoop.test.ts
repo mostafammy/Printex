@@ -34,6 +34,51 @@ beforeAll(async () => {
 });
 
 describe("outbox delivery loop (T024 / FR-028)", () => {
+  it("a stopped loop does NOT deliver, and restarting resumes (FR-054)", async () => {
+    // FIRST test in the file on purpose. The premise — "nothing delivers
+    // while stopped" — can only be proven when no batch has EVER been
+    // issued: a `void processOutboxBatch()` from an earlier test can sit
+    // queued in Prisma's connection pool (not FIFO) and execute after this
+    // record, regardless of how long the test waited or how many drains it
+    // awaited itself. With this test first, the only claim queries that can
+    // exist are ones this test awaited to completion.
+    const before = await unreadCount(designer);
+
+    stopOutboxProcessor();
+    expect(isOutboxProcessorRunning()).toBe(false);
+
+    const eventId = await recordOutboxEvent({
+      type: "workitem.assigned",
+      entityId: `loop-stopped-${Date.now()}`,
+      recipientUserIds: [designer.userId],
+    });
+
+    // Stopped with no prior loop: the row sits unprocessed. This is the
+    // assertion that the loop is what does the delivering — without it,
+    // the manual calls in other tests would mask the missing trigger.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(await unreadCount(designer)).toBe(before);
+
+    // Scoped by THIS event's id. A deterministic entityId makes findFirst
+    // return the previous suite run's row — already PROCESSED — and the
+    // assertion then "fails" against a row this run never touched. That
+    // single scoping mistake produced every flake this test ever had.
+    const pending = await testDb.notificationEvent.findFirst({
+      where: { id: eventId },
+    });
+    expect(pending?.deliveryStatus).toBe("PENDING");
+
+    // Reversible: starting again delivers it (FR-054's stop must not
+    // strand events).
+    startOutboxProcessor({ processorIntervalMs: 100 });
+    await vi.waitFor(
+      async () => {
+        expect(await unreadCount(designer)).toBe(before + 1);
+      },
+      { timeout: 2000, interval: 50 },
+    );
+  });
+
   it("start is idempotent — a second call does not stack an interval (FR-050)", () => {
     const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
 
@@ -67,48 +112,6 @@ describe("outbox delivery loop (T024 / FR-028)", () => {
       },
       // Generous against a 100ms loop; the assertion that matters is
       // "arrives without being asked", not the exact millisecond.
-      { timeout: 2000, interval: 50 },
-    );
-  });
-
-  it("a stopped loop does NOT deliver, and restarting resumes (FR-054)", async () => {
-    const before = await unreadCount(designer);
-
-    // Stop FIRST and wait out any batch already in flight from the previous
-    // test, so this row is recorded when nothing is scanning. `clearInterval`
-    // cannot cancel a tick that is mid-`await`, and its claim query executes
-    // on its own schedule — if that query lands after this record, it claims
-    // the row and the "stopped means undelivered" assertion fails for a race
-    // rather than for the reason it is testing. 500ms is an order of
-    // magnitude above a local claim round-trip, which is what made this
-    // flaky at 150ms under a full-suite load.
-    stopOutboxProcessor();
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    await recordOutboxEvent({
-      type: "workitem.assigned",
-      entityId: "loop-stopped",
-      recipientUserIds: [designer.userId],
-    });
-
-    // Stopped: the row sits unprocessed. This is the assertion that the loop
-    // was the thing doing the delivering — without it, one of the manual
-    // calls in other tests would mask the missing trigger.
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    expect(await unreadCount(designer)).toBe(before);
-
-    const pending = await testDb.notificationEvent.findFirst({
-      where: { entityId: "loop-stopped" },
-    });
-    expect(pending?.deliveryStatus).toBe("PENDING");
-
-    // Reversible: starting again delivers it (FR-054's stop must not
-    // strand events).
-    startOutboxProcessor({ processorIntervalMs: 100 });
-    await vi.waitFor(
-      async () => {
-        expect(await unreadCount(designer)).toBe(before + 1);
-      },
       { timeout: 2000, interval: 50 },
     );
   });

@@ -10,6 +10,15 @@
 -- `verify-notifications-schema.mjs` expects five, and tests that audit an
 -- edit's `before` snapshot need a prior row to read.
 
+-- The FIXTURE GRAPH, not just 053's tables. Every integration test creates
+-- Work Items through Orders and Customers and nothing ever deletes them, so
+-- the graph grows across runs; the first delay tick after a reset then
+-- re-breaches every one of them, which timed out the suite at 20s per tick.
+-- CASCADE follows the FK edges downstream (Order, WorkItem, PhaseTiming,
+-- DelayBreach, transitions, pricing rows …). User/Role and the seed survive:
+-- nothing points away from User, so it is never pulled in.
+TRUNCATE TABLE "Customer" CASCADE;
+
 TRUNCATE TABLE
   "notification",
   "notification_type_override",
