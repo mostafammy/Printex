@@ -9,7 +9,6 @@ import {
   XCircle,
   Receipt,
   ArrowUpRight,
-  ChevronLeft,
   Paperclip,
 } from "lucide-react";
 import type { ExpenseRow } from "~/server/finance";
@@ -18,12 +17,14 @@ import {
   voidExpenseAction,
 } from "~/app/(shell)/finance/expenses/finance-actions";
 import { Button } from "~/components/ui/button";
+import { PaginationBar } from "~/components/pagination-bar";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
 
 type Props = {
   readonly rows: readonly ExpenseRow[];
+  readonly page: number;
   readonly nextPage: number | null;
   readonly filters: {
     readonly from?: string;
@@ -38,7 +39,7 @@ type Props = {
   readonly canApprove: boolean;
 };
 
-export function ExpensesList({ rows, nextPage, filters, canModerate, canApprove }: Props) {
+export function ExpensesList({ rows, page, nextPage, filters, canModerate, canApprove }: Props) {
   if (rows.length === 0) {
     return (
       <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
@@ -53,12 +54,13 @@ export function ExpensesList({ rows, nextPage, filters, canModerate, canApprove 
     );
   }
 
-  const query = new URLSearchParams();
-  if (filters.from) query.set("from", filters.from);
-  if (filters.to) query.set("to", filters.to);
-  if (filters.category) query.set("category", filters.category);
-  if (filters.approval) query.set("approval", filters.approval);
-  if (filters.orderId) query.set("orderId", filters.orderId);
+  const query = {
+    from: filters.from,
+    to: filters.to,
+    category: filters.category,
+    approval: filters.approval,
+    orderId: filters.orderId,
+  };
 
   return (
     <div className="space-y-4">
@@ -170,17 +172,14 @@ export function ExpensesList({ rows, nextPage, filters, canModerate, canApprove 
         ))}
       </ul>
 
-      {nextPage !== null && (
-        <div className="pt-2 text-center">
-          <Link
-            href={`/finance/expenses?${query.toString()}&page=${nextPage}`}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-          >
-            <span>الصفحة التالية</span>
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      )}
+      <div className="pt-2">
+        <PaginationBar
+          basePath="/finance/expenses"
+          page={page}
+          hasNextPage={nextPage !== null}
+          query={query}
+        />
+      </div>
     </div>
   );
 }
