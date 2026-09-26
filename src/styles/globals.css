@@ -272,12 +272,17 @@
   0% {
     transform: rotate(0deg) translateX(var(--dot-a-radius)) rotate(0deg);
     opacity: 0.65;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
   }
   38% {
+    transform: rotate(230deg) translateX(var(--dot-a-radius)) rotate(-230deg);
     opacity: 1;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
   72% {
+    transform: rotate(280deg) translateX(var(--dot-a-radius)) rotate(-280deg);
     opacity: 0.55;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   100% {
     transform: rotate(360deg) translateX(var(--dot-a-radius)) rotate(-360deg);
@@ -289,12 +294,17 @@
   0% {
     transform: rotate(150deg) translateX(var(--dot-b-radius)) rotate(-150deg);
     opacity: 0.88;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   42% {
+    transform: rotate(-40deg) translateX(var(--dot-b-radius)) rotate(40deg);
     opacity: 0.58;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
   78% {
+    transform: rotate(-170deg) translateX(var(--dot-b-radius)) rotate(170deg);
     opacity: 1;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
   }
   100% {
     transform: rotate(-210deg) translateX(var(--dot-b-radius)) rotate(210deg);
@@ -306,12 +316,17 @@
   0% {
     transform: rotate(255deg) translateX(var(--dot-c-radius)) rotate(-255deg);
     opacity: 0.55;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.4, 1);
   }
   48% {
+    transform: rotate(320deg) translateX(var(--dot-c-radius)) rotate(-320deg);
     opacity: 0.95;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
   }
   82% {
+    transform: rotate(560deg) translateX(var(--dot-c-radius)) rotate(-560deg);
     opacity: 0.68;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   100% {
     transform: rotate(615deg) translateX(var(--dot-c-radius)) rotate(-615deg);
@@ -491,15 +506,15 @@
   }
 
   .loading-dot-a {
-    animation: dot-orbit-a 4.8s linear infinite;
+    animation: dot-orbit-a 4.8s infinite;
   }
 
   .loading-dot-b {
-    animation: dot-orbit-b 6.3s linear infinite;
+    animation: dot-orbit-b 6.3s infinite;
   }
 
   .loading-dot-c {
-    animation: dot-orbit-c 5.5s linear infinite;
+    animation: dot-orbit-c 5.5s infinite;
   }
 
   .loading-dot-a--completing {
