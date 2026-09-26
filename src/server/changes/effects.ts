@@ -19,8 +19,29 @@ export interface SendBackCtx extends TxScope {
   readonly transition?: (i: Omit<TransitionOrThrowInput, "actor">) => Promise<TransitionOutcome>;
 }
 
+/** The Work Item fields the send-back needs. */
+export type SendBackWorkItem = {
+  readonly id: string;
+  readonly orderId: string;
+  readonly requiresDesign: boolean;
+  readonly assigneeId: string | null;
+  readonly departmentId: string | null;
+  readonly productType: { readonly defaultDepartmentId: string | null } | null;
+};
+
+const sendBackWorkItemSelect = {
+  id: true,
+  orderId: true,
+  requiresDesign: true,
+  assigneeId: true,
+  departmentId: true,
+  productType: { select: { defaultDepartmentId: true } },
+} as const;
+
 export interface SendBackForCustomerChangeInput {
   readonly workItemId: string;
+  /** The already-loaded Work Item, when the caller has it; saves a round trip. */
+  readonly preloaded?: SendBackWorkItem;
   readonly reason?: string | null;
   readonly originDepartmentId?: string | null;
   readonly meta?: Readonly<Record<string, JsonValue>>;
@@ -37,18 +58,12 @@ export async function sendBackForCustomerChangeInTx(
   ctx: SendBackCtx,
   input: SendBackForCustomerChangeInput,
 ): Promise<{ returnId: string }> {
-  const item = await ctx.tx.workItem.findUnique({
-    where: { id: input.workItemId },
-    select: {
-      id: true,
-      orderId: true,
-      state: true,
-      requiresDesign: true,
-      assigneeId: true,
-      departmentId: true,
-      productType: { select: { defaultDepartmentId: true } },
-    },
-  });
+  const item =
+    input.preloaded ??
+    (await ctx.tx.workItem.findUnique({
+      where: { id: input.workItemId },
+      select: sendBackWorkItemSelect,
+    }));
 
   if (!item) {
     return fail({

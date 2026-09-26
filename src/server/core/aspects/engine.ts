@@ -13,9 +13,9 @@
 // 9. afterCommit hooks (registration order)
 // 10. Map errors to public AspectResult<O, E>
 
-import type { Prisma } from "../../../../generated/prisma";
 import type { z } from "zod";
 import type { Actor as CoreActor } from "../actor";
+import { withDefaultTxOptions, type TxOptions } from "./txOptions";
 import type {
   AspectDeps,
   AspectResult,
@@ -154,7 +154,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
         readonly authorize?: (c: CommandCtx<A, P, z.output<S>, Prep>) => Promise<void> | void;
         readonly run: (c: CommandCtx<A, P, z.output<S>, Prep>) => Promise<RunOutcome<O, NoChange>>;
         readonly allowNoChange?: NoChange;
-        readonly txOptions?: { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel };
+        readonly txOptions?: TxOptions;
       }) => {
         // Public entry point — catches domain errors and maps to AspectResult<O, E>
         const execute = async (actor: A, raw: z.input<S>): Promise<AspectResult<O, E>> => {
@@ -214,7 +214,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
                 );
 
                 return runOutcome;
-              }, def.txOptions);
+              }, withDefaultTxOptions(def.txOptions));
             } finally {
               closed = true;
             }
@@ -354,7 +354,10 @@ export function createAspects<A extends { userId: string }, P extends string>(
 
             let result: O;
             if (def.consistent) {
-              result = await deps.transaction(executeQuery, { isolationLevel: "RepeatableRead" });
+              result = await deps.transaction(
+                executeQuery,
+                withDefaultTxOptions({ isolationLevel: "RepeatableRead" }),
+              );
             } else {
               result = await executeQuery(deps.reader);
             }

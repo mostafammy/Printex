@@ -10,6 +10,7 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import type { Prisma } from "../../../generated/prisma";
+import { DEFAULT_TX_OPTIONS } from "~/server/core/aspects/txOptions";
 import {
   createAspects,
   AspectDomainError,
@@ -921,7 +922,11 @@ describe("Aspect Engine — .inTx Composition (§3.1, §7)", () => {
 
     const res = await command(makeActor(), {});
     expect(res).toEqual({ ok: true, data: "ok" });
-    expect(fakes.getLastTxOptions()).toEqual({ timeout: 12345, isolationLevel: "Serializable" });
+    expect(fakes.getLastTxOptions()).toEqual({
+      ...DEFAULT_TX_OPTIONS,
+      timeout: 12345,
+      isolationLevel: "Serializable",
+    });
   });
 });
 
@@ -1322,7 +1327,10 @@ describe("Aspect Engine — Query Pipeline (§3.1, §7)", () => {
 
     expect(res).toEqual({ ok: true, data: "consistent-read" });
     expect(fakes.steps).toEqual(["perm:check:order.view", "tx:open", "tx:commit"]);
-    expect(fakes.getLastTxOptions()).toEqual({ isolationLevel: "RepeatableRead" });
+    expect(fakes.getLastTxOptions()).toEqual({
+      ...DEFAULT_TX_OPTIONS,
+      isolationLevel: "RepeatableRead",
+    });
   });
 
   it("maps query domain errors via fail() and re-throws unknown errors", async () => {

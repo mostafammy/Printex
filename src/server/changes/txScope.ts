@@ -3,13 +3,9 @@
 // upon commit/rollback, and runs hooks sequentially after commit.
 
 import type { Prisma } from "../../../generated/prisma";
-import { AspectMisuseError, type TxScope } from "~/server/core";
+import { AspectMisuseError, withDefaultTxOptions, type TxOptions, type TxScope } from "~/server/core";
 
-export type TxScopeOptions = {
-  maxWait?: number;
-  timeout?: number;
-  isolationLevel?: Prisma.TransactionIsolationLevel;
-};
+export type TxScopeOptions = TxOptions;
 
 export type TxScopeDatabase = {
   $transaction<R>(
@@ -51,7 +47,7 @@ export async function runInTxScope<T>(
         },
       };
       return await fn(scope);
-    }, opts);
+    }, withDefaultTxOptions(opts));
   } finally {
     closed = true;
   }

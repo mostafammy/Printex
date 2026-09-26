@@ -206,6 +206,8 @@ describe("011 editWorkItem delegation to change control (integration, T025)", ()
     const actor = makeActor(userId);
 
     const orderId = await seedOrder({ customerId, createdById: userId });
+    // FR-011b: an order with no open Work Item is "finished"; seed an open sibling.
+    await seedWorkItem({ orderId, state: "NEW" });
     const { workItemId } = await addWorkItem(actor, orderId, {
       description: "Unchanged save item",
       quantity: 500,

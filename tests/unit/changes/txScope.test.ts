@@ -3,7 +3,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import type { Prisma } from "../../../generated/prisma";
-import { AspectMisuseError, type TxScope } from "~/server/core";
+import { AspectMisuseError, DEFAULT_TX_OPTIONS, type TxScope } from "~/server/core";
 import { runInTxScope, type TxScopeOptions } from "~/server/changes";
 
 function createFakeDb() {
@@ -33,6 +33,12 @@ function createFakeDb() {
 }
 
 describe("runInTxScope pure unit tests", () => {
+  it("applies DEFAULT_TX_OPTIONS when no opts are passed", async () => {
+    const { db, getLastOpts } = createFakeDb();
+    await runInTxScope(db, async () => null);
+    expect(getLastOpts()).toEqual(DEFAULT_TX_OPTIONS);
+  });
+
   it("executes fn inside db.$transaction, passes opts, and returns result", async () => {
     const { db, steps, getLastOpts } = createFakeDb();
 
@@ -43,11 +49,12 @@ describe("runInTxScope pure unit tests", () => {
         steps.push("fn:run");
         return { data: 42 };
       },
-      { timeout: 15000 },
+      { timeout: 20000 },
     );
 
     expect(result).toEqual({ data: 42 });
-    expect(getLastOpts()).toEqual({ timeout: 15000 });
+    // Caller options win; unspecified fields fall back to DEFAULT_TX_OPTIONS.
+    expect(getLastOpts()).toEqual({ ...DEFAULT_TX_OPTIONS, timeout: 20000 });
     expect(steps).toEqual(["tx:start", "fn:run", "tx:commit"]);
   });
 

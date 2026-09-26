@@ -89,6 +89,8 @@ export type {
   AspectDeps,
 } from "./aspects/types";
 export { createAspects } from "./aspects/engine";
+export { DEFAULT_TX_OPTIONS, withDefaultTxOptions } from "./aspects/txOptions";
+export type { TxOptions } from "./aspects/txOptions";
 export { AspectDomainError, TransitionFailure, AspectMisuseError, fail } from "./aspects/errors";
 export { transitionOrThrow } from "./aspects/transition";
 export type { TransitionOrThrowInput, TransitionOutcome } from "./aspects/transition";

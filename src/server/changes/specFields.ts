@@ -6,6 +6,8 @@ import { Prisma } from "../../../generated/prisma";
 import type { WorkItemDimensionUnit, SpecVersionOrigin } from "../../../generated/prisma";
 import type { WorkItemState } from "~/server/core";
 
+export type { WorkItemDimensionUnit };
+
 export const SPEC_FIELDS = [
   "productTypeId",
   "description",

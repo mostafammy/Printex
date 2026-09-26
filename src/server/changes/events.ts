@@ -60,13 +60,46 @@ function isAspectDomainError(err: unknown): err is AspectDomainError {
 }
 
 /**
+ * Who the SPEC_CHANGED outbox row is addressed to: the assignee plus the
+ * effective department. Callers that already hold the Work Item pass it in so
+ * emission costs no extra round trip.
+ */
+export type SpecChangeRecipients = {
+  readonly assigneeId: string | null;
+  readonly effectiveDepartmentId: string | null;
+};
+
+async function loadSpecChangeRecipients(
+  tx: Prisma.TransactionClient,
+  workItemId: string,
+): Promise<SpecChangeRecipients> {
+  const item = await tx.workItem.findUnique({
+    where: { id: workItemId },
+    select: {
+      assigneeId: true,
+      departmentId: true,
+      productType: { select: { defaultDepartmentId: true } },
+    },
+  });
+
+  if (!item) {
+    return fail({ code: "NOT_FOUND", entity: "WorkItem", id: workItemId });
+  }
+
+  return { assigneeId: item.assigneeId, effectiveDepartmentId: effectiveDepartmentId(item) };
+}
+
+/**
  * Emits a SPEC_CHANGED event inside the caller's transaction.
  * 1. Runs registered listeners sequentially in registration order.
  * 2. Writes one notify outbox row for delivery.
+ *
+ * `recipients` is optional: when omitted they are read from the Work Item.
  */
 export async function emitSpecChangedInTx(
   tx: Prisma.TransactionClient,
   event: SpecChangedEvent,
+  recipients?: SpecChangeRecipients,
 ): Promise<void> {
   for (const [name, listener] of listeners.entries()) {
     try {
@@ -83,30 +116,11 @@ export async function emitSpecChangedInTx(
     }
   }
 
-  const item = await tx.workItem.findUnique({
-    where: { id: event.workItemId },
-    select: {
-      assigneeId: true,
-      departmentId: true,
-      productType: { select: { defaultDepartmentId: true } },
-    },
-  });
-
-  if (!item) {
-    return fail({
-      code: "NOT_FOUND",
-      entity: "WorkItem",
-      id: event.workItemId,
-    });
-  }
-
-  const assigneeId = item.assigneeId ?? undefined;
-  const effDeptId = effectiveDepartmentId(item) ?? undefined;
+  const { assigneeId, effectiveDepartmentId: effDeptId } =
+    recipients ?? (await loadSpecChangeRecipients(tx, event.workItemId));
 
   const recipientUserIds: string[] = assigneeId ? [assigneeId] : [];
-  const recipientDepartmentIds: string[] = effDeptId
-    ? [effDeptId]
-    : [];
+  const recipientDepartmentIds: string[] = effDeptId ? [effDeptId] : [];
 
   await notify(tx, {
     type: SPEC_CHANGED,

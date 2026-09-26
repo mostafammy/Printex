@@ -153,6 +153,8 @@ describe("016 Specification Versioning (integration, T022)", () => {
     const userId = await seedUser();
     const customerId = await seedCustomer();
     const orderId = await seedOrder({ customerId, createdById: userId });
+    // FR-011b: an order with no open Work Item is "finished"; seed an open sibling.
+    await seedWorkItem({ orderId, state: "NEW" });
     const actor = makeActor(userId);
 
     const { workItemId } = await addWorkItem(actor, orderId, {

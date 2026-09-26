@@ -130,6 +130,7 @@ export const editSpec = defineCommand({
     if (isRedesign) {
       await sendBackForCustomerChangeInTx(ctx, {
         workItemId: ctx.input.workItemId,
+        preloaded: item,
         reason: ctx.input.reason,
         originDepartmentId: ctx.input.originDepartmentId,
       });

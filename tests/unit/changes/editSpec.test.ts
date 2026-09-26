@@ -95,7 +95,7 @@ import {
   editSpecInputSchema,
   type EditSpecInput,
 } from "~/server/changes/editSpec";
-import { getChangeErrorMessage } from "~/components/changes/edit-spec-form";
+import { getChangeErrorMessage, type ChangeErrorCode } from "~/components/changes";
 import type { Actor } from "~/server/auth";
 
 const receptionActor: Actor = {
@@ -403,7 +403,7 @@ describe("editSpec unit tests (T037 decision flow & schema)", () => {
   // ── Error message mapping ────────────────────────────────────────────────
   describe("getChangeErrorMessage mapping (T038)", () => {
     it("maps all ChangeResult and base error codes to non-empty Arabic strings", () => {
-      const codes = [
+      const codes: ChangeErrorCode[] = [
         "VALIDATION",
         "FORBIDDEN",
         "NOT_FOUND",
@@ -440,7 +440,7 @@ describe("editSpec unit tests (T037 decision flow & schema)", () => {
     });
 
     it("falls back to generic error message for unknown code", () => {
-      const msg = getChangeErrorMessage("COMPLETELY_UNKNOWN_CODE");
+      const msg = getChangeErrorMessage("COMPLETELY_UNKNOWN_CODE" as any);
       expect(msg).toBe("حدث خطأ غير متوقع أثناء معالجة الطلب");
     });
   });

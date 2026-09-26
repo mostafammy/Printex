@@ -10,6 +10,7 @@ import type { z } from "zod";
 import type { Actor as CoreActor } from "../actor";
 import type { WorkItemState } from "../workflow/states";
 import type { TransitionOrThrowInput, TransitionOutcome } from "./transition";
+import type { TxOptions } from "./txOptions";
 
 export type Tx = Prisma.TransactionClient;
 
@@ -87,7 +88,7 @@ export interface AspectDeps<A extends { userId: string }, P extends string> {
   /** db.$transaction(fn, opts). */
   readonly transaction: <T>(
     fn: (tx: Tx) => Promise<T>,
-    opts?: { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel },
+    opts?: TxOptions,
   ) => Promise<T>;
   /** Read client that queries use outside a transaction (the db instance). */
   readonly reader: Tx;
@@ -118,7 +119,7 @@ export type DefineCommand<A, P extends string, E extends ModuleErrorShape> = <
       : { readonly value: O; readonly audit: readonly [AuditEntry, ...AuditEntry[]] }
   >;
   readonly allowNoChange?: NoChange;
-  readonly txOptions?: { timeout?: number; isolationLevel?: Prisma.TransactionIsolationLevel };
+  readonly txOptions?: TxOptions;
 }) => {
   /** Public entry point. It never throws a domain error. It re-throws only programming or infrastructure errors. */
   (actor: A, raw: z.input<S>): Promise<AspectResult<O, E>>;
