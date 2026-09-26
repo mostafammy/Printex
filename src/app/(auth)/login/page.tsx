@@ -2,8 +2,7 @@
 
 // Login page — 001-identity-access-audit Phase 3 (T016).
 // Arabic-first RTL layout.
-// In Development: supports GitHub OAuth quick login.
-// In Production: strictly username and password authentication.
+// Strictly username and password authentication.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -87,7 +86,12 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        data-testid="sign-in-form"
+        className="flex flex-col gap-5"
+      >
         {/* Username field */}
         <div className="flex flex-col gap-1.5">
           <label
