@@ -116,7 +116,7 @@ const PaginationPrevious = React.forwardRef<HTMLButtonElement, PaginationNavProp
   ({ className, size, children, ...props }, ref) => (
     <button className={cn(paginationNavVariants({ size, className }))} ref={ref} {...props}>
       <ChevronLeft className="h-4 w-4" />
-      {children || "Previous"}
+      {children ?? "Previous"}
     </button>
   ),
 );
@@ -125,7 +125,7 @@ PaginationPrevious.displayName = "PaginationPrevious";
 const PaginationNext = React.forwardRef<HTMLButtonElement, PaginationNavProps>(
   ({ className, size, children, ...props }, ref) => (
     <button className={cn(paginationNavVariants({ size, className }))} ref={ref} {...props}>
-      {children || "Next"}
+      {children ?? "Next"}
       <ChevronRight className="h-4 w-4" />
     </button>
   ),
