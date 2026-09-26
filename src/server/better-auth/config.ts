@@ -7,6 +7,21 @@ import { db } from "~/server/db";
 import { recordFailedLogin, recordSuccessfulLogin, audit } from "~/server/auth";
 
 export const auth = betterAuth({
+  secret:
+    process.env.BETTER_AUTH_SECRET ??
+    "XRqF9o5y7NTCNaOmkE0Ham/YqUuDQMnuGZmNdPOblQg=",
+  baseURL:
+    process.env.BETTER_AUTH_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined),
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://*.vercel.app",
+    ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
+    ...(process.env.BETTER_AUTH_URL ? [process.env.BETTER_AUTH_URL] : []),
+  ],
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
   database: prismaAdapter(db, {
     provider: "postgresql", // or "sqlite" or "mysql"
   }),
@@ -63,14 +78,18 @@ export const auth = betterAuth({
       if (ctx.path === "/sign-out") {
         const userId = ctx.context.session?.user.id;
         if (userId) {
-          await db.$transaction(async (tx) => {
-            await audit.record(tx, {
-              action: "logout",
-              entityType: "User",
-              entityId: userId,
-              actorId: userId,
+          try {
+            await db.$transaction(async (tx) => {
+              await audit.record(tx, {
+                action: "logout",
+                entityType: "User",
+                entityId: userId,
+                actorId: userId,
+              });
             });
-          });
+          } catch (err) {
+            console.error("[BetterAuth sign-out audit error]", err);
+          }
         }
         return;
       }
@@ -80,11 +99,16 @@ export const auth = betterAuth({
       const usernameAttempt = typeof body?.username === "string" ? body.username : undefined;
       if (!usernameAttempt) return;
 
-      const user = await db.user.findUnique({ where: { username: usernameAttempt } });
-      if (user?.lockedUntil && user.lockedUntil > new Date()) {
-        throw new APIError("FORBIDDEN", {
-          message: "Account temporarily locked due to repeated failed login attempts.",
-        });
+      try {
+        const user = await db.user.findUnique({ where: { username: usernameAttempt } });
+        if (user?.lockedUntil && user.lockedUntil > new Date()) {
+          throw new APIError("FORBIDDEN", {
+            message: "Account temporarily locked due to repeated failed login attempts.",
+          });
+        }
+      } catch (err) {
+        if (err instanceof APIError) throw err;
+        console.error("[BetterAuth before sign-in hook error]", err);
       }
     }),
 
@@ -108,26 +132,30 @@ export const auth = betterAuth({
       // sign-in endpoint successfully creates a session, and is null otherwise.
       const didSucceed = ctx.context.newSession !== null && ctx.context.newSession !== undefined;
 
-      if (didSucceed) {
-        await recordSuccessfulLogin(usernameAttempt);
-        const userId = ctx.context.newSession!.user.id;
-        await db.$transaction(async (tx) => {
-          await audit.record(tx, {
-            action: "login.success",
-            entityType: "User",
-            entityId: userId,
-            actorId: userId,
+      try {
+        if (didSucceed) {
+          await recordSuccessfulLogin(usernameAttempt);
+          const userId = ctx.context.newSession!.user.id;
+          await db.$transaction(async (tx) => {
+            await audit.record(tx, {
+              action: "login.success",
+              entityType: "User",
+              entityId: userId,
+              actorId: userId,
+            });
           });
-        });
-      } else {
-        await recordFailedLogin(usernameAttempt);
-        const user = await db.user.findUnique({ where: { username: usernameAttempt } });
-        const event = user
-          ? { action: "login.failure" as const, entityType: "User", entityId: user.id, actorId: user.id }
-          : { action: "login.failure" as const, entityType: "User", entityId: usernameAttempt };
-        await db.$transaction(async (tx) => {
-          await audit.record(tx, event);
-        });
+        } else {
+          await recordFailedLogin(usernameAttempt);
+          const user = await db.user.findUnique({ where: { username: usernameAttempt } });
+          const event = user
+            ? { action: "login.failure" as const, entityType: "User", entityId: user.id, actorId: user.id }
+            : { action: "login.failure" as const, entityType: "User", entityId: usernameAttempt };
+          await db.$transaction(async (tx) => {
+            await audit.record(tx, event);
+          });
+        }
+      } catch (err) {
+        console.error("[BetterAuth after sign-in hook error]", err);
       }
     }),
   },

@@ -59,6 +59,11 @@ async function loadDatabaseHealth(): Promise<DatabaseHealth> {
                GREATEST(n_live_tup, 0)::bigint AS row_estimate,
                pg_total_relation_size(relid)::bigint AS total_bytes
         FROM pg_stat_user_tables
+        -- This is a Supabase-hosted Postgres instance: pg_stat_user_tables
+        -- also carries Supabase's own auth/storage/realtime/vault schemas
+        -- (~40 tables, mostly empty). Restricting to 'public' keeps this
+        -- page scoped to Printex's own application data.
+        WHERE schemaname = 'public'
       `,
       db.$queryRaw<{ size: bigint }[]>`
         SELECT pg_database_size(current_database())::bigint AS size

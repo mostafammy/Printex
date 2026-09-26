@@ -6,6 +6,7 @@ import { audit, authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
 import { attachments } from "~/server/files";
+import { normalizePage, paginateRows } from "~/server/pagination";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
 import { getApprovalThreshold, isActiveCategory } from "./config";
 import { DomainFinanceError } from "./errors";
@@ -251,8 +252,7 @@ export async function listExpenses(filter: ListExpensesFilter): Promise<{
   rows: ExpenseRow[];
   nextCursor: number | null;
 }> {
-  const pageSize = Math.min(Math.max(filter.pageSize ?? 25, 1), 100);
-  const page = Math.max(filter.page ?? 1, 1);
+  const { page, pageSize, skip, take } = normalizePage(filter);
 
   const rows = await db.expense.findMany({
     where: {
@@ -270,12 +270,11 @@ export async function listExpenses(filter: ListExpensesFilter): Promise<{
     },
     include: { approval: { select: { approvedAt: true } } },
     orderBy: [{ expenseDate: "desc" }, { id: "desc" }],
-    skip: (page - 1) * pageSize,
-    take: pageSize + 1,
+    skip,
+    take,
   });
 
-  const hasMore = rows.length > pageSize;
-  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+  const { rows: pageRows, nextCursor } = paginateRows(rows, page, pageSize);
   const voidRows = await db.financeVoid.findMany({
     where: { entityType: "EXPENSE", entityId: { in: pageRows.map((r) => r.id) } },
     select: { entityId: true },
@@ -323,5 +322,5 @@ export async function listExpenses(filter: ListExpensesFilter): Promise<{
       return true;
     });
 
-  return { rows: shaped, nextCursor: hasMore ? page + 1 : null };
+  return { rows: shaped, nextCursor };
 }

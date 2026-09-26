@@ -5,6 +5,7 @@ import { audit, authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
 import { attachments } from "~/server/files";
+import { normalizePage, paginateRows } from "~/server/pagination";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
 import { DomainFinanceError } from "./errors";
 import { parsePositiveDecimal } from "./money";
@@ -168,8 +169,7 @@ export async function listDirectCosts(filter: ListDirectCostsFilter): Promise<{
   rows: DirectCostRow[];
   nextCursor: number | null;
 }> {
-  const pageSize = Math.min(Math.max(filter.pageSize ?? 25, 1), 100);
-  const page = Math.max(filter.page ?? 1, 1);
+  const { page, pageSize, skip, take } = normalizePage(filter);
   const rows = await db.directCost.findMany({
     where: {
       ...(filter.orderId ? { orderId: filter.orderId } : {}),
@@ -184,11 +184,10 @@ export async function listDirectCosts(filter: ListDirectCostsFilter): Promise<{
         : {}),
     },
     orderBy: [{ costDate: "desc" }, { id: "desc" }],
-    skip: (page - 1) * pageSize,
-    take: pageSize + 1,
+    skip,
+    take,
   });
-  const hasMore = rows.length > pageSize;
-  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
+  const { rows: pageRows, nextCursor } = paginateRows(rows, page, pageSize);
   const voidRows = await db.financeVoid.findMany({
     where: { entityType: "DIRECT_COST", entityId: { in: pageRows.map((r) => r.id) } },
     select: { entityId: true },
@@ -206,5 +205,5 @@ export async function listDirectCosts(filter: ListDirectCostsFilter): Promise<{
       voided: voidedSet.has(row.id),
     }))
     .filter((row) => filter.includeVoided === true || !row.voided);
-  return { rows: shaped, nextCursor: hasMore ? page + 1 : null };
+  return { rows: shaped, nextCursor };
 }
