@@ -19,7 +19,6 @@
 // never a Work Item state, a PricingStatus, or any business gate.
 
 import { hostname } from "node:os";
-import type { WorkItemState } from "~/server/core";
 import { db } from "~/server/db";
 import { getNotificationConfig } from "./config";
 import type { DelayPhase } from "./config";
@@ -117,7 +116,7 @@ async function loadCandidates(): Promise<DelayCandidate[]> {
     orderNumber: workItem.order.number,
     customerName: workItem.order.customer.name,
     productTypeName: workItem.productType?.name ?? null,
-    state: workItem.state as WorkItemState,
+    state: workItem.state,
     priority: workItem.order.priority,
     createdAt: workItem.createdAt,
     departmentId: workItem.departmentId,
@@ -235,7 +234,7 @@ async function recordBreach(params: {
         workItemId,
       });
 
-      const users = await resolveRecipients(recipients, tx as never);
+      const users = await resolveRecipients(recipients, tx);
       for (const userId of users) {
         await tx.notification.create({
           data: {
@@ -294,7 +293,7 @@ export async function runDelayTick(): Promise<DelayTickResult> {
   let evaluated = 0;
   let flagged = 0;
   let alerted = 0;
-  let escalated = 0;
+  const escalated = 0;
 
   try {
     const now = new Date();
@@ -323,7 +322,7 @@ export async function runDelayTick(): Promise<DelayTickResult> {
       if (outcome.kind === "NONE") continue;
 
       const threshold = thresholds.get(outcome.phase);
-      if (!threshold || threshold.thresholdMinutes === null) continue;
+      if (threshold?.thresholdMinutes == null) continue;
 
       const breach = await recordBreach({
         workItemId: candidate.workItemId,

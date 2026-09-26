@@ -147,7 +147,7 @@ export async function list(
     unreadCount(actor),
   ]);
 
-  const views = rows.map((row) => toView(row as Row));
+  const views = rows.map((row) => toView(row));
   const nextPage = page * pageSize < total ? page + 1 : undefined;
 
   return { rows: views, total, unreadTotal: unread, nextPage };
@@ -187,7 +187,7 @@ async function loadView(id: string): Promise<NotificationView> {
       createdAt: true,
     },
   });
-  return toView(row as Row);
+  return toView(row);
 }
 
 /**

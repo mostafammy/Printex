@@ -243,7 +243,7 @@ type AgeClient = Pick<Prisma.TransactionClient, "phaseTiming" | "pricingStatus">
  */
 export async function loadAgeInputs(
   workItems: ReadonlyArray<{ id: string; state: WorkItemState; requiresDesign: boolean }>,
-  client: AgeClient = db as unknown as AgeClient,
+  client: AgeClient = db,
 ): Promise<Map<string, WorkItemAgeInput>> {
   const ids = workItems.map((w) => w.id);
   if (ids.length === 0) return new Map();
@@ -312,7 +312,13 @@ export async function pricingPendingSince(workItemId: string): Promise<Date | nu
 // --- the delayed-work query --------------------------------------------------
 
 export interface DelayedFilter {
-  readonly phase?: DelayPhase;
+  /**
+   * A measured phase. Typed `string` on purpose: this filter is built from
+   * URL search params, so the value is untrusted input, and the narrowing
+   * happens in `validateDelayedFilter` where an unknown phase is a VALIDATION
+   * error rather than a `never` the compiler has already assumed away.
+   */
+  readonly phase?: string;
   readonly priority?: "NORMAL" | "URGENT";
   readonly departmentId?: string;
   /** ISO-8601; Work Items created on/after. */
@@ -390,7 +396,7 @@ export function evaluateDelay(
   }
   const threshold = thresholds.get(derived.phase);
   // A disabled phase (thresholdMinutes = null) never alerts and never lists.
-  if (!threshold || threshold.thresholdMinutes === null) return { kind: "NONE" };
+  if (threshold?.thresholdMinutes == null) return { kind: "NONE" };
   // `>` not `>=`: at exactly the threshold the Work Item is not yet late,
   // which matches the seed's "4 hours" reading and avoids a boundary
   // disagreement between a hand-checked test and the tick.
@@ -520,7 +526,7 @@ export async function getDelayedWorkItems(
     orderNumber: workItem.order.number,
     customerName: workItem.order.customer.name,
     productTypeName: workItem.productType?.name ?? null,
-    state: workItem.state as WorkItemState,
+    state: workItem.state,
     priority: workItem.order.priority,
     createdAt: workItem.createdAt,
     departmentId: workItem.departmentId,

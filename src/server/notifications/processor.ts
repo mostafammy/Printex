@@ -25,7 +25,7 @@ import type { WorkItemState } from "~/server/core";
 import { db } from "~/server/db";
 import { getNotificationConfig } from "./config";
 import { lookup, renderEntry, type CatalogContext } from "./catalog";
-import { collapseByUser, deriveFromStateChange, type DerivedEvent } from "./derived";
+import { deriveFromStateChange } from "./derived";
 import { describeError, DomainNotificationError } from "./errors";
 import { recipientOverride } from "./overrides";
 import { resolveRecipients, unionSpecs, type RecipientSpec } from "./recipients";
@@ -55,7 +55,7 @@ interface ClaimedEvent {
 
 function payloadRecord(payload: Prisma.JsonValue | null): Record<string, unknown> {
   if (typeof payload !== "object" || payload === null || Array.isArray(payload)) return {};
-  return payload as Record<string, unknown>;
+  return payload;
 }
 
 function stringField(payload: Prisma.JsonValue | null, key: string): string | undefined {

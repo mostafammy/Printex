@@ -87,6 +87,14 @@ export const navItems: readonly NavItem[] = [
     roles: ["ACCOUNTING", ADMIN],
   },
   { id: "admin", href: "/admin", label: ar.nav.admin, roles: [ADMIN] },
+  // 053-notifications. The bell is on every page for every role (FR-020) and
+  // reaches the full page, so this entry is unrole-gated like "my-queue". The
+  // delayed list is unrole-gated too, because its SCOPE is derived from the
+  // actor inside the query (FR-057) — a role filter here would be a second,
+  // coarser, and possibly contradictory access model.
+  { id: "notifications", href: "/notifications", label: ar.nav.notifications, roles: [] },
+  { id: "delayed", href: "/delayed", label: ar.nav.delayed, roles: [] },
+  { id: "admin-notifications", href: "/admin/notifications", label: ar.nav.notifications, roles: [ADMIN] },
 ];
 
 // Pure, framework-free filter: shows only the entries `actor`'s roles allow.

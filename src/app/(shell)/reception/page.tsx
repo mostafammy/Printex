@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { getActor } from "~/server/auth";
 import { listReceptionQueue, changeOrderPriority } from "~/server/orders";
 import type { OrderQueueRow } from "~/server/orders";
+import { getDelayedWorkItemIds } from "~/server/notifications";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -45,7 +46,11 @@ async function togglePriorityAction(formData: FormData) {
 
 export default async function ReceptionQueuePage() {
   const actor = await getActor();
-  const rows = await listReceptionQueue(actor);
+  // 053's reserved seam: 011 sets `OrderQueueRow.delayed` from the set of
+  // currently-delayed Work Item ids. This is a BINDING, not a rewrite — 011's
+  // query, authorization, and ordering are untouched, and the queue still
+  // works unchanged if this callback is absent (011 FR-008a, FR-058).
+  const rows = await listReceptionQueue(actor, { getDelayedWorkItemIds });
 
   return (
     <div className="flex flex-col gap-6">
@@ -99,6 +104,11 @@ export default async function ReceptionQueuePage() {
                       {row.isComplete === false && (
                         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
                           {S.badgeIncomplete}
+                        </span>
+                      )}
+                      {row.delayed && (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                          {ar.notifications.badgeDelayed}
                         </span>
                       )}
                     </div>

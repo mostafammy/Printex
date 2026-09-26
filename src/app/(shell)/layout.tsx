@@ -1,6 +1,9 @@
 import { getActor } from "~/server/auth";
 import type { Actor as CoreActor } from "~/server/core";
 import { asUserId } from "~/server/core";
+import { listNotifications, startDelayScheduler, unreadCount } from "~/server/notifications";
+import { NotificationBell } from "~/components/notifications/notification-list";
+import { markAllReadAction, markReadAction } from "./notifications/actions";
 
 import { SidebarNav } from "./_components/sidebar-nav";
 
@@ -26,12 +29,44 @@ export default async function ShellLayout({
     departmentIds: actor.departmentIds,
   };
 
+  // The delay scheduler starts with the server process, not with a request:
+  // an alert with no way to see it running is a support incident (plan.md
+  // §Delivery and sequencing). `startDelayScheduler` is idempotent, so this
+  // is safe on every render and under dev's hot reload — it never stacks a
+  // second interval.
+  startDelayScheduler();
+
+  // Two reads for the header: the bell's exact unread count (a single indexed
+  // count, no join) and the dropdown's first page. Parallel because they are
+  // independent, and the header renders on EVERY authenticated page — so this
+  // is the most-executed query in the app and must stay constant-cost
+  // (research.md §2).
+  const [unread, firstPage] = await Promise.all([
+    unreadCount(actor),
+    listNotifications(actor, { page: 1, pageSize: 10 }),
+  ]);
+
   return (
     <div className="flex min-h-screen">
       <aside className="w-56 shrink-0 border-e border-border bg-card ps-2 pe-2 py-4">
         <SidebarNav actor={coreActor} />
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* The header row, not a floating overlay: a fixed overlay would
+            collide with the sidebar's own positioning and the logical-property
+            lint (contracts/ui.md §NotificationBell). The bell is present on
+            every authenticated page for every role, with no permission check
+            of its own (FR-020). */}
+        <header className="flex items-center justify-end gap-2 border-b border-border px-6 py-2">
+          <NotificationBell
+            initialCount={unread}
+            initialRows={firstPage.rows}
+            markReadAction={markReadAction}
+            markAllReadAction={markAllReadAction}
+          />
+        </header>
+        <main className="flex-1 p-6">{children}</main>
+      </div>
     </div>
   );
 }

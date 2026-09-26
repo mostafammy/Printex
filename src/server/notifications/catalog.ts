@@ -69,7 +69,10 @@ function str(payload: JsonValue, key: string): string | undefined {
 
 /** `entityId` when it names a Work Item, else undefined. */
 function workItemIdOf(ctx: CatalogContext): string | undefined {
-  return ctx.workItemId ?? (ctx.entityId || undefined);
+  // An empty `entityId` is "no target", not a link to `/design/`, so the
+  // empty-string case is normalised explicitly rather than left to `||`.
+  const id = ctx.workItemId ?? ctx.entityId;
+  return id && id.length > 0 ? id : undefined;
 }
 
 /**
