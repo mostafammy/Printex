@@ -11,12 +11,11 @@
 
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Pagination, PaginationEllipsis } from "~/components/ui/pagination";
 import {
-  Pagination,
-  PaginationEllipsis,
   paginationItemVariants,
   paginationNavVariants,
-} from "~/components/ui/pagination";
+} from "~/components/ui/pagination-variants";
 import { cn } from "~/lib/utils";
 
 type PaginationBarProps = {
