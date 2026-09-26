@@ -14,7 +14,6 @@ import {
   ArrowUpRight,
   Building,
   CheckCircle2,
-  ChevronLeft,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
 import {
@@ -23,7 +22,9 @@ import {
   changeOrderPriority,
 } from "~/server/orders";
 import type { OrderQueueRow } from "~/server/orders";
+import { DEFAULT_PAGE_SIZE } from "~/server/pagination";
 import { Button } from "~/components/ui/button";
+import { PaginationBar } from "~/components/pagination-bar";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -334,15 +335,14 @@ export default async function ReceptionQueuePage({
               </tbody>
             </table>
           </div>
-          {nextCursor !== null && (
-            <div className="border-t border-border/70 p-4 text-center">
-              <Link
-                href={`/reception?page=${nextCursor}`}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card px-4 py-2 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
-              >
-                <span>الصفحة التالية</span>
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </Link>
+          {totalCount > DEFAULT_PAGE_SIZE && (
+            <div className="border-t border-border/70 p-4">
+              <PaginationBar
+                basePath="/reception"
+                page={page}
+                hasNextPage={nextCursor !== null}
+                totalPages={Math.ceil(totalCount / DEFAULT_PAGE_SIZE)}
+              />
             </div>
           )}
         </div>
