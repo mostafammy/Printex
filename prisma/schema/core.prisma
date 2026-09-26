@@ -143,6 +143,8 @@ model Order {
   directCosts  DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
+
+  @@index([customerId])
 }
 
 model WorkItem {
@@ -202,6 +204,12 @@ model WorkItem {
   directCosts DirectCost[]
 
   @@index([orderId, state])
+  // Review queue (getReviewQueue) filters on `state` alone; My Queue /
+  // designer workload / eligible-designers filter on `assigneeId` (+ state).
+  // Neither was covered by the existing [orderId, state] index, so both were
+  // sequential-scanning the full WorkItem table at this row count.
+  @@index([state])
+  @@index([assigneeId, state])
 }
 
 /// Admin-configured product catalog (constitution VI: data, not an enum).

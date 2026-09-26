@@ -7,6 +7,7 @@
 //     current request's cookie via `auth.api.getSession`, then delegates to
 //     `getActorForSession`.
 
+import { cache } from "react";
 import { headers } from "next/headers";
 import { db } from "~/server/db";
 import { auth } from "~/server/better-auth";
@@ -85,11 +86,15 @@ export async function getActorForSession(
  * (confirmed by reading src/server/better-auth/server.ts which calls the
  * exact same API without further destructuring).
  */
-export async function getActor(_request?: unknown): Promise<Actor> {
+// Wrapped in React's `cache()` so the layout and the page it wraps — both of
+// which call `getActor()` on every request — share one session lookup and
+// one User query per request instead of issuing each twice, which was adding
+// to the DB connection pool's load unnecessarily.
+export const getActor = cache(async function getActor(_request?: unknown): Promise<Actor> {
   const result = await auth.api.getSession({ headers: await headers() });
   if (!result) throw new UnauthenticatedError();
   return getActorForSession({
     userId: result.session.userId,
     expiresAt: result.session.expiresAt,
   });
-}
+});

@@ -92,7 +92,7 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="fullName"
-          className="text-sm font-medium text-foreground"
+          className="text-xs font-semibold text-foreground/90"
         >
           {STRINGS.fullNameLabel}
         </label>
@@ -104,11 +104,11 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           className={[
-            "w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
+            "w-full rounded-xl border bg-background/80 px-3.5 py-2.5 text-sm text-foreground",
+            "placeholder:text-muted-foreground/70 shadow-2xs transition-all duration-200",
+            "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            fieldErrors.fullName ? "border-destructive" : "border-input",
+            fieldErrors.fullName ? "border-destructive ring-1 ring-destructive/30" : "border-input",
           ].join(" ")}
           placeholder={STRINGS.fullNameLabel}
         />
@@ -121,7 +121,7 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="username"
-          className="text-sm font-medium text-foreground"
+          className="text-xs font-semibold text-foreground/90"
         >
           {STRINGS.usernameLabel}
         </label>
@@ -136,11 +136,11 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
           aria-invalid={!!fieldErrors.username}
           aria-describedby={fieldErrors.username ? "username-error" : undefined}
           className={[
-            "w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
+            "w-full rounded-xl border bg-background/80 px-3.5 py-2.5 text-sm text-foreground",
+            "placeholder:text-muted-foreground/70 shadow-2xs transition-all duration-200",
+            "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            fieldErrors.username ? "border-destructive" : "border-input",
+            fieldErrors.username ? "border-destructive ring-1 ring-destructive/30" : "border-input",
           ].join(" ")}
           placeholder={STRINGS.usernameLabel}
         />
@@ -155,7 +155,7 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="password"
-          className="text-sm font-medium text-foreground"
+          className="text-xs font-semibold text-foreground/90"
         >
           {STRINGS.passwordLabel}
         </label>
@@ -170,11 +170,11 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
           aria-invalid={!!fieldErrors.password}
           aria-describedby={fieldErrors.password ? "password-error" : undefined}
           className={[
-            "w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
+            "w-full rounded-xl border bg-background/80 px-3.5 py-2.5 text-sm text-foreground",
+            "placeholder:text-muted-foreground/70 shadow-2xs transition-all duration-200",
+            "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            fieldErrors.password ? "border-destructive" : "border-input",
+            fieldErrors.password ? "border-destructive ring-1 ring-destructive/30" : "border-input",
           ].join(" ")}
           placeholder={STRINGS.passwordLabel}
         />
@@ -189,7 +189,7 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="confirmPassword"
-          className="text-sm font-medium text-foreground"
+          className="text-xs font-semibold text-foreground/90"
         >
           {STRINGS.confirmPasswordLabel}
         </label>
@@ -204,11 +204,11 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
           aria-invalid={!!fieldErrors.confirmPassword}
           aria-describedby={fieldErrors.confirmPassword ? "confirmPassword-error" : undefined}
           className={[
-            "w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
+            "w-full rounded-xl border bg-background/80 px-3.5 py-2.5 text-sm text-foreground",
+            "placeholder:text-muted-foreground/70 shadow-2xs transition-all duration-200",
+            "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            fieldErrors.confirmPassword ? "border-destructive" : "border-input",
+            fieldErrors.confirmPassword ? "border-destructive ring-1 ring-destructive/30" : "border-input",
           ].join(" ")}
           placeholder={STRINGS.confirmPasswordLabel}
         />
@@ -223,7 +223,7 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
       {formError && (
         <p
           role="alert"
-          className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm font-medium text-destructive shadow-2xs"
         >
           {formError}
         </p>
@@ -234,10 +234,10 @@ export function SignUpForm({ onSuccessRedirect = "/" }: SignUpFormProps) {
         type="submit"
         disabled={isSubmitDisabled}
         className={[
-          "mt-2 w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground",
-          "shadow-xs transition-opacity hover:opacity-90 active:opacity-80",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+          "mt-2 w-full cursor-pointer rounded-xl bg-gradient-to-b from-primary via-primary to-[color-mix(in_oklch,var(--primary),black_10%)] px-4 py-2.5 text-sm font-semibold text-primary-foreground",
+          "shadow-md shadow-primary/20 transition-all duration-150 hover:brightness-105 active:scale-[0.98] active:brightness-95",
+          "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none",
+          "focus:outline-none focus:ring-3 focus:ring-primary/30",
         ].join(" ")}
       >
         {loading ? "…" : STRINGS.signUpButton}

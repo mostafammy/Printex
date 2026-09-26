@@ -5,6 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Coins, PlusCircle, CheckCircle2, XCircle, Sliders, Trash2, AlertCircle } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import {
@@ -21,13 +22,13 @@ import ar from "~/messages/ar.json";
 const S = ar.ui;
 
 const inputCls =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground " +
-  "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground " +
+  "placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25 " +
+  "disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-2xs";
 
 const selectCls =
-  "rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground " +
-  "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0";
+  "rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground " +
+  "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25 transition-all duration-200 shadow-2xs";
 
 function formStr(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
@@ -48,7 +49,7 @@ const UNITS: readonly { value: PricingUnit; label: string }[] = [
   { value: "SQUARE_METER", label: "متر مربع" },
   { value: "LINEAR_METER", label: "متر خطي" },
   { value: "SHEET", label: "ورقة" },
-  { value: "PACK", label: " חבילה" },
+  { value: "PACK", label: "حزمة" },
 ];
 
 // ── Server Actions ─────────────────────────────────────────────────────────
@@ -75,7 +76,6 @@ async function createPriceListAction(formData: FormData) {
 
   if (!productTypeId || !unit || !effectiveFrom) return;
 
-  // Parse tier rows from the form.
   const tierJson = formStr(formData.get("tiers"));
   let parsedTiers: unknown;
   try {
@@ -143,19 +143,45 @@ export default async function PriceListsPage({
   const policyByProductType = new Map(policies.map((p) => [p.productTypeId, p.mode]));
 
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-xl font-semibold">{S.adminPriceListsPageTitle}</h1>
+    <div className="flex flex-col gap-6">
+      {/* ── Hero Admin Header ── */}
+      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-amber-500/10 to-orange-500/5 blur-2xl pointer-events-none" />
 
-      {/* ── Set Pricing Policy Section ──────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-base font-semibold">{S.priceListPolicyHeading}</h2>
-        <form action={setPolicyAction} className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">
+        <div className="relative flex items-start gap-4">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25">
+            <Coins className="h-7 w-7" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+              {S.adminPriceListsPageTitle}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              لوائح الأسعار الرسمية والشرائح الكمية وسياسات التسعير الثابت والمتغير
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Set Pricing Policy Section Card ── */}
+      <section className="apple-card p-6 sm:p-7">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Sliders className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-foreground">{S.priceListPolicyHeading}</h2>
+            <p className="text-xs text-muted-foreground">تحديد سياسة التسعير (ثابت أو متغير) لكل نوع منتج</p>
+          </div>
+        </div>
+
+        <form action={setPolicyAction} className="flex flex-wrap items-end gap-3 max-w-2xl">
+          <div className="flex flex-1 flex-col gap-1.5 min-w-[200px]">
+            <label className="text-xs font-semibold text-foreground">
               {S.productTypeLabel}
             </label>
             <select name="productTypeId" required className={selectCls}>
-              <option value="">—</option>
+              <option value="">— اختر نوع المنتج —</option>
               {activeProductTypes.map((pt) => (
                 <option key={pt.id} value={pt.id}>
                   {pt.name}
@@ -163,8 +189,9 @@ export default async function PriceListsPage({
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-foreground">
+
+          <div className="flex flex-1 flex-col gap-1.5 min-w-[180px]">
+            <label className="text-xs font-semibold text-foreground">
               {S.priceListModeLabel}
             </label>
             <select name="mode" required className={selectCls} defaultValue="FIXED">
@@ -172,24 +199,40 @@ export default async function PriceListsPage({
               <option value="VARIABLE">VARIABLE — سعر متغير</option>
             </select>
           </div>
+
           <Button type="submit" variant="default">
-            {S.priceListSetPolicyButton}
+            <span>{S.priceListSetPolicyButton}</span>
           </Button>
         </form>
       </section>
 
-      {/* ── Create Price List Form ──────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-base font-semibold">{S.priceListCreateHeading}</h2>
-        {error ? <p role="alert" className="mb-4 text-sm text-destructive">{error}</p> : null}
+      {/* ── Create Price List Form Card ── */}
+      <section className="apple-card p-6 sm:p-7">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <PlusCircle className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-foreground">{S.priceListCreateHeading}</h2>
+            <p className="text-xs text-muted-foreground">إضافة لائحة أسعار جديدة مع تحديد فترات السريان والشرائح</p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <form action={createPriceListAction} className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-xs font-semibold text-foreground">
                 {S.productTypeLabel}
               </label>
               <select name="productTypeId" required className={selectCls}>
-                <option value="">—</option>
+                <option value="">— اختر نوع المنتج —</option>
                 {activeProductTypes.map((pt) => (
                   <option key={pt.id} value={pt.id}>
                     {pt.name}
@@ -197,8 +240,9 @@ export default async function PriceListsPage({
                 ))}
               </select>
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-xs font-semibold text-foreground">
                 {S.priceListUnitLabel}
               </label>
               <select name="unit" required className={selectCls}>
@@ -209,8 +253,9 @@ export default async function PriceListsPage({
                 ))}
               </select>
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-xs font-semibold text-foreground">
                 {S.priceListEffectiveFromLabel}
               </label>
               <input
@@ -220,8 +265,9 @@ export default async function PriceListsPage({
                 className={inputCls}
               />
             </div>
+
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-foreground">
+              <label className="text-xs font-semibold text-foreground">
                 {S.priceListEffectiveToLabel}
               </label>
               <input
@@ -232,146 +278,111 @@ export default async function PriceListsPage({
             </div>
           </div>
 
-          {/* Tier rows — client-visible static rows; serialized as JSON for the action */}
-          <div className="rounded-md border border-border bg-muted/30 p-4">
-            <h3 className="mb-3 text-sm font-medium text-foreground">
+          {/* Tier rows */}
+          <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <h3 className="mb-3 text-xs font-bold text-foreground">
               {S.priceListTiersHeading}
             </h3>
             <div id="tier-rows" className="flex flex-col gap-2">
               <PriceListTierRows labels={{ min: S.priceListTierMin, max: S.priceListTierMax, price: S.priceListTierPrice }} />
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="mt-2 text-2xs text-muted-foreground">
               {S.priceListTiersHint}
             </p>
           </div>
 
-          <div>
-            <Button type="submit" variant="default">
-              {S.priceListCreateButton}
+          <div className="pt-2">
+            <Button type="submit" variant="default" className="w-full sm:w-auto">
+              <PlusCircle className="h-4 w-4" />
+              <span>{S.priceListCreateButton}</span>
             </Button>
           </div>
         </form>
       </section>
 
-      {/* ── Active Price Lists ──────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderProductType}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderPricingMode}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderUnit}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderEffectiveFrom}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderEffectiveTo}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderTiers}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderStatus}</th>
-              <th className="px-4 py-3 text-start font-medium">{S.tableHeaderActions}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {priceLists.map((pl) => {
-              const pt = productTypeById.get(pl.productTypeId);
-              return (
-                <tr key={pl.id} className="bg-card hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium">{pt?.name ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs">
-                    {policyByProductType.get(pl.productTypeId) ?? "FIXED"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {UNITS.find((u) => u.value === pl.unit)?.label ?? pl.unit}
-                  </td>
-                  <td className="px-4 py-3" dir="ltr">{new Date(pl.effectiveFrom).toLocaleDateString("ar-EG", { timeZone: "UTC" })}</td>
-                  <td className="px-4 py-3" dir="ltr">
-                    {pl.effectiveTo
-                      ? new Date(pl.effectiveTo).toLocaleDateString("ar-EG", { timeZone: "UTC" })
-                      : S.priceListOpenEnded}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-col gap-0.5 text-xs">
-                      {pl.tiers.map((tier) => (
-                        <span key={tier.id}>
-                          {tier.minimumQuantity}–{tier.maximumQuantity ?? "∞"}: {tier.basePrice.toString()} EGP
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={
-                        pl.status === "ACTIVE"
-                          ? "rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : "rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                      }
-                    >
-                      {pl.status === "ACTIVE" ? S.statusActive : S.statusRetired}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {pl.status === "ACTIVE" && (
-                      <form action={retirePriceListAction} className="flex">
-                        <input type="hidden" name="priceListId" value={pl.id} />
-                        <Button type="submit" variant="destructive" size="sm">
-                          {S.priceListRetireButton}
-                        </Button>
-                      </form>
-                    )}
+      {/* ── Active Price Lists Table Card ── */}
+      <div className="apple-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="border-b border-border/70 bg-muted/40 text-muted-foreground font-semibold">
+              <tr>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderProductType}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderPricingMode}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderUnit}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderEffectiveFrom}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderEffectiveTo}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderTiers}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderStatus}</th>
+                <th className="px-5 py-3.5 text-start">{S.tableHeaderActions}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {priceLists.map((pl) => {
+                const pt = productTypeById.get(pl.productTypeId);
+                return (
+                  <tr key={pl.id} className="transition-colors hover:bg-muted/30">
+                    <td className="px-5 py-4 font-bold text-foreground">{pt?.name ?? "—"}</td>
+                    <td className="px-5 py-4 font-mono">
+                      <span className="rounded-md bg-muted px-2 py-0.5 text-2xs font-semibold">
+                        {policyByProductType.get(pl.productTypeId) ?? "FIXED"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 font-medium text-foreground">
+                      {UNITS.find((u) => u.value === pl.unit)?.label ?? pl.unit}
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground" dir="ltr">
+                      {new Date(pl.effectiveFrom).toLocaleDateString("ar-EG", { timeZone: "UTC" })}
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground" dir="ltr">
+                      {pl.effectiveTo
+                        ? new Date(pl.effectiveTo).toLocaleDateString("ar-EG", { timeZone: "UTC" })
+                        : S.priceListOpenEnded}
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex flex-col gap-1">
+                        {pl.tiers.map((tier) => (
+                          <span key={tier.id} className="inline-flex items-center gap-1 rounded bg-muted/60 px-2 py-0.5 font-mono text-2xs">
+                            {tier.minimumQuantity}–{tier.maximumQuantity ?? "∞"}: <strong className="text-foreground">{tier.basePrice.toString()} ج.م</strong>
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-2xs font-semibold ${
+                          pl.status === "ACTIVE"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {pl.status === "ACTIVE" ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                        <span>{pl.status === "ACTIVE" ? S.statusActive : S.statusRetired}</span>
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      {pl.status === "ACTIVE" && (
+                        <form action={retirePriceListAction}>
+                          <input type="hidden" name="priceListId" value={pl.id} />
+                          <Button type="submit" variant="destructive" size="xs">
+                            <Trash2 className="h-3.5 w-3.5" />
+                            <span>{S.priceListRetireButton}</span>
+                          </Button>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {priceLists.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground">
+                    {S.priceListEmpty}
                   </td>
                 </tr>
-              );
-            })}
-            {priceLists.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-muted-foreground">
-                  {S.priceListEmpty}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-/* Tier rows are client-controlled so their serialized values reach the server action. */
-/* The component is kept below the page to keep this route's public surface unchanged. */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function TierRow({ index }: { readonly index: number }) {
-  return (
-    <div className="flex flex-wrap items-end gap-2">
-      <span className="text-xs font-medium text-muted-foreground w-6">{index + 1}.</span>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-muted-foreground">{S.priceListTierMin}</label>
-        <input
-          name={`tierMin_${index}`}
-          type="number"
-          min="1"
-          required
-          defaultValue={index === 0 ? 1 : undefined}
-          className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-muted-foreground">{S.priceListTierMax}</label>
-        <input
-          name={`tierMax_${index}`}
-          type="number"
-          min="0"
-          className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm"
-          placeholder="∞"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="text-xs text-muted-foreground">{S.priceListTierPrice}</label>
-        <input
-          name={`tierPrice_${index}`}
-          type="number"
-          min="0.01"
-          step="0.01"
-          required
-          className="w-32 rounded-md border border-input bg-background px-2 py-1 text-sm"
-          placeholder="EGP"
-        />
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

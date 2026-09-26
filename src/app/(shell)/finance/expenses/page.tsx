@@ -2,24 +2,32 @@
 // approve gating). finance.view reads; mutations go through the server
 // actions (service-level authorization).
 
+import Link from "next/link";
+import { Receipt, Filter, X } from "lucide-react";
 import { authorize, getActor } from "~/server/auth";
 import { listExpenses, type ListExpensesFilter } from "~/server/finance";
 import { ExpenseForm } from "~/components/finance/expense-form";
 import { ExpensesList } from "~/components/finance/expenses-list";
+import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
 
-type Search = Record<string, string | string[] | undefined>;
+type SearchParams = Record<string, string | string[] | undefined>;
 
 function str(value: string | string[] | undefined): string | undefined {
   return typeof value === "string" && value ? value : undefined;
 }
 
+const inputCls =
+  "rounded-xl border border-input bg-background/80 px-3 py-1.5 text-xs text-foreground " +
+  "placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/25 " +
+  "transition-all duration-200 shadow-2xs";
+
 export default async function ExpensesPage({
   searchParams,
 }: {
-  searchParams: Promise<Search>;
+  searchParams: Promise<SearchParams>;
 }) {
   const actor = await getActor();
   authorize(actor, "finance.view");
@@ -38,50 +46,100 @@ export default async function ExpensesPage({
   };
 
   const [result] = await Promise.all([listExpenses(filter)]);
-  // void gate: expense.record; approve gate: admin.config (T071 — Accounting
-  // must not see an approve button that would always fail).
   const canModerate = actor.permissions.has("expense.record");
   const canApprove = actor.permissions.has("admin.config");
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-xl font-semibold">{S.expensesHeading}</h1>
-        {filter.orderId && (
-          <span className="text-xs text-muted-foreground">
-            #{filter.orderId.slice(-6)}{" "}
-            <a href="/finance/expenses" className="underline">
-              ×
-            </a>
-          </span>
-        )}
+      {/* ── Hero Expenses Header ── */}
+      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+        <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-emerald-500/10 to-teal-500/5 blur-2xl pointer-events-none" />
+
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+              <Receipt className="h-7 w-7" />
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  {S.expensesHeading}
+                </h1>
+                {filter.orderId && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-semibold text-primary">
+                    <span>طلب #{filter.orderId.slice(-6)}</span>
+                    <Link href="/finance/expenses" className="hover:opacity-75">
+                      <X className="h-3 w-3" />
+                    </Link>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                إدارة ومتابعة المصروفات التشغيلية للمطبعة والطلبات
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* ── Record New Expense Form Card ── */}
       <ExpenseForm />
 
-      <form method="get" className="flex flex-wrap items-end gap-2 text-sm">
-        <label>
-          <span className="mb-1 block text-xs text-muted-foreground">{S.expenseDate}</span>
-          <input name="from" type="date" defaultValue={filter.from} className="rounded-md border border-input bg-background px-2 py-1" />
-        </label>
-        <label>
-          <span className="mb-1 block text-xs text-muted-foreground">{S.expenseDate}</span>
-          <input name="to" type="date" defaultValue={filter.to} className="rounded-md border border-input bg-background px-2 py-1" />
-        </label>
-        <label>
-          <span className="mb-1 block text-xs text-muted-foreground">{S.expenseCategory}</span>
-          <input name="category" type="text" defaultValue={filter.category} className="rounded-md border border-input bg-background px-2 py-1" />
-        </label>
-        <label>
-          <span className="mb-1 block text-xs text-muted-foreground">{S.employee}</span>
-          <input name="employee" type="text" defaultValue={filter.employee} className="rounded-md border border-input bg-background px-2 py-1" />
-        </label>
-        {filter.orderId && <input type="hidden" name="orderId" value={filter.orderId} />}
-        <button type="submit" className="rounded-md border border-border px-3 py-1.5 hover:bg-muted">
-          ✓
-        </button>
-      </form>
+      {/* ── Filters Toolbar Card ── */}
+      <div className="apple-card p-4 sm:p-5">
+        <form method="get" className="flex flex-wrap items-end gap-3 text-xs">
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-muted-foreground">{S.expenseDate} (من)</span>
+            <input name="from" type="date" defaultValue={filter.from} className={inputCls} />
+          </div>
 
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-muted-foreground">{S.expenseDate} (إلى)</span>
+            <input name="to" type="date" defaultValue={filter.to} className={inputCls} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-muted-foreground">{S.expenseCategory}</span>
+            <input
+              name="category"
+              type="text"
+              placeholder="البند..."
+              defaultValue={filter.category}
+              className={inputCls + " w-36"}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold text-muted-foreground">{S.employee}</span>
+            <input
+              name="employee"
+              type="text"
+              placeholder="الموظف..."
+              defaultValue={filter.employee}
+              className={inputCls + " w-36"}
+            />
+          </div>
+
+          {filter.orderId && <input type="hidden" name="orderId" value={filter.orderId} />}
+
+          <Button type="submit" variant="default" size="sm">
+            <Filter className="h-3.5 w-3.5" />
+            <span>تطبيق الفلتر</span>
+          </Button>
+
+          {Boolean(filter.from ?? filter.to ?? filter.category ?? filter.employee) && (
+            <Link
+              href="/finance/expenses"
+              className="inline-flex items-center gap-1 rounded-xl border border-border/70 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>إعادة ضبط</span>
+            </Link>
+          )}
+        </form>
+      </div>
+
+      {/* ── Expenses List ── */}
       <ExpensesList
         rows={result.rows}
         nextPage={result.nextCursor}

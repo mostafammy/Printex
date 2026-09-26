@@ -41,28 +41,37 @@ export async function getReviewQueue(actor: Actor): Promise<ReviewQueueRow[]> {
     },
   });
 
-  const rows = await Promise.all(
-    workItems.map(async (wi) => {
-      const enteredQueueTransition = wi.transitions.find((t) => t.to === "WAITING_REVIEW");
-      const enteredQueueAt = enteredQueueTransition?.at ?? wi.createdAt;
+  // Single grouped query instead of one `count` per Work Item (matches the
+  // pattern in src/app/(shell)/orders/[orderId]/page.tsx) — avoids opening a
+  // DB connection per row, which was exhausting the pooler's connection
+  // limit under a large queue.
+  const reworkCounts = await db.return.groupBy({
+    by: ["workItemId"],
+    where: { workItemId: { in: workItems.map((wi) => wi.id) } },
+    _count: { _all: true },
+  });
+  const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
 
-      const reworkCount = await db.return.count({ where: { workItemId: wi.id } });
+  const rows = workItems.map((wi) => {
+    const enteredQueueTransition = wi.transitions.find((t) => t.to === "WAITING_REVIEW");
+    const enteredQueueAt = enteredQueueTransition?.at ?? wi.createdAt;
 
-      const row: ReviewQueueRow = {
-        workItemId: wi.id,
-        orderId: wi.orderId,
-        orderNumber: wi.order.number,
-        customerName: wi.order.customer.name,
-        productTypeName: wi.productType?.name ?? null,
-        priority: wi.order.priority,
-        enteredQueueAt,
-        reworkCount,
-        isRework: reworkCount > 0,
-      };
+    const reworkCount = reworkCountByWorkItem.get(wi.id) ?? 0;
 
-      return { row, sortKey: enteredQueueAt.getTime() };
-    }),
-  );
+    const row: ReviewQueueRow = {
+      workItemId: wi.id,
+      orderId: wi.orderId,
+      orderNumber: wi.order.number,
+      customerName: wi.order.customer.name,
+      productTypeName: wi.productType?.name ?? null,
+      priority: wi.order.priority,
+      enteredQueueAt,
+      reworkCount,
+      isRework: reworkCount > 0,
+    };
+
+    return { row, sortKey: enteredQueueAt.getTime() };
+  });
 
   // FR-001/research.md §6: urgent first, then oldest enteredQueueAt within
   // each bucket — identical comparator to 012's getMyQueue.

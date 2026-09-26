@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CheckCircle2, XCircle, Percent, AlertCircle } from "lucide-react";
 import type { CustomerPricingRuleRow } from "~/server/pricing";
 
 type SpecialPricingTabProps = {
@@ -28,25 +29,35 @@ function formatDate(date: Date): string {
 function RuleRow({ rule }: { rule: CustomerPricingRuleRow }) {
   const isActive = rule.status === "ACTIVE";
   return (
-    <tr className={isActive ? "" : "opacity-60"}>
-      <td className="px-3 py-2 text-sm">{rule.productType?.name ?? rule.productTypeId}</td>
-      <td className="px-3 py-2 text-sm">{KIND_LABELS[rule.kind] ?? rule.kind}</td>
-      <td className="px-3 py-2 text-sm">
+    <tr className={`transition-colors hover:bg-muted/30 ${isActive ? "" : "opacity-60"}`}>
+      <td className="px-3.5 py-3 text-xs font-semibold text-foreground">
+        {rule.productType?.name ?? rule.productTypeId}
+      </td>
+      <td className="px-3.5 py-3 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium">
+          {rule.kind === "PERCENT_DISCOUNT" && <Percent className="h-3 w-3 text-primary" />}
+          <span>{KIND_LABELS[rule.kind] ?? rule.kind}</span>
+        </span>
+      </td>
+      <td className="px-3.5 py-3 text-xs font-bold text-foreground">
         {rule.kind === "FIXED"
           ? `${rule.fixedPrice} ج.م`
           : `${rule.discountPercent}%`}
       </td>
-      <td className="px-3 py-2 text-sm">{formatDate(rule.effectiveFrom)}</td>
-      <td className="px-3 py-2 text-sm">{rule.effectiveTo ? formatDate(rule.effectiveTo) : "—"}</td>
-      <td className="px-3 py-2 text-sm">
+      <td className="px-3.5 py-3 text-xs text-muted-foreground">{formatDate(rule.effectiveFrom)}</td>
+      <td className="px-3.5 py-3 text-xs text-muted-foreground">
+        {rule.effectiveTo ? formatDate(rule.effectiveTo) : "—"}
+      </td>
+      <td className="px-3.5 py-3 text-xs">
         <span
-          className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
+          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-2xs font-semibold ${
             isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-600"
+              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+              : "bg-muted text-muted-foreground"
           }`}
         >
-          {STATUS_LABELS[rule.status] ?? rule.status}
+          {isActive ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+          <span>{STATUS_LABELS[rule.status] ?? rule.status}</span>
         </span>
       </td>
     </tr>
@@ -75,21 +86,25 @@ export function SpecialPricingTab({ customerId }: SpecialPricingTabProps) {
       }
     }
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [customerId]);
 
   if (loading) {
     return (
-      <div className="py-8 text-center text-sm text-muted-foreground" dir="rtl">
-        جاري تحميل الأسعار الخاصة…
+      <div className="py-6 flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground" dir="rtl">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span>جاري تحميل الأسعار الخاصة…</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="py-8 text-center text-sm text-destructive" dir="rtl">
-        فشل تحميل الأسعار الخاصة: {error}
+      <div className="flex items-center gap-2 rounded-xl bg-destructive/10 p-3 text-xs text-destructive" dir="rtl">
+        <AlertCircle className="h-4 w-4 shrink-0" />
+        <span>فشل تحميل الأسعار الخاصة: {error}</span>
       </div>
     );
   }
@@ -98,27 +113,25 @@ export function SpecialPricingTab({ customerId }: SpecialPricingTabProps) {
   const retiredRules = rules.filter((r) => r.status !== "ACTIVE");
 
   return (
-    <section dir="rtl" className="space-y-4">
-      <h3 className="text-lg font-medium">الأسعار الخاصة</h3>
-
+    <section dir="rtl" className="flex flex-col gap-3">
       {rules.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">
-          لا توجد قواعد أسعار خاصة لهذا العميل.
-        </p>
+        <div className="py-6 text-center text-xs text-muted-foreground">
+          لا توجد قواعد أسعار خاصة مسجلة لهذا العميل.
+        </div>
       ) : (
-        <>
-          <table className="w-full border-collapse text-sm">
+        <div className="overflow-x-auto rounded-xl border border-border/70 bg-card">
+          <table className="w-full border-collapse text-start text-xs">
             <thead>
-              <tr className="border-b border-border text-start text-muted-foreground">
-                <th className="px-3 py-2 font-medium">نوع المنتج</th>
-                <th className="px-3 py-2 font-medium">النوع</th>
-                <th className="px-3 py-2 font-medium">القيمة</th>
-                <th className="px-3 py-2 font-medium">ساري من</th>
-                <th className="px-3 py-2 font-medium">ساري حتى</th>
-                <th className="px-3 py-2 font-medium">الحالة</th>
+              <tr className="border-b border-border/70 bg-muted/40 text-muted-foreground font-semibold">
+                <th className="px-3.5 py-2.5 text-start">نوع المنتج</th>
+                <th className="px-3.5 py-2.5 text-start">النوع</th>
+                <th className="px-3.5 py-2.5 text-start">القيمة</th>
+                <th className="px-3.5 py-2.5 text-start">ساري من</th>
+                <th className="px-3.5 py-2.5 text-start">ساري حتى</th>
+                <th className="px-3.5 py-2.5 text-start">الحالة</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/50">
               {activeRules.map((rule) => (
                 <RuleRow key={rule.id} rule={rule} />
               ))}
@@ -127,11 +140,13 @@ export function SpecialPricingTab({ customerId }: SpecialPricingTabProps) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
 
-          <p className="text-xs text-muted-foreground">
-            {activeRules.length} نشط · {retiredRules.length} متوقف
-          </p>
-        </>
+      {rules.length > 0 && (
+        <div className="flex items-center justify-between text-2xs text-muted-foreground pt-1">
+          <span>{activeRules.length} نشط · {retiredRules.length} متوقف</span>
+        </div>
       )}
     </section>
   );

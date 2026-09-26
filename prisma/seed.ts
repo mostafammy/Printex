@@ -233,6 +233,151 @@ async function seedAdminUser() {
   return user;
 }
 
+const WORKFLOW_DEV_USERS = [
+  {
+    id: "seed_user_reception",
+    username: "reception",
+    displayUsername: "Reception",
+    name: "موظف الاستقبال (Reception)",
+    email: "reception@local.invalid",
+    roleId: "seed_role_reception",
+    assignAllDepartments: false,
+  },
+  {
+    id: "seed_user_designer",
+    username: "designer",
+    displayUsername: "Designer",
+    name: "المصمم (Designer)",
+    email: "designer@local.invalid",
+    roleId: "seed_role_designer",
+    assignAllDepartments: true,
+  },
+  {
+    id: "seed_user_head_designer",
+    username: "headdesigner",
+    displayUsername: "Head Designer",
+    name: "رئيس المصممين (Head Designer)",
+    email: "headdesigner@local.invalid",
+    roleId: "seed_role_head_designer",
+    assignAllDepartments: true,
+  },
+  {
+    id: "seed_user_production",
+    username: "production",
+    displayUsername: "Production",
+    name: "فني الإنتاج (Production)",
+    email: "production@local.invalid",
+    roleId: "seed_role_production_operator",
+    assignAllDepartments: true,
+  },
+  {
+    id: "seed_user_delivery",
+    username: "delivery",
+    displayUsername: "Delivery",
+    name: "مسؤول التسليم (Delivery)",
+    email: "delivery@local.invalid",
+    roleId: "seed_role_print_reception_delivery",
+    assignAllDepartments: false,
+  },
+  {
+    id: "seed_user_accounting",
+    username: "accounting",
+    displayUsername: "Accounting",
+    name: "المحاسب المالي (Accounting)",
+    email: "accounting@local.invalid",
+    roleId: "seed_role_accounting",
+    assignAllDepartments: false,
+    extraPermissions: ["pricing.set_variable", "pricing.override"],
+  },
+] as const;
+
+async function seedWorkflowUsers(departments: { readonly id: string; readonly name: string }[]) {
+  console.log("  seeding workflow role users...");
+  const DEV_SHARED_PASSWORD = "Printex123!";
+  const hashedPassword = await hashPassword(DEV_SHARED_PASSWORD);
+
+  for (const userDef of WORKFLOW_DEV_USERS) {
+    const user = await db.user.upsert({
+      where: { id: userDef.id },
+      update: {
+        username: userDef.username,
+        displayUsername: userDef.displayUsername,
+        name: userDef.name,
+        isActive: true,
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      },
+      create: {
+        id: userDef.id,
+        name: userDef.name,
+        email: userDef.email,
+        emailVerified: false,
+        username: userDef.username,
+        displayUsername: userDef.displayUsername,
+        isActive: true,
+        failedLoginAttempts: 0,
+      },
+    });
+
+    const accountId = `seed_account_${userDef.username}`;
+    await db.account.upsert({
+      where: { id: accountId },
+      update: {
+        password: hashedPassword,
+        userId: user.id,
+      },
+      create: {
+        id: accountId,
+        accountId: user.id,
+        providerId: "credential",
+        userId: user.id,
+        password: hashedPassword,
+      },
+    });
+
+    await db.userRole.upsert({
+      where: {
+        userId_roleId: { userId: user.id, roleId: userDef.roleId },
+      },
+      update: {},
+      create: { userId: user.id, roleId: userDef.roleId },
+    });
+
+    if (userDef.assignAllDepartments && departments.length > 0) {
+      for (const dept of departments) {
+        await db.userDepartment.upsert({
+          where: {
+            userId_departmentId: { userId: user.id, departmentId: dept.id },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            departmentId: dept.id,
+          },
+        });
+      }
+    }
+
+    if ("extraPermissions" in userDef && userDef.extraPermissions) {
+      for (const perm of userDef.extraPermissions) {
+        await db.userPermission.upsert({
+          where: {
+            userId_permission: { userId: user.id, permission: perm },
+          },
+          update: {},
+          create: {
+            userId: user.id,
+            permission: perm,
+            grantedById: ADMIN_USER_ID,
+          },
+        });
+      }
+    }
+
+    console.log(`    user: ${user.username} (${userDef.roleId}) — ready`);
+  }
+}
+
 async function seedDepartments() {
   const departments = [];
   for (const name of DEPARTMENT_NAMES) {
@@ -407,6 +552,7 @@ async function main() {
   await seedRoles();
   const adminUser = await seedAdminUser();
   const departments = await seedDepartments();
+  await seedWorkflowUsers(departments);
   await seedProductTypes(departments);
   await seedClassifications();
   await seedCashCustomer();

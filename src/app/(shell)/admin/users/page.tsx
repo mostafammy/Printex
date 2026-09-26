@@ -24,13 +24,13 @@ const S = ar.ui;
 
 // ── Input class reused from login page recipe ──────────────────────────────
 const inputCls =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground " +
-  "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground " +
+  "placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25 " +
+  "disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-2xs";
 
 const selectCls =
-  "rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground " +
-  "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0";
+  "rounded-xl border border-input bg-background/80 px-3 py-2 text-sm text-foreground " +
+  "focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25 transition-all shadow-2xs";
 
 // FormDataEntryValue is `string | File`; File has no custom toString(), so
 // String(v) trips @typescript-eslint/no-base-to-string. These form fields
@@ -159,8 +159,8 @@ export default async function AdminUsersPage() {
       <h1 className="text-xl font-semibold">{S.adminUsersPageTitle}</h1>
 
       {/* ── Create User Form ───────────────────────────────────────────── */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-4 text-base font-semibold">{S.createUserHeading}</h2>
+      <section className="apple-card p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-bold text-foreground">{S.createUserHeading}</h2>
         <form action={createUserAction} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Username */}
@@ -239,8 +239,9 @@ export default async function AdminUsersPage() {
       </section>
 
       {/* ── Users Table ────────────────────────────────────────────────── */}
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full text-sm">
+      <div className="apple-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
           <thead className="bg-muted text-muted-foreground">
             <tr>
               <th className="px-4 py-3 text-start font-medium">{S.tableHeaderUsername}</th>
@@ -453,6 +454,7 @@ export default async function AdminUsersPage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

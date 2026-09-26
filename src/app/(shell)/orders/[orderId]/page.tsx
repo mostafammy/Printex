@@ -25,9 +25,9 @@ import ar from "~/messages/ar.json";
 const S = ar.ui;
 
 const inputCls =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground " +
-  "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0 " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+  "w-full rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground " +
+  "placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary focus:ring-3 focus:ring-primary/25 " +
+  "disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200 shadow-2xs";
 
 const STATUS_LABELS: Record<string, string> = {
   NOT_STARTED: S.orderStatusNotStarted,
@@ -219,34 +219,56 @@ export default async function OrderDetailPage({
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <Link href="/reception" className="text-sm text-primary hover:underline">
-          {S.orderDetailBackLink}
+        <Link
+          href="/reception"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:underline"
+        >
+          <span>→</span>
+          <span>{S.orderDetailBackLink}</span>
         </Link>
-        <h1 className="text-xl font-semibold">
-          {S.orderDetailPageTitle} #{detail.order.orderNumber}
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            {S.orderDetailPageTitle} #{detail.order.orderNumber}
+          </h1>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            #{detail.order.orderNumber}
+          </span>
+        </div>
       </div>
 
       {/* Header */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <div>
-            <div className="text-xs text-muted-foreground">{S.tableHeaderCustomer}</div>
-            <div className="font-medium">{detail.order.customerName}</div>
+      <section className="apple-card p-6 sm:p-8">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">{S.tableHeaderCustomer}</span>
+            <span className="text-base font-bold text-foreground">{detail.order.customerName}</span>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">{S.tableHeaderChannel}</div>
-            <div className="font-medium">{CHANNEL_LABELS[detail.order.channel] ?? detail.order.channel}</div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">{S.tableHeaderChannel}</span>
+            <span className="text-sm font-semibold text-foreground">
+              {CHANNEL_LABELS[detail.order.channel] ?? detail.order.channel}
+            </span>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">{S.tableHeaderPriority}</div>
-            <div className="font-medium">
-              {detail.order.priority === "URGENT" ? S.priorityUrgent : S.priorityNormal}
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">{S.tableHeaderPriority}</span>
+            <div>
+              {detail.order.priority === "URGENT" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 border border-rose-500/20 px-2.5 py-0.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  {S.priorityUrgent}
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                  {S.priorityNormal}
+                </span>
+              )}
             </div>
           </div>
-          <div>
-            <div className="text-xs text-muted-foreground">{S.tableHeaderOrderStatus}</div>
-            <div className="font-medium">{STATUS_LABELS[detail.order.status] ?? detail.order.status}</div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground">{S.tableHeaderOrderStatus}</span>
+            <span className="text-sm font-semibold text-foreground">
+              {STATUS_LABELS[detail.order.status] ?? detail.order.status}
+            </span>
           </div>
         </div>
 
@@ -284,7 +306,7 @@ export default async function OrderDetailPage({
           const hasAssignee = Boolean(assigneeInfo?.assigneeId);
           const reworkCount = reworkCountByWorkItem.get(wi.id) ?? 0;
           return (
-          <div key={wi.id} className="rounded-lg border border-border bg-card p-6">
+          <div key={wi.id} className="apple-card p-6">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-medium">
                 {S.workItemCardHeading} — {wi.description ?? wi.id}
@@ -426,43 +448,43 @@ export default async function OrderDetailPage({
       </section>
 
       {/* Add Work Item */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-3 text-base font-semibold">{S.addWorkItemHeading}</h2>
+      <section className="apple-card p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-bold text-foreground">{S.addWorkItemHeading}</h2>
         <form action={addWorkItemAction} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="orderId" value={orderId} />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{S.quantityLabel}</label>
-            <input name="quantity" type="number" min={1} required className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">{S.quantityLabel}</label>
+            <input name="quantity" type="number" min={1} required className="w-24 rounded-xl border border-input bg-background/80 px-3 py-2 text-sm shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{S.widthLabel}</label>
-            <input name="widthValue" type="number" min={0.01} step="0.01" required className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">{S.widthLabel}</label>
+            <input name="widthValue" type="number" min={0.01} step="0.01" required className="w-24 rounded-xl border border-input bg-background/80 px-3 py-2 text-sm shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{S.heightLabel}</label>
-            <input name="heightValue" type="number" min={0.01} step="0.01" required className="w-24 rounded-md border border-input bg-background px-2 py-1 text-sm" />
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">{S.heightLabel}</label>
+            <input name="heightValue" type="number" min={0.01} step="0.01" required className="w-24 rounded-xl border border-input bg-background/80 px-3 py-2 text-sm shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none" />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-muted-foreground">{S.dimensionUnitLabel}</label>
-            <select name="dimensionUnit" defaultValue="CM" className="w-20 rounded-md border border-input bg-background px-2 py-1 text-sm">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-muted-foreground">{S.dimensionUnitLabel}</label>
+            <select name="dimensionUnit" defaultValue="CM" className="w-24 rounded-xl border border-input bg-background/80 px-3 py-2 text-sm shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none">
               <option value="MM">MM</option>
               <option value="CM">CM</option>
               <option value="M">M</option>
               <option value="IN">IN</option>
             </select>
           </div>
-          <Button type="submit" variant="default" size="sm">
+          <Button type="submit" variant="default" size="default">
             {S.addWorkItemButton}
           </Button>
         </form>
         {STATUS_LABELS[detail.order.status] === S.orderStatusCompleted && (
-          <p className="mt-2 text-xs text-muted-foreground">{S.orderFinishedNote}</p>
+          <p className="mt-3 text-xs text-muted-foreground">{S.orderFinishedNote}</p>
         )}
       </section>
 
       {/* Timeline */}
-      <section className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-3 text-base font-semibold">{S.timelineHeading}</h2>
+      <section className="apple-card p-6 sm:p-8">
+        <h2 className="mb-4 text-base font-bold text-foreground">{S.timelineHeading}</h2>
         {detail.timeline.length === 0 ? (
           <p className="text-sm text-muted-foreground">{S.timelineEmpty}</p>
         ) : (

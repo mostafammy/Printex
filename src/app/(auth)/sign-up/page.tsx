@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import ar from "~/messages/ar.json";
 import { getAuthEnvironmentConfig } from "~/lib/auth";
 import { AuthCard } from "../_components/auth-card";
@@ -11,20 +12,22 @@ import { SocialAuthButton } from "../_components/social-auth-button";
 
 const STRINGS = ar.ui;
 
-/**
- * Sign-Up Page.
- * - Focuses strictly on Username and Password credentials.
- * - Responsive, accessible, and RTL-first.
- */
-export default function SignUpPage() {
+function SignUpContent() {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
   const envConfig = getAuthEnvironmentConfig();
   const [socialError, setSocialError] = useState<string | null>(null);
+
+  const loginHref =
+    callbackUrl && callbackUrl !== "/"
+      ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+      : "/login";
 
   const footerLink = (
     <div className="flex items-center justify-center gap-1.5">
       <span>{STRINGS.alreadyHaveAccount}</span>
       <Link
-        href="/login"
+        href={loginHref}
         className="font-semibold text-primary underline-offset-4 hover:underline"
       >
         {STRINGS.goToLogin}
@@ -57,7 +60,15 @@ export default function SignUpPage() {
       )}
 
       {/* Production & Development credentials registration */}
-      <SignUpForm />
+      <SignUpForm onSuccessRedirect={callbackUrl} />
     </AuthCard>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignUpContent />
+    </Suspense>
   );
 }
