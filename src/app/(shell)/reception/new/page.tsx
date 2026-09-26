@@ -18,6 +18,7 @@ import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import { createOrder, listActiveProductTypes } from "~/server/orders";
 import { Button } from "~/components/ui/button";
+import { CustomerSelectField } from "~/components/customers";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -105,11 +106,14 @@ export default async function NewOrderPage({
   const params = await searchParams;
   const itemCount = parseItemsCount(params.items);
 
-  const [customers, departments, productTypes] = await Promise.all([
-    db.customer.findMany({ orderBy: { name: "asc" } }),
+  const [cashCustomerRow, departments, productTypes] = await Promise.all([
+    db.customer.findFirst({ where: { isCashCustomer: true }, select: { id: true } }),
     db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     listActiveProductTypes(actor),
   ]);
+  const cashCustomer = cashCustomerRow
+    ? { id: cashCustomerRow.id, label: S.cashCustomerOption }
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -158,16 +162,7 @@ export default async function NewOrderPage({
                 <User className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>{S.customerLabel}</span>
               </label>
-              <select id="customerId" name="customerId" required className={inputCls} defaultValue="">
-                <option value="" disabled>
-                  اختر العميل...
-                </option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.isCashCustomer ? S.cashCustomerOption : c.name}
-                  </option>
-                ))}
-              </select>
+              <CustomerSelectField name="customerId" required cashCustomer={cashCustomer} />
             </div>
 
             <div className="flex flex-col gap-1.5">
