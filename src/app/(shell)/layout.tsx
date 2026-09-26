@@ -1,7 +1,12 @@
 import { getActor } from "~/server/auth";
 import type { Actor as CoreActor } from "~/server/core";
 import { asUserId } from "~/server/core";
-import { listNotifications, startDelayScheduler, unreadCount } from "~/server/notifications";
+import {
+  listNotifications,
+  startDelayScheduler,
+  startOutboxProcessor,
+  unreadCount,
+} from "~/server/notifications";
 import { NotificationBell } from "~/components/notifications/notification-list";
 import { markAllReadAction, markReadAction } from "./notifications/actions";
 
@@ -29,11 +34,17 @@ export default async function ShellLayout({
     departmentIds: actor.departmentIds,
   };
 
-  // The delay scheduler starts with the server process, not with a request:
-  // an alert with no way to see it running is a support incident (plan.md
-  // §Delivery and sequencing). `startDelayScheduler` is idempotent, so this
-  // is safe on every render and under dev's hot reload — it never stacks a
-  // second interval.
+  // Both intervals start with the server process, not with a request — and
+  // both are idempotent, so a render (or dev's hot reload) never stacks a
+  // second one:
+  //
+  //  - the OUTBOX processor delivers notifications every ~500ms. Without it,
+  //    an outbox row would sit PENDING until the delay tick, and SC-001's
+  //    "visible within 2 seconds" would depend on luck (FR-028, T024).
+  //  - the DELAY scheduler detects breaches every 5 minutes — a report, so a
+  //    slower cadence is fine — and an alert nobody can see running is a
+  //    support incident (plan.md §Delivery and sequencing).
+  startOutboxProcessor();
   startDelayScheduler();
 
   // Two reads for the header: the bell's exact unread count (a single indexed

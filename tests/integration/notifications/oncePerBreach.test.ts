@@ -13,7 +13,6 @@ import { getDelayedWorkItemIds, runDelayTick } from "~/server/notifications";
 import {
   holdSchedulerLease,
   releaseSchedulerLease,
-  recordOutboxEvent,
   seedAgedWorkItem,
   seedDepartment,
   seedNotificationUser,

@@ -15,7 +15,12 @@
 // lands, this file's shape is the contract (contracts/notification-service.md).
 
 // --- errors (contract §Errors) ----------------------------------------------
-export { DomainNotificationError, describeError, isNotificationError } from "./errors";
+export {
+  DomainNotificationError,
+  authorizationCode,
+  describeError,
+  isNotificationError,
+} from "./errors";
 export type { NotificationErrorCode } from "./errors";
 
 // --- the shared event vocabulary (FR-011) -----------------------------------
@@ -47,7 +52,12 @@ export { resolveRecipients, unionSpecs } from "./recipients";
 export type { RecipientSpec } from "./recipients";
 
 // --- the processor (US1) -----------------------------------------------------
-export { processOutboxBatch } from "./processor";
+export {
+  isOutboxProcessorRunning,
+  processOutboxBatch,
+  startOutboxProcessor,
+  stopOutboxProcessor,
+} from "./processor";
 export type { ProcessResult } from "./processor";
 
 // --- the scheduler (US2) -----------------------------------------------------

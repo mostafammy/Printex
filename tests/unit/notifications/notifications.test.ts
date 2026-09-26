@@ -41,6 +41,16 @@ const NOW = new Date("2026-09-26T05:00:00Z"); // 300 minutes later
 
 describe("state -> phase mapping (T015 / SC-011)", () => {
   it("maps the five measured phases and leaves everything else unmeasured", () => {
+    // Every state in 002's vocabulary must land somewhere in this test:
+    // mapping it to a phase changes what gets measured, and forgetting to
+    // consider a new state would silently exempt it from delay detection.
+    expect(STATES).toHaveLength(15);
+    const measured = STATES.filter((state) => phaseForState(state) !== null);
+    expect([...measured].sort()).toEqual(
+      ["ASSIGNED", "IN_DESIGN", "READY_FOR_COLLECTION", "READY_FOR_PRODUCTION",
+       "IN_PRODUCTION", "REWORK_REQUIRED", "WAITING_REVIEW"].sort(),
+    );
+
     expect(phaseForState("ASSIGNED")).toBe("DESIGN");
     expect(phaseForState("IN_DESIGN")).toBe("DESIGN");
     expect(phaseForState("WAITING_REVIEW")).toBe("REVIEW");

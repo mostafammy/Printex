@@ -50,6 +50,7 @@ export interface NotificationConfigData {
     readonly leaseSeconds: number;
     readonly outboxBatchLimit: number;
     readonly maxAttempts: number;
+    readonly processorIntervalMs: number;
   };
   readonly stream: {
     readonly pingSeconds: number;
@@ -66,7 +67,13 @@ const FALLBACK: NotificationConfigData = {
     PRODUCTION: 480,
     COLLECTION: 1440,
   },
-  scheduler: { intervalMinutes: 5, leaseSeconds: 120, outboxBatchLimit: 100, maxAttempts: 5 },
+  scheduler: {
+    intervalMinutes: 5,
+    leaseSeconds: 120,
+    outboxBatchLimit: 100,
+    maxAttempts: 5,
+    processorIntervalMs: 500,
+  },
   stream: { pingSeconds: 25, pollSeconds: 15, maxConnections: 500 },
 };
 
@@ -125,6 +132,13 @@ function loadYamlConfig(): NotificationConfigData {
         "scheduler.outboxBatchLimit",
       ),
       maxAttempts: requirePositiveInt(scheduler.maxAttempts, "scheduler.maxAttempts"),
+      processorIntervalMs: requirePositiveInt(
+        // Older config files predate this field; the fallback keeps them
+        // loadable rather than crashing the server at boot.
+        (scheduler as { processorIntervalMs?: number }).processorIntervalMs ??
+          FALLBACK.scheduler.processorIntervalMs,
+        "scheduler.processorIntervalMs",
+      ),
     },
     stream: {
       pingSeconds: requirePositiveInt(stream.pingSeconds, "stream.pingSeconds"),

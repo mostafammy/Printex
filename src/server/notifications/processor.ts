@@ -459,6 +459,72 @@ async function unreadCountFor(userId: string): Promise<number | null> {
   }
 }
 
+// --- the delivery loop (T024 / FR-028) -------------------------------------
+
+let processorInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Claims a batch on a short interval so an outbox row becomes a notification
+ * without waiting for the 5-minute delay tick.
+ *
+ * WHY A LOOP AND NOT A HOOK AT THE EMIT SITE (the deviation tasks.md
+ * prescribes, recorded rather than absorbed):
+ *
+ *   1. `transitionWorkItem` — which emits `work_item.state_changed`, and is
+ *      reached by EVERY state change in the app — lives in `src/server/core`,
+ *      and core is forbidden by eslint from importing any feature, including
+ *      this one. A hook there is not just invasive, it is not writable
+ *      without a module-boundary violation.
+ *   2. The claim predicate `deliveredAt IS NULL AND deliveryStatus = 'PENDING'`
+ *      can only ever match a row whose recording transaction has COMMITTED.
+ *      A poll is therefore structurally post-commit in a way a hook cannot
+ *      be: a hook fires when the caller believes it is after commit, a poll
+ *      observes what the database has actually committed. That is also
+ *      exactly the query the migration's (deliveredAt, deliveryStatus,
+ *      createdAt) index was built for.
+ *   3. The bound: a row committed at time T is claimed at most
+ *      processorIntervalMs later. At 500 ms the worst case is well inside
+ *      FR-028's 2 seconds, independent of which feature emitted it and
+ *      without editing a single other feature's code.
+ *
+ * Never throws: `processOutboxBatch` fails only when the claim query itself
+ * is down, and a failed tick must not crash the interval — the next tick
+ * retries, and the Admin screen shows the queue's state either way.
+ */
+export function startOutboxProcessor(opts?: { processorIntervalMs?: number }): void {
+  if (processorInterval) return;
+
+  const { scheduler } = getNotificationConfig();
+  const ms = opts?.processorIntervalMs ?? scheduler.processorIntervalMs;
+
+  processorInterval = setInterval(() => {
+    void processOutboxBatch().catch(() => undefined);
+  }, ms);
+
+  // Drain immediately on start: a backlog from downtime should not wait one
+  // interval before anyone sees it — same reasoning as the delay tick's
+  // immediate first run (FR-051).
+  void processOutboxBatch().catch(() => undefined);
+}
+
+/**
+ * Stops the delivery loop. Separate from `stopDelayScheduler` on purpose:
+ * FR-054's Admin stop pauses DELAY DETECTION (a report), and stopping
+ * delivery with it would make new notifications silent — the one thing the
+ * center must never be.
+ */
+export function stopOutboxProcessor(): void {
+  if (processorInterval) {
+    clearInterval(processorInterval);
+    processorInterval = null;
+  }
+}
+
+/** True when this process holds a live delivery interval. */
+export function isOutboxProcessorRunning(): boolean {
+  return processorInterval !== null;
+}
+
 /**
  * Drains a batch of PENDING outbox events into notifications.
  *

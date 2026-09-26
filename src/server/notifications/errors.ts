@@ -41,6 +41,22 @@ export class DomainNotificationError extends Error {
 }
 
 /**
+ * 001's `authorize()` throws `ForbiddenError`, whose stable `name` is
+ * "ForbiddenError" and whose message is "FORBIDDEN" — deliberately the same
+ * markers the rest of the app asserts on. 053's contract lists `FORBIDDEN`
+ * and `UNAUTHENTICATED` among its own codes, so a caller switching on `code`
+ * has to see them. Normalising here, once, is what keeps that true without
+ * wrapping every call site (and risking a path that forgets to).
+ */
+export function authorizationCode(error: unknown): NotificationErrorCode | null {
+  if (isNotificationError(error)) return error.code;
+  if (!(error instanceof Error)) return null;
+  if (error.name === "ForbiddenError") return "FORBIDDEN";
+  if (error.name === "UnauthenticatedError") return "UNAUTHENTICATED";
+  return null;
+}
+
+/**
  * Narrows an unknown thrown value to a `DomainNotificationError`. Used by the
  * processor, which must never let one event's failure escape as an unhandled
  * rejection while still being able to record the failure on the outbox row.

@@ -164,7 +164,6 @@ async function nextSequence(
   workItemId: string,
   phase: DelayPhase,
   waitingSince: Date,
-  now: Date,
 ): Promise<{ sequence: number; isNewPeriod: boolean }> {
   const latest = await tx.delayBreach.findFirst({
     where: { workItemId, phase },
@@ -225,7 +224,7 @@ async function recordBreach(params: {
 
   try {
     const eventId = await db.$transaction(async (tx) => {
-      const { sequence, isNewPeriod } = await nextSequence(tx, workItemId, phase, waitingSince, now);
+      const { sequence, isNewPeriod } = await nextSequence(tx, workItemId, phase, waitingSince);
       if (!isNewPeriod) {
         // Still the same ongoing delay. Returning the sentinel below records
         // no breach and no alert, which is what "once per breach, not once per

@@ -41,6 +41,16 @@ scheduler:
   # the Admin thresholds screen (FR-008).
   maxAttempts: 5
 
+  # How often the OUTBOX processor claims a batch. Deliberately a different
+  # number from intervalMinutes: that one detects delays (a report, so 5
+  # minutes is fine), this one DELIVERS notifications, and FR-028's
+  # "within 2 seconds" bound is met as long as this plus processing stays
+  # under it. Named "after commit" in tasks.md's terms: the claim predicate
+  # can only see rows a committed transaction wrote, so a poll is
+  # structurally post-commit in a way a hook at an emit site never can be —
+  # and unlike a hook it does not require every other feature to import 053.
+  processorIntervalMs: 500
+
 # Real-time transport (notification-stream.md). The stream is a hint channel
 # only — delivery is persisted, so every value here affects immediacy, never
 # whether a notification arrives.
