@@ -13,8 +13,7 @@ const STRINGS = ar.ui;
 
 /**
  * Sign-Up Page.
- * - In Development: Supports both GitHub OAuth (with dev badge) and Username/Password registration.
- * - In Production: Focuses strictly on Username and Password credentials.
+ * - Focuses strictly on Username and Password credentials.
  * - Responsive, accessible, and RTL-first.
  */
 export default function SignUpPage() {
