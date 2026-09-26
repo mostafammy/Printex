@@ -50,10 +50,15 @@ describe("outbox idempotency (T017 / SC-002 / acceptance #2)", () => {
     const rows = await testDb.notification.findMany({
       where: { sourceEventId: eventId },
     });
+    // ONE row, for ONE recipient — the acceptance criterion itself.
     expect(rows).toHaveLength(1);
     expect(rows[0]!.userId).toBe(designer.userId);
-    // The second pass reports no NEW notification, because none was created.
-    expect(second.notificationsCreated).toBe(0);
+    // The second pass INSERTS nothing: its insert hit the unique pair and was
+    // rolled back to a savepoint. The counter still reports 1, because the
+    // recipient's notification exists and is delivered — counting only
+    // successful inserts would report a duplicate as "nothing delivered",
+    // which is the opposite of what happened.
+    expect(second.notificationsCreated).toBe(1);
 
     // The outbox row is still correctly marked processed after the retry.
     const event = await testDb.notificationEvent.findUnique({ where: { id: eventId } });

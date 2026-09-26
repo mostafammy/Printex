@@ -19,6 +19,7 @@
 // never a Work Item state, a PricingStatus, or any business gate.
 
 import { hostname } from "node:os";
+import type { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { getNotificationConfig } from "./config";
 import type { DelayPhase } from "./config";
@@ -76,11 +77,25 @@ const EMPTY: DelayTickResult = {
  */
 async function acquireLease(ownerId: string, leaseSeconds: number): Promise<boolean> {
   const now = new Date();
+  const expiresAt = new Date(now.getTime() + leaseSeconds * 1000);
+
   const { count } = await db.schedulerLease.updateMany({
     where: { id: LEASE_ID, OR: [{ expiresAt: { lt: now } }, { ownerId }] },
-    data: { ownerId, acquiredAt: now, expiresAt: new Date(now.getTime() + leaseSeconds * 1000) },
+    data: { ownerId, acquiredAt: now, expiresAt },
   });
-  return count > 0;
+  if (count > 0) return true;
+
+  // The lease row is normally seeded by the migration. If it is ABSENT — a
+  // database provisioned by `prisma db push`, which does not run migration
+  // seed inserts — an updateMany matches nothing and every tick would report
+  // `ran: false`, i.e. the scheduler would silently never alert. Creating the
+  // row here closes that hole; the unique PK on `id` makes a concurrent
+  // creator lose harmlessly, and it then reads the winner's lease on its next
+  // attempt.
+  await db.schedulerLease
+    .create({ data: { id: LEASE_ID, ownerId, acquiredAt: now, expiresAt } })
+    .catch(() => undefined);
+  return false;
 }
 
 async function releaseLease(ownerId: string): Promise<void> {
@@ -126,20 +141,45 @@ async function loadCandidates(): Promise<DelayCandidate[]> {
 }
 
 /**
- * The sequence number for a NEW breach of (workItem, phase).
+ * The sequence number for a NEW breach of (workItem, phase), decided INSIDE the
+ * transaction that inserts it.
  *
- * A Work Item that leaves a delayed phase and returns is a genuinely new
- * breach and must alert again (FR-044), so the number is one past the highest
- * already recorded for that pair — not a count, and not "1 unless one
- * exists". The old breach row is retained.
+ * Reading "max + 1" outside the transaction is the bug this replaces: a second
+ * tick over an unchanged breach reads the same maximum, computes the same next
+ * number, and inserts a row that is genuinely new by the unique triple's own
+ * definition — so the constraint never fires, and ten ticks produce ten alerts
+ * (SC-003). The check has to be a read INSIDE the same transaction as the
+ * insert, so the pair "is there already a breach for this exact waiting
+ * period?" and "insert a row for it" are decided atomically.
+ *
+ * A Work Item that genuinely LEFT the phase and came back is a new breach and
+ * must alert again (FR-044). The discriminator is the waiting period, not the
+ * current state: a breach row is open while no later `detectedAt` records a
+ * period that began after it. Comparing the current waiting anchor against the
+ * newest breach's `detectedAt` separates "still the same delay" (do nothing)
+ * from "delayed again after recovering" (new sequence, new alert).
  */
-async function nextSequence(workItemId: string, phase: DelayPhase): Promise<number> {
-  const latest = await db.delayBreach.findFirst({
+async function nextSequence(
+  tx: Prisma.TransactionClient,
+  workItemId: string,
+  phase: DelayPhase,
+  waitingSince: Date,
+  now: Date,
+): Promise<{ sequence: number; isNewPeriod: boolean }> {
+  const latest = await tx.delayBreach.findFirst({
     where: { workItemId, phase },
     orderBy: { breachSequence: "desc" },
-    select: { breachSequence: true },
+    select: { breachSequence: true, detectedAt: true },
   });
-  return (latest?.breachSequence ?? 0) + 1;
+
+  if (!latest) return { sequence: 1, isNewPeriod: true };
+
+  // The waiting period began before the last breach was recorded: this is the
+  // SAME ongoing delay, not a new one.
+  const sameDelay = waitingSince.getTime() <= latest.detectedAt.getTime();
+  if (sameDelay) return { sequence: latest.breachSequence, isNewPeriod: false };
+
+  return { sequence: latest.breachSequence + 1, isNewPeriod: true };
 }
 
 /** The catalog type a phase's breach alerts under. FR-037: pricing is special. */
@@ -178,14 +218,21 @@ async function recordBreach(params: {
   waitingAgeMinutes: number;
   now: Date;
 }): Promise<{ created: boolean; notified: string[]; eventId: string | null }> {
-  const { workItemId, phase, threshold, waitingAgeMinutes, now } = params;
-  const sequence = await nextSequence(workItemId, phase);
+  const { workItemId, phase, threshold, waitingAgeMinutes, now, waitingSince } = params;
   const type = alertTypeFor(phase);
   const age = formatAge(waitingAgeMinutes);
   const notified: string[] = [];
 
   try {
     const eventId = await db.$transaction(async (tx) => {
+      const { sequence, isNewPeriod } = await nextSequence(tx, workItemId, phase, waitingSince, now);
+      if (!isNewPeriod) {
+        // Still the same ongoing delay. Returning the sentinel below records
+        // no breach and no alert, which is what "once per breach, not once per
+        // tick" means operationally.
+        return null;
+      }
+
       await tx.delayBreach.create({
         data: {
           workItemId,
@@ -258,7 +305,7 @@ async function recordBreach(params: {
       return event.id;
     });
 
-    return { created: true, notified, eventId };
+    return { created: eventId !== null, notified: eventId === null ? [] : notified, eventId };
   } catch (error) {
     if (isUniqueViolation(error)) {
       return { created: false, notified: [], eventId: null };

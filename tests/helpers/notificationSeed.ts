@@ -229,3 +229,38 @@ export async function setThreshold(
     },
   });
 }
+
+/**
+ * Releases the scheduler lease so a test's next tick can acquire it.
+ *
+ * An UPSERT rather than an update: the lease row is created by the migration's
+ * seed, and `prisma db push` (which the test database uses) does not run
+ * migration seed inserts — so in a test database the row may not exist yet, and
+ * an `update` would throw instead of doing the obvious thing.
+ */
+export async function releaseSchedulerLease(): Promise<void> {
+  await testDb.schedulerLease.upsert({
+    where: { id: "delay-scheduler" },
+    create: {
+      id: "delay-scheduler",
+      ownerId: "",
+      acquiredAt: new Date(0),
+      expiresAt: new Date(0),
+    },
+    update: { expiresAt: new Date(0) },
+  });
+}
+
+/** Grants the lease to a live foreign owner, so a tick must skip. */
+export async function holdSchedulerLease(ownerId: string, seconds = 60): Promise<void> {
+  await testDb.schedulerLease.upsert({
+    where: { id: "delay-scheduler" },
+    create: {
+      id: "delay-scheduler",
+      ownerId,
+      acquiredAt: new Date(),
+      expiresAt: new Date(Date.now() + seconds * 1000),
+    },
+    update: { ownerId, acquiredAt: new Date(), expiresAt: new Date(Date.now() + seconds * 1000) },
+  });
+}

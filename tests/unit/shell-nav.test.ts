@@ -82,7 +82,21 @@ describe("filterNavByPermissions", () => {
       navItems,
     );
 
-    expect(noRoles.map((i) => i.id)).toEqual(["my-queue"]);
+    // Derived rather than hard-coded: the property under test is "an actor
+    // with no roles sees exactly the entries declared visible to everyone",
+    // not "sees exactly these three ids". Hard-coding the list meant every
+    // feature that legitimately adds a shared entry had to edit this test,
+    // which is how a nav assertion quietly becomes a change-detector.
+    const expected = navItems.filter((item) => item.roles.length === 0).map((i) => i.id);
+    expect(noRoles.map((i) => i.id)).toEqual(expected);
+    // Sanity: the roleless set is not empty, so the assertion above cannot
+    // pass vacuously if every entry accidentally gained a role filter.
+    expect(expected.length).toBeGreaterThan(0);
+    // 053's shared entries are the reason this set grew, and both must stay
+    // unrole-gated: the bell reaches every authenticated page, and the
+    // delayed list scopes itself from the actor inside the query (FR-057).
+    expect(expected).toContain("notifications");
+    expect(expected).toContain("delayed");
   });
 
   it("every nav item's label is an Arabic string, not an English placeholder", async () => {

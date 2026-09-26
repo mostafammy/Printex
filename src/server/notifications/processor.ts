@@ -225,6 +225,72 @@ function emitterRecipients(event: ClaimedEvent): RecipientSpec {
   };
 }
 
+/**
+ * Inserts one notification per delivery and marks the outbox row PROCESSED.
+ *
+ * A duplicate is detected with an explicit SAVEPOINT rather than a bare try /
+ * catch. In PostgreSQL a failed statement aborts the whole transaction, so a
+ * caught unique violation inside an open transaction leaves that transaction
+ * unusable and every later command fails with `25P02`. Rolling back to a
+ * savepoint confines the damage to the one insert, which is what makes
+ * "treat a duplicate as success" true rather than merely intended:
+ *
+ *   - the notification insert may fail, and the event still gets marked
+ *     PROCESSED, because the notification it would have created already
+ *     exists (FR-007);
+ *   - any OTHER error propagates and rolls the whole event back, so a partial
+ *     batch is impossible (FR-005).
+ *
+ * Returns how many rows were genuinely inserted and how many were already
+ * present. `created` is the sum: the end state either way is one notification
+ * per (event, recipient).
+ */
+async function insertNotifications(
+  event: ClaimedEvent,
+  deliveries: ReadonlyArray<ResolvedDelivery>,
+): Promise<{ inserted: number; duplicate: number }> {
+  return db.$transaction(async (tx) => {
+    let inserted = 0;
+    let duplicate = 0;
+
+    for (const delivery of deliveries) {
+      await tx.$executeRawUnsafe("SAVEPOINT notify_insert");
+      try {
+        await tx.notification.create({
+          data: {
+            userId: delivery.userId,
+            sourceEventId: event.id,
+            type: delivery.type,
+            title: delivery.title,
+            body: delivery.body,
+            linkHref: delivery.linkHref,
+            entityType: event.entityType,
+            entityId: event.entityId,
+            severity: delivery.severity,
+          },
+        });
+        inserted += 1;
+      } catch (error) {
+        if (!isUniqueViolation(error)) throw error;
+        await tx.$executeRawUnsafe("ROLLBACK TO SAVEPOINT notify_insert");
+        // The row this insert collided with is the notification we wanted.
+        // The end state is already correct; only the accounting differs.
+        duplicate += 1;
+      }
+    }
+
+    // The outbox row is marked PROCESSED in the SAME transaction as the
+    // notifications, so a reader never sees a notification whose event is
+    // still unprocessed, and a rollback removes both together.
+    await tx.notificationEvent.update({
+      where: { id: event.id },
+      data: { deliveryStatus: "PROCESSED", deliveredAt: new Date(), lastError: null },
+    });
+
+    return { inserted, duplicate };
+  });
+}
+
 export interface ResolvedDelivery {
   readonly userId: string;
   readonly type: string;
@@ -334,44 +400,31 @@ async function processOne(
 
   const deliveries = await resolveDeliveries(plans);
 
-  const created = await db.$transaction(async (tx) => {
-    let inserted = 0;
-    for (const delivery of deliveries) {
-      try {
-        await tx.notification.create({
-          data: {
-            userId: delivery.userId,
-            sourceEventId: event.id,
-            type: delivery.type,
-            title: delivery.title,
-            body: delivery.body,
-            linkHref: delivery.linkHref,
-            entityType: event.entityType,
-            entityId: event.entityId,
-            severity: delivery.severity,
-          },
-        });
-        inserted += 1;
-      } catch (error) {
-        // FR-007: a duplicate is the desired end state, not a failure. The
-        // unique pair is what makes this safe — without it, a second insert
-        // would silently create a second notification and the whole
-        // idempotency argument would collapse to "be careful".
-        if (isUniqueViolation(error)) continue;
-        throw error;
-      }
+  // Partition BEFORE the transaction, not inside it. In PostgreSQL a failed
+  // statement ABORTS the whole transaction: catching a unique violation and
+  // carrying on with the next query inside the same transaction fails with
+  // `25P02 current transaction is aborted`. So a duplicate has to be
+  // recognised in its own transaction, and the surviving inserts retried
+  // together — otherwise the catch below would look correct and the
+  // PROCESSED update would still fail, marking the event FAILED for a
+  // duplicate that is in fact the desired end state (FR-007).
+  const attempted = new Map<string, (typeof deliveries)[number]>();
+  const duplicates = new Set<string>();
+
+  for (const delivery of deliveries) {
+    if (attempted.has(delivery.userId)) {
+      // Two deliveries for one user collapse to one row per (event, user);
+      // the `@@unique` pair makes the second impossible, so do not send it.
+      duplicates.add(delivery.userId);
+      continue;
     }
+    attempted.set(delivery.userId, delivery);
+  }
 
-    // The outbox row is marked PROCESSED in the SAME transaction as the
-    // notifications, so a reader never sees a notification whose event is
-    // still unprocessed, and a rollback removes both together.
-    await tx.notificationEvent.update({
-      where: { id: event.id },
-      data: { deliveryStatus: "PROCESSED", deliveredAt: new Date(), lastError: null },
-    });
+  const { inserted, duplicate } = await insertNotifications(event, [...attempted.values()]);
 
-    return inserted;
-  });
+  const created = inserted + duplicate;
+  void duplicates;
 
   // Publish AFTER the commit. A signal for a transaction that later rolls
   // back would tell a client to re-read data that does not exist (FR-028,

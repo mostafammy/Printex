@@ -57,8 +57,16 @@ describe("local-first operation (T053 / SC-008 / acceptance #4)", () => {
     );
 
     const result = await processOutboxBatch();
-    expect(result.processed).toBe(2);
+    // `processed` counts every row the batch CLAIMED, and the database is
+    // shared across test files, so an absolute count is not this test's to
+    // assert. What is its own: the two events it created both left PENDING.
+    expect(result.processed).toBeGreaterThanOrEqual(2);
     expect(result.failed).toBe(0);
+    const settled = await testDb.notificationEvent.findMany({
+      where: { id: { in: ids } },
+      select: { deliveryStatus: true },
+    });
+    expect(settled.every((row) => row.deliveryStatus === "PROCESSED")).toBe(true);
     // No failure mentions a network, a host, a certificate, or DNS — the
     // specific evidence quickstart.md §10 asks for.
     const stuck = await testDb.notificationEvent.findMany({
@@ -122,7 +130,10 @@ describe("fallback completeness (SC-009 / FR-034)", () => {
 
     // The persisted row carries everything the live path would have shown,
     // because the live path never carried content at all.
-    const persisted = await testDb.notification.findUnique({ where: { id: eventId } });
+    const persisted = await testDb.notification.findFirst({
+      where: { sourceEventId: eventId },
+    });
     expect(persisted).not.toBeNull();
+    expect(persisted!.title.length).toBeGreaterThan(0);
   });
 });
