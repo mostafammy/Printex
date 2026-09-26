@@ -7,7 +7,7 @@ import { Prisma } from "../../../generated/prisma";
 import { audit, authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
-import { normalizePage, paginateRows } from "~/server/pagination";
+import { paginateQuery } from "~/server/pagination";
 import { notify } from "~/server/core/notifications/notify";
 import { getCurrentPrice } from "~/server/pricing";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
@@ -277,7 +277,6 @@ export async function listPayments(filter: ListPaymentsFilter): Promise<{
   rows: PaymentRow[];
   nextCursor: number | null;
 }> {
-  const { page, pageSize, skip, take } = normalizePage(filter);
   const where = {
     ...(filter.orderId ? { orderId: filter.orderId } : {}),
     ...(filter.customerId ? { customerId: filter.customerId } : {}),
@@ -291,15 +290,16 @@ export async function listPayments(filter: ListPaymentsFilter): Promise<{
         }
       : {}),
   };
-  const rows = await db.payment.findMany({
-    where,
-    include: { recordedBy: { select: { name: true } } },
-    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
-    skip,
-    take,
-  });
+  const { rows: pageRows, nextCursor } = await paginateQuery(filter, (skip, take) =>
+    db.payment.findMany({
+      where,
+      include: { recordedBy: { select: { name: true } } },
+      orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+  );
 
-  const { rows: pageRows, nextCursor } = paginateRows(rows, page, pageSize);
   const voidRows = await db.financeVoid.findMany({
     where: { entityType: "PAYMENT", entityId: { in: pageRows.map((r) => r.id) } },
   });
