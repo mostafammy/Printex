@@ -79,6 +79,7 @@ export type {
 // --- delayed work (US2 / US6) ------------------------------------------------
 export {
   ageMinutes,
+  deriveDelay,
   evaluateDelay,
   formatAge,
   formatDuration,
@@ -90,7 +91,14 @@ export {
   phaseForState,
   toArabicDigits,
 } from "./delays";
-export type { DelayedFilter, DelayedWorkItemView, DerivedDelay } from "./delays";
+export type {
+  AgeAnchor,
+  DelayedFilter,
+  DelayedWorkItemView,
+  DerivedDelay,
+  ThresholdRow,
+  WorkItemAgeInput,
+} from "./delays";
 
 // --- thresholds + scheduler status (US5) ------------------------------------
 export {
