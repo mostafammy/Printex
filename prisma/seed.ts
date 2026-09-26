@@ -168,7 +168,7 @@ async function seedAdminUser() {
   // To change: run the seed again with a different password constant below,
   // or reset via the Admin UI once it is built (T020).
   // ---------------------------------------------------------------------------
-  const DEV_ADMIN_PASSWORD = "Admin123!DevOnly"; // DEV ONLY
+  const DEV_ADMIN_PASSWORD = "Printex123!"; // Uniform dev seed password
 
   // Hash using Better Auth's own hasher so the credential provider can verify
   // this password at login time without any additional configuration.
