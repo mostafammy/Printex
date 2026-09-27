@@ -33,7 +33,7 @@ const EXPECTED_MATRIX: Record<string, string[]> = {
     "workitem.assign_designer",
   ],
   DESIGNER: ["design.work"],
-  HEAD_DESIGNER: ["design.review"],
+  HEAD_DESIGNER: ["change.approve", "design.review"],
   PRODUCTION_OPERATOR: ["files.download_production", "production.operate"],
   PRINT_RECEPTION_DELIVERY: ["collection.receive", "delivery.record"],
   ACCOUNTING: ["expense.record", "finance.view", "payment.record", "payment.void"],
@@ -76,7 +76,7 @@ describe("role × permission matrix (contract)", () => {
     }
   });
 
-  it("ADMIN_OWNER has exactly 22 permissions matching ALL_PERMISSIONS", async () => {
+  it("ADMIN_OWNER has exactly 23 permissions matching ALL_PERMISSIONS", async () => {
     const adminOwnerRole = await testDb.role.findUnique({
       where: { key: "ADMIN_OWNER" },
       include: { permissions: true },
@@ -90,7 +90,34 @@ describe("role × permission matrix (contract)", () => {
     const actualPerms = adminOwnerRole!.permissions.map((p) => p.permission).sort();
     const allPermsSorted = [...ALL_PERMISSIONS].sort();
 
-    expect(actualPerms).toHaveLength(22);
+    expect(actualPerms).toHaveLength(23);
     expect(actualPerms).toEqual(allPermsSorted);
+  });
+
+  it("HEAD_DESIGNER and ADMIN_OWNER have change.approve; other seeded roles do not (016 FR-013)", async () => {
+    const roles = await testDb.role.findMany({ include: { permissions: true } });
+    const permsByRole = new Map<string, string[]>();
+    for (const role of roles) {
+      permsByRole.set(
+        role.key,
+        role.permissions.map((p) => p.permission),
+      );
+    }
+
+    expect(permsByRole.get("HEAD_DESIGNER")).toContain("change.approve");
+    expect(permsByRole.get("ADMIN_OWNER")).toContain("change.approve");
+
+    const rolesWithoutChangeApprove = [
+      "RECEPTION",
+      "DESIGNER",
+      "PRODUCTION_OPERATOR",
+      "PRINT_RECEPTION_DELIVERY",
+      "ACCOUNTING",
+    ] as const;
+
+    for (const roleKey of rolesWithoutChangeApprove) {
+      expect(permsByRole.get(roleKey)).toBeDefined();
+      expect(permsByRole.get(roleKey)).not.toContain("change.approve");
+    }
   });
 });

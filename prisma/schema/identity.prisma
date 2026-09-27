@@ -78,6 +78,13 @@ model User {
   creditsUpdated     CustomerCredit[]   @relation("CustomerCreditUpdatedBy")
   financeConfigUpdates FinanceConfig[]  @relation("FinanceConfigUpdatedBy")
 
+  // --- Reverse relations to change-control.prisma (016-change-control) ---
+  specVersionsCreated        SpecVersion[]      @relation("SpecVersionCreatedBy")
+  changeRequestsRequested    ChangeRequest[]    @relation("ChangeRequestRequestedBy")
+  changeRequestsDecided      ChangeRequest[]    @relation("ChangeRequestDecidedBy")
+  changeRequestsAcknowledged ChangeRequest[]    @relation("ChangeRequestAcknowledgedBy")
+  lateCancellations          LateCancellation[] @relation("LateCancellationCreatedBy")
+
   @@unique([email])
   @@map("user")
 }

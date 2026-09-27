@@ -8,6 +8,13 @@
 import { db } from "~/server/db";
 import { authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
+import {
+  getProductionHold,
+  getProductionStartSpecDiff,
+  productTypeNamesForChanges,
+  type ProductionHold,
+  type SpecFieldChange,
+} from "~/server/changes";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 
@@ -43,6 +50,14 @@ export interface JobCard {
   approvedFile: JobCardApprovedFile | null;
   pendingFileRevisionAt: Date | null;
   vendorRecord: VendorRecordSummary | null;
+  /** 016: non-null while a change request or revised instruction freezes the job. */
+  changeHold: ProductionHold | null;
+  /** 016: the current specification version number (null before the first version). */
+  specVersion: number | null;
+  /** 016 (FR-020): what changed between the version at production start and the current one. */
+  productionStartDiff: SpecFieldChange[];
+  /** productTypeId → name for the product types named in `productionStartDiff` (usually empty). */
+  productionStartProductTypeNames: Record<string, string>;
 }
 
 export async function getJobCard(actor: Actor, workItemId: string): Promise<JobCard> {
@@ -52,6 +67,7 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
       order: { include: { customer: { select: { name: true } } } },
       productType: { select: { defaultDepartmentId: true } },
       department: { select: { isExternalProduction: true } },
+      currentSpecVersion: { select: { version: true } },
     },
   });
   if (!workItem) {
@@ -62,17 +78,25 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
     departmentId: effectiveDepartmentId(workItem) ?? undefined,
   });
 
-  const approvedVersion = await db.designVersion.findFirst({
-    where: { workItemId, approvedAt: { not: null } },
-    orderBy: { version: "desc" },
-  });
-
-  const latestVendorRecord = workItem.department?.isExternalProduction
-    ? await db.vendorProductionRecord.findFirst({
-        where: { workItemId },
-        orderBy: { sentAt: "desc" },
-      })
-    : null;
+  // Independent reads — issued together rather than one after another.
+  const [approvedVersion, latestVendorRecord, changeHold, startDiff] = await Promise.all([
+    db.designVersion.findFirst({
+      where: { workItemId, approvedAt: { not: null } },
+      orderBy: { version: "desc" },
+    }),
+    workItem.department?.isExternalProduction
+      ? db.vendorProductionRecord.findFirst({
+          where: { workItemId },
+          orderBy: { sentAt: "desc" },
+        })
+      : null,
+    getProductionHold(db, workItemId),
+    getProductionStartSpecDiff(db, workItemId),
+  ]);
+  // No query unless the diff touches productTypeId.
+  const productionStartProductTypeNames = await productTypeNamesForChanges(db, [
+    startDiff.changes,
+  ]);
 
   return {
     workItemId: workItem.id,
@@ -107,5 +131,9 @@ export async function getJobCard(actor: Actor, workItemId: string): Promise<JobC
           receivedAt: latestVendorRecord.receivedAt,
         }
       : null,
+    changeHold,
+    specVersion: workItem.currentSpecVersion?.version ?? null,
+    productionStartDiff: startDiff.changes,
+    productionStartProductTypeNames,
   };
 }

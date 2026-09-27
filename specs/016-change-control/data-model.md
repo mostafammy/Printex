@@ -27,7 +27,7 @@ enum ChangeRequestOutcome {
   REDESIGN
 }
 
-/// One immutable specification snapshot. Append-only: REVOKE UPDATE, DELETE
+/// One immutable specification snapshot. Append-only: REVOKE DELETE + BEFORE UPDATE trigger
 /// (manual-sql/016-change-control-constraints.sql). Columns mirror WorkItem's
 /// 011 descriptive fields exactly (types, precision, enum).
 model SpecVersion {
@@ -270,9 +270,20 @@ the schema.
 ```sql
 CREATE UNIQUE INDEX IF NOT EXISTS "ChangeRequest_one_pending_per_work_item"
   ON "ChangeRequest" ("workItemId") WHERE status = 'PENDING';
-REVOKE UPDATE, DELETE ON "SpecVersion" FROM CURRENT_USER;
-REVOKE UPDATE, DELETE ON "LateCancellation" FROM CURRENT_USER;
+-- SpecVersion is an FK target (WorkItem.currentSpecVersionId, ChangeRequest.base/resulting-
+-- SpecVersionId). Postgres FK checks take SELECT ... FOR KEY SHARE on the referenced row,
+-- which needs the UPDATE privilege, so UPDATE is blocked by a trigger instead of a REVOKE.
+REVOKE DELETE ON "SpecVersion" FROM CURRENT_USER;
+-- spec_version_forbid_update() RAISEs an exception
+DROP TRIGGER IF EXISTS spec_version_forbid_update ON "SpecVersion";
+CREATE TRIGGER spec_version_forbid_update
+  BEFORE UPDATE ON "SpecVersion"
+  FOR EACH ROW EXECUTE FUNCTION spec_version_forbid_update();
+REVOKE UPDATE, DELETE ON "LateCancellation" FROM CURRENT_USER; -- nothing references it
 ```
+
+The authoritative text is the SQL file itself (revised 2026-09-24 after the REVOKE UPDATE form
+broke FK locking on the shared DB).
 
 (The same non-superuser prerequisite as `audit-event-append-only.sql`. Re-apply after every
 `db push`.)

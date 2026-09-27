@@ -111,6 +111,16 @@ export const navItems: readonly NavItem[] = [
     section: "finance",
     iconName: "Coins",
   },
+  // 016 US3 (T052): approver queue. Cosmetic gating only — the page itself
+  // authorizes by the `change.approve` permission.
+  {
+    id: "changes",
+    href: "/changes",
+    label: ar.nav.changes,
+    roles: ["HEAD_DESIGNER", ADMIN],
+    section: "operations",
+    iconName: "GitPullRequest",
+  },
   {
     id: "admin",
     // No `/admin` index page exists yet — points straight at the one admin

@@ -7,6 +7,7 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import {
   ArrowRight,
@@ -25,6 +26,7 @@ import {
   Truck,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
+import { acknowledgeSpecRevision } from "~/server/changes";
 import {
   getJobCard,
   startProduction,
@@ -38,6 +40,12 @@ import {
   DomainProductionError,
 } from "~/server/production";
 import { Button } from "~/components/ui/button";
+import {
+  ChangeHoldBanner,
+  SpecDiff,
+  getChangeErrorMessage,
+  type ChangeErrorCode,
+} from "~/components/changes";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -54,6 +62,32 @@ function formStr(value: FormDataEntryValue | null): string {
 function formatDate(date: Date | null): string {
   if (!date) return "—";
   return new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(date);
+}
+
+// 016 (FR-012): resume / complete / send-back are refused while a change
+// request or an unacknowledged revision holds the job — as
+// DomainProductionError("CHANGE_HOLD") or a transition guard failure.
+function isChangeHoldRefusal(caught: unknown): boolean {
+  if (caught instanceof DomainProductionError) return caught.code === "CHANGE_HOLD";
+  if (!(caught instanceof Error) || caught.name !== "WorkItemTransitionError") return false;
+  const details = (caught as { error?: { details?: unknown } }).error?.details;
+  return typeof details === "object" && details !== null && "guardCode" in details && details.guardCode === "CHANGE_HOLD";
+}
+
+/** Re-shows the job card with the hold explained. */
+function redirectChangeError(workItemId: string, code: ChangeErrorCode): never {
+  redirect(`/production/${workItemId}?changeError=${code}`);
+}
+
+async function acknowledgeSpecRevisionAction(formData: FormData) {
+  "use server";
+  const actor = await getActor();
+  const workItemId = formStr(formData.get("workItemId"));
+  if (!workItemId) return;
+  const result = await acknowledgeSpecRevision(actor, { workItemId });
+  if (!result.ok) redirectChangeError(workItemId, result.error.code);
+  revalidatePath(`/production/${workItemId}`);
+  redirect(`/production/${workItemId}`);
 }
 
 // ── Server Actions ──────────────────────────────────────────────────────────
@@ -91,12 +125,15 @@ async function resumeProductionAction(formData: FormData) {
   const actor = await getActor();
   const workItemId = formStr(formData.get("workItemId"));
   if (!workItemId) return;
+  let held = false;
   try {
     await resumeProduction(actor, workItemId);
   } catch (caught) {
-    if (caught instanceof DomainProductionError) return;
-    throw caught;
+    held = isChangeHoldRefusal(caught);
+    if (!held && caught instanceof DomainProductionError) return;
+    if (!held) throw caught;
   }
+  if (held) redirectChangeError(workItemId, "CHANGE_HOLD");
   revalidatePath(`/production/${workItemId}`);
 }
 
@@ -121,16 +158,19 @@ async function completeProductionAction(formData: FormData) {
   if (!workItemId) return;
   const producedQuantity = Number(formStr(formData.get("producedQuantity")));
   const notes = formStr(formData.get("notes"));
+  let held = false;
   try {
     await completeProduction(actor, workItemId, {
       producedQuantity,
       notes: notes ? notes : undefined,
     });
   } catch (caught) {
-    if (caught instanceof DomainProductionError) return;
-    if (caught instanceof Error && caught.name === "ZodError") return;
-    throw caught;
+    held = isChangeHoldRefusal(caught);
+    if (!held && caught instanceof DomainProductionError) return;
+    if (!held && caught instanceof Error && caught.name === "ZodError") return;
+    if (!held) throw caught;
   }
+  if (held) redirectChangeError(workItemId, "CHANGE_HOLD");
   revalidatePath(`/production/${workItemId}`);
 }
 
@@ -140,13 +180,16 @@ async function sendBackToDesignAction(formData: FormData) {
   const workItemId = formStr(formData.get("workItemId"));
   if (!workItemId) return;
   const reason = formStr(formData.get("reason"));
+  let held = false;
   try {
     await sendBackToDesign(actor, workItemId, { reason });
   } catch (caught) {
-    if (caught instanceof DomainProductionError) return;
-    if (caught instanceof Error && caught.name === "ZodError") return;
-    throw caught;
+    held = isChangeHoldRefusal(caught);
+    if (!held && caught instanceof DomainProductionError) return;
+    if (!held && caught instanceof Error && caught.name === "ZodError") return;
+    if (!held) throw caught;
   }
+  if (held) redirectChangeError(workItemId, "CHANGE_HOLD");
   revalidatePath(`/production/${workItemId}`);
 }
 
@@ -185,10 +228,13 @@ async function recordReceivedFromVendorAction(formData: FormData) {
 
 export default async function ProductionJobCardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ workItemId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { workItemId } = await params;
+  const { changeError } = await searchParams;
   const actor = await getActor();
 
   let card: Awaited<ReturnType<typeof getJobCard>>;
@@ -220,6 +266,10 @@ export default async function ProductionJobCardPage({
   const isInProduction = card.state === "IN_PRODUCTION";
   const hasPendingRevision = card.pendingFileRevisionAt !== null;
   const vendorAwaitingReceipt = card.vendorRecord !== null && card.vendorRecord.receivedAt === null;
+  // 016: resume / complete / send-back are disabled while held (the server refuses anyway).
+  const isHeld = card.changeHold !== null;
+  const changeErrorMessage =
+    typeof changeError === "string" ? getChangeErrorMessage(changeError as ChangeErrorCode) : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -255,6 +305,11 @@ export default async function ProductionJobCardPage({
                   <Sparkles className="h-3 w-3" />
                   <span>{card.state}</span>
                 </span>
+                {card.specVersion !== null && (
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                    {ar.changes.hold.specVersionLabel} {card.specVersion}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 بطاقة تشغيل خط الإنتاج (Job Card)
@@ -271,6 +326,22 @@ export default async function ProductionJobCardPage({
           </div>
         </div>
       </div>
+
+      {/* ── 016: change hold (pending request / unacknowledged revision) ── */}
+      {card.changeHold ? (
+        <ChangeHoldBanner
+          hold={card.changeHold}
+          workItemId={workItemId}
+          acknowledgeAction={acknowledgeSpecRevisionAction}
+          errorMessage={changeErrorMessage}
+        />
+      ) : (
+        changeErrorMessage && (
+          <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive" role="alert">
+            {changeErrorMessage}
+          </p>
+        )
+      )}
 
       {/* ── Pending File Revision Banner ── */}
       {hasPendingRevision && (
@@ -341,6 +412,19 @@ export default async function ProductionJobCardPage({
               </div>
             </dl>
           </section>
+
+          {/* 016 (FR-020): spec changes since production started */}
+          {card.productionStartDiff.length > 0 && (
+            <section className="apple-card p-6 sm:p-7" data-testid="production-start-diff">
+              <h2 className="mb-4 text-base font-bold text-foreground">
+                {ar.changes.diff.productionStartHeading}
+              </h2>
+              <SpecDiff
+                changes={card.productionStartDiff}
+                productTypeNames={card.productionStartProductTypeNames}
+              />
+            </section>
+          )}
 
           {/* Approved file download card */}
           <section className="apple-card p-6 sm:p-7">
@@ -478,7 +562,7 @@ export default async function ProductionJobCardPage({
                   </form>
                   <form action={resumeProductionAction}>
                     <input type="hidden" name="workItemId" value={workItemId} />
-                    <Button type="submit" variant="outline" size="sm" disabled={hasPendingRevision} className="w-full">
+                    <Button type="submit" variant="outline" size="sm" disabled={hasPendingRevision || isHeld} className="w-full">
                       <Play className="h-4 w-4" />
                       <span>{S.myQueueResumeButton}</span>
                     </Button>
@@ -536,7 +620,7 @@ export default async function ProductionJobCardPage({
                 </div>
 
                 <div className="pt-2">
-                  <Button type="submit" variant="default" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25">
+                  <Button type="submit" variant="default" disabled={isHeld} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25">
                     <CheckCircle2 className="h-4 w-4" />
                     <span>{S.productionCompleteButton}</span>
                   </Button>
@@ -577,7 +661,7 @@ export default async function ProductionJobCardPage({
                 </div>
 
                 <div className="pt-2">
-                  <Button type="submit" variant="outline" className="w-full border-amber-500/40 text-amber-700 hover:bg-amber-500/10 dark:text-amber-300">
+                  <Button type="submit" variant="outline" disabled={isHeld} className="w-full border-amber-500/40 text-amber-700 hover:bg-amber-500/10 dark:text-amber-300">
                     <RotateCcw className="h-4 w-4" />
                     <span>{S.productionSendBackButton}</span>
                   </Button>

@@ -41,7 +41,39 @@ import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/ser
 import type { EligibleDesigner } from "~/server/designers";
 import { OrderFinancePanel } from "~/components/finance/order-finance-panel";
 import { Button } from "~/components/ui/button";
+import {
+  editSpec,
+  specEditPolicy,
+  redesignChoice,
+  toSpecSnapshot,
+  type SpecPatchInput,
+  type WorkItemDimensionUnit,
+} from "~/server/changes";
+import {
+  SpecHistory,
+  EditSpecForm,
+  getChangeErrorMessage,
+  type EditSpecActionResult,
+} from "~/components/changes";
+// 016 US3 (T051): change requests on IN_PRODUCTION Work Items.
+import {
+  createChangeRequest,
+  withdrawChangeRequest,
+  findPendingChangeRequestIds,
+} from "~/server/changes";
+import { specPatchFromFormData } from "~/components/changes";
+// 016 US7 (T070): admin override of the specification.
+import { adminOverrideSpec, canRedesignOnApproval } from "~/server/changes";
+import { AdminOverrideForm } from "~/components/changes";
+// 016 US6 (T067): late cancellation after production started.
+import { cancelAfterProductionStarted, LATE_CANCEL_STATES } from "~/server/changes";
+import { LateCancelForm, CancelOrderForm, type CancelOrderActionResult } from "~/components/changes";
 import ar from "~/messages/ar.json";
+
+const VALID_DIMENSION_UNITS = new Set<string>(["MM", "CM", "M", "IN"]);
+function isDimensionUnit(value: unknown): value is WorkItemDimensionUnit {
+  return typeof value === "string" && VALID_DIMENSION_UNITS.has(value);
+}
 
 const S = ar.ui;
 
@@ -150,15 +182,46 @@ async function cancelWorkItemAction(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
-async function cancelOrderAction(formData: FormData) {
+async function cancelOrderAction(
+  _prevState: CancelOrderActionResult | null,
+  formData: FormData,
+): Promise<CancelOrderActionResult | null> {
   "use server";
   const actor = await getActor();
   const orderId = formStr(formData.get("orderId"));
   const reason = formStr(formData.get("reason")).trim();
-  if (!orderId || !reason) return;
-  await cancelOrder(actor, orderId, reason);
+  if (!orderId || !reason) return null;
+  const result = await cancelOrder(actor, orderId, reason);
   revalidatePath(`/orders/${orderId}`);
+  // 016 US6: items already in production are listed, not silently skipped.
+  return {
+    cancelledCount: result.cancelledWorkItemIds.length,
+    requiresLateCancellation: result.requiresLateCancellation,
+  };
 }
+
+// 016 US6 (T067): cancel after production started, with reason and cost.
+async function lateCancelAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const produced = formStr(formData.get("producedQuantitySoFar")).trim();
+  const result = await cancelAfterProductionStarted(actor, {
+    workItemId: formStr(formData.get("workItemId")),
+    reason: formStr(formData.get("reason")),
+    costIncurred: formStr(formData.get("costIncurred")),
+    producedQuantitySoFar: produced === "" ? undefined : Number(produced),
+    costNote: formStr(formData.get("costNote")),
+  });
+  if (!result.ok) return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
+const LATE_CANCEL_STATE_SET = new Set<string>(LATE_CANCEL_STATES);
 
 async function addWorkItemAction(formData: FormData) {
   "use server";
@@ -223,14 +286,169 @@ async function assignDesignerAction(formData: FormData) {
   revalidatePath(`/orders/${orderId}`);
 }
 
+async function editSpecAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const workItemId = formStr(formData.get("workItemId"));
+  const expectedVersion = Number(formData.get("expectedVersion"));
+
+  if (!workItemId || !orderId || !Number.isFinite(expectedVersion)) {
+    return { ok: false, error: getChangeErrorMessage("VALIDATION") };
+  }
+
+  const patch: SpecPatchInput = {};
+  if (formData.has("quantity")) {
+    const q = formData.get("quantity");
+    if (typeof q === "string" && q.trim() !== "") {
+      patch.quantity = Number(q);
+    }
+  }
+  if (formData.has("widthValue")) {
+    const w = formData.get("widthValue");
+    if (typeof w === "string") {
+      patch.widthValue = w.trim() === "" ? null : w.trim();
+    }
+  }
+  if (formData.has("heightValue")) {
+    const h = formData.get("heightValue");
+    if (typeof h === "string") {
+      patch.heightValue = h.trim() === "" ? null : h.trim();
+    }
+  }
+  if (formData.has("dimensionUnit")) {
+    const u = formData.get("dimensionUnit");
+    if (typeof u === "string") {
+      const trimmed = u.trim();
+      if (trimmed === "") {
+        patch.dimensionUnit = null;
+      } else if (isDimensionUnit(trimmed)) {
+        patch.dimensionUnit = trimmed;
+      }
+    }
+  }
+  if (formData.has("material")) {
+    const m = formData.get("material");
+    if (typeof m === "string") {
+      patch.material = m.trim() === "" ? null : m.trim();
+    }
+  }
+  if (formData.has("description")) {
+    const d = formData.get("description");
+    if (typeof d === "string") {
+      patch.description = d.trim() === "" ? null : d.trim();
+    }
+  }
+  if (formData.has("finishNotes")) {
+    const f = formData.get("finishNotes");
+    if (typeof f === "string") {
+      patch.finishNotes = f.trim() === "" ? null : f.trim();
+    }
+  }
+
+  const reasonRaw = formData.get("reason");
+  const reason =
+    typeof reasonRaw === "string" && reasonRaw.trim() !== "" ? reasonRaw.trim() : undefined;
+
+  const choiceRaw = formData.get("designChoice");
+  const designChoice =
+    choiceRaw === "REDESIGN" || choiceRaw === "KEEP_DESIGN" ? choiceRaw : undefined;
+
+  const originDeptRaw = formData.get("originDepartmentId");
+  const originDepartmentId =
+    typeof originDeptRaw === "string" && originDeptRaw.trim() !== ""
+      ? originDeptRaw.trim()
+      : undefined;
+
+  const result = await editSpec(actor, {
+    workItemId,
+    expectedVersion,
+    patch,
+    reason,
+    designChoice,
+    originDepartmentId,
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  }
+
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
+// 016 US3 (T051): raise / withdraw a change request (IN_PRODUCTION only).
+async function requestChangeAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const result = await createChangeRequest(actor, {
+    workItemId: formStr(formData.get("workItemId")),
+    patch: specPatchFromFormData(formData),
+    reason: formStr(formData.get("reason")),
+  });
+  if (!result.ok) return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
+async function withdrawChangeRequestAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const result = await withdrawChangeRequest(actor, {
+    changeRequestId: formStr(formData.get("changeRequestId")),
+    reason: formStr(formData.get("reason")),
+  });
+  if (!result.ok) return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
+// 016 US7 (T070): admin override (any non-cancelled state, reason required).
+async function adminOverrideAction(
+  _prevState: EditSpecActionResult | null,
+  formData: FormData,
+): Promise<EditSpecActionResult> {
+  "use server";
+  const actor = await getActor();
+  const orderId = formStr(formData.get("orderId"));
+  const outcome = formData.get("outcome");
+  const designChoice = formData.get("designChoice");
+  const result = await adminOverrideSpec(actor, {
+    workItemId: formStr(formData.get("workItemId")),
+    expectedVersion: Number(formData.get("expectedVersion")),
+    patch: specPatchFromFormData(formData),
+    reason: formStr(formData.get("reason")),
+    outcome: outcome === "CONTINUE_PRODUCTION" || outcome === "REDESIGN" ? outcome : undefined,
+    designChoice: designChoice === "REDESIGN" || designChoice === "KEEP_DESIGN" ? designChoice : undefined,
+    originDepartmentId: formStr(formData.get("originDepartmentId")) || undefined,
+  });
+  if (!result.ok) return { ok: false, error: getChangeErrorMessage(result.error.code) };
+  revalidatePath(`/orders/${orderId}`);
+  return { ok: true, success: true };
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────
 
 export default async function OrderDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orderId: string }>;
+  // 016 US4 (T058): the spec-history two-version picker is a GET form.
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { orderId } = await params;
+  const [{ orderId }, specDiffParams] = await Promise.all([params, searchParams]);
   const actor = await getActor();
   const detail = await getOrderDetail(actor, orderId);
 
@@ -248,16 +466,34 @@ export default async function OrderDetailPage({
   // Designer assignment dialog data (US1/US2, contracts/designer-assignment.md).
   const canAssignDesigner = actor.permissions.has("workitem.assign_designer");
 
+  const workItemIds = detail.workItems.map((wi) => wi.id);
   const assigneeRows = await db.workItem.findMany({
-    where: { orderId },
-    select: { id: true, assigneeId: true, assignee: { select: { name: true } } },
+    where: { id: { in: workItemIds } },
+    select: {
+      id: true,
+      assigneeId: true,
+      assignee: { select: { name: true } },
+      requiresDesign: true,
+      departmentId: true,
+      productTypeId: true,
+      description: true,
+      quantity: true,
+      widthValue: true,
+      heightValue: true,
+      dimensionUnit: true,
+      material: true,
+      finishNotes: true,
+      productType: { select: { defaultDepartmentId: true } },
+      currentSpecVersion: { select: { version: true } },
+    },
   });
   const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
+  const workItemExtraById = new Map(assigneeRows.map((r) => [r.id, r]));
 
   // US5 (013, T036): rework count per Work Item
   const reworkCounts = await db.return.groupBy({
     by: ["workItemId"],
-    where: { workItemId: { in: detail.workItems.map((wi) => wi.id) } },
+    where: { workItemId: { in: workItemIds } },
     _count: { _all: true },
   });
   const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
@@ -270,6 +506,34 @@ export default async function OrderDetailPage({
       }
     }
   }
+
+  const canEditSpec = actor.permissions.has("order.edit");
+  const needsDepartments =
+    canEditSpec &&
+    detail.workItems.some((wi) => {
+      const extra = workItemExtraById.get(wi.id);
+      const choice = redesignChoice(wi.state, extra?.requiresDesign ?? false);
+      const effectiveDept =
+        extra?.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
+      return choice === "REQUIRED" && !effectiveDept;
+    });
+
+  const departments = needsDepartments
+    ? await db.department.findMany({
+        select: { id: true, name: true },
+      })
+    : undefined;
+
+  // 016 US3: open change request per IN_PRODUCTION Work Item (withdraw action).
+  //     One query for all of them, not one per Work Item.
+  const pendingChangeRequestByWorkItem = await findPendingChangeRequestIds(
+    db,
+    canEditSpec
+      ? detail.workItems
+          .filter((wi) => specEditPolicy(wi.state) === "CHANGE_REQUEST")
+          .map((wi) => wi.id)
+      : [],
+  );
 
   const activeStepIdx = getActiveStepIndex(detail.order.status, detail.workItems);
   const customerInitials = (detail.order.customerName || "ع")
@@ -415,17 +679,14 @@ export default async function OrderDetailPage({
             <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
             <span>إلغاء الطلب بالكامل</span>
           </summary>
-          <form action={cancelOrderAction} className="mt-3 flex flex-wrap items-end gap-2.5 bg-destructive/5 p-4 rounded-2xl border border-destructive/20">
-            <input type="hidden" name="orderId" value={orderId} />
-            <div className="flex flex-1 min-w-[200px] flex-col gap-1">
-              <label className="text-xs font-semibold text-foreground">{S.cancelReasonLabel}</label>
-              <input name="reason" type="text" placeholder="سبب إلغاء الطلب..." required className={inputCls} />
-            </div>
-            <Button type="submit" variant="destructive" size="sm">
-              <XCircle className="h-3.5 w-3.5" />
-              <span>{S.cancelOrderButton}</span>
-            </Button>
-          </form>
+          {/* 016 US6: reports items that need a late cancellation instead. */}
+          <CancelOrderForm
+            orderId={orderId}
+            workItemLabels={Object.fromEntries(
+              detail.workItems.map((wi) => [wi.id, `${S.workItemCardHeading} — ${wi.description ?? wi.id}`]),
+            )}
+            action={cancelOrderAction}
+          />
         </details>
       </section>
 
@@ -611,27 +872,36 @@ export default async function OrderDetailPage({
                     )}
                   </div>
 
-                  {/* Cancel Work Item Button / Disclosure */}
-                  <details className="group">
-                    <summary className="cursor-pointer text-xs font-semibold text-destructive/80 hover:text-destructive flex items-center gap-1">
-                      <XCircle className="h-3.5 w-3.5" />
-                      <span>{S.cancelWorkItemButton}</span>
-                    </summary>
-                    <form action={cancelWorkItemAction} className="mt-2 flex items-center gap-2 bg-destructive/5 p-2.5 rounded-xl border border-destructive/20">
-                      <input type="hidden" name="workItemId" value={wi.id} />
-                      <input type="hidden" name="orderId" value={orderId} />
-                      <input
-                        name="reason"
-                        type="text"
-                        placeholder={S.cancelReasonLabel}
-                        required
-                        className="w-36 rounded-lg border border-input bg-background px-2.5 py-1 text-xs text-foreground"
-                      />
-                      <Button type="submit" variant="destructive" size="xs">
-                        تأكيد الإلغاء
-                      </Button>
-                    </form>
-                  </details>
+                  {/* Cancel — after production started only a late cancellation (016 US6) */}
+                  {LATE_CANCEL_STATE_SET.has(wi.state) ? (
+                    <div className="flex w-full flex-col gap-2" data-testid="late-cancel-required">
+                      <p className="text-xs text-destructive">{ar.changes.lateCancel.requiredNotice}</p>
+                      {actor.permissions.has("order.cancel") && (
+                        <LateCancelForm workItemId={wi.id} orderId={orderId} action={lateCancelAction} />
+                      )}
+                    </div>
+                  ) : (
+                                      <details className="group">
+                      <summary className="cursor-pointer text-xs font-semibold text-destructive/80 hover:text-destructive flex items-center gap-1">
+                        <XCircle className="h-3.5 w-3.5" />
+                        <span>{S.cancelWorkItemButton}</span>
+                      </summary>
+                      <form action={cancelWorkItemAction} className="mt-2 flex items-center gap-2 bg-destructive/5 p-2.5 rounded-xl border border-destructive/20">
+                        <input type="hidden" name="workItemId" value={wi.id} />
+                        <input type="hidden" name="orderId" value={orderId} />
+                        <input
+                          name="reason"
+                          type="text"
+                          placeholder={S.cancelReasonLabel}
+                          required
+                          className="w-36 rounded-lg border border-input bg-background px-2.5 py-1 text-xs text-foreground"
+                        />
+                        <Button type="submit" variant="destructive" size="xs">
+                          تأكيد الإلغاء
+                        </Button>
+                      </form>
+                    </details>
+                  )}
                 </div>
 
                 {/* Designer Assignment Section */}
@@ -722,6 +992,58 @@ export default async function OrderDetailPage({
                     </form>
                   </details>
                 )}
+
+                {(() => {
+                  const extra = workItemExtraById.get(wi.id);
+                  if (!extra) return null;
+                  return (
+                    <EditSpecForm
+                      workItemId={wi.id}
+                      orderId={orderId}
+                      policy={specEditPolicy(wi.state)}
+                      choice={redesignChoice(wi.state, extra.requiresDesign)}
+                      expectedVersion={extra.currentSpecVersion?.version ?? 1}
+                      canEdit={canEditSpec}
+                      currentSpec={toSpecSnapshot(extra)}
+                      departments={departments}
+                      effectiveDepartmentId={
+                        extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                      }
+                      action={editSpecAction}
+                      changeRequest={{
+                        pendingId: pendingChangeRequestByWorkItem.get(wi.id) ?? null,
+                        requestAction: requestChangeAction,
+                        withdrawAction: withdrawChangeRequestAction,
+                      }}
+                    />
+                  );
+                })()}
+
+                {/* 016 US7 (T070): admin override, admin.override holders only. */}
+                {actor.permissions.has("admin.override") &&
+                  wi.state !== "CANCELLED" &&
+                  (() => {
+                    const extra = workItemExtraById.get(wi.id);
+                    if (!extra) return null;
+                    return (
+                      <AdminOverrideForm
+                        workItemId={wi.id}
+                        orderId={orderId}
+                        expectedVersion={extra.currentSpecVersion?.version ?? 1}
+                        currentSpec={toSpecSnapshot(extra)}
+                        inProduction={wi.state === "IN_PRODUCTION"}
+                        canRedesign={canRedesignOnApproval(extra)}
+                        choice={redesignChoice(wi.state, extra.requiresDesign)}
+                        departments={departments}
+                        effectiveDepartmentId={
+                          extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                        }
+                        action={adminOverrideAction}
+                      />
+                    );
+                  })()}
+
+                <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
               </div>
             );
           })}

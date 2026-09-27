@@ -14,6 +14,7 @@ import {
   Receipt,
   Coins,
   ShieldAlert,
+  GitPullRequest,
   Layers,
   ChevronLeft,
 } from "lucide-react";
@@ -32,6 +33,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Receipt,
   Coins,
   ShieldAlert,
+  GitPullRequest,
 };
 
 const SECTION_HEADERS: Record<string, string> = {

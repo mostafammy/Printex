@@ -9,6 +9,12 @@ import { DomainOrderError } from "./errors";
 import { isOrderFinished, PRE_DESIGN_EDITABLE_STATES } from "./completeness";
 import { workItemCreateSchema, dimensionUnitValues } from "./validation";
 import type { WorkItemCreateInput } from "./validation";
+import {
+  createInitialSpecVersionInTx,
+  ensureCurrentSpecVersionInTx,
+  applySpecChangeInTx,
+  runInTxScope,
+} from "~/server/changes";
 
 // ── addWorkItem (US7) ───────────────────────────────────────────────────────
 
@@ -20,9 +26,8 @@ export async function addWorkItem(
   authorize(actor, "order.create");
   const parsed = workItemCreateSchema.parse(input);
 
-  let workItemId!: string;
-
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  return await runInTxScope(db, async (scope) => {
+    const tx = scope.tx;
     const existing = await tx.workItem.findMany({ where: { orderId }, select: { state: true } });
 
     // Refused BEFORE any write when every sibling Work Item is finished
@@ -32,7 +37,11 @@ export async function addWorkItem(
     }
 
     const workItem = await tx.workItem.create({ data: { orderId, state: "NEW", ...parsed } });
-    workItemId = workItem.id;
+
+    await createInitialSpecVersionInTx(scope, {
+      workItemId: workItem.id,
+      actorId: actor.userId,
+    });
 
     await audit.record(tx, {
       action: "workitem.created",
@@ -41,9 +50,9 @@ export async function addWorkItem(
       actorId: actor.userId,
       after: { ...parsed, dueDate: parsed.dueDate?.toISOString(), orderId, addedToExistingOrder: true },
     });
-  });
 
-  return { workItemId };
+    return { workItemId: workItem.id };
+  });
 }
 
 // ── editWorkItem (US8) ──────────────────────────────────────────────────────
@@ -69,32 +78,64 @@ export async function editWorkItem(actor: Actor, workItemId: string, patch: Edit
   authorize(actor, "order.edit");
   const parsed = editWorkItemSchema.parse(patch);
 
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const existing = await tx.workItem.findUniqueOrThrow({ where: { id: workItemId } });
+  await runInTxScope(
+    db,
+    async (scope) => {
+      const tx = scope.tx;
+      await tx.$queryRaw`SELECT 1 FROM "WorkItem" WHERE id = ${workItemId} FOR UPDATE`;
+      const existing = await tx.workItem.findUniqueOrThrow({ where: { id: workItemId } });
 
-    if (!PRE_DESIGN_EDITABLE_STATES.has(existing.state)) {
-      throw new DomainOrderError(
-        "PAST_EDIT_WINDOW",
-        "This item has entered design; use 016's change process instead.",
-      );
-    }
+      if (!PRE_DESIGN_EDITABLE_STATES.has(existing.state)) {
+        throw new DomainOrderError(
+          "PAST_EDIT_WINDOW",
+          "This item has entered design; use 016's change process instead.",
+        );
+      }
 
-    await tx.workItem.update({ where: { id: workItemId }, data: parsed });
+      const { dueDate, ...specPatch } = parsed;
 
-    const patchKeys = Object.keys(parsed) as Array<keyof typeof parsed>;
-    const before: Record<string, unknown> = {};
-    for (const key of patchKeys) {
-      const value = existing[key as keyof typeof existing];
-      before[key] = value instanceof Prisma.Decimal ? value.toNumber() : value instanceof Date ? value.toISOString() : value;
-    }
+      if (Object.keys(specPatch).length > 0) {
+        const currentVersion = await ensureCurrentSpecVersionInTx(
+          scope,
+          workItemId,
+        );
+        await applySpecChangeInTx(
+          scope,
+          {
+            workItemId,
+            actorId: actor.userId,
+            origin: "DIRECT_EDIT",
+            patch: specPatch,
+            expected: { version: currentVersion.version },
+            reason: null,
+            ifUnchanged: "skip",
+          },
+        );
+      }
 
-    await audit.record(tx, {
-      action: "workitem.edited",
-      entityType: "WorkItem",
-      entityId: workItemId,
-      actorId: actor.userId,
-      before,
-      after: { ...parsed, dueDate: parsed.dueDate === undefined ? undefined : parsed.dueDate?.toISOString() ?? null },
-    });
-  });
+      if (dueDate !== undefined) {
+        await tx.workItem.update({
+          where: { id: workItemId },
+          data: { dueDate },
+        });
+      }
+
+      const patchKeys = Object.keys(parsed) as Array<keyof typeof parsed>;
+      const before: Record<string, unknown> = {};
+      for (const key of patchKeys) {
+        const value = existing[key as keyof typeof existing];
+        before[key] = value instanceof Prisma.Decimal ? value.toNumber() : value instanceof Date ? value.toISOString() : value;
+      }
+
+      await audit.record(tx, {
+        action: "workitem.edited",
+        entityType: "WorkItem",
+        entityId: workItemId,
+        actorId: actor.userId,
+        before,
+        after: { ...parsed, dueDate: parsed.dueDate === undefined ? undefined : parsed.dueDate?.toISOString() ?? null },
+      });
+    },
+    { timeout: 15000 },
+  );
 }
