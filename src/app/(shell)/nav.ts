@@ -20,6 +20,8 @@ export interface NavItem {
   // actor, regardless of role" (used for "My queue", which every print-shop
   // role has).
   readonly roles: readonly string[];
+  readonly section?: "workspace" | "operations" | "finance" | "management";
+  readonly iconName?: string;
 }
 
 // Real RoleKey values (~/server/auth), not the pre-001 placeholder strings
@@ -37,64 +39,127 @@ const ADMIN: RoleKey = "ADMIN_OWNER";
 // Admin) reserved for future features' nav entries — not yet backed by a
 // page, so they intentionally have no route behind them beyond the label.
 export const navItems: readonly NavItem[] = [
-  { id: "my-queue", href: "/my-queue", label: ar.nav.myQueue, roles: [] },
+  {
+    id: "my-queue",
+    href: "/my-queue",
+    label: ar.nav.myQueue,
+    roles: [],
+    section: "workspace",
+    iconName: "Clock",
+  },
   {
     id: "review",
     href: "/review",
     label: ar.nav.review,
     roles: ["HEAD_DESIGNER", ADMIN],
+    section: "workspace",
+    iconName: "CheckCircle2",
   },
   {
     id: "reception",
     href: "/reception",
     label: ar.nav.reception,
     roles: ["RECEPTION", ADMIN],
+    section: "operations",
+    iconName: "Inbox",
   },
   {
     id: "design",
     href: "/design",
     label: ar.nav.design,
     roles: ["DESIGNER", "HEAD_DESIGNER", ADMIN],
+    section: "operations",
+    iconName: "Palette",
   },
   {
     id: "production",
     href: "/production",
     label: ar.nav.production,
     roles: ["PRODUCTION_OPERATOR", ADMIN],
+    section: "operations",
+    iconName: "Printer",
   },
   {
     id: "pricing",
     href: "/pricing",
     label: ar.nav.pricing,
     roles: ["RECEPTION", "ACCOUNTING", ADMIN],
+    section: "operations",
+    iconName: "Tag",
   },
   {
     id: "delivery",
     href: "/delivery",
     label: ar.nav.delivery,
     roles: ["PRINT_RECEPTION_DELIVERY", ADMIN],
+    section: "operations",
+    iconName: "Truck",
   },
   {
     id: "finance-expenses",
     href: "/finance/expenses",
     label: ar.nav.financeExpenses,
     roles: ["ACCOUNTING", ADMIN],
+    section: "finance",
+    iconName: "Receipt",
   },
   {
     id: "finance-daily-cash",
     href: "/finance/daily-cash",
     label: ar.nav.financeDailyCash,
     roles: ["ACCOUNTING", ADMIN],
+    section: "finance",
+    iconName: "Coins",
   },
-  { id: "admin", href: "/admin", label: ar.nav.admin, roles: [ADMIN] },
+  // 016 US3 (T052): approver queue. Cosmetic gating only — the page itself
+  // authorizes by the `change.approve` permission.
+  {
+    id: "changes",
+    href: "/changes",
+    label: ar.nav.changes,
+    roles: ["HEAD_DESIGNER", ADMIN],
+    section: "operations",
+    iconName: "GitPullRequest",
+  },
+  {
+    id: "admin",
+    // No `/admin` index page exists yet — points straight at the one admin
+    // hub page that's actually built, rather than a dead link.
+    href: "/admin/health",
+    label: ar.nav.admin,
+    roles: [ADMIN],
+    section: "management",
+    iconName: "ShieldAlert",
+  },
   // 053-notifications. The bell is on every page for every role (FR-020) and
   // reaches the full page, so this entry is unrole-gated like "my-queue". The
   // delayed list is unrole-gated too, because its SCOPE is derived from the
   // actor inside the query (FR-057) — a role filter here would be a second,
   // coarser, and possibly contradictory access model.
-  { id: "notifications", href: "/notifications", label: ar.nav.notifications, roles: [] },
-  { id: "delayed", href: "/delayed", label: ar.nav.delayed, roles: [] },
-  { id: "admin-notifications", href: "/admin/notifications", label: ar.nav.notifications, roles: [ADMIN] },
+  {
+    id: "notifications",
+    href: "/notifications",
+    label: ar.nav.notifications,
+    roles: [],
+    section: "operations",
+    iconName: "Bell",
+  },
+  {
+    id: "delayed",
+    href: "/delayed",
+    label: ar.nav.delayed,
+    section: "operations",
+    roles: [],
+    iconName: "Clock",
+  },
+  {
+    id: "admin-notifications",
+    href: "/admin/notifications",
+    label: ar.nav.notifications,
+    roles: [ADMIN],
+    section: "management",
+    iconName: "Bell",
+  },
 ];
 
 // Pure, framework-free filter: shows only the entries `actor`'s roles allow.
