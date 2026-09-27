@@ -25,6 +25,7 @@ import {
   Footprints,
   PhoneCall,
   Palette,
+  Paperclip,
 } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor } from "~/server/auth";
@@ -774,6 +775,18 @@ export default async function OrderDetailPage({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* 050-files: every Work Item's file panel. The component
+                        shipped complete but nothing rendered it, so files were
+                        only reachable by typing a URL — this link is what makes
+                        PRD §17's "the person working the job can see its files"
+                        actually true. */}
+                    <Link
+                      href={`/work-items/${wi.id}/files`}
+                      className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-muted/40 px-2.5 py-0.5 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      {ar.nav.files}
+                    </Link>
                     {reworkCount > 0 && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
                         <Flame className="h-3 w-3" />

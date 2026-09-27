@@ -12,7 +12,8 @@
     "financeExpenses": "المصروفات",
     "financeDailyCash": "النقد اليومي",
     "notifications": "الإشعارات",
-    "delayed": "الأعمال المتأخرة"
+    "delayed": "الأعمال المتأخرة",
+    "files": "الملفات"
   },
   "roles": {
     "reception": "موظف استقبال",
@@ -426,7 +427,9 @@
     "tableHeaderEffectiveFrom": "من تاريخ",
     "tableHeaderEffectiveTo": "إلى تاريخ",
     "tableHeaderTiers": "الشرائح",
-    "statusRetired": "متوقف"
+    "statusRetired": "متوقف",
+    "filesTitle": "ملفات الشغل",
+    "filesForbidden": "ليس لديك صلاحية لعرض ملفات هذا الشغل"
   },
   "changes": {
     "fields": {
