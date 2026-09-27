@@ -120,7 +120,7 @@ export function createAspects<A extends { userId: string }, P extends string>(
     /** Maps a transitionWorkItem GUARD_FAILED guardCode to a module error. undefined → base GUARD_FAILED. */
     readonly mapGuardFailure?: (guardCode: string, details: unknown) => E | undefined;
     /** Maps a Prisma P2002 unique violation to a module error. undefined → base CONFLICT. */
-    readonly mapUniqueViolation?: (target: readonly string[]) => E | undefined;
+    readonly mapUniqueViolation?: (target: readonly string[], modelName: string | undefined) => E | undefined;
   }): {
     defineCommand: DefineCommand<A, P, E>;
     defineQuery: DefineQuery<A, P, E>;
@@ -146,7 +146,7 @@ type DefineCommand<A, P extends string, E extends ModuleErrorShape> = <
   /** Composition inside a caller's transaction. It throws AspectDomainError<E> so the caller rolls back.
    *  Exists only when the command has no `prepare` (conditional type), because pre-transaction I/O cannot run
    *  inside someone else's transaction. */
-  inTx: Prep extends undefined ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
+  inTx: [Prep] extends [undefined] ? (scope: TxScope, actor: A, raw: z.input<S>) => Promise<O> : never;
 };
 
 type DefineQuery<A, P extends string, E extends ModuleErrorShape> = <S extends z.ZodTypeAny, O>(def: {
@@ -155,7 +155,7 @@ type DefineQuery<A, P extends string, E extends ModuleErrorShape> = <S extends z
   readonly authorize?: (c: { client: Tx; actor: A; input: z.output<S>;
                              check: (p: P, scope?: { departmentId?: string }) => void }) => Promise<void> | void;
   readonly run: (c: { client: Tx; actor: A; coreActor: CoreActor; input: z.output<S> }) => Promise<O>;
-  /** true → run inside a read transaction for a consistent snapshot. */
+  /** true → run inside a read transaction for a consistent snapshot. `consistent: true` runs the query in a REPEATABLE READ read transaction. */
   readonly consistent?: boolean;
 }) => (actor: A, raw: z.input<S>) => Promise<AspectResult<O, E>>;
 ```
@@ -199,7 +199,7 @@ A **query** runs step 1, then step 2, then `authorize`, then `run` on `deps.read
 | `TransitionFailure` with `INVALID_TRANSITION` and `details.expectedFrom` (optimistic-concurrency miss) | `CONFLICT { entity: "WorkItem", id }` |
 | `TransitionFailure` with `INVALID_TRANSITION` and no `expectedFrom` | `INVALID_STATE { workItemIds: [id], expected: [] }` |
 | `TransitionFailure` with `GUARD_FAILED` and `details.guardCode = g` | `mapGuardFailure(g, details) ?? GUARD_FAILED { guardCode: g, message }` |
-| Prisma error with `code === "P2002"` (checked structurally) | `mapUniqueViolation(meta.target) ?? CONFLICT { entity: modelName, id: "" }` |
+| Prisma error with `code === "P2002"` (checked structurally) | `mapUniqueViolation(meta.target, meta.modelName) ?? CONFLICT { entity: modelName, id: "" }` |
 | `AspectMisuseError`, anything else | re-thrown |
 
 ```ts

@@ -7,6 +7,7 @@
 
 import { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
+import { paginateQuery } from "~/server/pagination";
 import { getCurrentPrice } from "~/server/pricing";
 import { readCreditCompensations } from "./ports";
 import { toDecimalString } from "./money";
@@ -171,31 +172,55 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
   };
 }
 
-/** 090 rollup (contracts/queries.md listCustomerBalances). */
+/**
+ * 090 rollup (contracts/queries.md listCustomerBalances). The contract
+ * already documents a `page?` filter; the previous implementation ignored
+ * it and did `db.customer.findMany()` with no `where`-narrowing take, then
+ * ran a full N+1 `customerBalance` (itself N+1 over each customer's orders)
+ * across every non-cash customer on every call. Paginating the customer
+ * scan bounds both the row count fetched AND the number of `customerBalance`
+ * calls made per invocation.
+ */
 export async function listCustomerBalances(filter?: {
   readonly creditApproved?: boolean;
   readonly positiveOnly?: boolean;
-}): Promise<Array<{ customerId: string; name: string; balance: string; creditApproved: boolean; creditLimit: string | null }>> {
-  const rows = await db.customer.findMany({
-    where: { isArchived: false, isCashCustomer: false },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
-  const out: Array<{
+  readonly page?: number;
+  readonly pageSize?: number;
+}): Promise<{
+  rows: Array<{
+    customerId: string;
+    name: string;
+    balance: string;
+    creditApproved: boolean;
+    creditLimit: string | null;
+  }>;
+  nextCursor: number | null;
+}> {
+  const page = await paginateQuery(filter ?? {}, (skip, take) =>
+    db.customer.findMany({
+      where: { isArchived: false, isCashCustomer: false },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+      skip,
+      take,
+    }),
+  );
+
+  const rows: Array<{
     customerId: string;
     name: string;
     balance: string;
     creditApproved: boolean;
     creditLimit: string | null;
   }> = [];
-  for (const row of rows) {
+  for (const row of page.rows) {
     const balance = await customerBalance(row.id);
     if (!balance) continue;
     if (filter?.creditApproved !== undefined && balance.creditApproved !== filter.creditApproved) {
       continue;
     }
     if (filter?.positiveOnly && new Prisma.Decimal(balance.balance).lte(0)) continue;
-    out.push({
+    rows.push({
       customerId: row.id,
       name: row.name,
       balance: balance.balance,
@@ -203,5 +228,5 @@ export async function listCustomerBalances(filter?: {
       creditLimit: balance.creditLimit,
     });
   }
-  return out;
+  return { rows, nextCursor: page.nextCursor };
 }

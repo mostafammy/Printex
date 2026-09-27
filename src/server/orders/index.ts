@@ -24,7 +24,13 @@ export type {
 } from "./productTypes";
 
 // US3 / US4 / US5
-export { listReceptionQueue, getOrderDetail, searchOrders } from "./search";
+export {
+  listReceptionQueue,
+  listReceptionQueuePage,
+  getReceptionQueueStats,
+  getOrderDetail,
+  searchOrders,
+} from "./search";
 export type { OrderSearchResult, OrderQueueRow, TimelineEntry } from "./search";
 
 // US3 (priority) / US6 (cancel)

@@ -7,6 +7,7 @@ import { Prisma } from "../../../generated/prisma";
 import { audit, authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
+import { paginateQuery } from "~/server/pagination";
 import { notify } from "~/server/core/notifications/notify";
 import { getCurrentPrice } from "~/server/pricing";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
@@ -276,8 +277,6 @@ export async function listPayments(filter: ListPaymentsFilter): Promise<{
   rows: PaymentRow[];
   nextCursor: number | null;
 }> {
-  const pageSize = Math.min(Math.max(filter.pageSize ?? 25, 1), 100);
-  const page = Math.max(filter.page ?? 1, 1);
   const where = {
     ...(filter.orderId ? { orderId: filter.orderId } : {}),
     ...(filter.customerId ? { customerId: filter.customerId } : {}),
@@ -291,16 +290,16 @@ export async function listPayments(filter: ListPaymentsFilter): Promise<{
         }
       : {}),
   };
-  const rows = await db.payment.findMany({
-    where,
-    include: { recordedBy: { select: { name: true } } },
-    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
-    skip: (page - 1) * pageSize,
-    take: pageSize + 1,
-  });
+  const { rows: pageRows, nextCursor } = await paginateQuery(filter, (skip, take) =>
+    db.payment.findMany({
+      where,
+      include: { recordedBy: { select: { name: true } } },
+      orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+      skip,
+      take,
+    }),
+  );
 
-  const hasMore = rows.length > pageSize;
-  const pageRows = hasMore ? rows.slice(0, pageSize) : rows;
   const voidRows = await db.financeVoid.findMany({
     where: { entityType: "PAYMENT", entityId: { in: pageRows.map((r) => r.id) } },
   });
@@ -329,7 +328,7 @@ export async function listPayments(filter: ListPaymentsFilter): Promise<{
     }))
     .filter((row) => filter.includeVoided === true || row.voided === null);
 
-  return { rows: shaped, nextCursor: hasMore ? page + 1 : null };
+  return { rows: shaped, nextCursor };
 }
 
 /** Convenience: does this payment have a void row? (shared with list shaping) */

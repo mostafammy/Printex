@@ -7,7 +7,7 @@ import { validateUploadInput, FileError, FileErrorCode } from "@/server/files/sc
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 600; // 10 minutes for large uploads
+export const maxDuration = 300; // 5 minutes (max allowed on Vercel Hobby plan)
 
 export async function POST(request: Request) {
   try {

@@ -96,6 +96,15 @@ jobs:
         # elevated privileges the app role deliberately does not have.
         run: pnpm exec prisma db push --skip-generate
 
+      - name: Apply 016 change-control constraints
+        # `prisma db push` cannot express the partial one-PENDING index or the
+        # SpecVersion no-UPDATE trigger (prisma/manual-sql/016-change-control-constraints.sql).
+        # Its `REVOKE ... FROM CURRENT_USER` lines are a no-op for the superuser
+        # here; the runtime role's REVOKEs are applied in the append-only step below.
+        run: |
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d printex_test \
+            -f prisma/manual-sql/016-change-control-constraints.sql
+
       - name: Grant printex_app its runtime privileges
         # SELECT/INSERT/UPDATE/DELETE on every table — audit_event's
         # UPDATE/DELETE are revoked specifically in a later step. Tables
@@ -133,7 +142,9 @@ jobs:
         run: |
           PGPASSWORD=postgres psql -h localhost -U postgres -d printex_test -c \
             "REVOKE UPDATE, DELETE ON audit_event FROM printex_app;" \
-            -c "REVOKE UPDATE, DELETE ON \"Payment\", \"FinanceVoid\", \"Expense\", \"ExpenseApproval\", \"DirectCost\" FROM printex_app;"
+            -c "REVOKE UPDATE, DELETE ON \"Payment\", \"FinanceVoid\", \"Expense\", \"ExpenseApproval\", \"DirectCost\" FROM printex_app;" \
+            -c "REVOKE DELETE ON \"SpecVersion\" FROM printex_app;" \
+            -c "REVOKE UPDATE, DELETE ON \"LateCancellation\" FROM printex_app;"
 
       - name: Check (lint + typecheck)
         run: pnpm check

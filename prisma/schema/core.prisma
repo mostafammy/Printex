@@ -143,6 +143,8 @@ model Order {
   directCosts  DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
+
+  @@index([customerId])
 }
 
 model WorkItem {
@@ -189,6 +191,17 @@ model WorkItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// --- 016-change-control ------------------------------------------------
+  /// Current SpecVersion. Nullable only for the circular insert and the
+  /// window before backfill (research.md §14); non-null for every Work Item
+  /// after backfill (verified by query + contract test).
+  currentSpecVersionId String?        @unique
+  currentSpecVersion   SpecVersion?   @relation("WorkItemCurrentSpecVersion", fields: [currentSpecVersionId], references: [id])
+  specVersions         SpecVersion[]  @relation("WorkItemSpecVersions")
+  changeRequests       ChangeRequest[]
+  lateCancellation     LateCancellation?
+  /// --- end 016-change-control ---------------------------------------------
+
   transitions             WorkItemTransition[]
   phaseTimings            PhaseTiming[]
   designVersions          DesignVersion[]
@@ -204,6 +217,12 @@ model WorkItem {
   delayBreaches DelayBreach[]
 
   @@index([orderId, state])
+  // Review queue (getReviewQueue) filters on `state` alone; My Queue /
+  // designer workload / eligible-designers filter on `assigneeId` (+ state).
+  // Neither was covered by the existing [orderId, state] index, so both were
+  // sequential-scanning the full WorkItem table at this row count.
+  @@index([state])
+  @@index([assigneeId, state])
 }
 
 /// Admin-configured product catalog (constitution VI: data, not an enum).
@@ -221,9 +240,10 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems WorkItem[]
-  pricingPolicy ProductPricingPolicy?
-  priceLists PriceList[]
+  workItems            WorkItem[]
+  specVersions         SpecVersion[]          @relation("SpecVersionProductType")
+  pricingPolicy        ProductPricingPolicy?
+  priceLists           PriceList[]
   customerPricingRules CustomerPricingRule[]
 }
 
@@ -323,7 +343,8 @@ model Return {
   designVersion      DesignVersion?     @relation(fields: [designVersionId], references: [id])
   createdAt          DateTime           @default(now())
 
-  attachments ReturnAttachment[]
+  attachments   ReturnAttachment[]
+  changeRequest ChangeRequest?
 
   @@index([workItemId, createdAt])
 }

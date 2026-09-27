@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 export type CustomerPickerProps = {
   value?: string | null;
-  onSelect: (customerId: string) => void;
+  onSelect: (customerId: string, customerName: string) => void;
   disabled?: boolean;
   autoFocus?: boolean;
 };
@@ -41,8 +41,8 @@ export function CustomerPicker({ value, onSelect, disabled, autoFocus }: Custome
     };
   }, [query]);
 
-  function select(customerId: string) {
-    onSelect(customerId);
+  function select(customer: CustomerResult) {
+    onSelect(customer.id, customer.name);
     setQuery("");
     setResults([]);
   }
@@ -71,7 +71,7 @@ export function CustomerPicker({ value, onSelect, disabled, autoFocus }: Custome
             setActiveIndex((index) => Math.max(index - 1, 0));
           } else if (event.key === "Enter" && results[activeIndex]) {
             event.preventDefault();
-            select(results[activeIndex].id);
+            select(results[activeIndex]);
           } else if (event.key === "Escape") {
             setResults([]);
           }
@@ -93,7 +93,7 @@ export function CustomerPicker({ value, onSelect, disabled, autoFocus }: Custome
               role="option"
               aria-selected={index === activeIndex}
               className={`cursor-pointer rounded px-3 py-2 ${index === activeIndex ? "bg-muted" : ""}`}
-              onMouseDown={() => select(customer.id)}
+              onMouseDown={() => select(customer)}
             >
               <span className="block">{customer.name}</span>
               <span className="text-sm text-muted-foreground">{customer.phones[0]?.phoneE164}</span>

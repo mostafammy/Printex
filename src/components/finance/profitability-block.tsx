@@ -5,101 +5,116 @@
 // order-filtered expenses list.
 
 import Link from "next/link";
+import { TrendingUp, AlertTriangle } from "lucide-react";
 import type { OrderProfitability } from "~/server/finance";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
 
 export function ProfitabilityBlock({ profit }: { readonly profit: OrderProfitability }) {
+  const isLoss = profit.grossProfit.startsWith("-");
+
   return (
-    <div className="mt-6 rounded-md border border-border p-4">
-      <h3 className="text-sm font-semibold">{S.profitability}</h3>
+    <div className="mt-6 rounded-2xl border border-border/70 bg-muted/15 p-5">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingUp className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-bold text-foreground">{S.profitability}</h3>
+      </div>
+
       {profit.pricingIncomplete && (
-        <p className="mt-2 rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
-          {S.pricingIncomplete}
-        </p>
+        <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-2.5 text-2xs font-medium text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          <span>{S.pricingIncomplete}</span>
+        </div>
       )}
-      <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-4">
-        <div>
-          <dt className="text-muted-foreground">{S.revenue}</dt>
-          <dd className="font-semibold">
-            <details>
-              <summary className="cursor-pointer list-none">
-                {profit.pricingIncomplete ? "≈" : ""}
-                {profit.revenue} ج.م ({profit.revenueEntries.length})
+
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-4 text-xs">
+        {/* Revenue */}
+        <div className="rounded-xl border border-border/60 bg-card p-3.5">
+          <dt className="text-2xs font-medium text-muted-foreground">{S.revenue}</dt>
+          <dd className="mt-1 font-bold text-sm text-foreground">
+            <details className="group">
+              <summary className="cursor-pointer list-none flex items-center justify-between">
+                <span>
+                  {profit.pricingIncomplete ? "≈ " : ""}
+                  {profit.revenue} ج.م
+                </span>
+                <span className="text-2xs font-normal text-muted-foreground">({profit.revenueEntries.length})</span>
               </summary>
-              <ul className="mt-1 flex flex-col gap-1 text-xs text-muted-foreground">
+              <ul className="mt-2 flex flex-col gap-1 border-t border-border/40 pt-2 text-2xs text-muted-foreground">
                 {profit.revenueEntries.map((entry) => (
-                  <li key={entry.priceId}>
-                    {entry.amount} — <Link href={`/orders/${profit.orderId}`} className="underline hover:text-foreground">#{entry.workItemId.slice(-6)}</Link>
+                  <li key={entry.priceId} className="flex justify-between items-center">
+                    <span>{entry.amount} ج.م</span>
+                    <Link href={`/orders/${profit.orderId}`} className="hover:text-primary">
+                      #{entry.workItemId.slice(-6)}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </details>
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">{S.directCostTotal}</dt>
-          <dd className="font-semibold">
-            <details>
-              <summary className="cursor-pointer list-none">
-                {profit.directCosts.total} ج.م ({profit.directCosts.entries.length})
+
+        {/* Direct Costs */}
+        <div className="rounded-xl border border-border/60 bg-card p-3.5">
+          <dt className="text-2xs font-medium text-muted-foreground">{S.directCostTotal}</dt>
+          <dd className="mt-1 font-bold text-sm text-foreground">
+            <details className="group">
+              <summary className="cursor-pointer list-none flex items-center justify-between">
+                <span>{profit.directCosts.total} ج.م</span>
+                <span className="text-2xs font-normal text-muted-foreground">({profit.directCosts.entries.length})</span>
               </summary>
-              <ul className="mt-1 flex flex-col gap-1 text-xs text-muted-foreground">
+              <ul className="mt-2 flex flex-col gap-1 border-t border-border/40 pt-2 text-2xs text-muted-foreground">
                 {profit.directCosts.entries.map((entry) => (
-                  <li key={entry.id}>
-                    {entry.amount} — {entry.description}
-                    {entry.workItemId ? ` (#${entry.workItemId.slice(-6)})` : ""}
+                  <li key={entry.id} className="flex justify-between items-center">
+                    <span className="truncate max-w-[100px]">{entry.description}</span>
+                    <span>{entry.amount} ج.م</span>
                   </li>
                 ))}
               </ul>
             </details>
-            <a href="#direct-costs" className="ms-1 text-xs underline text-muted-foreground hover:text-foreground">
-              →
-            </a>
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">{S.jobExpensesTotal}</dt>
-          <dd className="font-semibold">
-            <details>
-              <summary className="cursor-pointer list-none">
-                {profit.jobExpenses.total} ج.م ({profit.jobExpenses.entries.length})
+
+        {/* Job Expenses */}
+        <div className="rounded-xl border border-border/60 bg-card p-3.5">
+          <dt className="text-2xs font-medium text-muted-foreground">{S.jobExpensesTotal}</dt>
+          <dd className="mt-1 font-bold text-sm text-foreground">
+            <details className="group">
+              <summary className="cursor-pointer list-none flex items-center justify-between">
+                <span>{profit.jobExpenses.total} ج.م</span>
+                <span className="text-2xs font-normal text-muted-foreground">({profit.jobExpenses.entries.length})</span>
               </summary>
-              <ul className="mt-1 flex flex-col gap-1 text-xs text-muted-foreground">
+              <ul className="mt-2 flex flex-col gap-1 border-t border-border/40 pt-2 text-2xs text-muted-foreground">
                 {profit.jobExpenses.entries.map((entry) => (
-                  <li key={entry.id}>
-                    {entry.amount} — {entry.category} ({entry.expenseDate})
+                  <li key={entry.id} className="flex justify-between items-center">
+                    <span className="truncate max-w-[100px]">{entry.category}</span>
+                    <span>{entry.amount} ج.م</span>
                   </li>
                 ))}
               </ul>
             </details>
-            <Link
-              href={`/finance/expenses?orderId=${profit.orderId}`}
-              className="ms-1 text-xs underline text-muted-foreground hover:text-foreground"
-              title={S.expensesHeading}
-            >
-            </Link>
           </dd>
         </div>
-        <div>
-          <dt className="text-muted-foreground">{S.grossProfit}</dt>
+
+        {/* Gross Profit */}
+        <div
+          className={`rounded-xl border p-3.5 ${
+            isLoss
+              ? "border-destructive/30 bg-destructive/5"
+              : "border-emerald-500/30 bg-emerald-500/5"
+          }`}
+        >
+          <dt className="text-2xs font-medium text-muted-foreground">{S.grossProfit}</dt>
           <dd
-            className={
-              profit.grossProfit.startsWith("-")
-                ? "text-lg font-bold text-destructive"
-                : "text-lg font-bold"
-            }
+            className={`mt-1 font-extrabold text-base ${
+              isLoss ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"
+            }`}
           >
             {profit.grossProfit} ج.م
           </dd>
         </div>
       </dl>
-      <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-        <span>
-          {S.revenue}: {profit.revenueEntries.length} × {S.directCosts}: {profit.directCosts.entries.length} × {S.expensesHeading}: {profit.jobExpenses.entries.length}
-        </span>
-      </div>
     </div>
   );
 }

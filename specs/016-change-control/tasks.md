@@ -49,7 +49,7 @@ Vitest collects only `tests/**/*.test.ts`, so there are no `.tsx` test files.
 **Purpose**: Land the schema, SQL, edges, permission key, and module scaffolding that every story
 builds on.
 
-- [ ] T001 Create `prisma/schema/change-control.prisma` exactly per data-model.md:
+- [x] T001 Create `prisma/schema/change-control.prisma` exactly per data-model.md:
   - enums `SpecVersionOrigin`, `ChangeRequestStatus`, `ChangeRequestOutcome`
   - models `SpecVersion` (`@@unique([workItemId, version])`), `ChangeRequest`
     (`@@index([workItemId, status])`, `@@index([status, createdAt])`), and `LateCancellation`
@@ -68,19 +68,21 @@ builds on.
     "Step 1"). If it warns, stop and investigate.
   - Whoever picks this up: (1) confirm with Fady, (2) run the commands, (3) run T004 and T005,
     (4) re-run the DB-dependent suites below.
-- [ ] T003 [P] **Cross-team (001, Fady).** Add `"change.approve"` to the `Permission` union and
+- [x] T003 [P] **Cross-team (001, Fady).** Add `"change.approve"` to the `Permission` union and
   `ALL_PERMISSIONS` in `src/server/auth/permissions.ts`, with a doc comment citing
   016 FR-013. Append it to the `HEAD_DESIGNER` and `ADMIN_OWNER` permission lists in
   `prisma/seed.ts`. Update `tests/contract/role-permission-matrix.test.ts` to assert that
   `HEAD_DESIGNER` and `ADMIN_OWNER` have it and that `RECEPTION`, `DESIGNER`,
   `PRODUCTION_OPERATOR`, `PRINT_RECEPTION_DELIVERY`, and `ACCOUNTING` do not.
-- [ ] T004 [P] Create `prisma/manual-sql/016-change-control-constraints.sql` (idempotent): the
-  partial unique index `ChangeRequest_one_pending_per_work_item`, and `REVOKE UPDATE, DELETE` on
-  `"SpecVersion"` and `"LateCancellation"` (data-model.md "Step 2"). Use the header comment style
+- [x] T004 [P] Create `prisma/manual-sql/016-change-control-constraints.sql` (idempotent): the
+  partial unique index `ChangeRequest_one_pending_per_work_item`, `REVOKE DELETE` plus the
+  `spec_version_forbid_update` BEFORE UPDATE trigger on `"SpecVersion"` (an FK target, so REVOKE
+  UPDATE would break FK locking), and `REVOKE UPDATE, DELETE` on `"LateCancellation"`
+  (data-model.md "Step 2"). Use the header comment style
   of `audit-event-append-only.sql`, including the non-superuser prerequisite and "re-apply after
   every `db push`". Apply it with `pnpm exec prisma db execute --file … --schema prisma/schema`
   once T002 is unblocked.
-- [ ] T005 [P] Create `prisma/manual-sql/016-spec-version-backfill.sql` per data-model.md "Step 3":
+- [x] T005 [P] Create `prisma/manual-sql/016-spec-version-backfill.sql` per data-model.md "Step 3":
   - a single transaction
   - `INSERT … WHERE NOT EXISTS` with the deterministic id `'bf_' || id`
   - point every Work Item at its max version
@@ -90,13 +92,13 @@ builds on.
   Re-check every table and column name against the current `prisma/schema/*.prisma`
   (`AuditEvent` is `@@map("audit_event")`, and `attachmentIds` is a non-null `text[]`). Apply after
   T004.
-- [ ] T006 [P] Add the three edges to `src/server/core/workflow/edges.ts` per data-model.md
+- [x] T006 [P] Add the three edges to `src/server/core/workflow/edges.ts` per data-model.md
   "Workflow edges": `APPROVED`, `WAITING_PRICING`, and `READY_FOR_PRODUCTION` each gain
   `"REWORK_REQUIRED"`. Update the file's header comment to cite 016 research §7.
-- [ ] T007 [P] Add a `no-restricted-imports` rule for `src/server/changes/**` to
+- [x] T007 [P] Add a `no-restricted-imports` rule for `src/server/changes/**` to
   `eslint.config.js`, identical in shape to the `orders`/`designers`/`review`/`production` rules:
   only `~/server/changes` (the barrel) is importable from outside, and `tests/**` is exempted.
-- [ ] T008 [P] Create the barrel `src/server/changes/index.ts` as a placeholder (`export {}`),
+- [x] T008 [P] Create the barrel `src/server/changes/index.ts` as a placeholder (`export {}`),
   populated incrementally. Create `src/components/changes/index.ts` the same way.
 
 ---
@@ -108,16 +110,16 @@ builds on.
 
 **⚠️ CRITICAL**: No user story implementation task may start until this phase is complete.
 
-- [ ] T009 [P] Implement `src/server/changes/errors.ts`: the `ChangeError` object union and
+- [x] T009 [P] Implement `src/server/changes/errors.ts`: the `ChangeError` object union and
   `ChangeResult<T> = AspectResult<T, ChangeError>`, exactly as in contracts/change-control.md
   "Errors". Refusals are raised with core's `fail()`. There is no error class,
   `WorkItemTransitionError`, or `ChangeActionResult` (superseded by the shared layer, research
   §11).
-- [ ] T010 [P] Implement `src/server/changes/specFields.ts`: `SPEC_FIELDS`, `SpecField`,
+- [x] T010 [P] Implement `src/server/changes/specFields.ts`: `SPEC_FIELDS`, `SpecField`,
   `SpecSnapshot`, `SpecPatch`, `specPatchSchema` (the Zod rules from data-model.md "Validation
   rules"), `toSpecSnapshot(row)`, and `mergeSpecPatch(base, patch)`. Decimals are normalized to
   canonical strings via `Prisma.Decimal`. No `any`.
-- [ ] T011 [P] Unit test `tests/unit/changes/specPatchSchema.test.ts`. The schema must refuse:
+- [x] T011 [P] Unit test `tests/unit/changes/specPatchSchema.test.ts`. The schema must refuse:
   - an empty patch
   - an unknown key
   - `quantity` 0, -1, or 1.5
@@ -125,23 +127,23 @@ builds on.
   - a string over 2000 characters
 
   It must accept `"1.50"` and `1.5` and normalize both to `"1.5"`, and turn `""` into `null`.
-- [ ] T012 [P] Implement `src/server/changes/policy.ts`:
+- [x] T012 [P] Implement `src/server/changes/policy.ts`:
   - `specEditPolicy(state)`: an exhaustive `switch` with `assertNever` from `~/server/core`
   - `redesignChoice(state, requiresDesign)`
   - `canRedesignOnApproval({ requiresDesign, assigneeId })`
 
   Implement these per data-model.md "Derived values".
-- [ ] T013 [P] Unit test `tests/unit/changes/policy.test.ts`: table-driven over **all 15**
+- [x] T013 [P] Unit test `tests/unit/changes/policy.test.ts`: table-driven over **all 15**
   `WORK_ITEM_STATES`, asserting the exact FR-006 mapping (9 DIRECT, 1 CHANGE_REQUEST, 4 ADMIN_ONLY,
   1 LOCKED). Assert that every state is classified, iterating `WORK_ITEM_STATES` so that a 16th
   state fails the test. Also assert the `redesignChoice` truth table.
-- [ ] T014 [P] Implement `src/server/changes/diff.ts` `diffSpecSnapshots` per
+- [x] T014 [P] Implement `src/server/changes/diff.ts` `diffSpecSnapshots` per
   contracts/spec-diff.md (pure, `SPEC_FIELDS` order, `ADDED`/`REMOVED`/`CHANGED` kinds).
-- [ ] T015 [P] Unit test `tests/unit/changes/diff.test.ts`: the table in contracts/spec-diff.md.
+- [x] T015 [P] Unit test `tests/unit/changes/diff.test.ts`: the table in contracts/spec-diff.md.
   This covers quantity only (US4-1), null → value (US4-2), 1.50 vs 1.5 (US4-3), value → null,
   multi-field order, identical, `productTypeId`, and `dimensionUnit`. Include a type-level assertion
   (`expectTypeOf`) that narrowing on `field === "quantity"` yields `number | null`.
-- [ ] T016 **Shared, with 015. If absent, create per contracts/aspects.md; otherwise reuse
+- [x] T016 **Shared, with 015. If absent, create per contracts/aspects.md; otherwise reuse
   unchanged.** Check first whether 015 has already landed them. The files are:
   - `src/server/core/aspects/{types,engine,errors,transition}.ts`
   - the barrel additions in `src/server/core/index.ts` (§6)
@@ -155,7 +157,7 @@ builds on.
   mapping `CHANGE_HOLD`/`LATE_CANCELLATION_REQUIRED` and `(workItemId, version)` →
   `STALE_SPEC_VERSION`, `workItemId` or the partial index name → `CHANGE_REQUEST_PENDING`
   (research §11 conflicts note 1). It exports `defineCommand`, `defineQuery`, and `ChangeResult`.
-- [ ] T017 **Shared, with 015. If absent, create per contracts/aspects.md §7; otherwise reuse
+- [x] T017 **Shared, with 015. If absent, create per contracts/aspects.md §7; otherwise reuse
   unchanged**: `tests/unit/core/aspects.test.ts`, the engine tests on in-memory fake deps. **Then**
   (016-owned) write the integration test `tests/integration/changes/aspect-binding.test.ts`, using
   a throwaway command built with the changes binding against the real DB:
@@ -168,18 +170,18 @@ builds on.
     re-thrown and both roll back
   - an in-transaction building block called via `.inTx`/`CommandCtx` rolls back the outer
     transaction
-- [ ] T018 [P] Implement `src/server/changes/events.ts`: `SPEC_CHANGED`, `SpecChangedEvent`,
+- [x] T018 [P] Implement `src/server/changes/events.ts`: `SPEC_CHANGED`, `SpecChangedEvent`,
   `SpecChangeListener`, `registerSpecChangeListener` (replace-by-name),
   `emitSpecChangedInTx` (sequential listeners with the caller's `tx`, then one `notify` outbox
   row), and the test-only `__resetSpecChangeListenersForTests`. Follow
   contracts/events-and-ports.md §1.
-- [ ] T019 [P] Implement `src/server/changes/ports.ts`: `LateCancellationCost`, `DirectCostPort`,
+- [x] T019 [P] Implement `src/server/changes/ports.ts`: `LateCancellationCost`, `DirectCostPort`,
   `noopDirectCostPort`, `setDirectCostPort`, `getDirectCostPort`, and the test-only
   `__resetDirectCostPortForTests`. Follow contracts/events-and-ports.md §2.
-- [ ] T020 [P] Implement `src/server/changes/recipients.ts` `usersWithPermission(tx, permission)`.
+- [x] T020 [P] Implement `src/server/changes/recipients.ts` `usersWithPermission(tx, permission)`.
   It is a single query covering role permissions and extra permissions, active users only
   (research §17).
-- [ ] T021 [P] Unit test `tests/unit/changes/edges.test.ts`: `ALLOWED_EDGES.APPROVED`,
+- [x] T021 [P] Unit test `tests/unit/changes/edges.test.ts`: `ALLOWED_EDGES.APPROVED`,
   `.WAITING_PRICING`, and `.READY_FOR_PRODUCTION` include `"REWORK_REQUIRED"`, and
   `.DESIGN_COMPLETED` does not (T006). The existing `tests/unit/workflow-edges.test.ts` matrix
   must still pass unmodified.
@@ -199,7 +201,7 @@ exactly one v1 each, idempotently.
 
 ### Tests for User Story 1
 
-- [ ] T022 [P] [US1] Integration test `tests/integration/changes/versioning.test.ts`:
+- [x] T022 [P] [US1] Integration test `tests/integration/changes/versioning.test.ts`:
   - `quickCreateOrder`, `createOrder` (2 items), and `addWorkItem` each create v1 `INITIAL` with
     the entered values, `stateAtCreation`, `createdById`, and the pointer set, plus a
     `spec_version.created` audit (US1-1, FR-001).
@@ -210,13 +212,13 @@ exactly one v1 each, idempotently.
   - After v2, `getSpecHistory` returns v1 (500) and v2 (800) (US1-2).
   - For every command in this file, assert the invariant "WorkItem mirror columns ==
     `toSpecSnapshot(currentSpecVersion)`" (FR-003).
-- [ ] T023 [P] [US1] Contract test `tests/contract/changes/append-only.test.ts`, mirroring
+- [x] T023 [P] [US1] Contract test `tests/contract/changes/append-only.test.ts`, mirroring
   `tests/contract/audit-append-only.test.ts`: raw `UPDATE` and `DELETE` on `"SpecVersion"` and
   `"LateCancellation"` fail with a permission error once T004 is applied (US1-4, FR-004).
   - Also assert that `src/server/changes/**` contains no `specVersion.update`,
     `specVersion.delete`, or `lateCancellation.update`/`delete` calls (source grep in the test,
     same technique as 002's `externalGuard.test.ts`).
-- [ ] T024 [P] [US1] Integration test `tests/integration/changes/backfill.test.ts`:
+- [x] T024 [P] [US1] Integration test `tests/integration/changes/backfill.test.ts`:
   - Create 3 factory Work Items without versions (one with Decimal dimensions, one with nulls).
   - Execute `prisma/manual-sql/016-spec-version-backfill.sql` through `db.$executeRawUnsafe`,
     reading the file and splitting on the documented statement separator.
@@ -225,7 +227,7 @@ exactly one v1 each, idempotently.
   - Assert the Step 4 verification queries return zero rows.
   - A second run inserts zero versions (idempotent, US1-3).
   - Pre-existing `workitem.edited` audit rows are untouched.
-- [ ] T025 [P] [US1] Integration test `tests/integration/changes/editWorkItemDelegation.test.ts`:
+- [x] T025 [P] [US1] Integration test `tests/integration/changes/editWorkItemDelegation.test.ts`:
   - 011's `editWorkItem` in `NEW` now creates a `DIRECT_EDIT` version and still writes
     `workitem.edited`.
   - A dueDate-only patch creates **no** version and emits no `SPEC_CHANGED`, but is still
@@ -235,29 +237,30 @@ exactly one v1 each, idempotently.
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] Implement `createInitialSpecVersionInTx` and `ensureCurrentSpecVersionInTx` in
+- [x] T026 [US1] Implement `createInitialSpecVersionInTx` and `ensureCurrentSpecVersionInTx` in
   `src/server/changes/versions.ts` per contracts/change-control.md.
-- [ ] T027 [US1] Implement `applySpecChangeInTx` in `src/server/changes/versions.ts`. The steps are
+- [x] T027 [US1] Implement `applySpecChangeInTx` in `src/server/changes/versions.ts`. The steps are
   a row lock via `tx.$queryRaw` `SELECT … FOR UPDATE`, then ensure, expected-version check,
   `productTypeId` existence, diff/`NO_CHANGES`, insert `n + 1`, update the mirror and pointer,
   audit `spec_version.created`, and `emitSpecChangedInTx`. This is the only writer of the spec
   columns (FR-010).
-- [ ] T028 [US1] In `src/server/orders/create.ts` (`quickCreateOrder`, `createOrder`) and
-  `src/server/orders/workItems.ts` (`addWorkItem`), call `createInitialSpecVersionInTx(tx, {
+- [x] T028 [US1] In `src/server/orders/create.ts` (`quickCreateOrder`, `createOrder`) and
+  `src/server/orders/workItems.ts` (`addWorkItem`), call `createInitialSpecVersionInTx(scope, {
   workItemId, actorId })` right after each `tx.workItem.create`, imported from the
   `~/server/changes` barrel.
-- [ ] T029 [US1] In `src/server/orders/workItems.ts` `editWorkItem`:
+
+- [x] T029 [US1] In `src/server/orders/workItems.ts` `editWorkItem`:
   - Split the patch into spec fields and `dueDate`.
   - Route the spec fields through `applySpecChangeInTx({ tx, afterCommit }, { origin:
     "DIRECT_EDIT", expected: { version: current }, ifUnchanged: "skip" })`, so an unchanged or
     due-date-only save stays a non-error (contracts/change-control.md).
   - Keep `dueDate` as a plain audited update.
   - Keep the `PAST_EDIT_WINDOW` refusal and the `workitem.edited` audit exactly as they are.
-- [ ] T030 [US1] Implement `getSpecHistory` in `src/server/changes/versions.ts` with `defineQuery`
+- [x] T030 [US1] Implement `getSpecHistory` in `src/server/changes/versions.ts` with `defineQuery`
   (any-of `PermissionSpec` plus a department-scope `authorize` hook, contracts/change-control.md): one query with
   `include: { createdBy }`, consecutive diffs computed in memory, the `noHistoryBeforeNow` flag,
   and the permission rule from data-model.md "Permission model". Export it from the barrel.
-- [ ] T031 [US1] Add `src/components/changes/spec-history.tsx`, a Server Component listing the
+- [x] T031 [US1] Add `src/components/changes/spec-history.tsx`, a Server Component listing the
   versions (number, origin label, author or "—", time, reason). Render it per Work Item on
   `src/app/(shell)/orders/[orderId]/page.tsx`. Add `changes.history.*` and
   `changes.origin.*` keys to `src/messages/ar.json`.
@@ -276,14 +279,14 @@ DIRECT states and refuses with the distinct code otherwise.
 
 ### Tests for User Story 2
 
-- [ ] T032 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "policy by
+- [x] T032 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "policy by
   state": table-driven over all 15 states using factory Work Items, as RECEPTION.
   - The 9 DIRECT states create a version plus a `spec.edited` audit with before and after
     (US2-1). The before/after contains only the changed fields.
   - `PRODUCTION_COMPLETED`, `READY_FOR_COLLECTION`, `DELIVERED`, and `COMPLETED` →
     `ADMIN_OVERRIDE_REQUIRED` (US2-4).
   - `CANCELLED` → `WORK_ITEM_LOCKED`.
-- [ ] T033 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "permission and
+- [x] T033 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "permission and
   concurrency":
   - `HEAD_DESIGNER`, `DESIGNER`, `PRODUCTION_OPERATOR`, and `ACCOUNTING` actors are refused as
     forbidden in a DIRECT state and in `IN_PRODUCTION` (US2-5).
@@ -291,7 +294,7 @@ DIRECT states and refuses with the distinct code otherwise.
   - A no-op patch → `NO_CHANGES`.
   - Two `editSpec` calls from the same version run with `Promise.all` → exactly one succeeds and
     the other gets `STALE_SPEC_VERSION`, with no lost update (US2-6).
-- [ ] T034 [P] [US2] **Acceptance criterion 1.** Integration test
+- [x] T034 [P] [US2] **Acceptance criterion 1.** Integration test
   `tests/integration/changes/editSpec.test.ts`, "IN_PRODUCTION refused server-side". Call
   `editSpec` directly, not via UI, on an `IN_PRODUCTION` item. It returns `CHANGE_REQUEST_REQUIRED`,
   and the following are all unchanged by count/value: `SpecVersion` count, `AuditEvent` count for
@@ -299,7 +302,7 @@ DIRECT states and refuses with the distinct code otherwise.
   call count. Assert the public call returns `{ ok: false, error: { code:
   "CHANGE_REQUEST_REQUIRED" } }` (the `AspectResult` the Server Action receives) and never throws (US2-3, FR-010, SC-003). Also assert 011's `editWorkItem` refuses the same item
   (`PAST_EDIT_WINDOW`).
-- [ ] T035 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "redesign":
+- [x] T035 [P] [US2] Integration test `tests/integration/changes/editSpec.test.ts`, "redesign":
   - `APPROVED`/`WAITING_PRICING`/`READY_FOR_PRODUCTION` with `requiresDesign` and no
     `designChoice` → `REDESIGN_CHOICE_REQUIRED`.
   - `REDESIGN` → the state is `REWORK_REQUIRED`, the `WorkItemTransition` has `rejectionCategory:
@@ -313,18 +316,18 @@ DIRECT states and refuses with the distinct code otherwise.
 
 ### Implementation for User Story 2
 
-- [ ] T036 [US2] Implement `sendBackForCustomerChangeInTx` in `src/server/changes/effects.ts`,
+- [x] T036 [US2] Implement `sendBackForCustomerChangeInTx` in `src/server/changes/effects.ts`,
   including the local effective-department helper, per research §8:
   1. `ctx.transition` to `REWORK_REQUIRED` with `CUSTOMER_CHANGE`
   2. `createReturnInTx` from `~/server/review`
   3. `notify` with `work_item.customer_change_returned`
   4. return `{ returnId }`
-- [ ] T037 [US2] Implement `editSpec` in `src/server/changes/editSpec.ts` with `defineCommand` (from
+- [x] T037 [US2] Implement `editSpec` in `src/server/changes/editSpec.ts` with `defineCommand` (from
   `./aspect`; the queries in this module use `defineQuery`),
   per contracts/change-control.md. The policy check comes before any write. Then the redesign
   choice, `applySpecChangeInTx`, the redesign effect or `customer_modification` notify, and the
   WAITING_REVIEW reviewer notify. Export it from the barrel.
-- [ ] T038 [US2] Add a Server Action and an edit-spec form on
+- [x] T038 [US2] Add a Server Action and an edit-spec form on
   `src/app/(shell)/orders/[orderId]/page.tsx`:
   - The form is driven by `specEditPolicy`: an edit form for DIRECT (with the redesign/keep radio
     when `REQUIRED`), a "request change" button for CHANGE_REQUEST, and read-only otherwise.
@@ -345,7 +348,7 @@ acknowledge (FR-011–018).
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`, "record":
+- [x] T039 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`, "record":
   - As RECEPTION on an `IN_PRODUCTION` item with an open `ACTIVE` segment, the request is stored
     `PENDING` with `baseSpecVersionId = current`, the `ACTIVE` segment is closed, and
     `pausedRunningTimerAt` is set.
@@ -356,7 +359,7 @@ acknowledge (FR-011–018).
     partial index.
   - A no-op → `NO_CHANGES`.
   - Every non-`IN_PRODUCTION` state (table-driven) → `NOT_IN_PRODUCTION`.
-- [ ] T040 [P] [US3] Integration test `tests/integration/changes/productionHold.test.ts`:
+- [x] T040 [P] [US3] Integration test `tests/integration/changes/productionHold.test.ts`:
   - While `PENDING`, all three are refused (US3-2, FR-012, SC-004):
     - 014's `resumeProduction` → `DomainProductionError("CHANGE_HOLD")`
     - `completeProduction` → `WorkItemTransitionError` with `guardCode: "CHANGE_HOLD"`
@@ -372,7 +375,7 @@ acknowledge (FR-011–018).
   - After reject or withdraw, resume succeeds with no acknowledgment (US3-6).
   - A direct `transitionWorkItem(IN_PRODUCTION → REWORK_REQUIRED)` with
     `meta.changeRequestId` set to a *different* id → `GUARD_FAILED`.
-- [ ] T041 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`,
+- [x] T041 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`,
   "approve":
   - **Acceptance criterion 2.** `CONTINUE_PRODUCTION` makes v2 (800) current, sets
     `resultingSpecVersionId`, and leaves v1 (500) readable. `getSpecVersionDiff(1, 2)` equals
@@ -383,7 +386,7 @@ acknowledge (FR-011–018).
     Return the production department as origin, closes the `ACTIVE` segment, and notifies the
     designer (US3-5, FR-015).
   - `REDESIGN` on `requiresDesign = false` or with no assignee → `REDESIGN_NOT_ALLOWED`.
-- [ ] T042 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`,
+- [x] T042 [P] [US3] Integration test `tests/integration/changes/changeRequest.test.ts`,
   "permissions, decisions, races":
   - RECEPTION approve/reject → forbidden (US3-7).
   - `PRODUCTION_OPERATOR` create/approve/reject/withdraw → forbidden (FR-018).
@@ -397,12 +400,12 @@ acknowledge (FR-011–018).
     `WORK_ITEM_LEFT_PRODUCTION`.
   - Approving when the base is no longer current (seed v3 via `applySpecChangeInTx` in the test)
     → `STALE_SPEC_VERSION`, and nothing is written (US3-8).
-- [ ] T043 [P] [US3] Contract test `tests/contract/changes/guards.test.ts`:
+- [x] T043 [P] [US3] Contract test `tests/contract/changes/guards.test.ts`:
   - Importing only `~/server/production` registers the two hold guards.
   - Importing only `~/server/orders` registers the three late-cancel guards. Check with
     `runGuards` on a constructed `WorkItemSnapshot` plus a seeded pending CR.
   - Malformed or unknown `meta` is ignored, which means refusal.
-- [ ] T044 [P] [US3] Integration test `tests/integration/changes/approverQueue.test.ts`:
+- [x] T044 [P] [US3] Integration test `tests/integration/changes/approverQueue.test.ts`:
   - `listPendingChangeRequests` requires `change.approve`.
   - It orders `URGENT` before `NORMAL`, then oldest first.
   - The cursor paginates 5 rows with `limit: 2` into 2 + 2 + 1, with `nextCursor` null at the end.
@@ -413,12 +416,12 @@ acknowledge (FR-011–018).
 
 ### Implementation for User Story 3
 
-- [ ] T045 [US3] Implement `getProductionHold` and `acknowledgeSpecRevision` (`defineCommand` from
+- [x] T045 [US3] Implement `getProductionHold` and `acknowledgeSpecRevision` (`defineCommand` from
   `./aspect`, with `permission: "production.operate"` and an `authorize` hook calling
   `ctx.check("production.operate", { departmentId })` for the effective department, and an `updateMany` over every
   unacknowledged `CONTINUE_PRODUCTION` approval of the Work Item) in
   `src/server/changes/productionHold.ts`.
-- [ ] T046 [US3] Implement `src/server/changes/guards.ts` per contracts/events-and-ports.md §3. Use
+- [x] T046 [US3] Implement `src/server/changes/guards.ts` per contracts/events-and-ports.md §3. Use
   a Zod `metaSchema` discriminated union, and read via `db`. Export an **idempotent** `registerChangeGuards()`
   (module-level `registered` flag, because 002's `registerGuard` appends on every call). The barrel
   `src/server/changes/index.ts` exports it **and** calls it on import, which covers vitest, the
@@ -427,19 +430,19 @@ acknowledge (FR-011–018).
   block inside `register()` (`NEXT_RUNTIME === "nodejs"`): `const { registerChangeGuards } = await
   import("~/server/changes"); registerChangeGuards();` (research §18). Extend T043 so that calling
   `registerChangeGuards()` twice registers each guard only once.
-- [ ] T047 [US3] Implement `createChangeRequest` in `src/server/changes/changeRequests.ts`: row
+- [x] T047 [US3] Implement `createChangeRequest` in `src/server/changes/changeRequests.ts`: row
   lock, state and pending checks, dry-run diff, insert, pause (existence check then
   `closeOpenSegment`), notify, audit.
-- [ ] T048 [US3] Implement `approveChangeRequest`, `rejectChangeRequest`, and
+- [x] T048 [US3] Implement `approveChangeRequest`, `rejectChangeRequest`, and
   `withdrawChangeRequest` in `src/server/changes/changeRequests.ts` per contracts. Use the guarded
   `updateMany` for every decision. The redesign outcome goes through
   `sendBackForCustomerChangeInTx` with `meta: { changeControl: "CHANGE_REQUEST_APPROVAL",
   changeRequestId }`.
-- [ ] T049 [US3] Implement `listPendingChangeRequests` (cursor, `include`, in-memory
+- [x] T049 [US3] Implement `listPendingChangeRequests` (cursor, `include`, in-memory
   `changedFields`) and `getChangeRequestDetail`, both with `defineQuery` and `permission:
   "change.approve"`, in `src/server/changes/changeRequests.ts`. Export
   all US3 functions from the barrel.
-- [ ] T050 [US3] 014 touch points:
+- [x] T050 [US3] 014 touch points:
   - add `"CHANGE_HOLD"` to `DomainProductionErrorCode` in `src/server/production/errors.ts`
   - in `src/server/production/timer.ts` `resumeProduction`, refuse while `getProductionHold(tx,
     id)` is non-null, next to the existing `pendingFileRevisionAt` check
@@ -447,7 +450,7 @@ acknowledge (FR-011–018).
 
   The `~/server/changes` import also guarantees guard registration (research §18). Existing
   `tests/integration/production/**` must pass unmodified.
-- [ ] T051 [US3] UI:
+- [x] T051 [US3] UI:
   - `src/app/(shell)/changes/page.tsx` (approver queue, paginated) and
     `src/app/(shell)/changes/[changeRequestId]/page.tsx` (detail with approve-continue,
     approve-redesign shown only when allowed, and reject with reason), both with Server Actions
@@ -457,7 +460,7 @@ acknowledge (FR-011–018).
     `src/app/(shell)/production/[workItemId]/page.tsx`, with resume/complete/send-back disabled
     while held (the server refuses anyway)
   - `changes.request.*`, `changes.queue.*`, and `changes.hold.*` keys in `src/messages/ar.json`
-- [ ] T052 [US3] Add a `changes` nav entry in `src/app/(shell)/nav.ts`, gated to `HEAD_DESIGNER`
+- [x] T052 [US3] Add a `changes` nav entry in `src/app/(shell)/nav.ts`, gated to `HEAD_DESIGNER`
   and `ADMIN_OWNER`, which mirrors the existing role-list gating. The page itself authorizes by the
   `change.approve` permission, so the nav gating is cosmetic only. Update
   `tests/unit/shell-nav.test.ts`.
@@ -476,10 +479,10 @@ on the job card (FR-019–020).
 
 ### Tests for User Story 4
 
-- [ ] T053 [P] [US4] Unit test `tests/unit/changes/spec-diff-render.test.ts` (a `.ts` file):
+- [x] T053 [P] [US4] Unit test `tests/unit/changes/spec-diff-render.test.ts` (a `.ts` file):
   `renderToStaticMarkup(SpecDiff({ changes }))` renders one `data-field` row per change, "—" for
   null, the empty label for `[]`, and product type names from `productTypeNames`.
-- [ ] T054 [P] [US4] Integration test `tests/integration/changes/diff.test.ts`:
+- [x] T054 [P] [US4] Integration test `tests/integration/changes/diff.test.ts`:
   - `getSpecVersionDiff` gives v1 vs v2 exactly as in US4-1, and v2 vs v2 → `[]`.
   - Versions of another Work Item → `VERSION_MISMATCH` (US4-5).
   - `getChangeRequestDetail` returns the base-vs-proposed diff (US4-4).
@@ -488,21 +491,21 @@ on the job card (FR-019–020).
   - An actor with no qualifying permission (a user with no roles) calling `getSpecHistory` or
     `getSpecVersionDiff` → forbidden. A `PRODUCTION_OPERATOR` of another department → forbidden.
     `RECEPTION` and `ACCOUNTING` → allowed.
-- [ ] T055 [P] [US4] **Acceptance criterion 2 (UI path).** Integration test
+- [x] T055 [P] [US4] **Acceptance criterion 2 (UI path).** Integration test
   `tests/integration/changes/diff.test.ts`: after `editSpec` in `NEW` from 500 to 800,
   `getSpecHistory` returns both versions and `diffs[0].changes` equals the quantity change, which
   is the data `<SpecDiff>` renders.
 
 ### Implementation for User Story 4
 
-- [ ] T056 [US4] Implement `src/components/changes/spec-diff.tsx` per contracts/spec-diff.md
+- [x] T056 [US4] Implement `src/components/changes/spec-diff.tsx` per contracts/spec-diff.md
   (Server Component, logical CSS, `data-field`/`data-kind`, `ar-EG` number formatting). Export it
   from `src/components/changes/index.ts`. Add `changes.fields.*`, `changes.dimensionUnit.*`, and
   `changes.diff.*` keys to `src/messages/ar.json`.
-- [ ] T057 [US4] Implement `getSpecVersionDiff` (`defineQuery`, same permission as T030) and the
+- [x] T057 [US4] Implement `getSpecVersionDiff` (`defineQuery`, same permission as T030) and the
   plain in-transaction helper `getProductionStartSpecDiff` in
   `src/server/changes/versions.ts` (two queries, research §17). Export them from the barrel.
-- [ ] T058 [US4] Wire `<SpecDiff>` into `spec-history.tsx` (consecutive pairs plus a two-version
+- [x] T058 [US4] Wire `<SpecDiff>` into `spec-history.tsx` (consecutive pairs plus a two-version
   picker), the change request detail page, and the job card. On the job card, add
   `productionStartDiff` to `JobCard` in `src/server/production/jobCard.ts`.
 
@@ -520,7 +523,7 @@ throwing listener rolls everything back.
 
 ### Tests for User Story 5
 
-- [ ] T059 [P] [US5] Contract test `tests/contract/changes/events.test.ts`:
+- [x] T059 [P] [US5] Contract test `tests/contract/changes/events.test.ts`:
   - Exactly one event (listener spy plus one `NotificationEvent` of type
     `work_item.spec_changed`) per `editSpec`, approval, and override.
   - **Zero** events for v1 `INITIAL`, runtime `BACKFILL`, any refused command, reject/withdraw,
@@ -529,7 +532,7 @@ throwing listener rolls everything back.
     `origin`, `changeRequestId`, `changedFields` in `SPEC_FIELDS` order, `workItemState`,
     `actorId`) (US5-2).
   - Registering the same name twice replaces the first listener.
-- [ ] T060 [P] [US5] **Acceptance criterion 3.** Integration test
+- [x] T060 [P] [US5] **Acceptance criterion 3.** Integration test
   `tests/integration/changes/pricingReset.test.ts`. Register a stand-in 051 listener,
   `"pricing.reset"`, that writes a marker through the **provided `tx`**: an `audit_event` with
   `action: "test.pricing_pending"` for the Work Item, only when a test-controlled "priced" set
@@ -544,7 +547,7 @@ throwing listener rolls everything back.
 
 ### Implementation for User Story 5
 
-- [ ] T061 [US5] Finalize the `emitSpecChangedInTx` wiring in
+- [x] T061 [US5] Finalize the `emitSpecChangedInTx` wiring in
   `src/server/changes/versions.ts`/`events.ts`: outbox recipients are the assignee plus the
   effective department, and `workItemState` is captured before any redesign transition. Export
   `SPEC_CHANGED`, `SpecChangedEvent`, `SpecChangeListener`, and `registerSpecChangeListener` from
@@ -563,7 +566,7 @@ which requires a reason and a cost and hands off to 052 (FR-024–026).
 
 ### Tests for User Story 6
 
-- [ ] T062 [P] [US6] Integration test `tests/integration/changes/lateCancellation.test.ts`:
+- [x] T062 [P] [US6] Integration test `tests/integration/changes/lateCancellation.test.ts`:
   - For each of `IN_PRODUCTION`, `PRODUCTION_COMPLETED`, and `READY_FOR_COLLECTION` (with a spy
     port via `setDirectCostPort`): the state becomes `CANCELLED` and a `LateCancellation` row
     holds `350.00`/`EGP`/the reason/`stateAtCancellation`. The port is called once with a payload
@@ -577,7 +580,7 @@ which requires a reason and a cost and hands off to 052 (FR-024–026).
     (US6-4).
   - A throwing port → full rollback.
   - `PRODUCTION_OPERATOR` and `HEAD_DESIGNER` (no `order.cancel`) → forbidden.
-- [ ] T063 [P] [US6] Integration test `tests/integration/changes/cancelPaths.test.ts`:
+- [x] T063 [P] [US6] Integration test `tests/integration/changes/cancelPaths.test.ts`:
   - 011's `cancelWorkItem` on each of the three production states →
     `WorkItemTransitionError` with `guardCode: "LATE_CANCELLATION_REQUIRED"`, and the state is
     unchanged (US6-3, FR-026).
@@ -586,24 +589,24 @@ which requires a reason and a cost and hands off to 052 (FR-024–026).
   - A raw `transitionWorkItem(→ CANCELLED)` from `IN_PRODUCTION` without the marker →
     `GUARD_FAILED`.
   - Regression: `cancelWorkItem` on `NEW`/`IN_DESIGN`/`READY_FOR_PRODUCTION` still succeeds.
-- [ ] T064 [P] [US6] Contract test `tests/contract/changes/directCostPort.test.ts`: the default is
+- [x] T064 [P] [US6] Contract test `tests/contract/changes/directCostPort.test.ts`: the default is
   the no-op, `setDirectCostPort` replaces it, and the port receives the provided `tx` (it can write
   in it and the write commits with the cancellation).
 
 ### Implementation for User Story 6
 
-- [ ] T065 [US6] Implement `cancelAfterProductionStarted` in
+- [x] T065 [US6] Implement `cancelAfterProductionStarted` in
   `src/server/changes/lateCancellation.ts` (`defineCommand`, `order.cancel`) per contracts: state
   check, close pending CRs, insert `LateCancellation`, `ctx.transition` with the
   `LATE_CANCELLATION` marker, port call, notify. Export it from the barrel.
-- [ ] T066 [US6] In `src/server/orders/cancelOrder.ts`, extend `cancelOrder`'s return with
+- [x] T066 [US6] In `src/server/orders/cancelOrder.ts`, extend `cancelOrder`'s return with
   `requiresLateCancellation: string[]`, populated from failures whose `guardCode` is
   `LATE_CANCELLATION_REQUIRED`. This is additive, and existing callers and tests keep working.
   Import `~/server/changes` in `src/server/orders/index.ts` (or `cancelOrder.ts`) so the guards are
   registered. Existing `tests/integration/orders/**` must still pass, except any test that asserts
   cancelling an `IN_PRODUCTION` item succeeds. If one exists, update it to the new rule and note it
   in the PR.
-- [ ] T067 [US6] UI on `src/app/(shell)/orders/[orderId]/page.tsx`:
+- [x] T067 [US6] UI on `src/app/(shell)/orders/[orderId]/page.tsx`:
   - a late-cancellation form (reason, cost with a required, explicit decimal field, produced so
     far, note), shown for the three states
   - an ordinary cancel that shows "late cancellation required"
@@ -623,7 +626,7 @@ has the same effects as an approved CR (FR-027–028).
 
 ### Tests for User Story 7
 
-- [ ] T068 [P] [US7] Integration test `tests/integration/changes/adminOverride.test.ts`:
+- [x] T068 [P] [US7] Integration test `tests/integration/changes/adminOverride.test.ts`:
   - `PRODUCTION_COMPLETED`, `DELIVERED`, and `COMPLETED` → an `ADMIN_OVERRIDE` version, the prior
     version byte-identical, a `spec.admin_override` audit with the reason, and no state change
     (US7-1).
@@ -641,10 +644,10 @@ has the same effects as an approved CR (FR-027–028).
 
 ### Implementation for User Story 7
 
-- [ ] T069 [US7] Implement `adminOverrideSpec` in `src/server/changes/adminOverride.ts`
+- [x] T069 [US7] Implement `adminOverrideSpec` in `src/server/changes/adminOverride.ts`
   (`defineCommand`, `admin.override`) per contracts, reusing the approval effects from T048 via a
   shared internal helper rather than duplicating them. Export it from the barrel.
-- [ ] T070 [US7] Add an override form (fields plus a mandatory reason, and an outcome selector when
+- [x] T070 [US7] Add an override form (fields plus a mandatory reason, and an outcome selector when
   `IN_PRODUCTION`) on `src/app/(shell)/orders/[orderId]/page.tsx`, rendered only when the actor
   holds `admin.override`. Add `changes.override.*` keys to `src/messages/ar.json`.
 
@@ -654,7 +657,7 @@ has the same effects as an approved CR (FR-027–028).
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T071 **Acceptance criterion 4.** Integration test `tests/integration/changes/audit.test.ts`:
+- [x] T071 **Acceptance criterion 4.** Integration test `tests/integration/changes/audit.test.ts`:
   table-driven over every FR-029 step. Run each through its server entry point and assert exactly
   the expected `AuditEvent`(s): `action`, `entityType`, `entityId`, `actorId`, before/after where
   applicable, and `reason` where applicable. The steps are:
@@ -670,24 +673,26 @@ has the same effects as an approved CR (FR-027–028).
   - Admin override
 
   Also assert that a refused or rolled-back command leaves **no** audit event (SC-007).
-- [ ] T072 Add a source-grep test in `tests/contract/changes/guards.test.ts`: the literal
+- [x] T072 Add a source-grep test in `tests/contract/changes/guards.test.ts`: the literal
   `changeControl` appears in no `src/**` file outside `src/server/changes/**` (research §18
   residual risk).
-- [ ] T073 Run `pnpm check` (lint + typecheck) across `src/server/changes/**`,
+- [x] T073 Run `pnpm check` (lint + typecheck) across `src/server/changes/**`,
   `src/components/changes/**`, and every edited 001/002/011/014 file. Fix any violation, including
   no `any` and exhaustive switches.
-- [ ] T074 Run the full `pnpm test` suite. Every pre-existing 001/002/010–014 test must still pass,
+- [x] T074 Run the full `pnpm test` suite. Every pre-existing 001/002/010–014 test must still pass,
   and any test changed under T066 must be listed in the PR. All new `tests/**/changes/**` tests
   must pass once T002, T004, and T005 unblock the DB-dependent ones. The unit tests (T011, T013,
   T015, T021, T053) pass regardless.
-- [ ] T075 **Cross-team sign-off (Fady, Track B)** before merge. Record the agreement in Linear:
+- [x] T075 **Cross-team sign-off (Fady, Track B)** before merge. Record the agreement in Linear:
   - contracts/events-and-ports.md §1 (the 051 listener obligations)
   - §2 (the 052 port obligations)
   - §5 (054)
   - the `change.approve` key (T003)
   - the new schema file (T001/T002)
-- [ ] T076 Manual quickstart QA, blocked on T002 like every prior feature's final task. Walk through
+- [X] T076 Manual quickstart QA, blocked on T002 like every prior feature's final task. Walk through
   quickstart.md Scenarios 0–7 against a running dev server with the six seeded roles.
+  Done as headless browser QA: Scenarios 0, 1, 3, 4 walked end to end; 2, 5, 6, 7 rest on their
+  integration tests (owner accepted this split).
 
 ---
 

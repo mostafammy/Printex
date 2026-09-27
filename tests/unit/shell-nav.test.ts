@@ -57,6 +57,23 @@ describe("filterNavByPermissions", () => {
     expect(ids).not.toContain("admin");
   });
 
+  it("shows the change-request queue to head designers but not reception", async () => {
+    const { filterNavByPermissions, navItems } = await import(
+      "~/app/(shell)/nav"
+    );
+
+    const idsFor = (roles: string[]) =>
+      filterNavByPermissions(
+        { userId: asUserId("u5"), roles, departmentIds: [] },
+        navItems,
+      ).map((i) => i.id);
+
+    expect(idsFor(["HEAD_DESIGNER"])).toContain("changes");
+    expect(idsFor(["ADMIN_OWNER"])).toContain("changes");
+    expect(idsFor(["RECEPTION"])).not.toContain("changes");
+    expect(idsFor(["PRODUCTION_OPERATOR"])).not.toContain("changes");
+  });
+
   it("shows every entry to an admin actor", async () => {
     const { filterNavByPermissions, navItems } = await import(
       "~/app/(shell)/nav"

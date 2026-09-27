@@ -11,7 +11,7 @@ export { DomainReviewError } from "./errors";
 export type { DomainReviewErrorCode } from "./errors";
 
 // US1 — src/server/review/queue.ts
-export { getReviewQueue } from "./queue";
+export { getReviewQueue, getReviewQueuePage, getReviewQueueStats } from "./queue";
 export type { ReviewQueueRow } from "./queue";
 
 // US2 / US3 — src/server/review/review.ts, src/server/review/returns.ts

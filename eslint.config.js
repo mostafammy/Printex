@@ -234,21 +234,29 @@ export default tseslint.config(
     },
   },
   {
-    // Module-boundary rule, two barrels, ONE rule entry (T088):
+    // Module-boundary rule, THREE barrels, ONE rule entry (T088):
     //   - Nothing outside `src/server/pricing/**` (and tests/**) may
     //     deep-import pricing internals; application code uses the pricing
     //     barrel.
     //   - Nothing outside `src/server/notifications/**` (and tests/**) may
     //     deep-import notifications internals; application code uses the
     //     notifications barrel.
+    //   - Nothing outside `src/server/changes/**` (and tests/**) may
+    //     deep-import its internals; application code uses the changes barrel
+    //     (specs/016-change-control/contracts/change-control.md).
     // They share this block because ESLint flat config REPLACES a rule's
     // options per file instead of merging them — a second block that also
     // set `no-restricted-imports` would leave only whichever block comes
     // last in the array enforced and silently disable every other barrel
-    // rule above. Pattern style is unchanged from the original pricing rule:
-    // the `!` exclusions keep the bare barrel import legal.
+    // rule. Pattern style is unchanged from the original pricing rule: the
+    // `!` exclusions keep each bare barrel import legal.
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["src/server/pricing/**", "src/server/notifications/**", "tests/**"],
+    ignores: [
+      "src/server/pricing/**",
+      "src/server/notifications/**",
+      "src/server/changes/**",
+      "tests/**",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -268,6 +276,15 @@ export default tseslint.config(
               message:
                 "Import from the public barrel `~/server/notifications` instead of reaching into notifications internals.",
             },
+            {
+              group: [
+                "~/server/changes/**",
+                "!~/server/changes",
+                "!~/server/changes/index",
+              ],
+              message:
+                "Import from public barrel `~/server/changes` (src/server/changes/index.ts) instead reaching into its internals (specs/016-change-control/contracts/change-control.md).",
+            },
           ],
         },
       ],
@@ -275,20 +292,22 @@ export default tseslint.config(
   },
   {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
-    // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
-    // `src/server/core/storage/**`, which are Ports per contracts/storage.md
-    // and are allowed to throw/reject as their own contract; callers inside
-    // `core` catch and convert those rejections to `Result` at the call
-    // site, not the adapter itself.
+    // (plan.md §5.2, §5.3) — except:
+    // 1. `StorageAdapter` *implementations* under `src/server/core/storage/**`,
+    //    which are Ports per contracts/storage.md and are allowed to throw/reject
+    //    as their own contract; callers inside `core` catch and convert those
+    //    rejections to `Result` at the call site, not the adapter itself.
+    // 2. `src/server/core/aspects/**` (contracts/aspects.md §1) — transaction-boundary
+    //    adapter: must reject to roll back; public entry points still return a Result.
     files: ["src/server/core/**/*.ts", "src/server/core/**/*.tsx"],
-    ignores: ["src/server/core/storage/**"],
+    ignores: ["src/server/core/storage/**", "src/server/core/aspects/**"],
     rules: {
       "no-restricted-syntax": [
         "error",
         {
           selector: "ThrowStatement",
           message:
-            "src/server/core/** must not throw — return Result<T, DomainError> instead (plan.md §5.3). StorageAdapter implementations under src/server/core/storage/** are exempt.",
+            "src/server/core/** must not throw — return Result<T, DomainError> instead (plan.md §5.3). StorageAdapter implementations under src/server/core/storage/** and aspect engine adapters under src/server/core/aspects/** are exempt.",
         },
       ],
     },
