@@ -234,33 +234,29 @@ export default tseslint.config(
     },
   },
   {
-    // Nothing outside `src/server/changes/**` (and tests/**, same exemption
-    // as orders/designers/review/production above) may deep-import its
-    // internals — the only legal public surface for application code is the
-    // barrel export at `src/server/changes/index.ts`
-    // (specs/016-change-control/contracts/change-control.md).
+    // Module-boundary rule, THREE barrels, ONE rule entry (T088):
+    //   - Nothing outside `src/server/pricing/**` (and tests/**) may
+    //     deep-import pricing internals; application code uses the pricing
+    //     barrel.
+    //   - Nothing outside `src/server/notifications/**` (and tests/**) may
+    //     deep-import notifications internals; application code uses the
+    //     notifications barrel.
+    //   - Nothing outside `src/server/changes/**` (and tests/**) may
+    //     deep-import its internals; application code uses the changes barrel
+    //     (specs/016-change-control/contracts/change-control.md).
+    // They share this block because ESLint flat config REPLACES a rule's
+    // options per file instead of merging them — a second block that also
+    // set `no-restricted-imports` would leave only whichever block comes
+    // last in the array enforced and silently disable every other barrel
+    // rule. Pattern style is unchanged from the original pricing rule: the
+    // `!` exclusions keep each bare barrel import legal.
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["src/server/changes/**", "tests/**"],
-    rules: {
-      "no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["~/server/changes/**", "!~/server/changes", "!~/server/changes/index"],
-              message:
-                "Import from the public barrel `~/server/changes` (src/server/changes/index.ts) instead of reaching into its internals (specs/016-change-control/contracts/change-control.md).",
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    // Nothing outside `src/server/pricing/**` (and tests/**) may deep-import
-    // pricing internals; application code uses the pricing barrel.
-    files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["src/server/pricing/**", "tests/**"],
+    ignores: [
+      "src/server/pricing/**",
+      "src/server/notifications/**",
+      "src/server/changes/**",
+      "tests/**",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -270,6 +266,24 @@ export default tseslint.config(
               group: ["~/server/pricing/**", "!~/server/pricing", "!~/server/pricing/index"],
               message:
                 "Import from the public barrel `~/server/pricing` instead of reaching into pricing internals.",
+            },
+            {
+              group: [
+                "~/server/notifications/**",
+                "!~/server/notifications",
+                "!~/server/notifications/index",
+              ],
+              message:
+                "Import from the public barrel `~/server/notifications` instead of reaching into notifications internals.",
+            },
+            {
+              group: [
+                "~/server/changes/**",
+                "!~/server/changes",
+                "!~/server/changes/index",
+              ],
+              message:
+                "Import from public barrel `~/server/changes` (src/server/changes/index.ts) instead reaching into its internals (specs/016-change-control/contracts/change-control.md).",
             },
           ],
         },

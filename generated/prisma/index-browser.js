@@ -325,7 +325,11 @@ exports.Prisma.NotificationEventScalarFieldEnum = {
   payload: 'payload',
   createdAt: 'createdAt',
   deliveredAt: 'deliveredAt',
-  deliveryStatus: 'deliveryStatus'
+  deliveryStatus: 'deliveryStatus',
+  attemptCount: 'attemptCount',
+  lastAttemptAt: 'lastAttemptAt',
+  lastError: 'lastError',
+  recipientPermissions: 'recipientPermissions'
 };
 
 exports.Prisma.CustomerPhoneScalarFieldEnum = {
@@ -604,6 +608,77 @@ exports.Prisma.AuditEventScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.NotificationScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  sourceEventId: 'sourceEventId',
+  type: 'type',
+  title: 'title',
+  body: 'body',
+  linkHref: 'linkHref',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  severity: 'severity',
+  readAt: 'readAt',
+  archivedAt: 'archivedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.NotificationTypeOverrideScalarFieldEnum = {
+  id: 'id',
+  type: 'type',
+  userIds: 'userIds',
+  roles: 'roles',
+  departmentIds: 'departmentIds',
+  permissions: 'permissions',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DelayThresholdScalarFieldEnum = {
+  id: 'id',
+  phase: 'phase',
+  thresholdMinutes: 'thresholdMinutes',
+  alertRoles: 'alertRoles',
+  alertPermissions: 'alertPermissions',
+  alertDepartmentIds: 'alertDepartmentIds',
+  escalationMinutes: 'escalationMinutes',
+  updatedById: 'updatedById',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DelayBreachScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  phase: 'phase',
+  breachSequence: 'breachSequence',
+  thresholdMinutes: 'thresholdMinutes',
+  escalated: 'escalated',
+  escalatedAt: 'escalatedAt',
+  notifiedAt: 'notifiedAt',
+  detectedAt: 'detectedAt'
+};
+
+exports.Prisma.SchedulerRunScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  startedAt: 'startedAt',
+  finishedAt: 'finishedAt',
+  outcome: 'outcome',
+  evaluated: 'evaluated',
+  flagged: 'flagged',
+  alerted: 'alerted',
+  escalated: 'escalated',
+  error: 'error'
+};
+
+exports.Prisma.SchedulerLeaseScalarFieldEnum = {
+  id: 'id',
+  ownerId: 'ownerId',
+  acquiredAt: 'acquiredAt',
+  expiresAt: 'expiresAt'
+};
+
 exports.Prisma.ProductPricingPolicyScalarFieldEnum = {
   id: 'id',
   productTypeId: 'productTypeId',
@@ -785,6 +860,13 @@ exports.ReturnAttachmentKind = exports.$Enums.ReturnAttachmentKind = {
   FILE: 'FILE'
 };
 
+exports.DeliveryStatus = exports.$Enums.DeliveryStatus = {
+  PENDING: 'PENDING',
+  PROCESSED: 'PROCESSED',
+  FAILED: 'FAILED',
+  UNMAPPED: 'UNMAPPED'
+};
+
 exports.FileCategory = exports.$Enums.FileCategory = {
   ORIGINAL: 'ORIGINAL',
   DESIGN_VERSIONS: 'DESIGN_VERSIONS',
@@ -829,6 +911,26 @@ exports.FinanceVoidEntity = exports.$Enums.FinanceVoidEntity = {
   PAYMENT: 'PAYMENT',
   EXPENSE: 'EXPENSE',
   DIRECT_COST: 'DIRECT_COST'
+};
+
+exports.NotificationSeverity = exports.$Enums.NotificationSeverity = {
+  INFO: 'INFO',
+  ACTION: 'ACTION',
+  URGENT: 'URGENT'
+};
+
+exports.DelayPhase = exports.$Enums.DelayPhase = {
+  DESIGN: 'DESIGN',
+  REVIEW: 'REVIEW',
+  PRICING: 'PRICING',
+  PRODUCTION: 'PRODUCTION',
+  COLLECTION: 'COLLECTION'
+};
+
+exports.SchedulerOutcome = exports.$Enums.SchedulerOutcome = {
+  RUNNING: 'RUNNING',
+  OK: 'OK',
+  ERROR: 'ERROR'
 };
 
 exports.PricingMode = exports.$Enums.PricingMode = {
@@ -909,6 +1011,12 @@ exports.Prisma.ModelName = {
   UserPermission: 'UserPermission',
   UserDepartment: 'UserDepartment',
   AuditEvent: 'AuditEvent',
+  Notification: 'Notification',
+  NotificationTypeOverride: 'NotificationTypeOverride',
+  DelayThreshold: 'DelayThreshold',
+  DelayBreach: 'DelayBreach',
+  SchedulerRun: 'SchedulerRun',
+  SchedulerLease: 'SchedulerLease',
   ProductPricingPolicy: 'ProductPricingPolicy',
   PriceList: 'PriceList',
   PriceTier: 'PriceTier',
