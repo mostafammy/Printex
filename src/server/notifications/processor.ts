@@ -539,10 +539,42 @@ export function isOutboxProcessorRunning(): boolean {
  * only `OUTBOX_UNAVAILABLE` when the claim query itself fails, which is the
  * one failure the caller genuinely cannot proceed past.
  */
+/**
+ * Guards against two batches running at once. See the note at its
+ * declaration.
+ */
+let batchInFlight = false;
+
 export async function processOutboxBatch(limit?: number): Promise<ProcessResult> {
   const { scheduler } = getNotificationConfig();
   const batchLimit = limit ?? scheduler.outboxBatchLimit;
   const maxAttempts = scheduler.maxAttempts;
+
+  // No two batches may run at once. `startOutboxProcessor` fires every
+  // processorIntervalMs (500ms) and one batch takes LONGER than that — 100
+  // events, a transaction each. Without this guard, tick N+1 opens its
+  // transactions while tick N still holds them, and the two contend for the
+  // pool: against Supabase's pooler the symptom is
+  // `Unable to start a transaction in the given time`, which marks events
+  // FAILED and burns their attempt budget for a condition that is our own
+  // scheduling, not a bad event. Observed on Supabase: rows at 66 attempts.
+  //
+  // A tick arriving while another is in flight simply returns — the running
+  // one is already draining the queue, and the next tick continues.
+  if (batchInFlight) {
+    return { processed: 0, unmapped: 0, failed: 0, notificationsCreated: 0 };
+  }
+  batchInFlight = true;
+  try {
+    return await drainBatch(batchLimit, maxAttempts);
+  } finally {
+    // ALWAYS released — early return, throw, or normal finish. A stuck flag
+    // would wedge the processor permanently.
+    batchInFlight = false;
+  }
+}
+
+async function drainBatch(batchLimit: number, maxAttempts: number): Promise<ProcessResult> {
 
   let claimed: ClaimedEvent[];
   try {
