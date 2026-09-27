@@ -1,9 +1,9 @@
 // Attachment upload/download route — 050-files
 // Generic evidence attachments for rejection, discrepancy, expense, audit event, message
 
-import { getActor } from "@/server/auth/getActor.js";
-import { fileService, attachments } from "@/server/files/index.js";
-import { validateAttachmentInput } from "@/server/files/schemas.js";
+import { getActor } from "~/server/auth";
+import { fileService, attachments } from "~/server/files";
+import { validateAttachmentInput } from "~/server/files/schemas";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";

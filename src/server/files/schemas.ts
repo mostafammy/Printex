@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getFilesConfig, isMimeAllowed } from "./config.js";
+import { getFilesConfig, isMimeAllowed } from "./config";
 
 export const FileCategory = {
   ORIGINAL: "ORIGINAL",

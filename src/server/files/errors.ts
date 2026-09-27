@@ -1,7 +1,7 @@
 // Route-level error mapping — 050-files
 // Maps internal errors to HTTP responses
 
-import { FileError, FileErrorCode } from "./schemas.js";
+import { FileError, FileErrorCode } from "./schemas";
 import { NextResponse } from "next/server";
 
 export function mapFileError(error: unknown): NextResponse {

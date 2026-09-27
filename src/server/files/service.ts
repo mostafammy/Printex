@@ -2,15 +2,15 @@
 // Core business logic: upload, list, approve, lifecycle, attachments
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { type Prisma, FileCategory, FileLifecycleStatus } from "../../../generated/prisma/index.js";
-import type { Actor } from "@/server/auth/getActor.js";
-import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
-import { streamToTempFile, withRetry, verifyStreamIntegrity } from "./integrity.js";
-import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode } from "./schemas.js";
-import { canDownloadFileVersion, canListFileVersions, canPerformLifecycleAction, canApproveFileVersion } from "./authorization.js";
-import { createPreviewGrant, decodeAndVerifyGrant, encodeGrant } from "./signed-preview.js";
-import { audit } from "@/server/auth/audit.js";
-import { db as prisma } from "@/server/db.js";
+import { type Prisma, FileCategory, FileLifecycleStatus } from "../../../generated/prisma";
+import type { Actor } from "~/server/auth";
+import { audit } from "~/server/auth";
+import { db as prisma } from "~/server/db";
+import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "~/server/core/storage/local-disk";
+import { streamToTempFile, withRetry, verifyStreamIntegrity } from "./integrity";
+import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode } from "./schemas";
+import { canDownloadFileVersion, canListFileVersions, canPerformLifecycleAction, canApproveFileVersion } from "./authorization";
+import { createPreviewGrant, decodeAndVerifyGrant, encodeGrant } from "./signed-preview";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 

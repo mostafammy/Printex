@@ -1,10 +1,10 @@
 // Signed preview route — 050-files
 // Re-authorization, SHA-256 verification, image/PDF preview vs metadata/icon
 
-import { getActor } from "@/server/auth/getActor.js";
-import { authorizeFileDownload } from "@/server/files/index.js";
-import { decodeAndVerifyGrant } from "@/server/files/signed-preview.js";
-import { mapFileError } from "@/server/files/errors.js";
+import { getActor } from "~/server/auth";
+import { authorizeFileDownload } from "~/server/files";
+import { decodeAndVerifyGrant } from "~/server/files/signed-preview";
+import { mapFileError } from "~/server/files/errors";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";

@@ -3,7 +3,7 @@
 // Rejects expiry/tampering.
 
 import { createHmac, timingSafeEqual } from "crypto";
-import { getFilesConfig } from "./config.js";
+import { getFilesConfig } from "./config";
 
 export interface SignedPreviewGrant {
   versionId: string;

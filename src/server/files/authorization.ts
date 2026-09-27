@@ -2,9 +2,9 @@
 // Implements: Admin, assigned designer, same-department production operator
 // for Approved/Production; all other cases forbidden.
 
-import type { Actor } from "@/server/auth/getActor.js";
-import { FileCategory, FileLifecycleStatus } from "../../../generated/prisma/index.js";
-import { db as prisma } from "@/server/db.js";
+import type { Actor } from "~/server/auth";
+import { FileCategory, FileLifecycleStatus } from "../../../generated/prisma";
+import { db as prisma } from "~/server/db";
 
 export interface FileAccessContext {
   actor: Actor;

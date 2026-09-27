@@ -1,9 +1,9 @@
 // Authenticated streaming download route — 050-files
 // Re-authorization, SHA-256 verification, 64KB chunks, 30s per-chunk, 5min total timeout
 
-import { getActor } from "@/server/auth/getActor.js";
-import { authorizeFileDownload } from "@/server/files/index.js";
-import { mapFileError } from "@/server/files/errors.js";
+import { getActor } from "~/server/auth";
+import { authorizeFileDownload } from "~/server/files";
+import { mapFileError } from "~/server/files/errors";
 import { NextResponse } from "next/server";
 import { Readable } from "stream";
 
