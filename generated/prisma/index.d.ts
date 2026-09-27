@@ -14,6 +14,27 @@ export type PrismaPromise<T> = $Public.PrismaPromise<T>
 
 
 /**
+ * Model SpecVersion
+ * One immutable specification snapshot. Append-only: REVOKE UPDATE, DELETE
+ * (manual-sql/016-change-control-constraints.sql). Columns mirror WorkItem's
+ * 011 descriptive fields exactly (types, precision, enum).
+ */
+export type SpecVersion = $Result.DefaultSelection<Prisma.$SpecVersionPayload>
+/**
+ * Model ChangeRequest
+ * A customer's requested modification to an IN_PRODUCTION Work Item (US3), or
+ * the auto-approved record of an in-production Admin override (FR-028).
+ * Never deleted. Fields below the divider are written exactly once by the
+ * guarded PENDING → terminal update (research.md §13).
+ */
+export type ChangeRequest = $Result.DefaultSelection<Prisma.$ChangeRequestPayload>
+/**
+ * Model LateCancellation
+ * Permanent record of a cancellation after production started (US6). Source
+ * record for 052's direct cost (PRD §30). Append-only (REVOKE UPDATE, DELETE).
+ */
+export type LateCancellation = $Result.DefaultSelection<Prisma.$LateCancellationPayload>
+/**
  * Model Department
  * Admin-configured production department (constitution VI: data, not an enum).
  */
@@ -274,7 +295,37 @@ export type PricingStatus = $Result.DefaultSelection<Prisma.$PricingStatusPayloa
  * Enums
  */
 export namespace $Enums {
-  export const WorkItemState: {
+  export const SpecVersionOrigin: {
+  INITIAL: 'INITIAL',
+  BACKFILL: 'BACKFILL',
+  DIRECT_EDIT: 'DIRECT_EDIT',
+  CHANGE_REQUEST: 'CHANGE_REQUEST',
+  ADMIN_OVERRIDE: 'ADMIN_OVERRIDE'
+};
+
+export type SpecVersionOrigin = (typeof SpecVersionOrigin)[keyof typeof SpecVersionOrigin]
+
+
+export const ChangeRequestStatus: {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  WITHDRAWN: 'WITHDRAWN',
+  CLOSED_BY_CANCELLATION: 'CLOSED_BY_CANCELLATION'
+};
+
+export type ChangeRequestStatus = (typeof ChangeRequestStatus)[keyof typeof ChangeRequestStatus]
+
+
+export const ChangeRequestOutcome: {
+  CONTINUE_PRODUCTION: 'CONTINUE_PRODUCTION',
+  REDESIGN: 'REDESIGN'
+};
+
+export type ChangeRequestOutcome = (typeof ChangeRequestOutcome)[keyof typeof ChangeRequestOutcome]
+
+
+export const WorkItemState: {
   NEW: 'NEW',
   ASSIGNED: 'ASSIGNED',
   IN_DESIGN: 'IN_DESIGN',
@@ -481,6 +532,18 @@ export type PriceConfigStatus = (typeof PriceConfigStatus)[keyof typeof PriceCon
 
 }
 
+export type SpecVersionOrigin = $Enums.SpecVersionOrigin
+
+export const SpecVersionOrigin: typeof $Enums.SpecVersionOrigin
+
+export type ChangeRequestStatus = $Enums.ChangeRequestStatus
+
+export const ChangeRequestStatus: typeof $Enums.ChangeRequestStatus
+
+export type ChangeRequestOutcome = $Enums.ChangeRequestOutcome
+
+export const ChangeRequestOutcome: typeof $Enums.ChangeRequestOutcome
+
 export type WorkItemState = $Enums.WorkItemState
 
 export const WorkItemState: typeof $Enums.WorkItemState
@@ -568,8 +631,8 @@ export const PriceConfigStatus: typeof $Enums.PriceConfigStatus
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Departments
- * const departments = await prisma.department.findMany()
+ * // Fetch zero or more SpecVersions
+ * const specVersions = await prisma.specVersion.findMany()
  * ```
  *
  *
@@ -589,8 +652,8 @@ export class PrismaClient<
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more Departments
-   * const departments = await prisma.department.findMany()
+   * // Fetch zero or more SpecVersions
+   * const specVersions = await prisma.specVersion.findMany()
    * ```
    *
    *
@@ -680,6 +743,36 @@ export class PrismaClient<
   }>>
 
       /**
+   * `prisma.specVersion`: Exposes CRUD operations for the **SpecVersion** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SpecVersions
+    * const specVersions = await prisma.specVersion.findMany()
+    * ```
+    */
+  get specVersion(): Prisma.SpecVersionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.changeRequest`: Exposes CRUD operations for the **ChangeRequest** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ChangeRequests
+    * const changeRequests = await prisma.changeRequest.findMany()
+    * ```
+    */
+  get changeRequest(): Prisma.ChangeRequestDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.lateCancellation`: Exposes CRUD operations for the **LateCancellation** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more LateCancellations
+    * const lateCancellations = await prisma.lateCancellation.findMany()
+    * ```
+    */
+  get lateCancellation(): Prisma.LateCancellationDelegate<ExtArgs, ClientOptions>;
+
+  /**
    * `prisma.department`: Exposes CRUD operations for the **Department** model.
     * Example usage:
     * ```ts
@@ -1569,6 +1662,9 @@ export namespace Prisma {
 
 
   export const ModelName: {
+    SpecVersion: 'SpecVersion',
+    ChangeRequest: 'ChangeRequest',
+    LateCancellation: 'LateCancellation',
     Department: 'Department',
     Customer: 'Customer',
     Order: 'Order',
@@ -1632,10 +1728,232 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus"
+      modelProps: "specVersion" | "changeRequest" | "lateCancellation" | "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
+      SpecVersion: {
+        payload: Prisma.$SpecVersionPayload<ExtArgs>
+        fields: Prisma.SpecVersionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SpecVersionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SpecVersionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          findFirst: {
+            args: Prisma.SpecVersionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SpecVersionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          findMany: {
+            args: Prisma.SpecVersionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>[]
+          }
+          create: {
+            args: Prisma.SpecVersionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          createMany: {
+            args: Prisma.SpecVersionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SpecVersionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>[]
+          }
+          delete: {
+            args: Prisma.SpecVersionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          update: {
+            args: Prisma.SpecVersionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          deleteMany: {
+            args: Prisma.SpecVersionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SpecVersionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SpecVersionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>[]
+          }
+          upsert: {
+            args: Prisma.SpecVersionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SpecVersionPayload>
+          }
+          aggregate: {
+            args: Prisma.SpecVersionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSpecVersion>
+          }
+          groupBy: {
+            args: Prisma.SpecVersionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SpecVersionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SpecVersionCountArgs<ExtArgs>
+            result: $Utils.Optional<SpecVersionCountAggregateOutputType> | number
+          }
+        }
+      }
+      ChangeRequest: {
+        payload: Prisma.$ChangeRequestPayload<ExtArgs>
+        fields: Prisma.ChangeRequestFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ChangeRequestFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ChangeRequestFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          findFirst: {
+            args: Prisma.ChangeRequestFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ChangeRequestFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          findMany: {
+            args: Prisma.ChangeRequestFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>[]
+          }
+          create: {
+            args: Prisma.ChangeRequestCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          createMany: {
+            args: Prisma.ChangeRequestCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ChangeRequestCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>[]
+          }
+          delete: {
+            args: Prisma.ChangeRequestDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          update: {
+            args: Prisma.ChangeRequestUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          deleteMany: {
+            args: Prisma.ChangeRequestDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ChangeRequestUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ChangeRequestUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>[]
+          }
+          upsert: {
+            args: Prisma.ChangeRequestUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ChangeRequestPayload>
+          }
+          aggregate: {
+            args: Prisma.ChangeRequestAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateChangeRequest>
+          }
+          groupBy: {
+            args: Prisma.ChangeRequestGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ChangeRequestGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ChangeRequestCountArgs<ExtArgs>
+            result: $Utils.Optional<ChangeRequestCountAggregateOutputType> | number
+          }
+        }
+      }
+      LateCancellation: {
+        payload: Prisma.$LateCancellationPayload<ExtArgs>
+        fields: Prisma.LateCancellationFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.LateCancellationFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.LateCancellationFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          findFirst: {
+            args: Prisma.LateCancellationFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.LateCancellationFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          findMany: {
+            args: Prisma.LateCancellationFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>[]
+          }
+          create: {
+            args: Prisma.LateCancellationCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          createMany: {
+            args: Prisma.LateCancellationCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.LateCancellationCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>[]
+          }
+          delete: {
+            args: Prisma.LateCancellationDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          update: {
+            args: Prisma.LateCancellationUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          deleteMany: {
+            args: Prisma.LateCancellationDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.LateCancellationUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.LateCancellationUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>[]
+          }
+          upsert: {
+            args: Prisma.LateCancellationUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$LateCancellationPayload>
+          }
+          aggregate: {
+            args: Prisma.LateCancellationAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateLateCancellation>
+          }
+          groupBy: {
+            args: Prisma.LateCancellationGroupByArgs<ExtArgs>
+            result: $Utils.Optional<LateCancellationGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.LateCancellationCountArgs<ExtArgs>
+            result: $Utils.Optional<LateCancellationCountAggregateOutputType> | number
+          }
+        }
+      }
       Department: {
         payload: Prisma.$DepartmentPayload<ExtArgs>
         fields: Prisma.DepartmentFieldRefs
@@ -5062,6 +5380,9 @@ export namespace Prisma {
     omit?: Prisma.GlobalOmitConfig
   }
   export type GlobalOmitConfig = {
+    specVersion?: SpecVersionOmit
+    changeRequest?: ChangeRequestOmit
+    lateCancellation?: LateCancellationOmit
     department?: DepartmentOmit
     customer?: CustomerOmit
     order?: OrderOmit
@@ -5180,6 +5501,37 @@ export namespace Prisma {
   /**
    * Count Types
    */
+
+
+  /**
+   * Count Type SpecVersionCountOutputType
+   */
+
+  export type SpecVersionCountOutputType = {
+    baseOfChangeRequests: number
+  }
+
+  export type SpecVersionCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    baseOfChangeRequests?: boolean | SpecVersionCountOutputTypeCountBaseOfChangeRequestsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * SpecVersionCountOutputType without action
+   */
+  export type SpecVersionCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersionCountOutputType
+     */
+    select?: SpecVersionCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * SpecVersionCountOutputType without action
+   */
+  export type SpecVersionCountOutputTypeCountBaseOfChangeRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
+  }
 
 
   /**
@@ -5388,6 +5740,8 @@ export namespace Prisma {
    */
 
   export type WorkItemCountOutputType = {
+    specVersions: number
+    changeRequests: number
     transitions: number
     phaseTimings: number
     designVersions: number
@@ -5400,6 +5754,8 @@ export namespace Prisma {
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    specVersions?: boolean | WorkItemCountOutputTypeCountSpecVersionsArgs
+    changeRequests?: boolean | WorkItemCountOutputTypeCountChangeRequestsArgs
     transitions?: boolean | WorkItemCountOutputTypeCountTransitionsArgs
     phaseTimings?: boolean | WorkItemCountOutputTypeCountPhaseTimingsArgs
     designVersions?: boolean | WorkItemCountOutputTypeCountDesignVersionsArgs
@@ -5420,6 +5776,20 @@ export namespace Prisma {
      * Select specific fields to fetch from the WorkItemCountOutputType
      */
     select?: WorkItemCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountSpecVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SpecVersionWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountChangeRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
   }
 
   /**
@@ -5492,12 +5862,14 @@ export namespace Prisma {
 
   export type ProductTypeCountOutputType = {
     workItems: number
+    specVersions: number
     priceLists: number
     customerPricingRules: number
   }
 
   export type ProductTypeCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workItems?: boolean | ProductTypeCountOutputTypeCountWorkItemsArgs
+    specVersions?: boolean | ProductTypeCountOutputTypeCountSpecVersionsArgs
     priceLists?: boolean | ProductTypeCountOutputTypeCountPriceListsArgs
     customerPricingRules?: boolean | ProductTypeCountOutputTypeCountCustomerPricingRulesArgs
   }
@@ -5518,6 +5890,13 @@ export namespace Prisma {
    */
   export type ProductTypeCountOutputTypeCountWorkItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: WorkItemWhereInput
+  }
+
+  /**
+   * ProductTypeCountOutputType without action
+   */
+  export type ProductTypeCountOutputTypeCountSpecVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SpecVersionWhereInput
   }
 
   /**
@@ -5736,6 +6115,11 @@ export namespace Prisma {
     directCostsCreated: number
     creditsUpdated: number
     financeConfigUpdates: number
+    specVersionsCreated: number
+    changeRequestsRequested: number
+    changeRequestsDecided: number
+    changeRequestsAcknowledged: number
+    lateCancellations: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5771,6 +6155,11 @@ export namespace Prisma {
     directCostsCreated?: boolean | UserCountOutputTypeCountDirectCostsCreatedArgs
     creditsUpdated?: boolean | UserCountOutputTypeCountCreditsUpdatedArgs
     financeConfigUpdates?: boolean | UserCountOutputTypeCountFinanceConfigUpdatesArgs
+    specVersionsCreated?: boolean | UserCountOutputTypeCountSpecVersionsCreatedArgs
+    changeRequestsRequested?: boolean | UserCountOutputTypeCountChangeRequestsRequestedArgs
+    changeRequestsDecided?: boolean | UserCountOutputTypeCountChangeRequestsDecidedArgs
+    changeRequestsAcknowledged?: boolean | UserCountOutputTypeCountChangeRequestsAcknowledgedArgs
+    lateCancellations?: boolean | UserCountOutputTypeCountLateCancellationsArgs
   }
 
   // Custom InputTypes
@@ -6008,6 +6397,41 @@ export namespace Prisma {
     where?: FinanceConfigWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountSpecVersionsCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SpecVersionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountChangeRequestsRequestedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountChangeRequestsDecidedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountChangeRequestsAcknowledgedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountLateCancellationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LateCancellationWhereInput
+  }
+
 
   /**
    * Count Type RoleCountOutputType
@@ -6083,6 +6507,3936 @@ export namespace Prisma {
   /**
    * Models
    */
+
+  /**
+   * Model SpecVersion
+   */
+
+  export type AggregateSpecVersion = {
+    _count: SpecVersionCountAggregateOutputType | null
+    _avg: SpecVersionAvgAggregateOutputType | null
+    _sum: SpecVersionSumAggregateOutputType | null
+    _min: SpecVersionMinAggregateOutputType | null
+    _max: SpecVersionMaxAggregateOutputType | null
+  }
+
+  export type SpecVersionAvgAggregateOutputType = {
+    version: number | null
+    quantity: number | null
+    widthValue: Decimal | null
+    heightValue: Decimal | null
+  }
+
+  export type SpecVersionSumAggregateOutputType = {
+    version: number | null
+    quantity: number | null
+    widthValue: Decimal | null
+    heightValue: Decimal | null
+  }
+
+  export type SpecVersionMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    version: number | null
+    origin: $Enums.SpecVersionOrigin | null
+    productTypeId: string | null
+    description: string | null
+    quantity: number | null
+    widthValue: Decimal | null
+    heightValue: Decimal | null
+    dimensionUnit: $Enums.WorkItemDimensionUnit | null
+    material: string | null
+    finishNotes: string | null
+    stateAtCreation: $Enums.WorkItemState | null
+    reason: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type SpecVersionMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    version: number | null
+    origin: $Enums.SpecVersionOrigin | null
+    productTypeId: string | null
+    description: string | null
+    quantity: number | null
+    widthValue: Decimal | null
+    heightValue: Decimal | null
+    dimensionUnit: $Enums.WorkItemDimensionUnit | null
+    material: string | null
+    finishNotes: string | null
+    stateAtCreation: $Enums.WorkItemState | null
+    reason: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type SpecVersionCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    version: number
+    origin: number
+    productTypeId: number
+    description: number
+    quantity: number
+    widthValue: number
+    heightValue: number
+    dimensionUnit: number
+    material: number
+    finishNotes: number
+    stateAtCreation: number
+    reason: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type SpecVersionAvgAggregateInputType = {
+    version?: true
+    quantity?: true
+    widthValue?: true
+    heightValue?: true
+  }
+
+  export type SpecVersionSumAggregateInputType = {
+    version?: true
+    quantity?: true
+    widthValue?: true
+    heightValue?: true
+  }
+
+  export type SpecVersionMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    origin?: true
+    productTypeId?: true
+    description?: true
+    quantity?: true
+    widthValue?: true
+    heightValue?: true
+    dimensionUnit?: true
+    material?: true
+    finishNotes?: true
+    stateAtCreation?: true
+    reason?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type SpecVersionMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    origin?: true
+    productTypeId?: true
+    description?: true
+    quantity?: true
+    widthValue?: true
+    heightValue?: true
+    dimensionUnit?: true
+    material?: true
+    finishNotes?: true
+    stateAtCreation?: true
+    reason?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type SpecVersionCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    version?: true
+    origin?: true
+    productTypeId?: true
+    description?: true
+    quantity?: true
+    widthValue?: true
+    heightValue?: true
+    dimensionUnit?: true
+    material?: true
+    finishNotes?: true
+    stateAtCreation?: true
+    reason?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type SpecVersionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SpecVersion to aggregate.
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SpecVersions to fetch.
+     */
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SpecVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SpecVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SpecVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SpecVersions
+    **/
+    _count?: true | SpecVersionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SpecVersionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SpecVersionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SpecVersionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SpecVersionMaxAggregateInputType
+  }
+
+  export type GetSpecVersionAggregateType<T extends SpecVersionAggregateArgs> = {
+        [P in keyof T & keyof AggregateSpecVersion]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSpecVersion[P]>
+      : GetScalarType<T[P], AggregateSpecVersion[P]>
+  }
+
+
+
+
+  export type SpecVersionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SpecVersionWhereInput
+    orderBy?: SpecVersionOrderByWithAggregationInput | SpecVersionOrderByWithAggregationInput[]
+    by: SpecVersionScalarFieldEnum[] | SpecVersionScalarFieldEnum
+    having?: SpecVersionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SpecVersionCountAggregateInputType | true
+    _avg?: SpecVersionAvgAggregateInputType
+    _sum?: SpecVersionSumAggregateInputType
+    _min?: SpecVersionMinAggregateInputType
+    _max?: SpecVersionMaxAggregateInputType
+  }
+
+  export type SpecVersionGroupByOutputType = {
+    id: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId: string | null
+    description: string | null
+    quantity: number | null
+    widthValue: Decimal | null
+    heightValue: Decimal | null
+    dimensionUnit: $Enums.WorkItemDimensionUnit | null
+    material: string | null
+    finishNotes: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason: string | null
+    createdById: string | null
+    createdAt: Date
+    _count: SpecVersionCountAggregateOutputType | null
+    _avg: SpecVersionAvgAggregateOutputType | null
+    _sum: SpecVersionSumAggregateOutputType | null
+    _min: SpecVersionMinAggregateOutputType | null
+    _max: SpecVersionMaxAggregateOutputType | null
+  }
+
+  type GetSpecVersionGroupByPayload<T extends SpecVersionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SpecVersionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SpecVersionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SpecVersionGroupByOutputType[P]>
+            : GetScalarType<T[P], SpecVersionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SpecVersionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    origin?: boolean
+    productTypeId?: boolean
+    description?: boolean
+    quantity?: boolean
+    widthValue?: boolean
+    heightValue?: boolean
+    dimensionUnit?: boolean
+    material?: boolean
+    finishNotes?: boolean
+    stateAtCreation?: boolean
+    reason?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+    currentFor?: boolean | SpecVersion$currentForArgs<ExtArgs>
+    baseOfChangeRequests?: boolean | SpecVersion$baseOfChangeRequestsArgs<ExtArgs>
+    resultOfChangeRequest?: boolean | SpecVersion$resultOfChangeRequestArgs<ExtArgs>
+    _count?: boolean | SpecVersionCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["specVersion"]>
+
+  export type SpecVersionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    origin?: boolean
+    productTypeId?: boolean
+    description?: boolean
+    quantity?: boolean
+    widthValue?: boolean
+    heightValue?: boolean
+    dimensionUnit?: boolean
+    material?: boolean
+    finishNotes?: boolean
+    stateAtCreation?: boolean
+    reason?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["specVersion"]>
+
+  export type SpecVersionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    origin?: boolean
+    productTypeId?: boolean
+    description?: boolean
+    quantity?: boolean
+    widthValue?: boolean
+    heightValue?: boolean
+    dimensionUnit?: boolean
+    material?: boolean
+    finishNotes?: boolean
+    stateAtCreation?: boolean
+    reason?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+  }, ExtArgs["result"]["specVersion"]>
+
+  export type SpecVersionSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    version?: boolean
+    origin?: boolean
+    productTypeId?: boolean
+    description?: boolean
+    quantity?: boolean
+    widthValue?: boolean
+    heightValue?: boolean
+    dimensionUnit?: boolean
+    material?: boolean
+    finishNotes?: boolean
+    stateAtCreation?: boolean
+    reason?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type SpecVersionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "version" | "origin" | "productTypeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "stateAtCreation" | "reason" | "createdById" | "createdAt", ExtArgs["result"]["specVersion"]>
+  export type SpecVersionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+    currentFor?: boolean | SpecVersion$currentForArgs<ExtArgs>
+    baseOfChangeRequests?: boolean | SpecVersion$baseOfChangeRequestsArgs<ExtArgs>
+    resultOfChangeRequest?: boolean | SpecVersion$resultOfChangeRequestArgs<ExtArgs>
+    _count?: boolean | SpecVersionCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type SpecVersionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+  }
+  export type SpecVersionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    productType?: boolean | SpecVersion$productTypeArgs<ExtArgs>
+    createdBy?: boolean | SpecVersion$createdByArgs<ExtArgs>
+  }
+
+  export type $SpecVersionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SpecVersion"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      productType: Prisma.$ProductTypePayload<ExtArgs> | null
+      createdBy: Prisma.$UserPayload<ExtArgs> | null
+      /**
+       * Back-relations
+       */
+      currentFor: Prisma.$WorkItemPayload<ExtArgs> | null
+      baseOfChangeRequests: Prisma.$ChangeRequestPayload<ExtArgs>[]
+      resultOfChangeRequest: Prisma.$ChangeRequestPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      /**
+       * 1, 2, 3 … per Work Item, never reused.
+       */
+      version: number
+      origin: $Enums.SpecVersionOrigin
+      productTypeId: string | null
+      description: string | null
+      quantity: number | null
+      widthValue: Prisma.Decimal | null
+      heightValue: Prisma.Decimal | null
+      dimensionUnit: $Enums.WorkItemDimensionUnit | null
+      material: string | null
+      finishNotes: string | null
+      /**
+       * WorkItem.state when this version was created (FR-002).
+       */
+      stateAtCreation: $Enums.WorkItemState
+      /**
+       * Required for ADMIN_OVERRIDE and CHANGE_REQUEST (copied from the request); optional otherwise.
+       */
+      reason: string | null
+      /**
+       * Null only for origin = BACKFILL.
+       */
+      createdById: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["specVersion"]>
+    composites: {}
+  }
+
+  type SpecVersionGetPayload<S extends boolean | null | undefined | SpecVersionDefaultArgs> = $Result.GetResult<Prisma.$SpecVersionPayload, S>
+
+  type SpecVersionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SpecVersionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SpecVersionCountAggregateInputType | true
+    }
+
+  export interface SpecVersionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SpecVersion'], meta: { name: 'SpecVersion' } }
+    /**
+     * Find zero or one SpecVersion that matches the filter.
+     * @param {SpecVersionFindUniqueArgs} args - Arguments to find a SpecVersion
+     * @example
+     * // Get one SpecVersion
+     * const specVersion = await prisma.specVersion.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SpecVersionFindUniqueArgs>(args: SelectSubset<T, SpecVersionFindUniqueArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SpecVersion that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SpecVersionFindUniqueOrThrowArgs} args - Arguments to find a SpecVersion
+     * @example
+     * // Get one SpecVersion
+     * const specVersion = await prisma.specVersion.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SpecVersionFindUniqueOrThrowArgs>(args: SelectSubset<T, SpecVersionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SpecVersion that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionFindFirstArgs} args - Arguments to find a SpecVersion
+     * @example
+     * // Get one SpecVersion
+     * const specVersion = await prisma.specVersion.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SpecVersionFindFirstArgs>(args?: SelectSubset<T, SpecVersionFindFirstArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SpecVersion that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionFindFirstOrThrowArgs} args - Arguments to find a SpecVersion
+     * @example
+     * // Get one SpecVersion
+     * const specVersion = await prisma.specVersion.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SpecVersionFindFirstOrThrowArgs>(args?: SelectSubset<T, SpecVersionFindFirstOrThrowArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SpecVersions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SpecVersions
+     * const specVersions = await prisma.specVersion.findMany()
+     * 
+     * // Get first 10 SpecVersions
+     * const specVersions = await prisma.specVersion.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const specVersionWithIdOnly = await prisma.specVersion.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SpecVersionFindManyArgs>(args?: SelectSubset<T, SpecVersionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SpecVersion.
+     * @param {SpecVersionCreateArgs} args - Arguments to create a SpecVersion.
+     * @example
+     * // Create one SpecVersion
+     * const SpecVersion = await prisma.specVersion.create({
+     *   data: {
+     *     // ... data to create a SpecVersion
+     *   }
+     * })
+     * 
+     */
+    create<T extends SpecVersionCreateArgs>(args: SelectSubset<T, SpecVersionCreateArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SpecVersions.
+     * @param {SpecVersionCreateManyArgs} args - Arguments to create many SpecVersions.
+     * @example
+     * // Create many SpecVersions
+     * const specVersion = await prisma.specVersion.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SpecVersionCreateManyArgs>(args?: SelectSubset<T, SpecVersionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SpecVersions and returns the data saved in the database.
+     * @param {SpecVersionCreateManyAndReturnArgs} args - Arguments to create many SpecVersions.
+     * @example
+     * // Create many SpecVersions
+     * const specVersion = await prisma.specVersion.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SpecVersions and only return the `id`
+     * const specVersionWithIdOnly = await prisma.specVersion.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SpecVersionCreateManyAndReturnArgs>(args?: SelectSubset<T, SpecVersionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SpecVersion.
+     * @param {SpecVersionDeleteArgs} args - Arguments to delete one SpecVersion.
+     * @example
+     * // Delete one SpecVersion
+     * const SpecVersion = await prisma.specVersion.delete({
+     *   where: {
+     *     // ... filter to delete one SpecVersion
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SpecVersionDeleteArgs>(args: SelectSubset<T, SpecVersionDeleteArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SpecVersion.
+     * @param {SpecVersionUpdateArgs} args - Arguments to update one SpecVersion.
+     * @example
+     * // Update one SpecVersion
+     * const specVersion = await prisma.specVersion.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SpecVersionUpdateArgs>(args: SelectSubset<T, SpecVersionUpdateArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SpecVersions.
+     * @param {SpecVersionDeleteManyArgs} args - Arguments to filter SpecVersions to delete.
+     * @example
+     * // Delete a few SpecVersions
+     * const { count } = await prisma.specVersion.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SpecVersionDeleteManyArgs>(args?: SelectSubset<T, SpecVersionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SpecVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SpecVersions
+     * const specVersion = await prisma.specVersion.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SpecVersionUpdateManyArgs>(args: SelectSubset<T, SpecVersionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SpecVersions and returns the data updated in the database.
+     * @param {SpecVersionUpdateManyAndReturnArgs} args - Arguments to update many SpecVersions.
+     * @example
+     * // Update many SpecVersions
+     * const specVersion = await prisma.specVersion.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SpecVersions and only return the `id`
+     * const specVersionWithIdOnly = await prisma.specVersion.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SpecVersionUpdateManyAndReturnArgs>(args: SelectSubset<T, SpecVersionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SpecVersion.
+     * @param {SpecVersionUpsertArgs} args - Arguments to update or create a SpecVersion.
+     * @example
+     * // Update or create a SpecVersion
+     * const specVersion = await prisma.specVersion.upsert({
+     *   create: {
+     *     // ... data to create a SpecVersion
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SpecVersion we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SpecVersionUpsertArgs>(args: SelectSubset<T, SpecVersionUpsertArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SpecVersions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionCountArgs} args - Arguments to filter SpecVersions to count.
+     * @example
+     * // Count the number of SpecVersions
+     * const count = await prisma.specVersion.count({
+     *   where: {
+     *     // ... the filter for the SpecVersions we want to count
+     *   }
+     * })
+    **/
+    count<T extends SpecVersionCountArgs>(
+      args?: Subset<T, SpecVersionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SpecVersionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SpecVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SpecVersionAggregateArgs>(args: Subset<T, SpecVersionAggregateArgs>): Prisma.PrismaPromise<GetSpecVersionAggregateType<T>>
+
+    /**
+     * Group by SpecVersion.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SpecVersionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SpecVersionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SpecVersionGroupByArgs['orderBy'] }
+        : { orderBy?: SpecVersionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SpecVersionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSpecVersionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SpecVersion model
+   */
+  readonly fields: SpecVersionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SpecVersion.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SpecVersionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    productType<T extends SpecVersion$productTypeArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersion$productTypeArgs<ExtArgs>>): Prisma__ProductTypeClient<$Result.GetResult<Prisma.$ProductTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends SpecVersion$createdByArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersion$createdByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    currentFor<T extends SpecVersion$currentForArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersion$currentForArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    baseOfChangeRequests<T extends SpecVersion$baseOfChangeRequestsArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersion$baseOfChangeRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    resultOfChangeRequest<T extends SpecVersion$resultOfChangeRequestArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersion$resultOfChangeRequestArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SpecVersion model
+   */
+  interface SpecVersionFieldRefs {
+    readonly id: FieldRef<"SpecVersion", 'String'>
+    readonly workItemId: FieldRef<"SpecVersion", 'String'>
+    readonly version: FieldRef<"SpecVersion", 'Int'>
+    readonly origin: FieldRef<"SpecVersion", 'SpecVersionOrigin'>
+    readonly productTypeId: FieldRef<"SpecVersion", 'String'>
+    readonly description: FieldRef<"SpecVersion", 'String'>
+    readonly quantity: FieldRef<"SpecVersion", 'Int'>
+    readonly widthValue: FieldRef<"SpecVersion", 'Decimal'>
+    readonly heightValue: FieldRef<"SpecVersion", 'Decimal'>
+    readonly dimensionUnit: FieldRef<"SpecVersion", 'WorkItemDimensionUnit'>
+    readonly material: FieldRef<"SpecVersion", 'String'>
+    readonly finishNotes: FieldRef<"SpecVersion", 'String'>
+    readonly stateAtCreation: FieldRef<"SpecVersion", 'WorkItemState'>
+    readonly reason: FieldRef<"SpecVersion", 'String'>
+    readonly createdById: FieldRef<"SpecVersion", 'String'>
+    readonly createdAt: FieldRef<"SpecVersion", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SpecVersion findUnique
+   */
+  export type SpecVersionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which SpecVersion to fetch.
+     */
+    where: SpecVersionWhereUniqueInput
+  }
+
+  /**
+   * SpecVersion findUniqueOrThrow
+   */
+  export type SpecVersionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which SpecVersion to fetch.
+     */
+    where: SpecVersionWhereUniqueInput
+  }
+
+  /**
+   * SpecVersion findFirst
+   */
+  export type SpecVersionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which SpecVersion to fetch.
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SpecVersions to fetch.
+     */
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SpecVersions.
+     */
+    cursor?: SpecVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SpecVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SpecVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SpecVersions.
+     */
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SpecVersion findFirstOrThrow
+   */
+  export type SpecVersionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which SpecVersion to fetch.
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SpecVersions to fetch.
+     */
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SpecVersions.
+     */
+    cursor?: SpecVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SpecVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SpecVersions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SpecVersions.
+     */
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SpecVersion findMany
+   */
+  export type SpecVersionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter, which SpecVersions to fetch.
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SpecVersions to fetch.
+     */
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SpecVersions.
+     */
+    cursor?: SpecVersionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SpecVersions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SpecVersions.
+     */
+    skip?: number
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
+  }
+
+  /**
+   * SpecVersion create
+   */
+  export type SpecVersionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SpecVersion.
+     */
+    data: XOR<SpecVersionCreateInput, SpecVersionUncheckedCreateInput>
+  }
+
+  /**
+   * SpecVersion createMany
+   */
+  export type SpecVersionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SpecVersions.
+     */
+    data: SpecVersionCreateManyInput | SpecVersionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SpecVersion createManyAndReturn
+   */
+  export type SpecVersionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * The data used to create many SpecVersions.
+     */
+    data: SpecVersionCreateManyInput | SpecVersionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SpecVersion update
+   */
+  export type SpecVersionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SpecVersion.
+     */
+    data: XOR<SpecVersionUpdateInput, SpecVersionUncheckedUpdateInput>
+    /**
+     * Choose, which SpecVersion to update.
+     */
+    where: SpecVersionWhereUniqueInput
+  }
+
+  /**
+   * SpecVersion updateMany
+   */
+  export type SpecVersionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SpecVersions.
+     */
+    data: XOR<SpecVersionUpdateManyMutationInput, SpecVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which SpecVersions to update
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * Limit how many SpecVersions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SpecVersion updateManyAndReturn
+   */
+  export type SpecVersionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * The data used to update SpecVersions.
+     */
+    data: XOR<SpecVersionUpdateManyMutationInput, SpecVersionUncheckedUpdateManyInput>
+    /**
+     * Filter which SpecVersions to update
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * Limit how many SpecVersions to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SpecVersion upsert
+   */
+  export type SpecVersionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SpecVersion to update in case it exists.
+     */
+    where: SpecVersionWhereUniqueInput
+    /**
+     * In case the SpecVersion found by the `where` argument doesn't exist, create a new SpecVersion with this data.
+     */
+    create: XOR<SpecVersionCreateInput, SpecVersionUncheckedCreateInput>
+    /**
+     * In case the SpecVersion was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SpecVersionUpdateInput, SpecVersionUncheckedUpdateInput>
+  }
+
+  /**
+   * SpecVersion delete
+   */
+  export type SpecVersionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    /**
+     * Filter which SpecVersion to delete.
+     */
+    where: SpecVersionWhereUniqueInput
+  }
+
+  /**
+   * SpecVersion deleteMany
+   */
+  export type SpecVersionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SpecVersions to delete
+     */
+    where?: SpecVersionWhereInput
+    /**
+     * Limit how many SpecVersions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SpecVersion.productType
+   */
+  export type SpecVersion$productTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductType
+     */
+    select?: ProductTypeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductType
+     */
+    omit?: ProductTypeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductTypeInclude<ExtArgs> | null
+    where?: ProductTypeWhereInput
+  }
+
+  /**
+   * SpecVersion.createdBy
+   */
+  export type SpecVersion$createdByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * SpecVersion.currentFor
+   */
+  export type SpecVersion$currentForArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItem
+     */
+    select?: WorkItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItem
+     */
+    omit?: WorkItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemInclude<ExtArgs> | null
+    where?: WorkItemWhereInput
+  }
+
+  /**
+   * SpecVersion.baseOfChangeRequests
+   */
+  export type SpecVersion$baseOfChangeRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    cursor?: ChangeRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * SpecVersion.resultOfChangeRequest
+   */
+  export type SpecVersion$resultOfChangeRequestArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+  }
+
+  /**
+   * SpecVersion without action
+   */
+  export type SpecVersionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ChangeRequest
+   */
+
+  export type AggregateChangeRequest = {
+    _count: ChangeRequestCountAggregateOutputType | null
+    _min: ChangeRequestMinAggregateOutputType | null
+    _max: ChangeRequestMaxAggregateOutputType | null
+  }
+
+  export type ChangeRequestMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    status: $Enums.ChangeRequestStatus | null
+    baseSpecVersionId: string | null
+    requestReason: string | null
+    requestedById: string | null
+    createdAt: Date | null
+    pausedRunningTimerAt: Date | null
+    isAdminOverride: boolean | null
+    decidedById: string | null
+    decidedAt: Date | null
+    decisionNote: string | null
+    outcome: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId: string | null
+    returnId: string | null
+    productionAcknowledgedAt: Date | null
+    productionAcknowledgedById: string | null
+  }
+
+  export type ChangeRequestMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    status: $Enums.ChangeRequestStatus | null
+    baseSpecVersionId: string | null
+    requestReason: string | null
+    requestedById: string | null
+    createdAt: Date | null
+    pausedRunningTimerAt: Date | null
+    isAdminOverride: boolean | null
+    decidedById: string | null
+    decidedAt: Date | null
+    decisionNote: string | null
+    outcome: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId: string | null
+    returnId: string | null
+    productionAcknowledgedAt: Date | null
+    productionAcknowledgedById: string | null
+  }
+
+  export type ChangeRequestCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    status: number
+    baseSpecVersionId: number
+    proposedPatch: number
+    requestReason: number
+    requestedById: number
+    createdAt: number
+    pausedRunningTimerAt: number
+    isAdminOverride: number
+    decidedById: number
+    decidedAt: number
+    decisionNote: number
+    outcome: number
+    resultingSpecVersionId: number
+    returnId: number
+    productionAcknowledgedAt: number
+    productionAcknowledgedById: number
+    _all: number
+  }
+
+
+  export type ChangeRequestMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    status?: true
+    baseSpecVersionId?: true
+    requestReason?: true
+    requestedById?: true
+    createdAt?: true
+    pausedRunningTimerAt?: true
+    isAdminOverride?: true
+    decidedById?: true
+    decidedAt?: true
+    decisionNote?: true
+    outcome?: true
+    resultingSpecVersionId?: true
+    returnId?: true
+    productionAcknowledgedAt?: true
+    productionAcknowledgedById?: true
+  }
+
+  export type ChangeRequestMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    status?: true
+    baseSpecVersionId?: true
+    requestReason?: true
+    requestedById?: true
+    createdAt?: true
+    pausedRunningTimerAt?: true
+    isAdminOverride?: true
+    decidedById?: true
+    decidedAt?: true
+    decisionNote?: true
+    outcome?: true
+    resultingSpecVersionId?: true
+    returnId?: true
+    productionAcknowledgedAt?: true
+    productionAcknowledgedById?: true
+  }
+
+  export type ChangeRequestCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    status?: true
+    baseSpecVersionId?: true
+    proposedPatch?: true
+    requestReason?: true
+    requestedById?: true
+    createdAt?: true
+    pausedRunningTimerAt?: true
+    isAdminOverride?: true
+    decidedById?: true
+    decidedAt?: true
+    decisionNote?: true
+    outcome?: true
+    resultingSpecVersionId?: true
+    returnId?: true
+    productionAcknowledgedAt?: true
+    productionAcknowledgedById?: true
+    _all?: true
+  }
+
+  export type ChangeRequestAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ChangeRequest to aggregate.
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChangeRequests to fetch.
+     */
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ChangeRequestWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChangeRequests from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChangeRequests.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ChangeRequests
+    **/
+    _count?: true | ChangeRequestCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ChangeRequestMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ChangeRequestMaxAggregateInputType
+  }
+
+  export type GetChangeRequestAggregateType<T extends ChangeRequestAggregateArgs> = {
+        [P in keyof T & keyof AggregateChangeRequest]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateChangeRequest[P]>
+      : GetScalarType<T[P], AggregateChangeRequest[P]>
+  }
+
+
+
+
+  export type ChangeRequestGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithAggregationInput | ChangeRequestOrderByWithAggregationInput[]
+    by: ChangeRequestScalarFieldEnum[] | ChangeRequestScalarFieldEnum
+    having?: ChangeRequestScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ChangeRequestCountAggregateInputType | true
+    _min?: ChangeRequestMinAggregateInputType
+    _max?: ChangeRequestMaxAggregateInputType
+  }
+
+  export type ChangeRequestGroupByOutputType = {
+    id: string
+    workItemId: string
+    status: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonValue
+    requestReason: string
+    requestedById: string
+    createdAt: Date
+    pausedRunningTimerAt: Date | null
+    isAdminOverride: boolean
+    decidedById: string | null
+    decidedAt: Date | null
+    decisionNote: string | null
+    outcome: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId: string | null
+    returnId: string | null
+    productionAcknowledgedAt: Date | null
+    productionAcknowledgedById: string | null
+    _count: ChangeRequestCountAggregateOutputType | null
+    _min: ChangeRequestMinAggregateOutputType | null
+    _max: ChangeRequestMaxAggregateOutputType | null
+  }
+
+  type GetChangeRequestGroupByPayload<T extends ChangeRequestGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ChangeRequestGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ChangeRequestGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ChangeRequestGroupByOutputType[P]>
+            : GetScalarType<T[P], ChangeRequestGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ChangeRequestSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    status?: boolean
+    baseSpecVersionId?: boolean
+    proposedPatch?: boolean
+    requestReason?: boolean
+    requestedById?: boolean
+    createdAt?: boolean
+    pausedRunningTimerAt?: boolean
+    isAdminOverride?: boolean
+    decidedById?: boolean
+    decidedAt?: boolean
+    decisionNote?: boolean
+    outcome?: boolean
+    resultingSpecVersionId?: boolean
+    returnId?: boolean
+    productionAcknowledgedAt?: boolean
+    productionAcknowledgedById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }, ExtArgs["result"]["changeRequest"]>
+
+  export type ChangeRequestSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    status?: boolean
+    baseSpecVersionId?: boolean
+    proposedPatch?: boolean
+    requestReason?: boolean
+    requestedById?: boolean
+    createdAt?: boolean
+    pausedRunningTimerAt?: boolean
+    isAdminOverride?: boolean
+    decidedById?: boolean
+    decidedAt?: boolean
+    decisionNote?: boolean
+    outcome?: boolean
+    resultingSpecVersionId?: boolean
+    returnId?: boolean
+    productionAcknowledgedAt?: boolean
+    productionAcknowledgedById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }, ExtArgs["result"]["changeRequest"]>
+
+  export type ChangeRequestSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    status?: boolean
+    baseSpecVersionId?: boolean
+    proposedPatch?: boolean
+    requestReason?: boolean
+    requestedById?: boolean
+    createdAt?: boolean
+    pausedRunningTimerAt?: boolean
+    isAdminOverride?: boolean
+    decidedById?: boolean
+    decidedAt?: boolean
+    decisionNote?: boolean
+    outcome?: boolean
+    resultingSpecVersionId?: boolean
+    returnId?: boolean
+    productionAcknowledgedAt?: boolean
+    productionAcknowledgedById?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }, ExtArgs["result"]["changeRequest"]>
+
+  export type ChangeRequestSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    status?: boolean
+    baseSpecVersionId?: boolean
+    proposedPatch?: boolean
+    requestReason?: boolean
+    requestedById?: boolean
+    createdAt?: boolean
+    pausedRunningTimerAt?: boolean
+    isAdminOverride?: boolean
+    decidedById?: boolean
+    decidedAt?: boolean
+    decisionNote?: boolean
+    outcome?: boolean
+    resultingSpecVersionId?: boolean
+    returnId?: boolean
+    productionAcknowledgedAt?: boolean
+    productionAcknowledgedById?: boolean
+  }
+
+  export type ChangeRequestOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "status" | "baseSpecVersionId" | "proposedPatch" | "requestReason" | "requestedById" | "createdAt" | "pausedRunningTimerAt" | "isAdminOverride" | "decidedById" | "decidedAt" | "decisionNote" | "outcome" | "resultingSpecVersionId" | "returnId" | "productionAcknowledgedAt" | "productionAcknowledgedById", ExtArgs["result"]["changeRequest"]>
+  export type ChangeRequestInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }
+  export type ChangeRequestIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }
+  export type ChangeRequestIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    baseSpecVersion?: boolean | SpecVersionDefaultArgs<ExtArgs>
+    requestedBy?: boolean | UserDefaultArgs<ExtArgs>
+    decidedBy?: boolean | ChangeRequest$decidedByArgs<ExtArgs>
+    resultingSpecVersion?: boolean | ChangeRequest$resultingSpecVersionArgs<ExtArgs>
+    return?: boolean | ChangeRequest$returnArgs<ExtArgs>
+    productionAcknowledgedBy?: boolean | ChangeRequest$productionAcknowledgedByArgs<ExtArgs>
+  }
+
+  export type $ChangeRequestPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ChangeRequest"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      baseSpecVersion: Prisma.$SpecVersionPayload<ExtArgs>
+      requestedBy: Prisma.$UserPayload<ExtArgs>
+      decidedBy: Prisma.$UserPayload<ExtArgs> | null
+      resultingSpecVersion: Prisma.$SpecVersionPayload<ExtArgs> | null
+      return: Prisma.$ReturnPayload<ExtArgs> | null
+      productionAcknowledgedBy: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      status: $Enums.ChangeRequestStatus
+      baseSpecVersionId: string
+      /**
+       * SpecPatch (contracts/change-control.md) — validated by specPatchSchema on
+       * write AND re-parsed on read; never consumed untyped.
+       */
+      proposedPatch: Prisma.JsonValue
+      requestReason: string
+      requestedById: string
+      createdAt: Date
+      /**
+       * Set when createChangeRequest closed an open ACTIVE PhaseTiming segment (FR-012).
+       */
+      pausedRunningTimerAt: Date | null
+      isAdminOverride: boolean
+      decidedById: string | null
+      decidedAt: Date | null
+      /**
+       * Rejection/withdrawal reason (required then) or approval note (optional).
+       */
+      decisionNote: string | null
+      /**
+       * Non-null iff status = APPROVED.
+       */
+      outcome: $Enums.ChangeRequestOutcome | null
+      resultingSpecVersionId: string | null
+      /**
+       * Non-null iff outcome = REDESIGN.
+       */
+      returnId: string | null
+      productionAcknowledgedAt: Date | null
+      productionAcknowledgedById: string | null
+    }, ExtArgs["result"]["changeRequest"]>
+    composites: {}
+  }
+
+  type ChangeRequestGetPayload<S extends boolean | null | undefined | ChangeRequestDefaultArgs> = $Result.GetResult<Prisma.$ChangeRequestPayload, S>
+
+  type ChangeRequestCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ChangeRequestFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ChangeRequestCountAggregateInputType | true
+    }
+
+  export interface ChangeRequestDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ChangeRequest'], meta: { name: 'ChangeRequest' } }
+    /**
+     * Find zero or one ChangeRequest that matches the filter.
+     * @param {ChangeRequestFindUniqueArgs} args - Arguments to find a ChangeRequest
+     * @example
+     * // Get one ChangeRequest
+     * const changeRequest = await prisma.changeRequest.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ChangeRequestFindUniqueArgs>(args: SelectSubset<T, ChangeRequestFindUniqueArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ChangeRequest that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ChangeRequestFindUniqueOrThrowArgs} args - Arguments to find a ChangeRequest
+     * @example
+     * // Get one ChangeRequest
+     * const changeRequest = await prisma.changeRequest.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ChangeRequestFindUniqueOrThrowArgs>(args: SelectSubset<T, ChangeRequestFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ChangeRequest that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestFindFirstArgs} args - Arguments to find a ChangeRequest
+     * @example
+     * // Get one ChangeRequest
+     * const changeRequest = await prisma.changeRequest.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ChangeRequestFindFirstArgs>(args?: SelectSubset<T, ChangeRequestFindFirstArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ChangeRequest that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestFindFirstOrThrowArgs} args - Arguments to find a ChangeRequest
+     * @example
+     * // Get one ChangeRequest
+     * const changeRequest = await prisma.changeRequest.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ChangeRequestFindFirstOrThrowArgs>(args?: SelectSubset<T, ChangeRequestFindFirstOrThrowArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ChangeRequests that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ChangeRequests
+     * const changeRequests = await prisma.changeRequest.findMany()
+     * 
+     * // Get first 10 ChangeRequests
+     * const changeRequests = await prisma.changeRequest.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const changeRequestWithIdOnly = await prisma.changeRequest.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ChangeRequestFindManyArgs>(args?: SelectSubset<T, ChangeRequestFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ChangeRequest.
+     * @param {ChangeRequestCreateArgs} args - Arguments to create a ChangeRequest.
+     * @example
+     * // Create one ChangeRequest
+     * const ChangeRequest = await prisma.changeRequest.create({
+     *   data: {
+     *     // ... data to create a ChangeRequest
+     *   }
+     * })
+     * 
+     */
+    create<T extends ChangeRequestCreateArgs>(args: SelectSubset<T, ChangeRequestCreateArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ChangeRequests.
+     * @param {ChangeRequestCreateManyArgs} args - Arguments to create many ChangeRequests.
+     * @example
+     * // Create many ChangeRequests
+     * const changeRequest = await prisma.changeRequest.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ChangeRequestCreateManyArgs>(args?: SelectSubset<T, ChangeRequestCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ChangeRequests and returns the data saved in the database.
+     * @param {ChangeRequestCreateManyAndReturnArgs} args - Arguments to create many ChangeRequests.
+     * @example
+     * // Create many ChangeRequests
+     * const changeRequest = await prisma.changeRequest.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ChangeRequests and only return the `id`
+     * const changeRequestWithIdOnly = await prisma.changeRequest.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ChangeRequestCreateManyAndReturnArgs>(args?: SelectSubset<T, ChangeRequestCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ChangeRequest.
+     * @param {ChangeRequestDeleteArgs} args - Arguments to delete one ChangeRequest.
+     * @example
+     * // Delete one ChangeRequest
+     * const ChangeRequest = await prisma.changeRequest.delete({
+     *   where: {
+     *     // ... filter to delete one ChangeRequest
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ChangeRequestDeleteArgs>(args: SelectSubset<T, ChangeRequestDeleteArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ChangeRequest.
+     * @param {ChangeRequestUpdateArgs} args - Arguments to update one ChangeRequest.
+     * @example
+     * // Update one ChangeRequest
+     * const changeRequest = await prisma.changeRequest.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ChangeRequestUpdateArgs>(args: SelectSubset<T, ChangeRequestUpdateArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ChangeRequests.
+     * @param {ChangeRequestDeleteManyArgs} args - Arguments to filter ChangeRequests to delete.
+     * @example
+     * // Delete a few ChangeRequests
+     * const { count } = await prisma.changeRequest.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ChangeRequestDeleteManyArgs>(args?: SelectSubset<T, ChangeRequestDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ChangeRequests.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ChangeRequests
+     * const changeRequest = await prisma.changeRequest.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ChangeRequestUpdateManyArgs>(args: SelectSubset<T, ChangeRequestUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ChangeRequests and returns the data updated in the database.
+     * @param {ChangeRequestUpdateManyAndReturnArgs} args - Arguments to update many ChangeRequests.
+     * @example
+     * // Update many ChangeRequests
+     * const changeRequest = await prisma.changeRequest.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ChangeRequests and only return the `id`
+     * const changeRequestWithIdOnly = await prisma.changeRequest.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ChangeRequestUpdateManyAndReturnArgs>(args: SelectSubset<T, ChangeRequestUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ChangeRequest.
+     * @param {ChangeRequestUpsertArgs} args - Arguments to update or create a ChangeRequest.
+     * @example
+     * // Update or create a ChangeRequest
+     * const changeRequest = await prisma.changeRequest.upsert({
+     *   create: {
+     *     // ... data to create a ChangeRequest
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ChangeRequest we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ChangeRequestUpsertArgs>(args: SelectSubset<T, ChangeRequestUpsertArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ChangeRequests.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestCountArgs} args - Arguments to filter ChangeRequests to count.
+     * @example
+     * // Count the number of ChangeRequests
+     * const count = await prisma.changeRequest.count({
+     *   where: {
+     *     // ... the filter for the ChangeRequests we want to count
+     *   }
+     * })
+    **/
+    count<T extends ChangeRequestCountArgs>(
+      args?: Subset<T, ChangeRequestCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ChangeRequestCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ChangeRequest.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ChangeRequestAggregateArgs>(args: Subset<T, ChangeRequestAggregateArgs>): Prisma.PrismaPromise<GetChangeRequestAggregateType<T>>
+
+    /**
+     * Group by ChangeRequest.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ChangeRequestGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ChangeRequestGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ChangeRequestGroupByArgs['orderBy'] }
+        : { orderBy?: ChangeRequestGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ChangeRequestGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetChangeRequestGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ChangeRequest model
+   */
+  readonly fields: ChangeRequestFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ChangeRequest.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ChangeRequestClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    baseSpecVersion<T extends SpecVersionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SpecVersionDefaultArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    requestedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    decidedBy<T extends ChangeRequest$decidedByArgs<ExtArgs> = {}>(args?: Subset<T, ChangeRequest$decidedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    resultingSpecVersion<T extends ChangeRequest$resultingSpecVersionArgs<ExtArgs> = {}>(args?: Subset<T, ChangeRequest$resultingSpecVersionArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    return<T extends ChangeRequest$returnArgs<ExtArgs> = {}>(args?: Subset<T, ChangeRequest$returnArgs<ExtArgs>>): Prisma__ReturnClient<$Result.GetResult<Prisma.$ReturnPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    productionAcknowledgedBy<T extends ChangeRequest$productionAcknowledgedByArgs<ExtArgs> = {}>(args?: Subset<T, ChangeRequest$productionAcknowledgedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ChangeRequest model
+   */
+  interface ChangeRequestFieldRefs {
+    readonly id: FieldRef<"ChangeRequest", 'String'>
+    readonly workItemId: FieldRef<"ChangeRequest", 'String'>
+    readonly status: FieldRef<"ChangeRequest", 'ChangeRequestStatus'>
+    readonly baseSpecVersionId: FieldRef<"ChangeRequest", 'String'>
+    readonly proposedPatch: FieldRef<"ChangeRequest", 'Json'>
+    readonly requestReason: FieldRef<"ChangeRequest", 'String'>
+    readonly requestedById: FieldRef<"ChangeRequest", 'String'>
+    readonly createdAt: FieldRef<"ChangeRequest", 'DateTime'>
+    readonly pausedRunningTimerAt: FieldRef<"ChangeRequest", 'DateTime'>
+    readonly isAdminOverride: FieldRef<"ChangeRequest", 'Boolean'>
+    readonly decidedById: FieldRef<"ChangeRequest", 'String'>
+    readonly decidedAt: FieldRef<"ChangeRequest", 'DateTime'>
+    readonly decisionNote: FieldRef<"ChangeRequest", 'String'>
+    readonly outcome: FieldRef<"ChangeRequest", 'ChangeRequestOutcome'>
+    readonly resultingSpecVersionId: FieldRef<"ChangeRequest", 'String'>
+    readonly returnId: FieldRef<"ChangeRequest", 'String'>
+    readonly productionAcknowledgedAt: FieldRef<"ChangeRequest", 'DateTime'>
+    readonly productionAcknowledgedById: FieldRef<"ChangeRequest", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ChangeRequest findUnique
+   */
+  export type ChangeRequestFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter, which ChangeRequest to fetch.
+     */
+    where: ChangeRequestWhereUniqueInput
+  }
+
+  /**
+   * ChangeRequest findUniqueOrThrow
+   */
+  export type ChangeRequestFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter, which ChangeRequest to fetch.
+     */
+    where: ChangeRequestWhereUniqueInput
+  }
+
+  /**
+   * ChangeRequest findFirst
+   */
+  export type ChangeRequestFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter, which ChangeRequest to fetch.
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChangeRequests to fetch.
+     */
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ChangeRequests.
+     */
+    cursor?: ChangeRequestWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChangeRequests from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChangeRequests.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ChangeRequests.
+     */
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * ChangeRequest findFirstOrThrow
+   */
+  export type ChangeRequestFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter, which ChangeRequest to fetch.
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChangeRequests to fetch.
+     */
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ChangeRequests.
+     */
+    cursor?: ChangeRequestWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChangeRequests from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChangeRequests.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ChangeRequests.
+     */
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * ChangeRequest findMany
+   */
+  export type ChangeRequestFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter, which ChangeRequests to fetch.
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ChangeRequests to fetch.
+     */
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ChangeRequests.
+     */
+    cursor?: ChangeRequestWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ChangeRequests from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ChangeRequests.
+     */
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * ChangeRequest create
+   */
+  export type ChangeRequestCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ChangeRequest.
+     */
+    data: XOR<ChangeRequestCreateInput, ChangeRequestUncheckedCreateInput>
+  }
+
+  /**
+   * ChangeRequest createMany
+   */
+  export type ChangeRequestCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ChangeRequests.
+     */
+    data: ChangeRequestCreateManyInput | ChangeRequestCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ChangeRequest createManyAndReturn
+   */
+  export type ChangeRequestCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * The data used to create many ChangeRequests.
+     */
+    data: ChangeRequestCreateManyInput | ChangeRequestCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ChangeRequest update
+   */
+  export type ChangeRequestUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ChangeRequest.
+     */
+    data: XOR<ChangeRequestUpdateInput, ChangeRequestUncheckedUpdateInput>
+    /**
+     * Choose, which ChangeRequest to update.
+     */
+    where: ChangeRequestWhereUniqueInput
+  }
+
+  /**
+   * ChangeRequest updateMany
+   */
+  export type ChangeRequestUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ChangeRequests.
+     */
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyInput>
+    /**
+     * Filter which ChangeRequests to update
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * Limit how many ChangeRequests to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ChangeRequest updateManyAndReturn
+   */
+  export type ChangeRequestUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * The data used to update ChangeRequests.
+     */
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyInput>
+    /**
+     * Filter which ChangeRequests to update
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * Limit how many ChangeRequests to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ChangeRequest upsert
+   */
+  export type ChangeRequestUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ChangeRequest to update in case it exists.
+     */
+    where: ChangeRequestWhereUniqueInput
+    /**
+     * In case the ChangeRequest found by the `where` argument doesn't exist, create a new ChangeRequest with this data.
+     */
+    create: XOR<ChangeRequestCreateInput, ChangeRequestUncheckedCreateInput>
+    /**
+     * In case the ChangeRequest was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ChangeRequestUpdateInput, ChangeRequestUncheckedUpdateInput>
+  }
+
+  /**
+   * ChangeRequest delete
+   */
+  export type ChangeRequestDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    /**
+     * Filter which ChangeRequest to delete.
+     */
+    where: ChangeRequestWhereUniqueInput
+  }
+
+  /**
+   * ChangeRequest deleteMany
+   */
+  export type ChangeRequestDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ChangeRequests to delete
+     */
+    where?: ChangeRequestWhereInput
+    /**
+     * Limit how many ChangeRequests to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ChangeRequest.decidedBy
+   */
+  export type ChangeRequest$decidedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * ChangeRequest.resultingSpecVersion
+   */
+  export type ChangeRequest$resultingSpecVersionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    where?: SpecVersionWhereInput
+  }
+
+  /**
+   * ChangeRequest.return
+   */
+  export type ChangeRequest$returnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Return
+     */
+    select?: ReturnSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Return
+     */
+    omit?: ReturnOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReturnInclude<ExtArgs> | null
+    where?: ReturnWhereInput
+  }
+
+  /**
+   * ChangeRequest.productionAcknowledgedBy
+   */
+  export type ChangeRequest$productionAcknowledgedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * ChangeRequest without action
+   */
+  export type ChangeRequestDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model LateCancellation
+   */
+
+  export type AggregateLateCancellation = {
+    _count: LateCancellationCountAggregateOutputType | null
+    _avg: LateCancellationAvgAggregateOutputType | null
+    _sum: LateCancellationSumAggregateOutputType | null
+    _min: LateCancellationMinAggregateOutputType | null
+    _max: LateCancellationMaxAggregateOutputType | null
+  }
+
+  export type LateCancellationAvgAggregateOutputType = {
+    costIncurred: Decimal | null
+    producedQuantitySoFar: number | null
+  }
+
+  export type LateCancellationSumAggregateOutputType = {
+    costIncurred: Decimal | null
+    producedQuantitySoFar: number | null
+  }
+
+  export type LateCancellationMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    stateAtCancellation: $Enums.WorkItemState | null
+    reason: string | null
+    costIncurred: Decimal | null
+    currency: string | null
+    producedQuantitySoFar: number | null
+    costNote: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type LateCancellationMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    stateAtCancellation: $Enums.WorkItemState | null
+    reason: string | null
+    costIncurred: Decimal | null
+    currency: string | null
+    producedQuantitySoFar: number | null
+    costNote: string | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type LateCancellationCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    stateAtCancellation: number
+    reason: number
+    costIncurred: number
+    currency: number
+    producedQuantitySoFar: number
+    costNote: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type LateCancellationAvgAggregateInputType = {
+    costIncurred?: true
+    producedQuantitySoFar?: true
+  }
+
+  export type LateCancellationSumAggregateInputType = {
+    costIncurred?: true
+    producedQuantitySoFar?: true
+  }
+
+  export type LateCancellationMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    stateAtCancellation?: true
+    reason?: true
+    costIncurred?: true
+    currency?: true
+    producedQuantitySoFar?: true
+    costNote?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type LateCancellationMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    stateAtCancellation?: true
+    reason?: true
+    costIncurred?: true
+    currency?: true
+    producedQuantitySoFar?: true
+    costNote?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type LateCancellationCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    stateAtCancellation?: true
+    reason?: true
+    costIncurred?: true
+    currency?: true
+    producedQuantitySoFar?: true
+    costNote?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type LateCancellationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LateCancellation to aggregate.
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LateCancellations to fetch.
+     */
+    orderBy?: LateCancellationOrderByWithRelationInput | LateCancellationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: LateCancellationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LateCancellations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LateCancellations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned LateCancellations
+    **/
+    _count?: true | LateCancellationCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: LateCancellationAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: LateCancellationSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: LateCancellationMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: LateCancellationMaxAggregateInputType
+  }
+
+  export type GetLateCancellationAggregateType<T extends LateCancellationAggregateArgs> = {
+        [P in keyof T & keyof AggregateLateCancellation]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateLateCancellation[P]>
+      : GetScalarType<T[P], AggregateLateCancellation[P]>
+  }
+
+
+
+
+  export type LateCancellationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: LateCancellationWhereInput
+    orderBy?: LateCancellationOrderByWithAggregationInput | LateCancellationOrderByWithAggregationInput[]
+    by: LateCancellationScalarFieldEnum[] | LateCancellationScalarFieldEnum
+    having?: LateCancellationScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: LateCancellationCountAggregateInputType | true
+    _avg?: LateCancellationAvgAggregateInputType
+    _sum?: LateCancellationSumAggregateInputType
+    _min?: LateCancellationMinAggregateInputType
+    _max?: LateCancellationMaxAggregateInputType
+  }
+
+  export type LateCancellationGroupByOutputType = {
+    id: string
+    workItemId: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal
+    currency: string
+    producedQuantitySoFar: number | null
+    costNote: string | null
+    createdById: string
+    createdAt: Date
+    _count: LateCancellationCountAggregateOutputType | null
+    _avg: LateCancellationAvgAggregateOutputType | null
+    _sum: LateCancellationSumAggregateOutputType | null
+    _min: LateCancellationMinAggregateOutputType | null
+    _max: LateCancellationMaxAggregateOutputType | null
+  }
+
+  type GetLateCancellationGroupByPayload<T extends LateCancellationGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<LateCancellationGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof LateCancellationGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], LateCancellationGroupByOutputType[P]>
+            : GetScalarType<T[P], LateCancellationGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type LateCancellationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    stateAtCancellation?: boolean
+    reason?: boolean
+    costIncurred?: boolean
+    currency?: boolean
+    producedQuantitySoFar?: boolean
+    costNote?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lateCancellation"]>
+
+  export type LateCancellationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    stateAtCancellation?: boolean
+    reason?: boolean
+    costIncurred?: boolean
+    currency?: boolean
+    producedQuantitySoFar?: boolean
+    costNote?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lateCancellation"]>
+
+  export type LateCancellationSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    stateAtCancellation?: boolean
+    reason?: boolean
+    costIncurred?: boolean
+    currency?: boolean
+    producedQuantitySoFar?: boolean
+    costNote?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["lateCancellation"]>
+
+  export type LateCancellationSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    stateAtCancellation?: boolean
+    reason?: boolean
+    costIncurred?: boolean
+    currency?: boolean
+    producedQuantitySoFar?: boolean
+    costNote?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type LateCancellationOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "stateAtCancellation" | "reason" | "costIncurred" | "currency" | "producedQuantitySoFar" | "costNote" | "createdById" | "createdAt", ExtArgs["result"]["lateCancellation"]>
+  export type LateCancellationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type LateCancellationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type LateCancellationIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $LateCancellationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "LateCancellation"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      createdBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      stateAtCancellation: $Enums.WorkItemState
+      reason: string
+      /**
+       * Exact decimal, >= 0, entered explicitly (FR-024).
+       */
+      costIncurred: Prisma.Decimal
+      /**
+       * Configured column, default EGP (constitution VI) — not a UI constant.
+       */
+      currency: string
+      producedQuantitySoFar: number | null
+      costNote: string | null
+      createdById: string
+      createdAt: Date
+    }, ExtArgs["result"]["lateCancellation"]>
+    composites: {}
+  }
+
+  type LateCancellationGetPayload<S extends boolean | null | undefined | LateCancellationDefaultArgs> = $Result.GetResult<Prisma.$LateCancellationPayload, S>
+
+  type LateCancellationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<LateCancellationFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: LateCancellationCountAggregateInputType | true
+    }
+
+  export interface LateCancellationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['LateCancellation'], meta: { name: 'LateCancellation' } }
+    /**
+     * Find zero or one LateCancellation that matches the filter.
+     * @param {LateCancellationFindUniqueArgs} args - Arguments to find a LateCancellation
+     * @example
+     * // Get one LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends LateCancellationFindUniqueArgs>(args: SelectSubset<T, LateCancellationFindUniqueArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one LateCancellation that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {LateCancellationFindUniqueOrThrowArgs} args - Arguments to find a LateCancellation
+     * @example
+     * // Get one LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends LateCancellationFindUniqueOrThrowArgs>(args: SelectSubset<T, LateCancellationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LateCancellation that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationFindFirstArgs} args - Arguments to find a LateCancellation
+     * @example
+     * // Get one LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends LateCancellationFindFirstArgs>(args?: SelectSubset<T, LateCancellationFindFirstArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first LateCancellation that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationFindFirstOrThrowArgs} args - Arguments to find a LateCancellation
+     * @example
+     * // Get one LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends LateCancellationFindFirstOrThrowArgs>(args?: SelectSubset<T, LateCancellationFindFirstOrThrowArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more LateCancellations that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all LateCancellations
+     * const lateCancellations = await prisma.lateCancellation.findMany()
+     * 
+     * // Get first 10 LateCancellations
+     * const lateCancellations = await prisma.lateCancellation.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const lateCancellationWithIdOnly = await prisma.lateCancellation.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends LateCancellationFindManyArgs>(args?: SelectSubset<T, LateCancellationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a LateCancellation.
+     * @param {LateCancellationCreateArgs} args - Arguments to create a LateCancellation.
+     * @example
+     * // Create one LateCancellation
+     * const LateCancellation = await prisma.lateCancellation.create({
+     *   data: {
+     *     // ... data to create a LateCancellation
+     *   }
+     * })
+     * 
+     */
+    create<T extends LateCancellationCreateArgs>(args: SelectSubset<T, LateCancellationCreateArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many LateCancellations.
+     * @param {LateCancellationCreateManyArgs} args - Arguments to create many LateCancellations.
+     * @example
+     * // Create many LateCancellations
+     * const lateCancellation = await prisma.lateCancellation.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends LateCancellationCreateManyArgs>(args?: SelectSubset<T, LateCancellationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many LateCancellations and returns the data saved in the database.
+     * @param {LateCancellationCreateManyAndReturnArgs} args - Arguments to create many LateCancellations.
+     * @example
+     * // Create many LateCancellations
+     * const lateCancellation = await prisma.lateCancellation.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many LateCancellations and only return the `id`
+     * const lateCancellationWithIdOnly = await prisma.lateCancellation.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends LateCancellationCreateManyAndReturnArgs>(args?: SelectSubset<T, LateCancellationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a LateCancellation.
+     * @param {LateCancellationDeleteArgs} args - Arguments to delete one LateCancellation.
+     * @example
+     * // Delete one LateCancellation
+     * const LateCancellation = await prisma.lateCancellation.delete({
+     *   where: {
+     *     // ... filter to delete one LateCancellation
+     *   }
+     * })
+     * 
+     */
+    delete<T extends LateCancellationDeleteArgs>(args: SelectSubset<T, LateCancellationDeleteArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one LateCancellation.
+     * @param {LateCancellationUpdateArgs} args - Arguments to update one LateCancellation.
+     * @example
+     * // Update one LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends LateCancellationUpdateArgs>(args: SelectSubset<T, LateCancellationUpdateArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more LateCancellations.
+     * @param {LateCancellationDeleteManyArgs} args - Arguments to filter LateCancellations to delete.
+     * @example
+     * // Delete a few LateCancellations
+     * const { count } = await prisma.lateCancellation.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends LateCancellationDeleteManyArgs>(args?: SelectSubset<T, LateCancellationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LateCancellations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many LateCancellations
+     * const lateCancellation = await prisma.lateCancellation.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends LateCancellationUpdateManyArgs>(args: SelectSubset<T, LateCancellationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more LateCancellations and returns the data updated in the database.
+     * @param {LateCancellationUpdateManyAndReturnArgs} args - Arguments to update many LateCancellations.
+     * @example
+     * // Update many LateCancellations
+     * const lateCancellation = await prisma.lateCancellation.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more LateCancellations and only return the `id`
+     * const lateCancellationWithIdOnly = await prisma.lateCancellation.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends LateCancellationUpdateManyAndReturnArgs>(args: SelectSubset<T, LateCancellationUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one LateCancellation.
+     * @param {LateCancellationUpsertArgs} args - Arguments to update or create a LateCancellation.
+     * @example
+     * // Update or create a LateCancellation
+     * const lateCancellation = await prisma.lateCancellation.upsert({
+     *   create: {
+     *     // ... data to create a LateCancellation
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the LateCancellation we want to update
+     *   }
+     * })
+     */
+    upsert<T extends LateCancellationUpsertArgs>(args: SelectSubset<T, LateCancellationUpsertArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of LateCancellations.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationCountArgs} args - Arguments to filter LateCancellations to count.
+     * @example
+     * // Count the number of LateCancellations
+     * const count = await prisma.lateCancellation.count({
+     *   where: {
+     *     // ... the filter for the LateCancellations we want to count
+     *   }
+     * })
+    **/
+    count<T extends LateCancellationCountArgs>(
+      args?: Subset<T, LateCancellationCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], LateCancellationCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a LateCancellation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends LateCancellationAggregateArgs>(args: Subset<T, LateCancellationAggregateArgs>): Prisma.PrismaPromise<GetLateCancellationAggregateType<T>>
+
+    /**
+     * Group by LateCancellation.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {LateCancellationGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends LateCancellationGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: LateCancellationGroupByArgs['orderBy'] }
+        : { orderBy?: LateCancellationGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, LateCancellationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetLateCancellationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the LateCancellation model
+   */
+  readonly fields: LateCancellationFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for LateCancellation.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__LateCancellationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the LateCancellation model
+   */
+  interface LateCancellationFieldRefs {
+    readonly id: FieldRef<"LateCancellation", 'String'>
+    readonly workItemId: FieldRef<"LateCancellation", 'String'>
+    readonly stateAtCancellation: FieldRef<"LateCancellation", 'WorkItemState'>
+    readonly reason: FieldRef<"LateCancellation", 'String'>
+    readonly costIncurred: FieldRef<"LateCancellation", 'Decimal'>
+    readonly currency: FieldRef<"LateCancellation", 'String'>
+    readonly producedQuantitySoFar: FieldRef<"LateCancellation", 'Int'>
+    readonly costNote: FieldRef<"LateCancellation", 'String'>
+    readonly createdById: FieldRef<"LateCancellation", 'String'>
+    readonly createdAt: FieldRef<"LateCancellation", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * LateCancellation findUnique
+   */
+  export type LateCancellationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter, which LateCancellation to fetch.
+     */
+    where: LateCancellationWhereUniqueInput
+  }
+
+  /**
+   * LateCancellation findUniqueOrThrow
+   */
+  export type LateCancellationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter, which LateCancellation to fetch.
+     */
+    where: LateCancellationWhereUniqueInput
+  }
+
+  /**
+   * LateCancellation findFirst
+   */
+  export type LateCancellationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter, which LateCancellation to fetch.
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LateCancellations to fetch.
+     */
+    orderBy?: LateCancellationOrderByWithRelationInput | LateCancellationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LateCancellations.
+     */
+    cursor?: LateCancellationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LateCancellations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LateCancellations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LateCancellations.
+     */
+    distinct?: LateCancellationScalarFieldEnum | LateCancellationScalarFieldEnum[]
+  }
+
+  /**
+   * LateCancellation findFirstOrThrow
+   */
+  export type LateCancellationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter, which LateCancellation to fetch.
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LateCancellations to fetch.
+     */
+    orderBy?: LateCancellationOrderByWithRelationInput | LateCancellationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for LateCancellations.
+     */
+    cursor?: LateCancellationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LateCancellations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LateCancellations.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of LateCancellations.
+     */
+    distinct?: LateCancellationScalarFieldEnum | LateCancellationScalarFieldEnum[]
+  }
+
+  /**
+   * LateCancellation findMany
+   */
+  export type LateCancellationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter, which LateCancellations to fetch.
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of LateCancellations to fetch.
+     */
+    orderBy?: LateCancellationOrderByWithRelationInput | LateCancellationOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing LateCancellations.
+     */
+    cursor?: LateCancellationWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` LateCancellations from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` LateCancellations.
+     */
+    skip?: number
+    distinct?: LateCancellationScalarFieldEnum | LateCancellationScalarFieldEnum[]
+  }
+
+  /**
+   * LateCancellation create
+   */
+  export type LateCancellationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * The data needed to create a LateCancellation.
+     */
+    data: XOR<LateCancellationCreateInput, LateCancellationUncheckedCreateInput>
+  }
+
+  /**
+   * LateCancellation createMany
+   */
+  export type LateCancellationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many LateCancellations.
+     */
+    data: LateCancellationCreateManyInput | LateCancellationCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * LateCancellation createManyAndReturn
+   */
+  export type LateCancellationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * The data used to create many LateCancellations.
+     */
+    data: LateCancellationCreateManyInput | LateCancellationCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LateCancellation update
+   */
+  export type LateCancellationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * The data needed to update a LateCancellation.
+     */
+    data: XOR<LateCancellationUpdateInput, LateCancellationUncheckedUpdateInput>
+    /**
+     * Choose, which LateCancellation to update.
+     */
+    where: LateCancellationWhereUniqueInput
+  }
+
+  /**
+   * LateCancellation updateMany
+   */
+  export type LateCancellationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update LateCancellations.
+     */
+    data: XOR<LateCancellationUpdateManyMutationInput, LateCancellationUncheckedUpdateManyInput>
+    /**
+     * Filter which LateCancellations to update
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * Limit how many LateCancellations to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * LateCancellation updateManyAndReturn
+   */
+  export type LateCancellationUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * The data used to update LateCancellations.
+     */
+    data: XOR<LateCancellationUpdateManyMutationInput, LateCancellationUncheckedUpdateManyInput>
+    /**
+     * Filter which LateCancellations to update
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * Limit how many LateCancellations to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * LateCancellation upsert
+   */
+  export type LateCancellationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * The filter to search for the LateCancellation to update in case it exists.
+     */
+    where: LateCancellationWhereUniqueInput
+    /**
+     * In case the LateCancellation found by the `where` argument doesn't exist, create a new LateCancellation with this data.
+     */
+    create: XOR<LateCancellationCreateInput, LateCancellationUncheckedCreateInput>
+    /**
+     * In case the LateCancellation was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<LateCancellationUpdateInput, LateCancellationUncheckedUpdateInput>
+  }
+
+  /**
+   * LateCancellation delete
+   */
+  export type LateCancellationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    /**
+     * Filter which LateCancellation to delete.
+     */
+    where: LateCancellationWhereUniqueInput
+  }
+
+  /**
+   * LateCancellation deleteMany
+   */
+  export type LateCancellationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which LateCancellations to delete
+     */
+    where?: LateCancellationWhereInput
+    /**
+     * Limit how many LateCancellations to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * LateCancellation without action
+   */
+  export type LateCancellationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+  }
+
 
   /**
    * Model Department
@@ -9926,6 +14280,7 @@ export namespace Prisma {
     pendingFileRevisionAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
+    currentSpecVersionId: string | null
   }
 
   export type WorkItemMaxAggregateOutputType = {
@@ -9950,6 +14305,7 @@ export namespace Prisma {
     pendingFileRevisionAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
+    currentSpecVersionId: string | null
   }
 
   export type WorkItemCountAggregateOutputType = {
@@ -9974,6 +14330,7 @@ export namespace Prisma {
     pendingFileRevisionAt: number
     createdAt: number
     updatedAt: number
+    currentSpecVersionId: number
     _all: number
   }
 
@@ -10014,6 +14371,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
+    currentSpecVersionId?: true
   }
 
   export type WorkItemMaxAggregateInputType = {
@@ -10038,6 +14396,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
+    currentSpecVersionId?: true
   }
 
   export type WorkItemCountAggregateInputType = {
@@ -10062,6 +14421,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: true
     createdAt?: true
     updatedAt?: true
+    currentSpecVersionId?: true
     _all?: true
   }
 
@@ -10173,6 +14533,7 @@ export namespace Prisma {
     pendingFileRevisionAt: Date | null
     createdAt: Date
     updatedAt: Date
+    currentSpecVersionId: string | null
     _count: WorkItemCountAggregateOutputType | null
     _avg: WorkItemAvgAggregateOutputType | null
     _sum: WorkItemSumAggregateOutputType | null
@@ -10216,10 +14577,15 @@ export namespace Prisma {
     pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currentSpecVersionId?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
+    specVersions?: boolean | WorkItem$specVersionsArgs<ExtArgs>
+    changeRequests?: boolean | WorkItem$changeRequestsArgs<ExtArgs>
+    lateCancellation?: boolean | WorkItem$lateCancellationArgs<ExtArgs>
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
@@ -10255,10 +14621,12 @@ export namespace Prisma {
     pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currentSpecVersionId?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
   export type WorkItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -10283,10 +14651,12 @@ export namespace Prisma {
     pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currentSpecVersionId?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
   export type WorkItemSelectScalar = {
@@ -10311,14 +14681,19 @@ export namespace Prisma {
     pendingFileRevisionAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    currentSpecVersionId?: boolean
   }
 
-  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "producedQuantity" | "productionNotes" | "pendingFileRevisionAt" | "createdAt" | "updatedAt", ExtArgs["result"]["workItem"]>
+  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "producedQuantity" | "productionNotes" | "pendingFileRevisionAt" | "createdAt" | "updatedAt" | "currentSpecVersionId", ExtArgs["result"]["workItem"]>
   export type WorkItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
+    specVersions?: boolean | WorkItem$specVersionsArgs<ExtArgs>
+    changeRequests?: boolean | WorkItem$changeRequestsArgs<ExtArgs>
+    lateCancellation?: boolean | WorkItem$lateCancellationArgs<ExtArgs>
     transitions?: boolean | WorkItem$transitionsArgs<ExtArgs>
     phaseTimings?: boolean | WorkItem$phaseTimingsArgs<ExtArgs>
     designVersions?: boolean | WorkItem$designVersionsArgs<ExtArgs>
@@ -10336,12 +14711,14 @@ export namespace Prisma {
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
   }
   export type WorkItemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
     department?: boolean | WorkItem$departmentArgs<ExtArgs>
     assignee?: boolean | WorkItem$assigneeArgs<ExtArgs>
+    currentSpecVersion?: boolean | WorkItem$currentSpecVersionArgs<ExtArgs>
   }
 
   export type $WorkItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10351,6 +14728,13 @@ export namespace Prisma {
       productType: Prisma.$ProductTypePayload<ExtArgs> | null
       department: Prisma.$DepartmentPayload<ExtArgs> | null
       assignee: Prisma.$UserPayload<ExtArgs> | null
+      currentSpecVersion: Prisma.$SpecVersionPayload<ExtArgs> | null
+      specVersions: Prisma.$SpecVersionPayload<ExtArgs>[]
+      changeRequests: Prisma.$ChangeRequestPayload<ExtArgs>[]
+      lateCancellation: Prisma.$LateCancellationPayload<ExtArgs> | null
+      /**
+       * --- end 016-change-control ---------------------------------------------
+       */
       transitions: Prisma.$WorkItemTransitionPayload<ExtArgs>[]
       phaseTimings: Prisma.$PhaseTimingPayload<ExtArgs>[]
       designVersions: Prisma.$DesignVersionPayload<ExtArgs>[]
@@ -10413,6 +14797,13 @@ export namespace Prisma {
        */
       createdAt: Date
       updatedAt: Date
+      /**
+       * --- 016-change-control ------------------------------------------------
+       * Current SpecVersion. Nullable only for the circular insert and the
+       * window before backfill (research.md §14); non-null for every Work Item
+       * after backfill (verified by query + contract test).
+       */
+      currentSpecVersionId: string | null
     }, ExtArgs["result"]["workItem"]>
     composites: {}
   }
@@ -10811,6 +15202,10 @@ export namespace Prisma {
     productType<T extends WorkItem$productTypeArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$productTypeArgs<ExtArgs>>): Prisma__ProductTypeClient<$Result.GetResult<Prisma.$ProductTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     department<T extends WorkItem$departmentArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$departmentArgs<ExtArgs>>): Prisma__DepartmentClient<$Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     assignee<T extends WorkItem$assigneeArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$assigneeArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    currentSpecVersion<T extends WorkItem$currentSpecVersionArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$currentSpecVersionArgs<ExtArgs>>): Prisma__SpecVersionClient<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    specVersions<T extends WorkItem$specVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$specVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    changeRequests<T extends WorkItem$changeRequestsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$changeRequestsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    lateCancellation<T extends WorkItem$lateCancellationArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$lateCancellationArgs<ExtArgs>>): Prisma__LateCancellationClient<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     transitions<T extends WorkItem$transitionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$transitionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemTransitionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     phaseTimings<T extends WorkItem$phaseTimingsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$phaseTimingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhaseTimingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     designVersions<T extends WorkItem$designVersionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$designVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -10871,6 +15266,7 @@ export namespace Prisma {
     readonly pendingFileRevisionAt: FieldRef<"WorkItem", 'DateTime'>
     readonly createdAt: FieldRef<"WorkItem", 'DateTime'>
     readonly updatedAt: FieldRef<"WorkItem", 'DateTime'>
+    readonly currentSpecVersionId: FieldRef<"WorkItem", 'String'>
   }
     
 
@@ -11324,6 +15720,92 @@ export namespace Prisma {
   }
 
   /**
+   * WorkItem.currentSpecVersion
+   */
+  export type WorkItem$currentSpecVersionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    where?: SpecVersionWhereInput
+  }
+
+  /**
+   * WorkItem.specVersions
+   */
+  export type WorkItem$specVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    where?: SpecVersionWhereInput
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    cursor?: SpecVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.changeRequests
+   */
+  export type WorkItem$changeRequestsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    cursor?: ChangeRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.lateCancellation
+   */
+  export type WorkItem$lateCancellationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    where?: LateCancellationWhereInput
+  }
+
+  /**
    * WorkItem.transitions
    */
   export type WorkItem$transitionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -11767,6 +16249,7 @@ export namespace Prisma {
     createdAt?: boolean
     defaultDepartment?: boolean | ProductType$defaultDepartmentArgs<ExtArgs>
     workItems?: boolean | ProductType$workItemsArgs<ExtArgs>
+    specVersions?: boolean | ProductType$specVersionsArgs<ExtArgs>
     pricingPolicy?: boolean | ProductType$pricingPolicyArgs<ExtArgs>
     priceLists?: boolean | ProductType$priceListsArgs<ExtArgs>
     customerPricingRules?: boolean | ProductType$customerPricingRulesArgs<ExtArgs>
@@ -11812,6 +16295,7 @@ export namespace Prisma {
   export type ProductTypeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     defaultDepartment?: boolean | ProductType$defaultDepartmentArgs<ExtArgs>
     workItems?: boolean | ProductType$workItemsArgs<ExtArgs>
+    specVersions?: boolean | ProductType$specVersionsArgs<ExtArgs>
     pricingPolicy?: boolean | ProductType$pricingPolicyArgs<ExtArgs>
     priceLists?: boolean | ProductType$priceListsArgs<ExtArgs>
     customerPricingRules?: boolean | ProductType$customerPricingRulesArgs<ExtArgs>
@@ -11829,6 +16313,7 @@ export namespace Prisma {
     objects: {
       defaultDepartment: Prisma.$DepartmentPayload<ExtArgs> | null
       workItems: Prisma.$WorkItemPayload<ExtArgs>[]
+      specVersions: Prisma.$SpecVersionPayload<ExtArgs>[]
       pricingPolicy: Prisma.$ProductPricingPolicyPayload<ExtArgs> | null
       priceLists: Prisma.$PriceListPayload<ExtArgs>[]
       customerPricingRules: Prisma.$CustomerPricingRulePayload<ExtArgs>[]
@@ -12242,6 +16727,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     defaultDepartment<T extends ProductType$defaultDepartmentArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$defaultDepartmentArgs<ExtArgs>>): Prisma__DepartmentClient<$Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     workItems<T extends ProductType$workItemsArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$workItemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    specVersions<T extends ProductType$specVersionsArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$specVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     pricingPolicy<T extends ProductType$pricingPolicyArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$pricingPolicyArgs<ExtArgs>>): Prisma__ProductPricingPolicyClient<$Result.GetResult<Prisma.$ProductPricingPolicyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     priceLists<T extends ProductType$priceListsArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$priceListsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     customerPricingRules<T extends ProductType$customerPricingRulesArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$customerPricingRulesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CustomerPricingRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -12718,6 +17204,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WorkItemScalarFieldEnum | WorkItemScalarFieldEnum[]
+  }
+
+  /**
+   * ProductType.specVersions
+   */
+  export type ProductType$specVersionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    where?: SpecVersionWhereInput
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    cursor?: SpecVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
   }
 
   /**
@@ -16537,6 +21047,7 @@ export namespace Prisma {
     assignedTo?: boolean | UserDefaultArgs<ExtArgs>
     designVersion?: boolean | Return$designVersionArgs<ExtArgs>
     attachments?: boolean | Return$attachmentsArgs<ExtArgs>
+    changeRequest?: boolean | Return$changeRequestArgs<ExtArgs>
     _count?: boolean | ReturnCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["return"]>
 
@@ -16597,6 +21108,7 @@ export namespace Prisma {
     assignedTo?: boolean | UserDefaultArgs<ExtArgs>
     designVersion?: boolean | Return$designVersionArgs<ExtArgs>
     attachments?: boolean | Return$attachmentsArgs<ExtArgs>
+    changeRequest?: boolean | Return$changeRequestArgs<ExtArgs>
     _count?: boolean | ReturnCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ReturnIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -16623,6 +21135,7 @@ export namespace Prisma {
       assignedTo: Prisma.$UserPayload<ExtArgs>
       designVersion: Prisma.$DesignVersionPayload<ExtArgs> | null
       attachments: Prisma.$ReturnAttachmentPayload<ExtArgs>[]
+      changeRequest: Prisma.$ChangeRequestPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -17039,6 +21552,7 @@ export namespace Prisma {
     assignedTo<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     designVersion<T extends Return$designVersionArgs<ExtArgs> = {}>(args?: Subset<T, Return$designVersionArgs<ExtArgs>>): Prisma__DesignVersionClient<$Result.GetResult<Prisma.$DesignVersionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     attachments<T extends Return$attachmentsArgs<ExtArgs> = {}>(args?: Subset<T, Return$attachmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReturnAttachmentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    changeRequest<T extends Return$changeRequestArgs<ExtArgs> = {}>(args?: Subset<T, Return$changeRequestArgs<ExtArgs>>): Prisma__ChangeRequestClient<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -17514,6 +22028,25 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ReturnAttachmentScalarFieldEnum | ReturnAttachmentScalarFieldEnum[]
+  }
+
+  /**
+   * Return.changeRequest
+   */
+  export type Return$changeRequestArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
   }
 
   /**
@@ -40224,6 +44757,11 @@ export namespace Prisma {
     directCostsCreated?: boolean | User$directCostsCreatedArgs<ExtArgs>
     creditsUpdated?: boolean | User$creditsUpdatedArgs<ExtArgs>
     financeConfigUpdates?: boolean | User$financeConfigUpdatesArgs<ExtArgs>
+    specVersionsCreated?: boolean | User$specVersionsCreatedArgs<ExtArgs>
+    changeRequestsRequested?: boolean | User$changeRequestsRequestedArgs<ExtArgs>
+    changeRequestsDecided?: boolean | User$changeRequestsDecidedArgs<ExtArgs>
+    changeRequestsAcknowledged?: boolean | User$changeRequestsAcknowledgedArgs<ExtArgs>
+    lateCancellations?: boolean | User$lateCancellationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -40306,6 +44844,11 @@ export namespace Prisma {
     directCostsCreated?: boolean | User$directCostsCreatedArgs<ExtArgs>
     creditsUpdated?: boolean | User$creditsUpdatedArgs<ExtArgs>
     financeConfigUpdates?: boolean | User$financeConfigUpdatesArgs<ExtArgs>
+    specVersionsCreated?: boolean | User$specVersionsCreatedArgs<ExtArgs>
+    changeRequestsRequested?: boolean | User$changeRequestsRequestedArgs<ExtArgs>
+    changeRequestsDecided?: boolean | User$changeRequestsDecidedArgs<ExtArgs>
+    changeRequestsAcknowledged?: boolean | User$changeRequestsAcknowledgedArgs<ExtArgs>
+    lateCancellations?: boolean | User$lateCancellationsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -40346,6 +44889,11 @@ export namespace Prisma {
       directCostsCreated: Prisma.$DirectCostPayload<ExtArgs>[]
       creditsUpdated: Prisma.$CustomerCreditPayload<ExtArgs>[]
       financeConfigUpdates: Prisma.$FinanceConfigPayload<ExtArgs>[]
+      specVersionsCreated: Prisma.$SpecVersionPayload<ExtArgs>[]
+      changeRequestsRequested: Prisma.$ChangeRequestPayload<ExtArgs>[]
+      changeRequestsDecided: Prisma.$ChangeRequestPayload<ExtArgs>[]
+      changeRequestsAcknowledged: Prisma.$ChangeRequestPayload<ExtArgs>[]
+      lateCancellations: Prisma.$LateCancellationPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -40786,6 +45334,11 @@ export namespace Prisma {
     directCostsCreated<T extends User$directCostsCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$directCostsCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectCostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     creditsUpdated<T extends User$creditsUpdatedArgs<ExtArgs> = {}>(args?: Subset<T, User$creditsUpdatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CustomerCreditPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     financeConfigUpdates<T extends User$financeConfigUpdatesArgs<ExtArgs> = {}>(args?: Subset<T, User$financeConfigUpdatesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinanceConfigPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    specVersionsCreated<T extends User$specVersionsCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$specVersionsCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SpecVersionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    changeRequestsRequested<T extends User$changeRequestsRequestedArgs<ExtArgs> = {}>(args?: Subset<T, User$changeRequestsRequestedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    changeRequestsDecided<T extends User$changeRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$changeRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    changeRequestsAcknowledged<T extends User$changeRequestsAcknowledgedArgs<ExtArgs> = {}>(args?: Subset<T, User$changeRequestsAcknowledgedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    lateCancellations<T extends User$lateCancellationsArgs<ExtArgs> = {}>(args?: Subset<T, User$lateCancellationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -41980,6 +46533,126 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: FinanceConfigScalarFieldEnum | FinanceConfigScalarFieldEnum[]
+  }
+
+  /**
+   * User.specVersionsCreated
+   */
+  export type User$specVersionsCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SpecVersion
+     */
+    select?: SpecVersionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SpecVersion
+     */
+    omit?: SpecVersionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SpecVersionInclude<ExtArgs> | null
+    where?: SpecVersionWhereInput
+    orderBy?: SpecVersionOrderByWithRelationInput | SpecVersionOrderByWithRelationInput[]
+    cursor?: SpecVersionWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SpecVersionScalarFieldEnum | SpecVersionScalarFieldEnum[]
+  }
+
+  /**
+   * User.changeRequestsRequested
+   */
+  export type User$changeRequestsRequestedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    cursor?: ChangeRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * User.changeRequestsDecided
+   */
+  export type User$changeRequestsDecidedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    cursor?: ChangeRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * User.changeRequestsAcknowledged
+   */
+  export type User$changeRequestsAcknowledgedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ChangeRequest
+     */
+    select?: ChangeRequestSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ChangeRequest
+     */
+    omit?: ChangeRequestOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ChangeRequestInclude<ExtArgs> | null
+    where?: ChangeRequestWhereInput
+    orderBy?: ChangeRequestOrderByWithRelationInput | ChangeRequestOrderByWithRelationInput[]
+    cursor?: ChangeRequestWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ChangeRequestScalarFieldEnum | ChangeRequestScalarFieldEnum[]
+  }
+
+  /**
+   * User.lateCancellations
+   */
+  export type User$lateCancellationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the LateCancellation
+     */
+    select?: LateCancellationSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the LateCancellation
+     */
+    omit?: LateCancellationOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: LateCancellationInclude<ExtArgs> | null
+    where?: LateCancellationWhereInput
+    orderBy?: LateCancellationOrderByWithRelationInput | LateCancellationOrderByWithRelationInput[]
+    cursor?: LateCancellationWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: LateCancellationScalarFieldEnum | LateCancellationScalarFieldEnum[]
   }
 
   /**
@@ -58534,6 +63207,68 @@ export namespace Prisma {
   export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
 
+  export const SpecVersionScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    version: 'version',
+    origin: 'origin',
+    productTypeId: 'productTypeId',
+    description: 'description',
+    quantity: 'quantity',
+    widthValue: 'widthValue',
+    heightValue: 'heightValue',
+    dimensionUnit: 'dimensionUnit',
+    material: 'material',
+    finishNotes: 'finishNotes',
+    stateAtCreation: 'stateAtCreation',
+    reason: 'reason',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type SpecVersionScalarFieldEnum = (typeof SpecVersionScalarFieldEnum)[keyof typeof SpecVersionScalarFieldEnum]
+
+
+  export const ChangeRequestScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    status: 'status',
+    baseSpecVersionId: 'baseSpecVersionId',
+    proposedPatch: 'proposedPatch',
+    requestReason: 'requestReason',
+    requestedById: 'requestedById',
+    createdAt: 'createdAt',
+    pausedRunningTimerAt: 'pausedRunningTimerAt',
+    isAdminOverride: 'isAdminOverride',
+    decidedById: 'decidedById',
+    decidedAt: 'decidedAt',
+    decisionNote: 'decisionNote',
+    outcome: 'outcome',
+    resultingSpecVersionId: 'resultingSpecVersionId',
+    returnId: 'returnId',
+    productionAcknowledgedAt: 'productionAcknowledgedAt',
+    productionAcknowledgedById: 'productionAcknowledgedById'
+  };
+
+  export type ChangeRequestScalarFieldEnum = (typeof ChangeRequestScalarFieldEnum)[keyof typeof ChangeRequestScalarFieldEnum]
+
+
+  export const LateCancellationScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    stateAtCancellation: 'stateAtCancellation',
+    reason: 'reason',
+    costIncurred: 'costIncurred',
+    currency: 'currency',
+    producedQuantitySoFar: 'producedQuantitySoFar',
+    costNote: 'costNote',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type LateCancellationScalarFieldEnum = (typeof LateCancellationScalarFieldEnum)[keyof typeof LateCancellationScalarFieldEnum]
+
+
   export const DepartmentScalarFieldEnum: {
     id: 'id',
     name: 'name',
@@ -58597,7 +63332,8 @@ export namespace Prisma {
     productionNotes: 'productionNotes',
     pendingFileRevisionAt: 'pendingFileRevisionAt',
     createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
+    updatedAt: 'updatedAt',
+    currentSpecVersionId: 'currentSpecVersionId'
   };
 
   export type WorkItemScalarFieldEnum = (typeof WorkItemScalarFieldEnum)[keyof typeof WorkItemScalarFieldEnum]
@@ -59172,19 +63908,19 @@ export namespace Prisma {
   export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+  export const JsonNullValueInput: {
+    JsonNull: typeof JsonNull
+  };
+
+  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
   export const NullableJsonNullValueInput: {
     DbNull: typeof DbNull,
     JsonNull: typeof JsonNull
   };
 
   export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
-
-
-  export const JsonNullValueInput: {
-    JsonNull: typeof JsonNull
-  };
-
-  export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
   export const QueryMode: {
@@ -59232,9 +63968,72 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Boolean'
+   * Reference to a field of type 'Int'
    */
-  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+  /**
+   * Reference to a field of type 'Int[]'
+   */
+  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'SpecVersionOrigin'
+   */
+  export type EnumSpecVersionOriginFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SpecVersionOrigin'>
+    
+
+
+  /**
+   * Reference to a field of type 'SpecVersionOrigin[]'
+   */
+  export type ListEnumSpecVersionOriginFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SpecVersionOrigin[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkItemDimensionUnit'
+   */
+  export type EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemDimensionUnit'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkItemDimensionUnit[]'
+   */
+  export type ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemDimensionUnit[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkItemState'
+   */
+  export type EnumWorkItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemState'>
+    
+
+
+  /**
+   * Reference to a field of type 'WorkItemState[]'
+   */
+  export type ListEnumWorkItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemState[]'>
     
 
 
@@ -59253,16 +64052,51 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'Int'
+   * Reference to a field of type 'ChangeRequestStatus'
    */
-  export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+  export type EnumChangeRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChangeRequestStatus'>
     
 
 
   /**
-   * Reference to a field of type 'Int[]'
+   * Reference to a field of type 'ChangeRequestStatus[]'
    */
-  export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+  export type ListEnumChangeRequestStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChangeRequestStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Json'
+   */
+  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+  /**
+   * Reference to a field of type 'QueryMode'
+   */
+  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+  /**
+   * Reference to a field of type 'Boolean'
+   */
+  export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+  /**
+   * Reference to a field of type 'ChangeRequestOutcome'
+   */
+  export type EnumChangeRequestOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChangeRequestOutcome'>
+    
+
+
+  /**
+   * Reference to a field of type 'ChangeRequestOutcome[]'
+   */
+  export type ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ChangeRequestOutcome[]'>
     
 
 
@@ -59309,48 +64143,6 @@ export namespace Prisma {
 
 
   /**
-   * Reference to a field of type 'WorkItemState'
-   */
-  export type EnumWorkItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemState'>
-    
-
-
-  /**
-   * Reference to a field of type 'WorkItemState[]'
-   */
-  export type ListEnumWorkItemStateFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemState[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal'
-   */
-  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
-    
-
-
-  /**
-   * Reference to a field of type 'Decimal[]'
-   */
-  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'WorkItemDimensionUnit'
-   */
-  export type EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemDimensionUnit'>
-    
-
-
-  /**
-   * Reference to a field of type 'WorkItemDimensionUnit[]'
-   */
-  export type ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WorkItemDimensionUnit[]'>
-    
-
-
-  /**
    * Reference to a field of type 'RejectionCategory'
    */
   export type EnumRejectionCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RejectionCategory'>
@@ -59361,20 +64153,6 @@ export namespace Prisma {
    * Reference to a field of type 'RejectionCategory[]'
    */
   export type ListEnumRejectionCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RejectionCategory[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Json'
-   */
-  export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
-    
-
-
-  /**
-   * Reference to a field of type 'QueryMode'
-   */
-  export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
 
@@ -59604,6 +64382,357 @@ export namespace Prisma {
    * Deep Input Types
    */
 
+
+  export type SpecVersionWhereInput = {
+    AND?: SpecVersionWhereInput | SpecVersionWhereInput[]
+    OR?: SpecVersionWhereInput[]
+    NOT?: SpecVersionWhereInput | SpecVersionWhereInput[]
+    id?: StringFilter<"SpecVersion"> | string
+    workItemId?: StringFilter<"SpecVersion"> | string
+    version?: IntFilter<"SpecVersion"> | number
+    origin?: EnumSpecVersionOriginFilter<"SpecVersion"> | $Enums.SpecVersionOrigin
+    productTypeId?: StringNullableFilter<"SpecVersion"> | string | null
+    description?: StringNullableFilter<"SpecVersion"> | string | null
+    quantity?: IntNullableFilter<"SpecVersion"> | number | null
+    widthValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    heightValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: EnumWorkItemDimensionUnitNullableFilter<"SpecVersion"> | $Enums.WorkItemDimensionUnit | null
+    material?: StringNullableFilter<"SpecVersion"> | string | null
+    finishNotes?: StringNullableFilter<"SpecVersion"> | string | null
+    stateAtCreation?: EnumWorkItemStateFilter<"SpecVersion"> | $Enums.WorkItemState
+    reason?: StringNullableFilter<"SpecVersion"> | string | null
+    createdById?: StringNullableFilter<"SpecVersion"> | string | null
+    createdAt?: DateTimeFilter<"SpecVersion"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    productType?: XOR<ProductTypeNullableScalarRelationFilter, ProductTypeWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    currentFor?: XOR<WorkItemNullableScalarRelationFilter, WorkItemWhereInput> | null
+    baseOfChangeRequests?: ChangeRequestListRelationFilter
+    resultOfChangeRequest?: XOR<ChangeRequestNullableScalarRelationFilter, ChangeRequestWhereInput> | null
+  }
+
+  export type SpecVersionOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    origin?: SortOrder
+    productTypeId?: SortOrderInput | SortOrder
+    description?: SortOrderInput | SortOrder
+    quantity?: SortOrderInput | SortOrder
+    widthValue?: SortOrderInput | SortOrder
+    heightValue?: SortOrderInput | SortOrder
+    dimensionUnit?: SortOrderInput | SortOrder
+    material?: SortOrderInput | SortOrder
+    finishNotes?: SortOrderInput | SortOrder
+    stateAtCreation?: SortOrder
+    reason?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    productType?: ProductTypeOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+    currentFor?: WorkItemOrderByWithRelationInput
+    baseOfChangeRequests?: ChangeRequestOrderByRelationAggregateInput
+    resultOfChangeRequest?: ChangeRequestOrderByWithRelationInput
+  }
+
+  export type SpecVersionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    workItemId_version?: SpecVersionWorkItemIdVersionCompoundUniqueInput
+    AND?: SpecVersionWhereInput | SpecVersionWhereInput[]
+    OR?: SpecVersionWhereInput[]
+    NOT?: SpecVersionWhereInput | SpecVersionWhereInput[]
+    workItemId?: StringFilter<"SpecVersion"> | string
+    version?: IntFilter<"SpecVersion"> | number
+    origin?: EnumSpecVersionOriginFilter<"SpecVersion"> | $Enums.SpecVersionOrigin
+    productTypeId?: StringNullableFilter<"SpecVersion"> | string | null
+    description?: StringNullableFilter<"SpecVersion"> | string | null
+    quantity?: IntNullableFilter<"SpecVersion"> | number | null
+    widthValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    heightValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: EnumWorkItemDimensionUnitNullableFilter<"SpecVersion"> | $Enums.WorkItemDimensionUnit | null
+    material?: StringNullableFilter<"SpecVersion"> | string | null
+    finishNotes?: StringNullableFilter<"SpecVersion"> | string | null
+    stateAtCreation?: EnumWorkItemStateFilter<"SpecVersion"> | $Enums.WorkItemState
+    reason?: StringNullableFilter<"SpecVersion"> | string | null
+    createdById?: StringNullableFilter<"SpecVersion"> | string | null
+    createdAt?: DateTimeFilter<"SpecVersion"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    productType?: XOR<ProductTypeNullableScalarRelationFilter, ProductTypeWhereInput> | null
+    createdBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    currentFor?: XOR<WorkItemNullableScalarRelationFilter, WorkItemWhereInput> | null
+    baseOfChangeRequests?: ChangeRequestListRelationFilter
+    resultOfChangeRequest?: XOR<ChangeRequestNullableScalarRelationFilter, ChangeRequestWhereInput> | null
+  }, "id" | "workItemId_version">
+
+  export type SpecVersionOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    origin?: SortOrder
+    productTypeId?: SortOrderInput | SortOrder
+    description?: SortOrderInput | SortOrder
+    quantity?: SortOrderInput | SortOrder
+    widthValue?: SortOrderInput | SortOrder
+    heightValue?: SortOrderInput | SortOrder
+    dimensionUnit?: SortOrderInput | SortOrder
+    material?: SortOrderInput | SortOrder
+    finishNotes?: SortOrderInput | SortOrder
+    stateAtCreation?: SortOrder
+    reason?: SortOrderInput | SortOrder
+    createdById?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: SpecVersionCountOrderByAggregateInput
+    _avg?: SpecVersionAvgOrderByAggregateInput
+    _max?: SpecVersionMaxOrderByAggregateInput
+    _min?: SpecVersionMinOrderByAggregateInput
+    _sum?: SpecVersionSumOrderByAggregateInput
+  }
+
+  export type SpecVersionScalarWhereWithAggregatesInput = {
+    AND?: SpecVersionScalarWhereWithAggregatesInput | SpecVersionScalarWhereWithAggregatesInput[]
+    OR?: SpecVersionScalarWhereWithAggregatesInput[]
+    NOT?: SpecVersionScalarWhereWithAggregatesInput | SpecVersionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"SpecVersion"> | string
+    workItemId?: StringWithAggregatesFilter<"SpecVersion"> | string
+    version?: IntWithAggregatesFilter<"SpecVersion"> | number
+    origin?: EnumSpecVersionOriginWithAggregatesFilter<"SpecVersion"> | $Enums.SpecVersionOrigin
+    productTypeId?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    description?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    quantity?: IntNullableWithAggregatesFilter<"SpecVersion"> | number | null
+    widthValue?: DecimalNullableWithAggregatesFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    heightValue?: DecimalNullableWithAggregatesFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: EnumWorkItemDimensionUnitNullableWithAggregatesFilter<"SpecVersion"> | $Enums.WorkItemDimensionUnit | null
+    material?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    finishNotes?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    stateAtCreation?: EnumWorkItemStateWithAggregatesFilter<"SpecVersion"> | $Enums.WorkItemState
+    reason?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    createdById?: StringNullableWithAggregatesFilter<"SpecVersion"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"SpecVersion"> | Date | string
+  }
+
+  export type ChangeRequestWhereInput = {
+    AND?: ChangeRequestWhereInput | ChangeRequestWhereInput[]
+    OR?: ChangeRequestWhereInput[]
+    NOT?: ChangeRequestWhereInput | ChangeRequestWhereInput[]
+    id?: StringFilter<"ChangeRequest"> | string
+    workItemId?: StringFilter<"ChangeRequest"> | string
+    status?: EnumChangeRequestStatusFilter<"ChangeRequest"> | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFilter<"ChangeRequest"> | string
+    proposedPatch?: JsonFilter<"ChangeRequest">
+    requestReason?: StringFilter<"ChangeRequest"> | string
+    requestedById?: StringFilter<"ChangeRequest"> | string
+    createdAt?: DateTimeFilter<"ChangeRequest"> | Date | string
+    pausedRunningTimerAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    isAdminOverride?: BoolFilter<"ChangeRequest"> | boolean
+    decidedById?: StringNullableFilter<"ChangeRequest"> | string | null
+    decidedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    decisionNote?: StringNullableFilter<"ChangeRequest"> | string | null
+    outcome?: EnumChangeRequestOutcomeNullableFilter<"ChangeRequest"> | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: StringNullableFilter<"ChangeRequest"> | string | null
+    returnId?: StringNullableFilter<"ChangeRequest"> | string | null
+    productionAcknowledgedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    productionAcknowledgedById?: StringNullableFilter<"ChangeRequest"> | string | null
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    baseSpecVersion?: XOR<SpecVersionScalarRelationFilter, SpecVersionWhereInput>
+    requestedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    decidedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    resultingSpecVersion?: XOR<SpecVersionNullableScalarRelationFilter, SpecVersionWhereInput> | null
+    return?: XOR<ReturnNullableScalarRelationFilter, ReturnWhereInput> | null
+    productionAcknowledgedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }
+
+  export type ChangeRequestOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    status?: SortOrder
+    baseSpecVersionId?: SortOrder
+    proposedPatch?: SortOrder
+    requestReason?: SortOrder
+    requestedById?: SortOrder
+    createdAt?: SortOrder
+    pausedRunningTimerAt?: SortOrderInput | SortOrder
+    isAdminOverride?: SortOrder
+    decidedById?: SortOrderInput | SortOrder
+    decidedAt?: SortOrderInput | SortOrder
+    decisionNote?: SortOrderInput | SortOrder
+    outcome?: SortOrderInput | SortOrder
+    resultingSpecVersionId?: SortOrderInput | SortOrder
+    returnId?: SortOrderInput | SortOrder
+    productionAcknowledgedAt?: SortOrderInput | SortOrder
+    productionAcknowledgedById?: SortOrderInput | SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    baseSpecVersion?: SpecVersionOrderByWithRelationInput
+    requestedBy?: UserOrderByWithRelationInput
+    decidedBy?: UserOrderByWithRelationInput
+    resultingSpecVersion?: SpecVersionOrderByWithRelationInput
+    return?: ReturnOrderByWithRelationInput
+    productionAcknowledgedBy?: UserOrderByWithRelationInput
+  }
+
+  export type ChangeRequestWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    resultingSpecVersionId?: string
+    returnId?: string
+    AND?: ChangeRequestWhereInput | ChangeRequestWhereInput[]
+    OR?: ChangeRequestWhereInput[]
+    NOT?: ChangeRequestWhereInput | ChangeRequestWhereInput[]
+    workItemId?: StringFilter<"ChangeRequest"> | string
+    status?: EnumChangeRequestStatusFilter<"ChangeRequest"> | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFilter<"ChangeRequest"> | string
+    proposedPatch?: JsonFilter<"ChangeRequest">
+    requestReason?: StringFilter<"ChangeRequest"> | string
+    requestedById?: StringFilter<"ChangeRequest"> | string
+    createdAt?: DateTimeFilter<"ChangeRequest"> | Date | string
+    pausedRunningTimerAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    isAdminOverride?: BoolFilter<"ChangeRequest"> | boolean
+    decidedById?: StringNullableFilter<"ChangeRequest"> | string | null
+    decidedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    decisionNote?: StringNullableFilter<"ChangeRequest"> | string | null
+    outcome?: EnumChangeRequestOutcomeNullableFilter<"ChangeRequest"> | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    productionAcknowledgedById?: StringNullableFilter<"ChangeRequest"> | string | null
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    baseSpecVersion?: XOR<SpecVersionScalarRelationFilter, SpecVersionWhereInput>
+    requestedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    decidedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    resultingSpecVersion?: XOR<SpecVersionNullableScalarRelationFilter, SpecVersionWhereInput> | null
+    return?: XOR<ReturnNullableScalarRelationFilter, ReturnWhereInput> | null
+    productionAcknowledgedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }, "id" | "resultingSpecVersionId" | "returnId">
+
+  export type ChangeRequestOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    status?: SortOrder
+    baseSpecVersionId?: SortOrder
+    proposedPatch?: SortOrder
+    requestReason?: SortOrder
+    requestedById?: SortOrder
+    createdAt?: SortOrder
+    pausedRunningTimerAt?: SortOrderInput | SortOrder
+    isAdminOverride?: SortOrder
+    decidedById?: SortOrderInput | SortOrder
+    decidedAt?: SortOrderInput | SortOrder
+    decisionNote?: SortOrderInput | SortOrder
+    outcome?: SortOrderInput | SortOrder
+    resultingSpecVersionId?: SortOrderInput | SortOrder
+    returnId?: SortOrderInput | SortOrder
+    productionAcknowledgedAt?: SortOrderInput | SortOrder
+    productionAcknowledgedById?: SortOrderInput | SortOrder
+    _count?: ChangeRequestCountOrderByAggregateInput
+    _max?: ChangeRequestMaxOrderByAggregateInput
+    _min?: ChangeRequestMinOrderByAggregateInput
+  }
+
+  export type ChangeRequestScalarWhereWithAggregatesInput = {
+    AND?: ChangeRequestScalarWhereWithAggregatesInput | ChangeRequestScalarWhereWithAggregatesInput[]
+    OR?: ChangeRequestScalarWhereWithAggregatesInput[]
+    NOT?: ChangeRequestScalarWhereWithAggregatesInput | ChangeRequestScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ChangeRequest"> | string
+    workItemId?: StringWithAggregatesFilter<"ChangeRequest"> | string
+    status?: EnumChangeRequestStatusWithAggregatesFilter<"ChangeRequest"> | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringWithAggregatesFilter<"ChangeRequest"> | string
+    proposedPatch?: JsonWithAggregatesFilter<"ChangeRequest">
+    requestReason?: StringWithAggregatesFilter<"ChangeRequest"> | string
+    requestedById?: StringWithAggregatesFilter<"ChangeRequest"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"ChangeRequest"> | Date | string
+    pausedRunningTimerAt?: DateTimeNullableWithAggregatesFilter<"ChangeRequest"> | Date | string | null
+    isAdminOverride?: BoolWithAggregatesFilter<"ChangeRequest"> | boolean
+    decidedById?: StringNullableWithAggregatesFilter<"ChangeRequest"> | string | null
+    decidedAt?: DateTimeNullableWithAggregatesFilter<"ChangeRequest"> | Date | string | null
+    decisionNote?: StringNullableWithAggregatesFilter<"ChangeRequest"> | string | null
+    outcome?: EnumChangeRequestOutcomeNullableWithAggregatesFilter<"ChangeRequest"> | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: StringNullableWithAggregatesFilter<"ChangeRequest"> | string | null
+    returnId?: StringNullableWithAggregatesFilter<"ChangeRequest"> | string | null
+    productionAcknowledgedAt?: DateTimeNullableWithAggregatesFilter<"ChangeRequest"> | Date | string | null
+    productionAcknowledgedById?: StringNullableWithAggregatesFilter<"ChangeRequest"> | string | null
+  }
+
+  export type LateCancellationWhereInput = {
+    AND?: LateCancellationWhereInput | LateCancellationWhereInput[]
+    OR?: LateCancellationWhereInput[]
+    NOT?: LateCancellationWhereInput | LateCancellationWhereInput[]
+    id?: StringFilter<"LateCancellation"> | string
+    workItemId?: StringFilter<"LateCancellation"> | string
+    stateAtCancellation?: EnumWorkItemStateFilter<"LateCancellation"> | $Enums.WorkItemState
+    reason?: StringFilter<"LateCancellation"> | string
+    costIncurred?: DecimalFilter<"LateCancellation"> | Decimal | DecimalJsLike | number | string
+    currency?: StringFilter<"LateCancellation"> | string
+    producedQuantitySoFar?: IntNullableFilter<"LateCancellation"> | number | null
+    costNote?: StringNullableFilter<"LateCancellation"> | string | null
+    createdById?: StringFilter<"LateCancellation"> | string
+    createdAt?: DateTimeFilter<"LateCancellation"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type LateCancellationOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    stateAtCancellation?: SortOrder
+    reason?: SortOrder
+    costIncurred?: SortOrder
+    currency?: SortOrder
+    producedQuantitySoFar?: SortOrderInput | SortOrder
+    costNote?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    createdBy?: UserOrderByWithRelationInput
+  }
+
+  export type LateCancellationWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    workItemId?: string
+    AND?: LateCancellationWhereInput | LateCancellationWhereInput[]
+    OR?: LateCancellationWhereInput[]
+    NOT?: LateCancellationWhereInput | LateCancellationWhereInput[]
+    stateAtCancellation?: EnumWorkItemStateFilter<"LateCancellation"> | $Enums.WorkItemState
+    reason?: StringFilter<"LateCancellation"> | string
+    costIncurred?: DecimalFilter<"LateCancellation"> | Decimal | DecimalJsLike | number | string
+    currency?: StringFilter<"LateCancellation"> | string
+    producedQuantitySoFar?: IntNullableFilter<"LateCancellation"> | number | null
+    costNote?: StringNullableFilter<"LateCancellation"> | string | null
+    createdById?: StringFilter<"LateCancellation"> | string
+    createdAt?: DateTimeFilter<"LateCancellation"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "workItemId">
+
+  export type LateCancellationOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    stateAtCancellation?: SortOrder
+    reason?: SortOrder
+    costIncurred?: SortOrder
+    currency?: SortOrder
+    producedQuantitySoFar?: SortOrderInput | SortOrder
+    costNote?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    _count?: LateCancellationCountOrderByAggregateInput
+    _avg?: LateCancellationAvgOrderByAggregateInput
+    _max?: LateCancellationMaxOrderByAggregateInput
+    _min?: LateCancellationMinOrderByAggregateInput
+    _sum?: LateCancellationSumOrderByAggregateInput
+  }
+
+  export type LateCancellationScalarWhereWithAggregatesInput = {
+    AND?: LateCancellationScalarWhereWithAggregatesInput | LateCancellationScalarWhereWithAggregatesInput[]
+    OR?: LateCancellationScalarWhereWithAggregatesInput[]
+    NOT?: LateCancellationScalarWhereWithAggregatesInput | LateCancellationScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"LateCancellation"> | string
+    workItemId?: StringWithAggregatesFilter<"LateCancellation"> | string
+    stateAtCancellation?: EnumWorkItemStateWithAggregatesFilter<"LateCancellation"> | $Enums.WorkItemState
+    reason?: StringWithAggregatesFilter<"LateCancellation"> | string
+    costIncurred?: DecimalWithAggregatesFilter<"LateCancellation"> | Decimal | DecimalJsLike | number | string
+    currency?: StringWithAggregatesFilter<"LateCancellation"> | string
+    producedQuantitySoFar?: IntNullableWithAggregatesFilter<"LateCancellation"> | number | null
+    costNote?: StringNullableWithAggregatesFilter<"LateCancellation"> | string | null
+    createdById?: StringWithAggregatesFilter<"LateCancellation"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"LateCancellation"> | Date | string
+  }
 
   export type DepartmentWhereInput = {
     AND?: DepartmentWhereInput | DepartmentWhereInput[]
@@ -59890,10 +65019,15 @@ export namespace Prisma {
     pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
+    currentSpecVersionId?: StringNullableFilter<"WorkItem"> | string | null
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
     productType?: XOR<ProductTypeNullableScalarRelationFilter, ProductTypeWhereInput> | null
     department?: XOR<DepartmentNullableScalarRelationFilter, DepartmentWhereInput> | null
     assignee?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    currentSpecVersion?: XOR<SpecVersionNullableScalarRelationFilter, SpecVersionWhereInput> | null
+    specVersions?: SpecVersionListRelationFilter
+    changeRequests?: ChangeRequestListRelationFilter
+    lateCancellation?: XOR<LateCancellationNullableScalarRelationFilter, LateCancellationWhereInput> | null
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
@@ -59928,10 +65062,15 @@ export namespace Prisma {
     pendingFileRevisionAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currentSpecVersionId?: SortOrderInput | SortOrder
     order?: OrderOrderByWithRelationInput
     productType?: ProductTypeOrderByWithRelationInput
     department?: DepartmentOrderByWithRelationInput
     assignee?: UserOrderByWithRelationInput
+    currentSpecVersion?: SpecVersionOrderByWithRelationInput
+    specVersions?: SpecVersionOrderByRelationAggregateInput
+    changeRequests?: ChangeRequestOrderByRelationAggregateInput
+    lateCancellation?: LateCancellationOrderByWithRelationInput
     transitions?: WorkItemTransitionOrderByRelationAggregateInput
     phaseTimings?: PhaseTimingOrderByRelationAggregateInput
     designVersions?: DesignVersionOrderByRelationAggregateInput
@@ -59946,6 +65085,7 @@ export namespace Prisma {
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
     id?: string
+    currentSpecVersionId?: string
     AND?: WorkItemWhereInput | WorkItemWhereInput[]
     OR?: WorkItemWhereInput[]
     NOT?: WorkItemWhereInput | WorkItemWhereInput[]
@@ -59973,6 +65113,10 @@ export namespace Prisma {
     productType?: XOR<ProductTypeNullableScalarRelationFilter, ProductTypeWhereInput> | null
     department?: XOR<DepartmentNullableScalarRelationFilter, DepartmentWhereInput> | null
     assignee?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    currentSpecVersion?: XOR<SpecVersionNullableScalarRelationFilter, SpecVersionWhereInput> | null
+    specVersions?: SpecVersionListRelationFilter
+    changeRequests?: ChangeRequestListRelationFilter
+    lateCancellation?: XOR<LateCancellationNullableScalarRelationFilter, LateCancellationWhereInput> | null
     transitions?: WorkItemTransitionListRelationFilter
     phaseTimings?: PhaseTimingListRelationFilter
     designVersions?: DesignVersionListRelationFilter
@@ -59983,7 +65127,7 @@ export namespace Prisma {
     pricingStatus?: XOR<PricingStatusNullableScalarRelationFilter, PricingStatusWhereInput> | null
     expenses?: ExpenseListRelationFilter
     directCosts?: DirectCostListRelationFilter
-  }, "id">
+  }, "id" | "currentSpecVersionId">
 
   export type WorkItemOrderByWithAggregationInput = {
     id?: SortOrder
@@ -60007,6 +65151,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currentSpecVersionId?: SortOrderInput | SortOrder
     _count?: WorkItemCountOrderByAggregateInput
     _avg?: WorkItemAvgOrderByAggregateInput
     _max?: WorkItemMaxOrderByAggregateInput
@@ -60039,6 +65184,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: DateTimeNullableWithAggregatesFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
+    currentSpecVersionId?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
   }
 
   export type ProductTypeWhereInput = {
@@ -60055,6 +65201,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"ProductType"> | Date | string
     defaultDepartment?: XOR<DepartmentNullableScalarRelationFilter, DepartmentWhereInput> | null
     workItems?: WorkItemListRelationFilter
+    specVersions?: SpecVersionListRelationFilter
     pricingPolicy?: XOR<ProductPricingPolicyNullableScalarRelationFilter, ProductPricingPolicyWhereInput> | null
     priceLists?: PriceListListRelationFilter
     customerPricingRules?: CustomerPricingRuleListRelationFilter
@@ -60071,6 +65218,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     defaultDepartment?: DepartmentOrderByWithRelationInput
     workItems?: WorkItemOrderByRelationAggregateInput
+    specVersions?: SpecVersionOrderByRelationAggregateInput
     pricingPolicy?: ProductPricingPolicyOrderByWithRelationInput
     priceLists?: PriceListOrderByRelationAggregateInput
     customerPricingRules?: CustomerPricingRuleOrderByRelationAggregateInput
@@ -60090,6 +65238,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"ProductType"> | Date | string
     defaultDepartment?: XOR<DepartmentNullableScalarRelationFilter, DepartmentWhereInput> | null
     workItems?: WorkItemListRelationFilter
+    specVersions?: SpecVersionListRelationFilter
     pricingPolicy?: XOR<ProductPricingPolicyNullableScalarRelationFilter, ProductPricingPolicyWhereInput> | null
     priceLists?: PriceListListRelationFilter
     customerPricingRules?: CustomerPricingRuleListRelationFilter
@@ -60396,6 +65545,7 @@ export namespace Prisma {
     assignedTo?: XOR<UserScalarRelationFilter, UserWhereInput>
     designVersion?: XOR<DesignVersionNullableScalarRelationFilter, DesignVersionWhereInput> | null
     attachments?: ReturnAttachmentListRelationFilter
+    changeRequest?: XOR<ChangeRequestNullableScalarRelationFilter, ChangeRequestWhereInput> | null
   }
 
   export type ReturnOrderByWithRelationInput = {
@@ -60415,6 +65565,7 @@ export namespace Prisma {
     assignedTo?: UserOrderByWithRelationInput
     designVersion?: DesignVersionOrderByWithRelationInput
     attachments?: ReturnAttachmentOrderByRelationAggregateInput
+    changeRequest?: ChangeRequestOrderByWithRelationInput
   }
 
   export type ReturnWhereUniqueInput = Prisma.AtLeast<{
@@ -60437,6 +65588,7 @@ export namespace Prisma {
     assignedTo?: XOR<UserScalarRelationFilter, UserWhereInput>
     designVersion?: XOR<DesignVersionNullableScalarRelationFilter, DesignVersionWhereInput> | null
     attachments?: ReturnAttachmentListRelationFilter
+    changeRequest?: XOR<ChangeRequestNullableScalarRelationFilter, ChangeRequestWhereInput> | null
   }, "id">
 
   export type ReturnOrderByWithAggregationInput = {
@@ -61940,6 +67092,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostListRelationFilter
     creditsUpdated?: CustomerCreditListRelationFilter
     financeConfigUpdates?: FinanceConfigListRelationFilter
+    specVersionsCreated?: SpecVersionListRelationFilter
+    changeRequestsRequested?: ChangeRequestListRelationFilter
+    changeRequestsDecided?: ChangeRequestListRelationFilter
+    changeRequestsAcknowledged?: ChangeRequestListRelationFilter
+    lateCancellations?: LateCancellationListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -61987,6 +67144,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostOrderByRelationAggregateInput
     creditsUpdated?: CustomerCreditOrderByRelationAggregateInput
     financeConfigUpdates?: FinanceConfigOrderByRelationAggregateInput
+    specVersionsCreated?: SpecVersionOrderByRelationAggregateInput
+    changeRequestsRequested?: ChangeRequestOrderByRelationAggregateInput
+    changeRequestsDecided?: ChangeRequestOrderByRelationAggregateInput
+    changeRequestsAcknowledged?: ChangeRequestOrderByRelationAggregateInput
+    lateCancellations?: LateCancellationOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -62037,6 +67199,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostListRelationFilter
     creditsUpdated?: CustomerCreditListRelationFilter
     financeConfigUpdates?: FinanceConfigListRelationFilter
+    specVersionsCreated?: SpecVersionListRelationFilter
+    changeRequestsRequested?: ChangeRequestListRelationFilter
+    changeRequestsDecided?: ChangeRequestListRelationFilter
+    changeRequestsAcknowledged?: ChangeRequestListRelationFilter
+    lateCancellations?: LateCancellationListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -63092,6 +68259,377 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"PricingStatus"> | Date | string
   }
 
+  export type SpecVersionCreateInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionCreateManyInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type SpecVersionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SpecVersionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChangeRequestCreateInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestCreateManyInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type LateCancellationCreateInput = {
+    id?: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutLateCancellationInput
+    createdBy: UserCreateNestedOneWithoutLateCancellationsInput
+  }
+
+  export type LateCancellationUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type LateCancellationUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutLateCancellationNestedInput
+    createdBy?: UserUpdateOneRequiredWithoutLateCancellationsNestedInput
+  }
+
+  export type LateCancellationUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LateCancellationCreateManyInput = {
+    id?: string
+    workItemId: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type LateCancellationUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LateCancellationUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type DepartmentCreateInput = {
     id?: string
     name: string
@@ -63404,6 +68942,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -63438,6 +68980,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -63472,6 +69018,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -63506,6 +69056,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -63540,6 +69094,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
   }
 
   export type WorkItemUpdateManyMutationInput = {
@@ -63584,6 +69139,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ProductTypeCreateInput = {
@@ -63596,6 +69152,7 @@ export namespace Prisma {
     createdAt?: Date | string
     defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
     workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
@@ -63611,6 +69168,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
@@ -63626,6 +69184,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
     workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
@@ -63641,6 +69200,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
@@ -63953,6 +69513,7 @@ export namespace Prisma {
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateInput = {
@@ -63967,6 +69528,7 @@ export namespace Prisma {
     designVersionId?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUpdateInput = {
@@ -63981,6 +69543,7 @@ export namespace Prisma {
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateInput = {
@@ -63995,6 +69558,7 @@ export namespace Prisma {
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnCreateManyInput = {
@@ -65541,6 +71105,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -65588,6 +71157,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUpdateInput = {
@@ -65635,6 +71209,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -65682,6 +71261,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -66784,9 +72368,73 @@ export namespace Prisma {
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
-  export type BoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type EnumSpecVersionOriginFilter<$PrismaModel = never> = {
+    equals?: $Enums.SpecVersionOrigin | EnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    in?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    not?: NestedEnumSpecVersionOriginFilter<$PrismaModel> | $Enums.SpecVersionOrigin
+  }
+
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type EnumWorkItemDimensionUnitNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
+  }
+
+  export type EnumWorkItemStateFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
+    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    not?: NestedEnumWorkItemStateFilter<$PrismaModel> | $Enums.WorkItemState
   }
 
   export type DateTimeFilter<$PrismaModel = never> = {
@@ -66798,6 +72446,528 @@ export namespace Prisma {
     gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
+  }
+
+  export type WorkItemScalarRelationFilter = {
+    is?: WorkItemWhereInput
+    isNot?: WorkItemWhereInput
+  }
+
+  export type ProductTypeNullableScalarRelationFilter = {
+    is?: ProductTypeWhereInput | null
+    isNot?: ProductTypeWhereInput | null
+  }
+
+  export type UserNullableScalarRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
+  }
+
+  export type WorkItemNullableScalarRelationFilter = {
+    is?: WorkItemWhereInput | null
+    isNot?: WorkItemWhereInput | null
+  }
+
+  export type ChangeRequestListRelationFilter = {
+    every?: ChangeRequestWhereInput
+    some?: ChangeRequestWhereInput
+    none?: ChangeRequestWhereInput
+  }
+
+  export type ChangeRequestNullableScalarRelationFilter = {
+    is?: ChangeRequestWhereInput | null
+    isNot?: ChangeRequestWhereInput | null
+  }
+
+  export type SortOrderInput = {
+    sort: SortOrder
+    nulls?: NullsOrder
+  }
+
+  export type ChangeRequestOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SpecVersionWorkItemIdVersionCompoundUniqueInput = {
+    workItemId: string
+    version: number
+  }
+
+  export type SpecVersionCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    origin?: SortOrder
+    productTypeId?: SortOrder
+    description?: SortOrder
+    quantity?: SortOrder
+    widthValue?: SortOrder
+    heightValue?: SortOrder
+    dimensionUnit?: SortOrder
+    material?: SortOrder
+    finishNotes?: SortOrder
+    stateAtCreation?: SortOrder
+    reason?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SpecVersionAvgOrderByAggregateInput = {
+    version?: SortOrder
+    quantity?: SortOrder
+    widthValue?: SortOrder
+    heightValue?: SortOrder
+  }
+
+  export type SpecVersionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    origin?: SortOrder
+    productTypeId?: SortOrder
+    description?: SortOrder
+    quantity?: SortOrder
+    widthValue?: SortOrder
+    heightValue?: SortOrder
+    dimensionUnit?: SortOrder
+    material?: SortOrder
+    finishNotes?: SortOrder
+    stateAtCreation?: SortOrder
+    reason?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SpecVersionMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    version?: SortOrder
+    origin?: SortOrder
+    productTypeId?: SortOrder
+    description?: SortOrder
+    quantity?: SortOrder
+    widthValue?: SortOrder
+    heightValue?: SortOrder
+    dimensionUnit?: SortOrder
+    material?: SortOrder
+    finishNotes?: SortOrder
+    stateAtCreation?: SortOrder
+    reason?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type SpecVersionSumOrderByAggregateInput = {
+    version?: SortOrder
+    quantity?: SortOrder
+    widthValue?: SortOrder
+    heightValue?: SortOrder
+  }
+
+  export type StringWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: string[] | ListStringFieldRefInput<$PrismaModel>
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedStringFilter<$PrismaModel>
+    _max?: NestedStringFilter<$PrismaModel>
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type EnumSpecVersionOriginWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SpecVersionOrigin | EnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    in?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    not?: NestedEnumSpecVersionOriginWithAggregatesFilter<$PrismaModel> | $Enums.SpecVersionOrigin
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumSpecVersionOriginFilter<$PrismaModel>
+    _max?: NestedEnumSpecVersionOriginFilter<$PrismaModel>
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
+  }
+
+  export type EnumWorkItemDimensionUnitNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkItemDimensionUnitNullableWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
+    _max?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
+  }
+
+  export type EnumWorkItemStateWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
+    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    not?: NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemState
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumWorkItemStateFilter<$PrismaModel>
+    _max?: NestedEnumWorkItemStateFilter<$PrismaModel>
+  }
+
+  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type EnumChangeRequestStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestStatus | EnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumChangeRequestStatusFilter<$PrismaModel> | $Enums.ChangeRequestStatus
+  }
+  export type JsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type DateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type BoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type EnumChangeRequestOutcomeNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestOutcome | EnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel> | $Enums.ChangeRequestOutcome | null
+  }
+
+  export type SpecVersionScalarRelationFilter = {
+    is?: SpecVersionWhereInput
+    isNot?: SpecVersionWhereInput
+  }
+
+  export type UserScalarRelationFilter = {
+    is?: UserWhereInput
+    isNot?: UserWhereInput
+  }
+
+  export type SpecVersionNullableScalarRelationFilter = {
+    is?: SpecVersionWhereInput | null
+    isNot?: SpecVersionWhereInput | null
+  }
+
+  export type ReturnNullableScalarRelationFilter = {
+    is?: ReturnWhereInput | null
+    isNot?: ReturnWhereInput | null
+  }
+
+  export type ChangeRequestCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    status?: SortOrder
+    baseSpecVersionId?: SortOrder
+    proposedPatch?: SortOrder
+    requestReason?: SortOrder
+    requestedById?: SortOrder
+    createdAt?: SortOrder
+    pausedRunningTimerAt?: SortOrder
+    isAdminOverride?: SortOrder
+    decidedById?: SortOrder
+    decidedAt?: SortOrder
+    decisionNote?: SortOrder
+    outcome?: SortOrder
+    resultingSpecVersionId?: SortOrder
+    returnId?: SortOrder
+    productionAcknowledgedAt?: SortOrder
+    productionAcknowledgedById?: SortOrder
+  }
+
+  export type ChangeRequestMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    status?: SortOrder
+    baseSpecVersionId?: SortOrder
+    requestReason?: SortOrder
+    requestedById?: SortOrder
+    createdAt?: SortOrder
+    pausedRunningTimerAt?: SortOrder
+    isAdminOverride?: SortOrder
+    decidedById?: SortOrder
+    decidedAt?: SortOrder
+    decisionNote?: SortOrder
+    outcome?: SortOrder
+    resultingSpecVersionId?: SortOrder
+    returnId?: SortOrder
+    productionAcknowledgedAt?: SortOrder
+    productionAcknowledgedById?: SortOrder
+  }
+
+  export type ChangeRequestMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    status?: SortOrder
+    baseSpecVersionId?: SortOrder
+    requestReason?: SortOrder
+    requestedById?: SortOrder
+    createdAt?: SortOrder
+    pausedRunningTimerAt?: SortOrder
+    isAdminOverride?: SortOrder
+    decidedById?: SortOrder
+    decidedAt?: SortOrder
+    decisionNote?: SortOrder
+    outcome?: SortOrder
+    resultingSpecVersionId?: SortOrder
+    returnId?: SortOrder
+    productionAcknowledgedAt?: SortOrder
+    productionAcknowledgedById?: SortOrder
+  }
+
+  export type EnumChangeRequestStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestStatus | EnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumChangeRequestStatusWithAggregatesFilter<$PrismaModel> | $Enums.ChangeRequestStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumChangeRequestStatusFilter<$PrismaModel>
+    _max?: NestedEnumChangeRequestStatusFilter<$PrismaModel>
+  }
+  export type JsonWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedJsonFilter<$PrismaModel>
+    _max?: NestedJsonFilter<$PrismaModel>
+  }
+
+  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type EnumChangeRequestOutcomeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestOutcome | EnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumChangeRequestOutcomeNullableWithAggregatesFilter<$PrismaModel> | $Enums.ChangeRequestOutcome | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel>
+    _max?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type LateCancellationCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    stateAtCancellation?: SortOrder
+    reason?: SortOrder
+    costIncurred?: SortOrder
+    currency?: SortOrder
+    producedQuantitySoFar?: SortOrder
+    costNote?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LateCancellationAvgOrderByAggregateInput = {
+    costIncurred?: SortOrder
+    producedQuantitySoFar?: SortOrder
+  }
+
+  export type LateCancellationMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    stateAtCancellation?: SortOrder
+    reason?: SortOrder
+    costIncurred?: SortOrder
+    currency?: SortOrder
+    producedQuantitySoFar?: SortOrder
+    costNote?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LateCancellationMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    stateAtCancellation?: SortOrder
+    reason?: SortOrder
+    costIncurred?: SortOrder
+    currency?: SortOrder
+    producedQuantitySoFar?: SortOrder
+    costNote?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type LateCancellationSumOrderByAggregateInput = {
+    costIncurred?: SortOrder
+    producedQuantitySoFar?: SortOrder
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type WorkItemListRelationFilter = {
@@ -66864,61 +73034,6 @@ export namespace Prisma {
     isExternalProduction?: SortOrder
   }
 
-  export type StringWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedStringFilter<$PrismaModel>
-    _max?: NestedStringFilter<$PrismaModel>
-  }
-
-  export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
-  export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type StringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
   export type OrderListRelationFilter = {
     every?: OrderWhereInput
     some?: OrderWhereInput
@@ -66963,11 +73078,6 @@ export namespace Prisma {
   export type CustomerCreditNullableScalarRelationFilter = {
     is?: CustomerCreditWhereInput | null
     isNot?: CustomerCreditWhereInput | null
-  }
-
-  export type SortOrderInput = {
-    sort: SortOrder
-    nulls?: NullsOrder
   }
 
   export type OrderOrderByRelationAggregateInput = {
@@ -67033,35 +73143,6 @@ export namespace Prisma {
     updatedAt?: SortOrder
   }
 
-  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
-  }
-
   export type EnumOrderChannelFilter<$PrismaModel = never> = {
     equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
     in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
@@ -67083,25 +73164,9 @@ export namespace Prisma {
     not?: NestedEnumOrderModeFilter<$PrismaModel> | $Enums.OrderMode
   }
 
-  export type DateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
   export type CustomerScalarRelationFilter = {
     is?: CustomerWhereInput
     isNot?: CustomerWhereInput
-  }
-
-  export type UserScalarRelationFilter = {
-    is?: UserWhereInput
-    isNot?: UserWhereInput
   }
 
   export type ExpenseListRelationFilter = {
@@ -67168,22 +73233,6 @@ export namespace Prisma {
     number?: SortOrder
   }
 
-  export type IntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
-  }
-
   export type EnumOrderChannelWithAggregatesFilter<$PrismaModel = never> = {
     equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
     in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
@@ -67214,64 +73263,9 @@ export namespace Prisma {
     _max?: NestedEnumOrderModeFilter<$PrismaModel>
   }
 
-  export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type EnumWorkItemStateFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
-    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    not?: NestedEnumWorkItemStateFilter<$PrismaModel> | $Enums.WorkItemState
-  }
-
-  export type IntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type DecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
-  export type EnumWorkItemDimensionUnitNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
-  }
-
   export type OrderScalarRelationFilter = {
     is?: OrderWhereInput
     isNot?: OrderWhereInput
-  }
-
-  export type ProductTypeNullableScalarRelationFilter = {
-    is?: ProductTypeWhereInput | null
-    isNot?: ProductTypeWhereInput | null
   }
 
   export type DepartmentNullableScalarRelationFilter = {
@@ -67279,9 +73273,15 @@ export namespace Prisma {
     isNot?: DepartmentWhereInput | null
   }
 
-  export type UserNullableScalarRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
+  export type SpecVersionListRelationFilter = {
+    every?: SpecVersionWhereInput
+    some?: SpecVersionWhereInput
+    none?: SpecVersionWhereInput
+  }
+
+  export type LateCancellationNullableScalarRelationFilter = {
+    is?: LateCancellationWhereInput | null
+    isNot?: LateCancellationWhereInput | null
   }
 
   export type WorkItemTransitionListRelationFilter = {
@@ -67323,6 +73323,10 @@ export namespace Prisma {
   export type PricingStatusNullableScalarRelationFilter = {
     is?: PricingStatusWhereInput | null
     isNot?: PricingStatusWhereInput | null
+  }
+
+  export type SpecVersionOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type WorkItemTransitionOrderByRelationAggregateInput = {
@@ -67371,6 +73375,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currentSpecVersionId?: SortOrder
   }
 
   export type WorkItemAvgOrderByAggregateInput = {
@@ -67402,6 +73407,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currentSpecVersionId?: SortOrder
   }
 
   export type WorkItemMinOrderByAggregateInput = {
@@ -67426,6 +73432,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    currentSpecVersionId?: SortOrder
   }
 
   export type WorkItemSumOrderByAggregateInput = {
@@ -67433,58 +73440,6 @@ export namespace Prisma {
     widthValue?: SortOrder
     heightValue?: SortOrder
     producedQuantity?: SortOrder
-  }
-
-  export type EnumWorkItemStateWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
-    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    not?: NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemState
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumWorkItemStateFilter<$PrismaModel>
-    _max?: NestedEnumWorkItemStateFilter<$PrismaModel>
-  }
-
-  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedIntNullableFilter<$PrismaModel>
-    _max?: NestedIntNullableFilter<$PrismaModel>
-  }
-
-  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedDecimalNullableFilter<$PrismaModel>
-    _sum?: NestedDecimalNullableFilter<$PrismaModel>
-    _min?: NestedDecimalNullableFilter<$PrismaModel>
-    _max?: NestedDecimalNullableFilter<$PrismaModel>
-  }
-
-  export type EnumWorkItemDimensionUnitNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumWorkItemDimensionUnitNullableWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
-    _max?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
   }
 
   export type ProductPricingPolicyNullableScalarRelationFilter = {
@@ -67563,11 +73518,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type WorkItemScalarRelationFilter = {
-    is?: WorkItemWhereInput
-    isNot?: WorkItemWhereInput
   }
 
   export type WorkItemTransitionCountOrderByAggregateInput = {
@@ -68048,29 +73998,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
-  export type JsonFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type CustomerPromotionCountOrderByAggregateInput = {
     id?: SortOrder
@@ -68104,32 +74031,6 @@ export namespace Prisma {
     performedAt?: SortOrder
     reversedAt?: SortOrder
     reversedById?: SortOrder
-  }
-  export type JsonWithAggregatesFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedJsonFilter<$PrismaModel>
-    _max?: NestedJsonFilter<$PrismaModel>
   }
 
   export type BigIntFilter<$PrismaModel = never> = {
@@ -68498,17 +74399,6 @@ export namespace Prisma {
     previewExpirySeconds?: SortOrder
   }
 
-  export type DecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
   export type PaymentCountOrderByAggregateInput = {
     id?: SortOrder
     orderId?: SortOrder
@@ -68564,22 +74454,6 @@ export namespace Prisma {
     receiptNumber?: SortOrder
   }
 
-  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
-  }
-
   export type EnumFinanceVoidEntityFilter<$PrismaModel = never> = {
     equals?: $Enums.FinanceVoidEntity | EnumFinanceVoidEntityFieldRefInput<$PrismaModel>
     in?: $Enums.FinanceVoidEntity[] | ListEnumFinanceVoidEntityFieldRefInput<$PrismaModel>
@@ -68632,11 +74506,6 @@ export namespace Prisma {
   export type OrderNullableScalarRelationFilter = {
     is?: OrderWhereInput | null
     isNot?: OrderWhereInput | null
-  }
-
-  export type WorkItemNullableScalarRelationFilter = {
-    is?: WorkItemWhereInput | null
-    isNot?: WorkItemWhereInput | null
   }
 
   export type ExpenseApprovalNullableScalarRelationFilter = {
@@ -68900,6 +74769,12 @@ export namespace Prisma {
     none?: FinanceConfigWhereInput
   }
 
+  export type LateCancellationListRelationFilter = {
+    every?: LateCancellationWhereInput
+    some?: LateCancellationWhereInput
+    none?: LateCancellationWhereInput
+  }
+
   export type SessionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -68949,6 +74824,10 @@ export namespace Prisma {
   }
 
   export type FinanceConfigOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type LateCancellationOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -69634,6 +75513,364 @@ export namespace Prisma {
     _max?: NestedEnumPricingStatusValueFilter<$PrismaModel>
   }
 
+  export type WorkItemCreateNestedOneWithoutSpecVersionsInput = {
+    create?: XOR<WorkItemCreateWithoutSpecVersionsInput, WorkItemUncheckedCreateWithoutSpecVersionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutSpecVersionsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type ProductTypeCreateNestedOneWithoutSpecVersionsInput = {
+    create?: XOR<ProductTypeCreateWithoutSpecVersionsInput, ProductTypeUncheckedCreateWithoutSpecVersionsInput>
+    connectOrCreate?: ProductTypeCreateOrConnectWithoutSpecVersionsInput
+    connect?: ProductTypeWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutSpecVersionsCreatedInput = {
+    create?: XOR<UserCreateWithoutSpecVersionsCreatedInput, UserUncheckedCreateWithoutSpecVersionsCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSpecVersionsCreatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type WorkItemCreateNestedOneWithoutCurrentSpecVersionInput = {
+    create?: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutCurrentSpecVersionInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput = {
+    create?: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput> | ChangeRequestCreateWithoutBaseSpecVersionInput[] | ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput | ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput[]
+    createMany?: ChangeRequestCreateManyBaseSpecVersionInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput = {
+    create?: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutResultingSpecVersionInput
+    connect?: ChangeRequestWhereUniqueInput
+  }
+
+  export type WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput = {
+    create?: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutCurrentSpecVersionInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput = {
+    create?: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput> | ChangeRequestCreateWithoutBaseSpecVersionInput[] | ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput | ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput[]
+    createMany?: ChangeRequestCreateManyBaseSpecVersionInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput = {
+    create?: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutResultingSpecVersionInput
+    connect?: ChangeRequestWhereUniqueInput
+  }
+
+  export type StringFieldUpdateOperationsInput = {
+    set?: string
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type EnumSpecVersionOriginFieldUpdateOperationsInput = {
+    set?: $Enums.SpecVersionOrigin
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput = {
+    set?: $Enums.WorkItemDimensionUnit | null
+  }
+
+  export type EnumWorkItemStateFieldUpdateOperationsInput = {
+    set?: $Enums.WorkItemState
+  }
+
+  export type DateTimeFieldUpdateOperationsInput = {
+    set?: Date | string
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutSpecVersionsInput, WorkItemUncheckedCreateWithoutSpecVersionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutSpecVersionsInput
+    upsert?: WorkItemUpsertWithoutSpecVersionsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutSpecVersionsInput, WorkItemUpdateWithoutSpecVersionsInput>, WorkItemUncheckedUpdateWithoutSpecVersionsInput>
+  }
+
+  export type ProductTypeUpdateOneWithoutSpecVersionsNestedInput = {
+    create?: XOR<ProductTypeCreateWithoutSpecVersionsInput, ProductTypeUncheckedCreateWithoutSpecVersionsInput>
+    connectOrCreate?: ProductTypeCreateOrConnectWithoutSpecVersionsInput
+    upsert?: ProductTypeUpsertWithoutSpecVersionsInput
+    disconnect?: ProductTypeWhereInput | boolean
+    delete?: ProductTypeWhereInput | boolean
+    connect?: ProductTypeWhereUniqueInput
+    update?: XOR<XOR<ProductTypeUpdateToOneWithWhereWithoutSpecVersionsInput, ProductTypeUpdateWithoutSpecVersionsInput>, ProductTypeUncheckedUpdateWithoutSpecVersionsInput>
+  }
+
+  export type UserUpdateOneWithoutSpecVersionsCreatedNestedInput = {
+    create?: XOR<UserCreateWithoutSpecVersionsCreatedInput, UserUncheckedCreateWithoutSpecVersionsCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutSpecVersionsCreatedInput
+    upsert?: UserUpsertWithoutSpecVersionsCreatedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutSpecVersionsCreatedInput, UserUpdateWithoutSpecVersionsCreatedInput>, UserUncheckedUpdateWithoutSpecVersionsCreatedInput>
+  }
+
+  export type WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput = {
+    create?: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutCurrentSpecVersionInput
+    upsert?: WorkItemUpsertWithoutCurrentSpecVersionInput
+    disconnect?: WorkItemWhereInput | boolean
+    delete?: WorkItemWhereInput | boolean
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutCurrentSpecVersionInput, WorkItemUpdateWithoutCurrentSpecVersionInput>, WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput>
+  }
+
+  export type ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput> | ChangeRequestCreateWithoutBaseSpecVersionInput[] | ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput | ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput | ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput[]
+    createMany?: ChangeRequestCreateManyBaseSpecVersionInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutBaseSpecVersionInput | ChangeRequestUpdateWithWhereUniqueWithoutBaseSpecVersionInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutBaseSpecVersionInput | ChangeRequestUpdateManyWithWhereWithoutBaseSpecVersionInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutResultingSpecVersionInput
+    upsert?: ChangeRequestUpsertWithoutResultingSpecVersionInput
+    disconnect?: ChangeRequestWhereInput | boolean
+    delete?: ChangeRequestWhereInput | boolean
+    connect?: ChangeRequestWhereUniqueInput
+    update?: XOR<XOR<ChangeRequestUpdateToOneWithWhereWithoutResultingSpecVersionInput, ChangeRequestUpdateWithoutResultingSpecVersionInput>, ChangeRequestUncheckedUpdateWithoutResultingSpecVersionInput>
+  }
+
+  export type WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput = {
+    create?: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutCurrentSpecVersionInput
+    upsert?: WorkItemUpsertWithoutCurrentSpecVersionInput
+    disconnect?: WorkItemWhereInput | boolean
+    delete?: WorkItemWhereInput | boolean
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutCurrentSpecVersionInput, WorkItemUpdateWithoutCurrentSpecVersionInput>, WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput>
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput> | ChangeRequestCreateWithoutBaseSpecVersionInput[] | ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput | ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput | ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput[]
+    createMany?: ChangeRequestCreateManyBaseSpecVersionInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutBaseSpecVersionInput | ChangeRequestUpdateWithWhereUniqueWithoutBaseSpecVersionInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutBaseSpecVersionInput | ChangeRequestUpdateManyWithWhereWithoutBaseSpecVersionInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutResultingSpecVersionInput
+    upsert?: ChangeRequestUpsertWithoutResultingSpecVersionInput
+    disconnect?: ChangeRequestWhereInput | boolean
+    delete?: ChangeRequestWhereInput | boolean
+    connect?: ChangeRequestWhereUniqueInput
+    update?: XOR<XOR<ChangeRequestUpdateToOneWithWhereWithoutResultingSpecVersionInput, ChangeRequestUpdateWithoutResultingSpecVersionInput>, ChangeRequestUncheckedUpdateWithoutResultingSpecVersionInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutChangeRequestsInput = {
+    create?: XOR<WorkItemCreateWithoutChangeRequestsInput, WorkItemUncheckedCreateWithoutChangeRequestsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutChangeRequestsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput = {
+    create?: XOR<SpecVersionCreateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedCreateWithoutBaseOfChangeRequestsInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutBaseOfChangeRequestsInput
+    connect?: SpecVersionWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutChangeRequestsRequestedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsRequestedInput, UserUncheckedCreateWithoutChangeRequestsRequestedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsRequestedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutChangeRequestsDecidedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsDecidedInput, UserUncheckedCreateWithoutChangeRequestsDecidedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsDecidedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput = {
+    create?: XOR<SpecVersionCreateWithoutResultOfChangeRequestInput, SpecVersionUncheckedCreateWithoutResultOfChangeRequestInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutResultOfChangeRequestInput
+    connect?: SpecVersionWhereUniqueInput
+  }
+
+  export type ReturnCreateNestedOneWithoutChangeRequestInput = {
+    create?: XOR<ReturnCreateWithoutChangeRequestInput, ReturnUncheckedCreateWithoutChangeRequestInput>
+    connectOrCreate?: ReturnCreateOrConnectWithoutChangeRequestInput
+    connect?: ReturnWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsAcknowledgedInput, UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsAcknowledgedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumChangeRequestStatusFieldUpdateOperationsInput = {
+    set?: $Enums.ChangeRequestStatus
+  }
+
+  export type NullableDateTimeFieldUpdateOperationsInput = {
+    set?: Date | string | null
+  }
+
+  export type BoolFieldUpdateOperationsInput = {
+    set?: boolean
+  }
+
+  export type NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput = {
+    set?: $Enums.ChangeRequestOutcome | null
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutChangeRequestsInput, WorkItemUncheckedCreateWithoutChangeRequestsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutChangeRequestsInput
+    upsert?: WorkItemUpsertWithoutChangeRequestsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutChangeRequestsInput, WorkItemUpdateWithoutChangeRequestsInput>, WorkItemUncheckedUpdateWithoutChangeRequestsInput>
+  }
+
+  export type SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedCreateWithoutBaseOfChangeRequestsInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutBaseOfChangeRequestsInput
+    upsert?: SpecVersionUpsertWithoutBaseOfChangeRequestsInput
+    connect?: SpecVersionWhereUniqueInput
+    update?: XOR<XOR<SpecVersionUpdateToOneWithWhereWithoutBaseOfChangeRequestsInput, SpecVersionUpdateWithoutBaseOfChangeRequestsInput>, SpecVersionUncheckedUpdateWithoutBaseOfChangeRequestsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsRequestedInput, UserUncheckedCreateWithoutChangeRequestsRequestedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsRequestedInput
+    upsert?: UserUpsertWithoutChangeRequestsRequestedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutChangeRequestsRequestedInput, UserUpdateWithoutChangeRequestsRequestedInput>, UserUncheckedUpdateWithoutChangeRequestsRequestedInput>
+  }
+
+  export type UserUpdateOneWithoutChangeRequestsDecidedNestedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsDecidedInput, UserUncheckedCreateWithoutChangeRequestsDecidedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsDecidedInput
+    upsert?: UserUpsertWithoutChangeRequestsDecidedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutChangeRequestsDecidedInput, UserUpdateWithoutChangeRequestsDecidedInput>, UserUncheckedUpdateWithoutChangeRequestsDecidedInput>
+  }
+
+  export type SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutResultOfChangeRequestInput, SpecVersionUncheckedCreateWithoutResultOfChangeRequestInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutResultOfChangeRequestInput
+    upsert?: SpecVersionUpsertWithoutResultOfChangeRequestInput
+    disconnect?: SpecVersionWhereInput | boolean
+    delete?: SpecVersionWhereInput | boolean
+    connect?: SpecVersionWhereUniqueInput
+    update?: XOR<XOR<SpecVersionUpdateToOneWithWhereWithoutResultOfChangeRequestInput, SpecVersionUpdateWithoutResultOfChangeRequestInput>, SpecVersionUncheckedUpdateWithoutResultOfChangeRequestInput>
+  }
+
+  export type ReturnUpdateOneWithoutChangeRequestNestedInput = {
+    create?: XOR<ReturnCreateWithoutChangeRequestInput, ReturnUncheckedCreateWithoutChangeRequestInput>
+    connectOrCreate?: ReturnCreateOrConnectWithoutChangeRequestInput
+    upsert?: ReturnUpsertWithoutChangeRequestInput
+    disconnect?: ReturnWhereInput | boolean
+    delete?: ReturnWhereInput | boolean
+    connect?: ReturnWhereUniqueInput
+    update?: XOR<XOR<ReturnUpdateToOneWithWhereWithoutChangeRequestInput, ReturnUpdateWithoutChangeRequestInput>, ReturnUncheckedUpdateWithoutChangeRequestInput>
+  }
+
+  export type UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput = {
+    create?: XOR<UserCreateWithoutChangeRequestsAcknowledgedInput, UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutChangeRequestsAcknowledgedInput
+    upsert?: UserUpsertWithoutChangeRequestsAcknowledgedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutChangeRequestsAcknowledgedInput, UserUpdateWithoutChangeRequestsAcknowledgedInput>, UserUncheckedUpdateWithoutChangeRequestsAcknowledgedInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutLateCancellationInput = {
+    create?: XOR<WorkItemCreateWithoutLateCancellationInput, WorkItemUncheckedCreateWithoutLateCancellationInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutLateCancellationInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutLateCancellationsInput = {
+    create?: XOR<UserCreateWithoutLateCancellationsInput, UserUncheckedCreateWithoutLateCancellationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutLateCancellationsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutLateCancellationNestedInput = {
+    create?: XOR<WorkItemCreateWithoutLateCancellationInput, WorkItemUncheckedCreateWithoutLateCancellationInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutLateCancellationInput
+    upsert?: WorkItemUpsertWithoutLateCancellationInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutLateCancellationInput, WorkItemUpdateWithoutLateCancellationInput>, WorkItemUncheckedUpdateWithoutLateCancellationInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutLateCancellationsNestedInput = {
+    create?: XOR<UserCreateWithoutLateCancellationsInput, UserUncheckedCreateWithoutLateCancellationsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutLateCancellationsInput
+    upsert?: UserUpsertWithoutLateCancellationsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutLateCancellationsInput, UserUpdateWithoutLateCancellationsInput>, UserUncheckedUpdateWithoutLateCancellationsInput>
+  }
+
   export type WorkItemCreateNestedManyWithoutDepartmentInput = {
     create?: XOR<WorkItemCreateWithoutDepartmentInput, WorkItemUncheckedCreateWithoutDepartmentInput> | WorkItemCreateWithoutDepartmentInput[] | WorkItemUncheckedCreateWithoutDepartmentInput[]
     connectOrCreate?: WorkItemCreateOrConnectWithoutDepartmentInput | WorkItemCreateOrConnectWithoutDepartmentInput[]
@@ -69688,18 +75925,6 @@ export namespace Prisma {
     connectOrCreate?: ProductTypeCreateOrConnectWithoutDefaultDepartmentInput | ProductTypeCreateOrConnectWithoutDefaultDepartmentInput[]
     createMany?: ProductTypeCreateManyDefaultDepartmentInputEnvelope
     connect?: ProductTypeWhereUniqueInput | ProductTypeWhereUniqueInput[]
-  }
-
-  export type StringFieldUpdateOperationsInput = {
-    set?: string
-  }
-
-  export type BoolFieldUpdateOperationsInput = {
-    set?: boolean
-  }
-
-  export type DateTimeFieldUpdateOperationsInput = {
-    set?: Date | string
   }
 
   export type WorkItemUpdateManyWithoutDepartmentNestedInput = {
@@ -69928,10 +76153,6 @@ export namespace Prisma {
     create?: XOR<CustomerCreditCreateWithoutCustomerInput, CustomerCreditUncheckedCreateWithoutCustomerInput>
     connectOrCreate?: CustomerCreditCreateOrConnectWithoutCustomerInput
     connect?: CustomerCreditWhereUniqueInput
-  }
-
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
   }
 
   export type OrderUpdateManyWithoutCustomerNestedInput = {
@@ -70240,10 +76461,6 @@ export namespace Prisma {
     set?: $Enums.OrderMode
   }
 
-  export type NullableDateTimeFieldUpdateOperationsInput = {
-    set?: Date | string | null
-  }
-
   export type CustomerUpdateOneRequiredWithoutOrdersNestedInput = {
     create?: XOR<CustomerCreateWithoutOrdersInput, CustomerUncheckedCreateWithoutOrdersInput>
     connectOrCreate?: CustomerCreateOrConnectWithoutOrdersInput
@@ -70314,14 +76531,6 @@ export namespace Prisma {
     update?: DirectCostUpdateWithWhereUniqueWithoutOrderInput | DirectCostUpdateWithWhereUniqueWithoutOrderInput[]
     updateMany?: DirectCostUpdateManyWithWhereWithoutOrderInput | DirectCostUpdateManyWithWhereWithoutOrderInput[]
     deleteMany?: DirectCostScalarWhereInput | DirectCostScalarWhereInput[]
-  }
-
-  export type IntFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderNestedInput = {
@@ -70404,6 +76613,32 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type SpecVersionCreateNestedOneWithoutCurrentForInput = {
+    create?: XOR<SpecVersionCreateWithoutCurrentForInput, SpecVersionUncheckedCreateWithoutCurrentForInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCurrentForInput
+    connect?: SpecVersionWhereUniqueInput
+  }
+
+  export type SpecVersionCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
+    createMany?: SpecVersionCreateManyWorkItemInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+  }
+
+  export type ChangeRequestCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput> | ChangeRequestCreateWithoutWorkItemInput[] | ChangeRequestUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutWorkItemInput | ChangeRequestCreateOrConnectWithoutWorkItemInput[]
+    createMany?: ChangeRequestCreateManyWorkItemInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type LateCancellationCreateNestedOneWithoutWorkItemInput = {
+    create?: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutWorkItemInput
+    connect?: LateCancellationWhereUniqueInput
+  }
+
   export type WorkItemTransitionCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<WorkItemTransitionCreateWithoutWorkItemInput, WorkItemTransitionUncheckedCreateWithoutWorkItemInput> | WorkItemTransitionCreateWithoutWorkItemInput[] | WorkItemTransitionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: WorkItemTransitionCreateOrConnectWithoutWorkItemInput | WorkItemTransitionCreateOrConnectWithoutWorkItemInput[]
@@ -70471,6 +76706,26 @@ export namespace Prisma {
     connectOrCreate?: DirectCostCreateOrConnectWithoutWorkItemInput | DirectCostCreateOrConnectWithoutWorkItemInput[]
     createMany?: DirectCostCreateManyWorkItemInputEnvelope
     connect?: DirectCostWhereUniqueInput | DirectCostWhereUniqueInput[]
+  }
+
+  export type SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
+    createMany?: SpecVersionCreateManyWorkItemInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput> | ChangeRequestCreateWithoutWorkItemInput[] | ChangeRequestUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutWorkItemInput | ChangeRequestCreateOrConnectWithoutWorkItemInput[]
+    createMany?: ChangeRequestCreateManyWorkItemInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput = {
+    create?: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutWorkItemInput
+    connect?: LateCancellationWhereUniqueInput
   }
 
   export type WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput = {
@@ -70542,30 +76797,6 @@ export namespace Prisma {
     connect?: DirectCostWhereUniqueInput | DirectCostWhereUniqueInput[]
   }
 
-  export type EnumWorkItemStateFieldUpdateOperationsInput = {
-    set?: $Enums.WorkItemState
-  }
-
-  export type NullableIntFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
-  export type NullableDecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string | null
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
-  }
-
-  export type NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput = {
-    set?: $Enums.WorkItemDimensionUnit | null
-  }
-
   export type OrderUpdateOneRequiredWithoutWorkItemsNestedInput = {
     create?: XOR<OrderCreateWithoutWorkItemsInput, OrderUncheckedCreateWithoutWorkItemsInput>
     connectOrCreate?: OrderCreateOrConnectWithoutWorkItemsInput
@@ -70602,6 +76833,54 @@ export namespace Prisma {
     delete?: UserWhereInput | boolean
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAssignedWorkItemsInput, UserUpdateWithoutAssignedWorkItemsInput>, UserUncheckedUpdateWithoutAssignedWorkItemsInput>
+  }
+
+  export type SpecVersionUpdateOneWithoutCurrentForNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutCurrentForInput, SpecVersionUncheckedCreateWithoutCurrentForInput>
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCurrentForInput
+    upsert?: SpecVersionUpsertWithoutCurrentForInput
+    disconnect?: SpecVersionWhereInput | boolean
+    delete?: SpecVersionWhereInput | boolean
+    connect?: SpecVersionWhereUniqueInput
+    update?: XOR<XOR<SpecVersionUpdateToOneWithWhereWithoutCurrentForInput, SpecVersionUpdateWithoutCurrentForInput>, SpecVersionUncheckedUpdateWithoutCurrentForInput>
+  }
+
+  export type SpecVersionUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutWorkItemInput | SpecVersionUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: SpecVersionCreateManyWorkItemInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutWorkItemInput | SpecVersionUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutWorkItemInput | SpecVersionUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+  }
+
+  export type ChangeRequestUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput> | ChangeRequestCreateWithoutWorkItemInput[] | ChangeRequestUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutWorkItemInput | ChangeRequestCreateOrConnectWithoutWorkItemInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutWorkItemInput | ChangeRequestUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: ChangeRequestCreateManyWorkItemInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutWorkItemInput | ChangeRequestUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutWorkItemInput | ChangeRequestUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type LateCancellationUpdateOneWithoutWorkItemNestedInput = {
+    create?: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutWorkItemInput
+    upsert?: LateCancellationUpsertWithoutWorkItemInput
+    disconnect?: LateCancellationWhereInput | boolean
+    delete?: LateCancellationWhereInput | boolean
+    connect?: LateCancellationWhereUniqueInput
+    update?: XOR<XOR<LateCancellationUpdateToOneWithWhereWithoutWorkItemInput, LateCancellationUpdateWithoutWorkItemInput>, LateCancellationUncheckedUpdateWithoutWorkItemInput>
   }
 
   export type WorkItemTransitionUpdateManyWithoutWorkItemNestedInput = {
@@ -70738,6 +77017,44 @@ export namespace Prisma {
     update?: DirectCostUpdateWithWhereUniqueWithoutWorkItemInput | DirectCostUpdateWithWhereUniqueWithoutWorkItemInput[]
     updateMany?: DirectCostUpdateManyWithWhereWithoutWorkItemInput | DirectCostUpdateManyWithWhereWithoutWorkItemInput[]
     deleteMany?: DirectCostScalarWhereInput | DirectCostScalarWhereInput[]
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutWorkItemInput | SpecVersionUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: SpecVersionCreateManyWorkItemInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutWorkItemInput | SpecVersionUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutWorkItemInput | SpecVersionUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput> | ChangeRequestCreateWithoutWorkItemInput[] | ChangeRequestUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutWorkItemInput | ChangeRequestCreateOrConnectWithoutWorkItemInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutWorkItemInput | ChangeRequestUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: ChangeRequestCreateManyWorkItemInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutWorkItemInput | ChangeRequestUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutWorkItemInput | ChangeRequestUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput = {
+    create?: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutWorkItemInput
+    upsert?: LateCancellationUpsertWithoutWorkItemInput
+    disconnect?: LateCancellationWhereInput | boolean
+    delete?: LateCancellationWhereInput | boolean
+    connect?: LateCancellationWhereUniqueInput
+    update?: XOR<XOR<LateCancellationUpdateToOneWithWhereWithoutWorkItemInput, LateCancellationUpdateWithoutWorkItemInput>, LateCancellationUncheckedUpdateWithoutWorkItemInput>
   }
 
   export type WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput = {
@@ -70889,6 +77206,13 @@ export namespace Prisma {
     connect?: WorkItemWhereUniqueInput | WorkItemWhereUniqueInput[]
   }
 
+  export type SpecVersionCreateNestedManyWithoutProductTypeInput = {
+    create?: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput> | SpecVersionCreateWithoutProductTypeInput[] | SpecVersionUncheckedCreateWithoutProductTypeInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutProductTypeInput | SpecVersionCreateOrConnectWithoutProductTypeInput[]
+    createMany?: SpecVersionCreateManyProductTypeInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+  }
+
   export type ProductPricingPolicyCreateNestedOneWithoutProductTypeInput = {
     create?: XOR<ProductPricingPolicyCreateWithoutProductTypeInput, ProductPricingPolicyUncheckedCreateWithoutProductTypeInput>
     connectOrCreate?: ProductPricingPolicyCreateOrConnectWithoutProductTypeInput
@@ -70914,6 +77238,13 @@ export namespace Prisma {
     connectOrCreate?: WorkItemCreateOrConnectWithoutProductTypeInput | WorkItemCreateOrConnectWithoutProductTypeInput[]
     createMany?: WorkItemCreateManyProductTypeInputEnvelope
     connect?: WorkItemWhereUniqueInput | WorkItemWhereUniqueInput[]
+  }
+
+  export type SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput = {
+    create?: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput> | SpecVersionCreateWithoutProductTypeInput[] | SpecVersionUncheckedCreateWithoutProductTypeInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutProductTypeInput | SpecVersionCreateOrConnectWithoutProductTypeInput[]
+    createMany?: SpecVersionCreateManyProductTypeInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
   }
 
   export type ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput = {
@@ -70958,6 +77289,20 @@ export namespace Prisma {
     update?: WorkItemUpdateWithWhereUniqueWithoutProductTypeInput | WorkItemUpdateWithWhereUniqueWithoutProductTypeInput[]
     updateMany?: WorkItemUpdateManyWithWhereWithoutProductTypeInput | WorkItemUpdateManyWithWhereWithoutProductTypeInput[]
     deleteMany?: WorkItemScalarWhereInput | WorkItemScalarWhereInput[]
+  }
+
+  export type SpecVersionUpdateManyWithoutProductTypeNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput> | SpecVersionCreateWithoutProductTypeInput[] | SpecVersionUncheckedCreateWithoutProductTypeInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutProductTypeInput | SpecVersionCreateOrConnectWithoutProductTypeInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutProductTypeInput | SpecVersionUpsertWithWhereUniqueWithoutProductTypeInput[]
+    createMany?: SpecVersionCreateManyProductTypeInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutProductTypeInput | SpecVersionUpdateWithWhereUniqueWithoutProductTypeInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutProductTypeInput | SpecVersionUpdateManyWithWhereWithoutProductTypeInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
   }
 
   export type ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput = {
@@ -71010,6 +77355,20 @@ export namespace Prisma {
     update?: WorkItemUpdateWithWhereUniqueWithoutProductTypeInput | WorkItemUpdateWithWhereUniqueWithoutProductTypeInput[]
     updateMany?: WorkItemUpdateManyWithWhereWithoutProductTypeInput | WorkItemUpdateManyWithWhereWithoutProductTypeInput[]
     deleteMany?: WorkItemScalarWhereInput | WorkItemScalarWhereInput[]
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput> | SpecVersionCreateWithoutProductTypeInput[] | SpecVersionUncheckedCreateWithoutProductTypeInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutProductTypeInput | SpecVersionCreateOrConnectWithoutProductTypeInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutProductTypeInput | SpecVersionUpsertWithWhereUniqueWithoutProductTypeInput[]
+    createMany?: SpecVersionCreateManyProductTypeInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutProductTypeInput | SpecVersionUpdateWithWhereUniqueWithoutProductTypeInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutProductTypeInput | SpecVersionUpdateManyWithWhereWithoutProductTypeInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
   }
 
   export type ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput = {
@@ -71239,11 +77598,23 @@ export namespace Prisma {
     connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
   }
 
+  export type ChangeRequestCreateNestedOneWithoutReturnInput = {
+    create?: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutReturnInput
+    connect?: ChangeRequestWhereUniqueInput
+  }
+
   export type ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput = {
     create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
     connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
     createMany?: ReturnAttachmentCreateManyReturnInputEnvelope
     connect?: ReturnAttachmentWhereUniqueInput | ReturnAttachmentWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedOneWithoutReturnInput = {
+    create?: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutReturnInput
+    connect?: ChangeRequestWhereUniqueInput
   }
 
   export type EnumRejectionCategoryFieldUpdateOperationsInput = {
@@ -71306,6 +77677,16 @@ export namespace Prisma {
     deleteMany?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
   }
 
+  export type ChangeRequestUpdateOneWithoutReturnNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutReturnInput
+    upsert?: ChangeRequestUpsertWithoutReturnInput
+    disconnect?: ChangeRequestWhereInput | boolean
+    delete?: ChangeRequestWhereInput | boolean
+    connect?: ChangeRequestWhereUniqueInput
+    update?: XOR<XOR<ChangeRequestUpdateToOneWithWhereWithoutReturnInput, ChangeRequestUpdateWithoutReturnInput>, ChangeRequestUncheckedUpdateWithoutReturnInput>
+  }
+
   export type ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput = {
     create?: XOR<ReturnAttachmentCreateWithoutReturnInput, ReturnAttachmentUncheckedCreateWithoutReturnInput> | ReturnAttachmentCreateWithoutReturnInput[] | ReturnAttachmentUncheckedCreateWithoutReturnInput[]
     connectOrCreate?: ReturnAttachmentCreateOrConnectWithoutReturnInput | ReturnAttachmentCreateOrConnectWithoutReturnInput[]
@@ -71318,6 +77699,16 @@ export namespace Prisma {
     update?: ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput | ReturnAttachmentUpdateWithWhereUniqueWithoutReturnInput[]
     updateMany?: ReturnAttachmentUpdateManyWithWhereWithoutReturnInput | ReturnAttachmentUpdateManyWithWhereWithoutReturnInput[]
     deleteMany?: ReturnAttachmentScalarWhereInput | ReturnAttachmentScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutReturnInput
+    upsert?: ChangeRequestUpsertWithoutReturnInput
+    disconnect?: ChangeRequestWhereInput | boolean
+    delete?: ChangeRequestWhereInput | boolean
+    connect?: ChangeRequestWhereUniqueInput
+    update?: XOR<XOR<ChangeRequestUpdateToOneWithWhereWithoutReturnInput, ChangeRequestUpdateWithoutReturnInput>, ChangeRequestUncheckedUpdateWithoutReturnInput>
   }
 
   export type ReturnCreateNestedOneWithoutAttachmentsInput = {
@@ -71773,14 +78164,6 @@ export namespace Prisma {
     create?: XOR<UserCreateWithoutPaymentsRecordedInput, UserUncheckedCreateWithoutPaymentsRecordedInput>
     connectOrCreate?: UserCreateOrConnectWithoutPaymentsRecordedInput
     connect?: UserWhereUniqueInput
-  }
-
-  export type DecimalFieldUpdateOperationsInput = {
-    set?: Decimal | DecimalJsLike | number | string
-    increment?: Decimal | DecimalJsLike | number | string
-    decrement?: Decimal | DecimalJsLike | number | string
-    multiply?: Decimal | DecimalJsLike | number | string
-    divide?: Decimal | DecimalJsLike | number | string
   }
 
   export type OrderUpdateOneRequiredWithoutPaymentsNestedInput = {
@@ -72241,6 +78624,41 @@ export namespace Prisma {
     connect?: FinanceConfigWhereUniqueInput | FinanceConfigWhereUniqueInput[]
   }
 
+  export type SpecVersionCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput> | SpecVersionCreateWithoutCreatedByInput[] | SpecVersionUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCreatedByInput | SpecVersionCreateOrConnectWithoutCreatedByInput[]
+    createMany?: SpecVersionCreateManyCreatedByInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+  }
+
+  export type ChangeRequestCreateNestedManyWithoutRequestedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput> | ChangeRequestCreateWithoutRequestedByInput[] | ChangeRequestUncheckedCreateWithoutRequestedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutRequestedByInput | ChangeRequestCreateOrConnectWithoutRequestedByInput[]
+    createMany?: ChangeRequestCreateManyRequestedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestCreateNestedManyWithoutDecidedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput> | ChangeRequestCreateWithoutDecidedByInput[] | ChangeRequestUncheckedCreateWithoutDecidedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutDecidedByInput | ChangeRequestCreateOrConnectWithoutDecidedByInput[]
+    createMany?: ChangeRequestCreateManyDecidedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput> | ChangeRequestCreateWithoutProductionAcknowledgedByInput[] | ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput | ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput[]
+    createMany?: ChangeRequestCreateManyProductionAcknowledgedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type LateCancellationCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput> | LateCancellationCreateWithoutCreatedByInput[] | LateCancellationUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutCreatedByInput | LateCancellationCreateOrConnectWithoutCreatedByInput[]
+    createMany?: LateCancellationCreateManyCreatedByInputEnvelope
+    connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -72463,6 +78881,41 @@ export namespace Prisma {
     connectOrCreate?: FinanceConfigCreateOrConnectWithoutUpdatedByInput | FinanceConfigCreateOrConnectWithoutUpdatedByInput[]
     createMany?: FinanceConfigCreateManyUpdatedByInputEnvelope
     connect?: FinanceConfigWhereUniqueInput | FinanceConfigWhereUniqueInput[]
+  }
+
+  export type SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput> | SpecVersionCreateWithoutCreatedByInput[] | SpecVersionUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCreatedByInput | SpecVersionCreateOrConnectWithoutCreatedByInput[]
+    createMany?: SpecVersionCreateManyCreatedByInputEnvelope
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput> | ChangeRequestCreateWithoutRequestedByInput[] | ChangeRequestUncheckedCreateWithoutRequestedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutRequestedByInput | ChangeRequestCreateOrConnectWithoutRequestedByInput[]
+    createMany?: ChangeRequestCreateManyRequestedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput> | ChangeRequestCreateWithoutDecidedByInput[] | ChangeRequestUncheckedCreateWithoutDecidedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutDecidedByInput | ChangeRequestCreateOrConnectWithoutDecidedByInput[]
+    createMany?: ChangeRequestCreateManyDecidedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput = {
+    create?: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput> | ChangeRequestCreateWithoutProductionAcknowledgedByInput[] | ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput | ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput[]
+    createMany?: ChangeRequestCreateManyProductionAcknowledgedByInputEnvelope
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+  }
+
+  export type LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput> | LateCancellationCreateWithoutCreatedByInput[] | LateCancellationUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutCreatedByInput | LateCancellationCreateOrConnectWithoutCreatedByInput[]
+    createMany?: LateCancellationCreateManyCreatedByInputEnvelope
+    connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -72913,6 +79366,76 @@ export namespace Prisma {
     deleteMany?: FinanceConfigScalarWhereInput | FinanceConfigScalarWhereInput[]
   }
 
+  export type SpecVersionUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput> | SpecVersionCreateWithoutCreatedByInput[] | SpecVersionUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCreatedByInput | SpecVersionCreateOrConnectWithoutCreatedByInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutCreatedByInput | SpecVersionUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: SpecVersionCreateManyCreatedByInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutCreatedByInput | SpecVersionUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutCreatedByInput | SpecVersionUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+  }
+
+  export type ChangeRequestUpdateManyWithoutRequestedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput> | ChangeRequestCreateWithoutRequestedByInput[] | ChangeRequestUncheckedCreateWithoutRequestedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutRequestedByInput | ChangeRequestCreateOrConnectWithoutRequestedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutRequestedByInput | ChangeRequestUpsertWithWhereUniqueWithoutRequestedByInput[]
+    createMany?: ChangeRequestCreateManyRequestedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutRequestedByInput | ChangeRequestUpdateWithWhereUniqueWithoutRequestedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutRequestedByInput | ChangeRequestUpdateManyWithWhereWithoutRequestedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUpdateManyWithoutDecidedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput> | ChangeRequestCreateWithoutDecidedByInput[] | ChangeRequestUncheckedCreateWithoutDecidedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutDecidedByInput | ChangeRequestCreateOrConnectWithoutDecidedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutDecidedByInput | ChangeRequestUpsertWithWhereUniqueWithoutDecidedByInput[]
+    createMany?: ChangeRequestCreateManyDecidedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutDecidedByInput | ChangeRequestUpdateWithWhereUniqueWithoutDecidedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutDecidedByInput | ChangeRequestUpdateManyWithWhereWithoutDecidedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput> | ChangeRequestCreateWithoutProductionAcknowledgedByInput[] | ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput | ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutProductionAcknowledgedByInput | ChangeRequestUpsertWithWhereUniqueWithoutProductionAcknowledgedByInput[]
+    createMany?: ChangeRequestCreateManyProductionAcknowledgedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutProductionAcknowledgedByInput | ChangeRequestUpdateWithWhereUniqueWithoutProductionAcknowledgedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutProductionAcknowledgedByInput | ChangeRequestUpdateManyWithWhereWithoutProductionAcknowledgedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type LateCancellationUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput> | LateCancellationCreateWithoutCreatedByInput[] | LateCancellationUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutCreatedByInput | LateCancellationCreateOrConnectWithoutCreatedByInput[]
+    upsert?: LateCancellationUpsertWithWhereUniqueWithoutCreatedByInput | LateCancellationUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: LateCancellationCreateManyCreatedByInputEnvelope
+    set?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    disconnect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    delete?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    update?: LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput | LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: LateCancellationUpdateManyWithWhereWithoutCreatedByInput | LateCancellationUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -73359,6 +79882,76 @@ export namespace Prisma {
     update?: FinanceConfigUpdateWithWhereUniqueWithoutUpdatedByInput | FinanceConfigUpdateWithWhereUniqueWithoutUpdatedByInput[]
     updateMany?: FinanceConfigUpdateManyWithWhereWithoutUpdatedByInput | FinanceConfigUpdateManyWithWhereWithoutUpdatedByInput[]
     deleteMany?: FinanceConfigScalarWhereInput | FinanceConfigScalarWhereInput[]
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput> | SpecVersionCreateWithoutCreatedByInput[] | SpecVersionUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: SpecVersionCreateOrConnectWithoutCreatedByInput | SpecVersionCreateOrConnectWithoutCreatedByInput[]
+    upsert?: SpecVersionUpsertWithWhereUniqueWithoutCreatedByInput | SpecVersionUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: SpecVersionCreateManyCreatedByInputEnvelope
+    set?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    disconnect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    delete?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    connect?: SpecVersionWhereUniqueInput | SpecVersionWhereUniqueInput[]
+    update?: SpecVersionUpdateWithWhereUniqueWithoutCreatedByInput | SpecVersionUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: SpecVersionUpdateManyWithWhereWithoutCreatedByInput | SpecVersionUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput> | ChangeRequestCreateWithoutRequestedByInput[] | ChangeRequestUncheckedCreateWithoutRequestedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutRequestedByInput | ChangeRequestCreateOrConnectWithoutRequestedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutRequestedByInput | ChangeRequestUpsertWithWhereUniqueWithoutRequestedByInput[]
+    createMany?: ChangeRequestCreateManyRequestedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutRequestedByInput | ChangeRequestUpdateWithWhereUniqueWithoutRequestedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutRequestedByInput | ChangeRequestUpdateManyWithWhereWithoutRequestedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput> | ChangeRequestCreateWithoutDecidedByInput[] | ChangeRequestUncheckedCreateWithoutDecidedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutDecidedByInput | ChangeRequestCreateOrConnectWithoutDecidedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutDecidedByInput | ChangeRequestUpsertWithWhereUniqueWithoutDecidedByInput[]
+    createMany?: ChangeRequestCreateManyDecidedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutDecidedByInput | ChangeRequestUpdateWithWhereUniqueWithoutDecidedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutDecidedByInput | ChangeRequestUpdateManyWithWhereWithoutDecidedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput = {
+    create?: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput> | ChangeRequestCreateWithoutProductionAcknowledgedByInput[] | ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput[]
+    connectOrCreate?: ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput | ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput[]
+    upsert?: ChangeRequestUpsertWithWhereUniqueWithoutProductionAcknowledgedByInput | ChangeRequestUpsertWithWhereUniqueWithoutProductionAcknowledgedByInput[]
+    createMany?: ChangeRequestCreateManyProductionAcknowledgedByInputEnvelope
+    set?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    disconnect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    delete?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    connect?: ChangeRequestWhereUniqueInput | ChangeRequestWhereUniqueInput[]
+    update?: ChangeRequestUpdateWithWhereUniqueWithoutProductionAcknowledgedByInput | ChangeRequestUpdateWithWhereUniqueWithoutProductionAcknowledgedByInput[]
+    updateMany?: ChangeRequestUpdateManyWithWhereWithoutProductionAcknowledgedByInput | ChangeRequestUpdateManyWithWhereWithoutProductionAcknowledgedByInput[]
+    deleteMany?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+  }
+
+  export type LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput> | LateCancellationCreateWithoutCreatedByInput[] | LateCancellationUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: LateCancellationCreateOrConnectWithoutCreatedByInput | LateCancellationCreateOrConnectWithoutCreatedByInput[]
+    upsert?: LateCancellationUpsertWithWhereUniqueWithoutCreatedByInput | LateCancellationUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: LateCancellationCreateManyCreatedByInputEnvelope
+    set?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    disconnect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    delete?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+    update?: LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput | LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: LateCancellationUpdateManyWithWhereWithoutCreatedByInput | LateCancellationUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -73846,9 +80439,72 @@ export namespace Prisma {
     not?: NestedStringFilter<$PrismaModel> | string
   }
 
-  export type NestedBoolFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolFilter<$PrismaModel> | boolean
+  export type NestedIntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type NestedEnumSpecVersionOriginFilter<$PrismaModel = never> = {
+    equals?: $Enums.SpecVersionOrigin | EnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    in?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    not?: NestedEnumSpecVersionOriginFilter<$PrismaModel> | $Enums.SpecVersionOrigin
+  }
+
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
+  }
+
+  export type NestedIntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
+  }
+
+  export type NestedEnumWorkItemStateFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
+    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    not?: NestedEnumWorkItemStateFilter<$PrismaModel> | $Enums.WorkItemState
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -73879,113 +80535,6 @@ export namespace Prisma {
     _max?: NestedStringFilter<$PrismaModel>
   }
 
-  export type NestedIntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[] | ListIntFieldRefInput<$PrismaModel>
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
-  }
-
-  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
-    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedBoolFilter<$PrismaModel>
-    _max?: NestedBoolFilter<$PrismaModel>
-  }
-
-  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedDateTimeFilter<$PrismaModel>
-    _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type NestedStringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
-  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
-  export type NestedIntNullableFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedEnumOrderChannelFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderChannelFilter<$PrismaModel> | $Enums.OrderChannel
-  }
-
-  export type NestedEnumOrderPriorityFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderPriority | EnumOrderPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderPriorityFilter<$PrismaModel> | $Enums.OrderPriority
-  }
-
-  export type NestedEnumOrderModeFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderMode | EnumOrderModeFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderModeFilter<$PrismaModel> | $Enums.OrderMode
-  }
-
-  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
-  }
-
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel>
     in?: number[] | ListIntFieldRefInput<$PrismaModel>
@@ -74013,83 +80562,31 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
-  export type NestedEnumOrderChannelWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderChannelWithAggregatesFilter<$PrismaModel> | $Enums.OrderChannel
+  export type NestedEnumSpecVersionOriginWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.SpecVersionOrigin | EnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    in?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    notIn?: $Enums.SpecVersionOrigin[] | ListEnumSpecVersionOriginFieldRefInput<$PrismaModel>
+    not?: NestedEnumSpecVersionOriginWithAggregatesFilter<$PrismaModel> | $Enums.SpecVersionOrigin
     _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumOrderChannelFilter<$PrismaModel>
-    _max?: NestedEnumOrderChannelFilter<$PrismaModel>
+    _min?: NestedEnumSpecVersionOriginFilter<$PrismaModel>
+    _max?: NestedEnumSpecVersionOriginFilter<$PrismaModel>
   }
 
-  export type NestedEnumOrderPriorityWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderPriority | EnumOrderPriorityFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderPriorityWithAggregatesFilter<$PrismaModel> | $Enums.OrderPriority
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumOrderPriorityFilter<$PrismaModel>
-    _max?: NestedEnumOrderPriorityFilter<$PrismaModel>
-  }
-
-  export type NestedEnumOrderModeWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.OrderMode | EnumOrderModeFieldRefInput<$PrismaModel>
-    in?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
-    notIn?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
-    not?: NestedEnumOrderModeWithAggregatesFilter<$PrismaModel> | $Enums.OrderMode
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumOrderModeFilter<$PrismaModel>
-    _max?: NestedEnumOrderModeFilter<$PrismaModel>
-  }
-
-  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
-    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
-    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
-    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+  export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
     _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedDateTimeNullableFilter<$PrismaModel>
-    _max?: NestedDateTimeNullableFilter<$PrismaModel>
-  }
-
-  export type NestedEnumWorkItemStateFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
-    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    not?: NestedEnumWorkItemStateFilter<$PrismaModel> | $Enums.WorkItemState
-  }
-
-  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
-  }
-
-  export type NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemDimensionUnit | EnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    in?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    notIn?: $Enums.WorkItemDimensionUnit[] | ListEnumWorkItemDimensionUnitFieldRefInput<$PrismaModel> | null
-    not?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel> | $Enums.WorkItemDimensionUnit | null
-  }
-
-  export type NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
-    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
-    not?: NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemState
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedEnumWorkItemStateFilter<$PrismaModel>
-    _max?: NestedEnumWorkItemStateFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -74143,6 +80640,203 @@ export namespace Prisma {
     _count?: NestedIntNullableFilter<$PrismaModel>
     _min?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
     _max?: NestedEnumWorkItemDimensionUnitNullableFilter<$PrismaModel>
+  }
+
+  export type NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WorkItemState | EnumWorkItemStateFieldRefInput<$PrismaModel>
+    in?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WorkItemState[] | ListEnumWorkItemStateFieldRefInput<$PrismaModel>
+    not?: NestedEnumWorkItemStateWithAggregatesFilter<$PrismaModel> | $Enums.WorkItemState
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumWorkItemStateFilter<$PrismaModel>
+    _max?: NestedEnumWorkItemStateFilter<$PrismaModel>
+  }
+
+  export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeWithAggregatesFilter<$PrismaModel> | Date | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedDateTimeFilter<$PrismaModel>
+    _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedEnumChangeRequestStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestStatus | EnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumChangeRequestStatusFilter<$PrismaModel> | $Enums.ChangeRequestStatus
+  }
+
+  export type NestedDateTimeNullableFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
+  }
+
+  export type NestedBoolFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestOutcome | EnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel> | $Enums.ChangeRequestOutcome | null
+  }
+
+  export type NestedEnumChangeRequestStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestStatus | EnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.ChangeRequestStatus[] | ListEnumChangeRequestStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumChangeRequestStatusWithAggregatesFilter<$PrismaModel> | $Enums.ChangeRequestStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumChangeRequestStatusFilter<$PrismaModel>
+    _max?: NestedEnumChangeRequestStatusFilter<$PrismaModel>
+  }
+  export type NestedJsonFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Date | string | DateTimeFieldRefInput<$PrismaModel> | null
+    in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    notIn?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel> | null
+    lt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    lte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gt?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    gte?: Date | string | DateTimeFieldRefInput<$PrismaModel>
+    not?: NestedDateTimeNullableWithAggregatesFilter<$PrismaModel> | Date | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedDateTimeNullableFilter<$PrismaModel>
+    _max?: NestedDateTimeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: boolean | BooleanFieldRefInput<$PrismaModel>
+    not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedBoolFilter<$PrismaModel>
+    _max?: NestedBoolFilter<$PrismaModel>
+  }
+
+  export type NestedEnumChangeRequestOutcomeNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ChangeRequestOutcome | EnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    in?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    notIn?: $Enums.ChangeRequestOutcome[] | ListEnumChangeRequestOutcomeFieldRefInput<$PrismaModel> | null
+    not?: NestedEnumChangeRequestOutcomeNullableWithAggregatesFilter<$PrismaModel> | $Enums.ChangeRequestOutcome | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel>
+    _max?: NestedEnumChangeRequestOutcomeNullableFilter<$PrismaModel>
+  }
+
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrderChannelFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderChannelFilter<$PrismaModel> | $Enums.OrderChannel
+  }
+
+  export type NestedEnumOrderPriorityFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderPriority | EnumOrderPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderPriorityFilter<$PrismaModel> | $Enums.OrderPriority
+  }
+
+  export type NestedEnumOrderModeFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderMode | EnumOrderModeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderModeFilter<$PrismaModel> | $Enums.OrderMode
+  }
+
+  export type NestedEnumOrderChannelWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderChannel | EnumOrderChannelFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderChannel[] | ListEnumOrderChannelFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderChannelWithAggregatesFilter<$PrismaModel> | $Enums.OrderChannel
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderChannelFilter<$PrismaModel>
+    _max?: NestedEnumOrderChannelFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrderPriorityWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderPriority | EnumOrderPriorityFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderPriority[] | ListEnumOrderPriorityFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderPriorityWithAggregatesFilter<$PrismaModel> | $Enums.OrderPriority
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderPriorityFilter<$PrismaModel>
+    _max?: NestedEnumOrderPriorityFilter<$PrismaModel>
+  }
+
+  export type NestedEnumOrderModeWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.OrderMode | EnumOrderModeFieldRefInput<$PrismaModel>
+    in?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
+    notIn?: $Enums.OrderMode[] | ListEnumOrderModeFieldRefInput<$PrismaModel>
+    not?: NestedEnumOrderModeWithAggregatesFilter<$PrismaModel> | $Enums.OrderMode
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumOrderModeFilter<$PrismaModel>
+    _max?: NestedEnumOrderModeFilter<$PrismaModel>
   }
 
   export type NestedEnumRejectionCategoryNullableFilter<$PrismaModel = never> = {
@@ -74234,29 +80928,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
     _max?: NestedEnumReturnAttachmentKindFilter<$PrismaModel>
-  }
-  export type NestedJsonFilter<$PrismaModel = never> =
-    | PatchUndefined<
-        Either<Required<NestedJsonFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
   export type NestedBigIntFilter<$PrismaModel = never> = {
@@ -74369,33 +81040,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumAuditEntityFilter<$PrismaModel>
     _max?: NestedEnumAuditEntityFilter<$PrismaModel>
-  }
-
-  export type NestedDecimalFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-  }
-
-  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
-    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
-    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedDecimalFilter<$PrismaModel>
-    _sum?: NestedDecimalFilter<$PrismaModel>
-    _min?: NestedDecimalFilter<$PrismaModel>
-    _max?: NestedDecimalFilter<$PrismaModel>
   }
 
   export type NestedEnumFinanceVoidEntityFilter<$PrismaModel = never> = {
@@ -74517,6 +81161,2296 @@ export namespace Prisma {
     _max?: NestedEnumPricingStatusValueFilter<$PrismaModel>
   }
 
+  export type WorkItemCreateWithoutSpecVersionsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutSpecVersionsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutSpecVersionsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutSpecVersionsInput, WorkItemUncheckedCreateWithoutSpecVersionsInput>
+  }
+
+  export type ProductTypeCreateWithoutSpecVersionsInput = {
+    id?: string
+    name: string
+    defaultRequiresDesign?: boolean
+    defaultRequiresReview?: boolean
+    pricingModeHint?: string | null
+    isActive?: boolean
+    createdAt?: Date | string
+    defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
+    workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
+    priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
+    customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+  }
+
+  export type ProductTypeUncheckedCreateWithoutSpecVersionsInput = {
+    id?: string
+    name: string
+    defaultDepartmentId?: string | null
+    defaultRequiresDesign?: boolean
+    defaultRequiresReview?: boolean
+    pricingModeHint?: string | null
+    isActive?: boolean
+    createdAt?: Date | string
+    workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
+    priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
+    customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+  }
+
+  export type ProductTypeCreateOrConnectWithoutSpecVersionsInput = {
+    where: ProductTypeWhereUniqueInput
+    create: XOR<ProductTypeCreateWithoutSpecVersionsInput, ProductTypeUncheckedCreateWithoutSpecVersionsInput>
+  }
+
+  export type UserCreateWithoutSpecVersionsCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutSpecVersionsCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutSpecVersionsCreatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutSpecVersionsCreatedInput, UserUncheckedCreateWithoutSpecVersionsCreatedInput>
+  }
+
+  export type WorkItemCreateWithoutCurrentSpecVersionInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutCurrentSpecVersionInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutCurrentSpecVersionInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+  }
+
+  export type ChangeRequestCreateWithoutBaseSpecVersionInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutBaseSpecVersionInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput>
+  }
+
+  export type ChangeRequestCreateManyBaseSpecVersionInputEnvelope = {
+    data: ChangeRequestCreateManyBaseSpecVersionInput | ChangeRequestCreateManyBaseSpecVersionInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChangeRequestCreateWithoutResultingSpecVersionInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutResultingSpecVersionInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+  }
+
+  export type WorkItemUpsertWithoutSpecVersionsInput = {
+    update: XOR<WorkItemUpdateWithoutSpecVersionsInput, WorkItemUncheckedUpdateWithoutSpecVersionsInput>
+    create: XOR<WorkItemCreateWithoutSpecVersionsInput, WorkItemUncheckedCreateWithoutSpecVersionsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutSpecVersionsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutSpecVersionsInput, WorkItemUncheckedUpdateWithoutSpecVersionsInput>
+  }
+
+  export type WorkItemUpdateWithoutSpecVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutSpecVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type ProductTypeUpsertWithoutSpecVersionsInput = {
+    update: XOR<ProductTypeUpdateWithoutSpecVersionsInput, ProductTypeUncheckedUpdateWithoutSpecVersionsInput>
+    create: XOR<ProductTypeCreateWithoutSpecVersionsInput, ProductTypeUncheckedCreateWithoutSpecVersionsInput>
+    where?: ProductTypeWhereInput
+  }
+
+  export type ProductTypeUpdateToOneWithWhereWithoutSpecVersionsInput = {
+    where?: ProductTypeWhereInput
+    data: XOR<ProductTypeUpdateWithoutSpecVersionsInput, ProductTypeUncheckedUpdateWithoutSpecVersionsInput>
+  }
+
+  export type ProductTypeUpdateWithoutSpecVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    defaultRequiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    defaultRequiresReview?: BoolFieldUpdateOperationsInput | boolean
+    pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
+    workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
+    priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
+    customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+  }
+
+  export type ProductTypeUncheckedUpdateWithoutSpecVersionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    defaultDepartmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultRequiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    defaultRequiresReview?: BoolFieldUpdateOperationsInput | boolean
+    pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
+    priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
+    customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+  }
+
+  export type UserUpsertWithoutSpecVersionsCreatedInput = {
+    update: XOR<UserUpdateWithoutSpecVersionsCreatedInput, UserUncheckedUpdateWithoutSpecVersionsCreatedInput>
+    create: XOR<UserCreateWithoutSpecVersionsCreatedInput, UserUncheckedCreateWithoutSpecVersionsCreatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutSpecVersionsCreatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutSpecVersionsCreatedInput, UserUncheckedUpdateWithoutSpecVersionsCreatedInput>
+  }
+
+  export type UserUpdateWithoutSpecVersionsCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutSpecVersionsCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type WorkItemUpsertWithoutCurrentSpecVersionInput = {
+    update: XOR<WorkItemUpdateWithoutCurrentSpecVersionInput, WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput>
+    create: XOR<WorkItemCreateWithoutCurrentSpecVersionInput, WorkItemUncheckedCreateWithoutCurrentSpecVersionInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutCurrentSpecVersionInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutCurrentSpecVersionInput, WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput>
+  }
+
+  export type WorkItemUpdateWithoutCurrentSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput = {
+    where: ChangeRequestWhereUniqueInput
+    update: XOR<ChangeRequestUpdateWithoutBaseSpecVersionInput, ChangeRequestUncheckedUpdateWithoutBaseSpecVersionInput>
+    create: XOR<ChangeRequestCreateWithoutBaseSpecVersionInput, ChangeRequestUncheckedCreateWithoutBaseSpecVersionInput>
+  }
+
+  export type ChangeRequestUpdateWithWhereUniqueWithoutBaseSpecVersionInput = {
+    where: ChangeRequestWhereUniqueInput
+    data: XOR<ChangeRequestUpdateWithoutBaseSpecVersionInput, ChangeRequestUncheckedUpdateWithoutBaseSpecVersionInput>
+  }
+
+  export type ChangeRequestUpdateManyWithWhereWithoutBaseSpecVersionInput = {
+    where: ChangeRequestScalarWhereInput
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionInput>
+  }
+
+  export type ChangeRequestScalarWhereInput = {
+    AND?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+    OR?: ChangeRequestScalarWhereInput[]
+    NOT?: ChangeRequestScalarWhereInput | ChangeRequestScalarWhereInput[]
+    id?: StringFilter<"ChangeRequest"> | string
+    workItemId?: StringFilter<"ChangeRequest"> | string
+    status?: EnumChangeRequestStatusFilter<"ChangeRequest"> | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFilter<"ChangeRequest"> | string
+    proposedPatch?: JsonFilter<"ChangeRequest">
+    requestReason?: StringFilter<"ChangeRequest"> | string
+    requestedById?: StringFilter<"ChangeRequest"> | string
+    createdAt?: DateTimeFilter<"ChangeRequest"> | Date | string
+    pausedRunningTimerAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    isAdminOverride?: BoolFilter<"ChangeRequest"> | boolean
+    decidedById?: StringNullableFilter<"ChangeRequest"> | string | null
+    decidedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    decisionNote?: StringNullableFilter<"ChangeRequest"> | string | null
+    outcome?: EnumChangeRequestOutcomeNullableFilter<"ChangeRequest"> | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: StringNullableFilter<"ChangeRequest"> | string | null
+    returnId?: StringNullableFilter<"ChangeRequest"> | string | null
+    productionAcknowledgedAt?: DateTimeNullableFilter<"ChangeRequest"> | Date | string | null
+    productionAcknowledgedById?: StringNullableFilter<"ChangeRequest"> | string | null
+  }
+
+  export type ChangeRequestUpsertWithoutResultingSpecVersionInput = {
+    update: XOR<ChangeRequestUpdateWithoutResultingSpecVersionInput, ChangeRequestUncheckedUpdateWithoutResultingSpecVersionInput>
+    create: XOR<ChangeRequestCreateWithoutResultingSpecVersionInput, ChangeRequestUncheckedCreateWithoutResultingSpecVersionInput>
+    where?: ChangeRequestWhereInput
+  }
+
+  export type ChangeRequestUpdateToOneWithWhereWithoutResultingSpecVersionInput = {
+    where?: ChangeRequestWhereInput
+    data: XOR<ChangeRequestUpdateWithoutResultingSpecVersionInput, ChangeRequestUncheckedUpdateWithoutResultingSpecVersionInput>
+  }
+
+  export type ChangeRequestUpdateWithoutResultingSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutResultingSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type WorkItemCreateWithoutChangeRequestsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutChangeRequestsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutChangeRequestsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutChangeRequestsInput, WorkItemUncheckedCreateWithoutChangeRequestsInput>
+  }
+
+  export type SpecVersionCreateWithoutBaseOfChangeRequestsInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutBaseOfChangeRequestsInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutBaseOfChangeRequestsInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedCreateWithoutBaseOfChangeRequestsInput>
+  }
+
+  export type UserCreateWithoutChangeRequestsRequestedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutChangeRequestsRequestedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutChangeRequestsRequestedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutChangeRequestsRequestedInput, UserUncheckedCreateWithoutChangeRequestsRequestedInput>
+  }
+
+  export type UserCreateWithoutChangeRequestsDecidedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutChangeRequestsDecidedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutChangeRequestsDecidedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutChangeRequestsDecidedInput, UserUncheckedCreateWithoutChangeRequestsDecidedInput>
+  }
+
+  export type SpecVersionCreateWithoutResultOfChangeRequestInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutResultOfChangeRequestInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutResultOfChangeRequestInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutResultOfChangeRequestInput, SpecVersionUncheckedCreateWithoutResultOfChangeRequestInput>
+  }
+
+  export type ReturnCreateWithoutChangeRequestInput = {
+    id?: string
+    category: $Enums.RejectionCategory
+    explanation: string
+    note?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutReturnsInput
+    raisedBy: UserCreateNestedOneWithoutReturnsRaisedInput
+    originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
+    assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
+    designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnUncheckedCreateWithoutChangeRequestInput = {
+    id?: string
+    workItemId: string
+    raisedById: string
+    originDepartmentId: string
+    category: $Enums.RejectionCategory
+    assignedToId: string
+    explanation: string
+    note?: string | null
+    designVersionId?: string | null
+    createdAt?: Date | string
+    attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+  }
+
+  export type ReturnCreateOrConnectWithoutChangeRequestInput = {
+    where: ReturnWhereUniqueInput
+    create: XOR<ReturnCreateWithoutChangeRequestInput, ReturnUncheckedCreateWithoutChangeRequestInput>
+  }
+
+  export type UserCreateWithoutChangeRequestsAcknowledgedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutChangeRequestsAcknowledgedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutChangeRequestsAcknowledgedInput, UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput>
+  }
+
+  export type WorkItemUpsertWithoutChangeRequestsInput = {
+    update: XOR<WorkItemUpdateWithoutChangeRequestsInput, WorkItemUncheckedUpdateWithoutChangeRequestsInput>
+    create: XOR<WorkItemCreateWithoutChangeRequestsInput, WorkItemUncheckedCreateWithoutChangeRequestsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutChangeRequestsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutChangeRequestsInput, WorkItemUncheckedUpdateWithoutChangeRequestsInput>
+  }
+
+  export type WorkItemUpdateWithoutChangeRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutChangeRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type SpecVersionUpsertWithoutBaseOfChangeRequestsInput = {
+    update: XOR<SpecVersionUpdateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedUpdateWithoutBaseOfChangeRequestsInput>
+    create: XOR<SpecVersionCreateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedCreateWithoutBaseOfChangeRequestsInput>
+    where?: SpecVersionWhereInput
+  }
+
+  export type SpecVersionUpdateToOneWithWhereWithoutBaseOfChangeRequestsInput = {
+    where?: SpecVersionWhereInput
+    data: XOR<SpecVersionUpdateWithoutBaseOfChangeRequestsInput, SpecVersionUncheckedUpdateWithoutBaseOfChangeRequestsInput>
+  }
+
+  export type SpecVersionUpdateWithoutBaseOfChangeRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutBaseOfChangeRequestsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type UserUpsertWithoutChangeRequestsRequestedInput = {
+    update: XOR<UserUpdateWithoutChangeRequestsRequestedInput, UserUncheckedUpdateWithoutChangeRequestsRequestedInput>
+    create: XOR<UserCreateWithoutChangeRequestsRequestedInput, UserUncheckedCreateWithoutChangeRequestsRequestedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutChangeRequestsRequestedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutChangeRequestsRequestedInput, UserUncheckedUpdateWithoutChangeRequestsRequestedInput>
+  }
+
+  export type UserUpdateWithoutChangeRequestsRequestedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutChangeRequestsRequestedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUpsertWithoutChangeRequestsDecidedInput = {
+    update: XOR<UserUpdateWithoutChangeRequestsDecidedInput, UserUncheckedUpdateWithoutChangeRequestsDecidedInput>
+    create: XOR<UserCreateWithoutChangeRequestsDecidedInput, UserUncheckedCreateWithoutChangeRequestsDecidedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutChangeRequestsDecidedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutChangeRequestsDecidedInput, UserUncheckedUpdateWithoutChangeRequestsDecidedInput>
+  }
+
+  export type UserUpdateWithoutChangeRequestsDecidedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutChangeRequestsDecidedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type SpecVersionUpsertWithoutResultOfChangeRequestInput = {
+    update: XOR<SpecVersionUpdateWithoutResultOfChangeRequestInput, SpecVersionUncheckedUpdateWithoutResultOfChangeRequestInput>
+    create: XOR<SpecVersionCreateWithoutResultOfChangeRequestInput, SpecVersionUncheckedCreateWithoutResultOfChangeRequestInput>
+    where?: SpecVersionWhereInput
+  }
+
+  export type SpecVersionUpdateToOneWithWhereWithoutResultOfChangeRequestInput = {
+    where?: SpecVersionWhereInput
+    data: XOR<SpecVersionUpdateWithoutResultOfChangeRequestInput, SpecVersionUncheckedUpdateWithoutResultOfChangeRequestInput>
+  }
+
+  export type SpecVersionUpdateWithoutResultOfChangeRequestInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutResultOfChangeRequestInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+  }
+
+  export type ReturnUpsertWithoutChangeRequestInput = {
+    update: XOR<ReturnUpdateWithoutChangeRequestInput, ReturnUncheckedUpdateWithoutChangeRequestInput>
+    create: XOR<ReturnCreateWithoutChangeRequestInput, ReturnUncheckedCreateWithoutChangeRequestInput>
+    where?: ReturnWhereInput
+  }
+
+  export type ReturnUpdateToOneWithWhereWithoutChangeRequestInput = {
+    where?: ReturnWhereInput
+    data: XOR<ReturnUpdateWithoutChangeRequestInput, ReturnUncheckedUpdateWithoutChangeRequestInput>
+  }
+
+  export type ReturnUpdateWithoutChangeRequestInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutReturnsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutReturnsRaisedNestedInput
+    originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
+    assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
+    designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+  }
+
+  export type ReturnUncheckedUpdateWithoutChangeRequestInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    raisedById?: StringFieldUpdateOperationsInput | string
+    originDepartmentId?: StringFieldUpdateOperationsInput | string
+    category?: EnumRejectionCategoryFieldUpdateOperationsInput | $Enums.RejectionCategory
+    assignedToId?: StringFieldUpdateOperationsInput | string
+    explanation?: StringFieldUpdateOperationsInput | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+  }
+
+  export type UserUpsertWithoutChangeRequestsAcknowledgedInput = {
+    update: XOR<UserUpdateWithoutChangeRequestsAcknowledgedInput, UserUncheckedUpdateWithoutChangeRequestsAcknowledgedInput>
+    create: XOR<UserCreateWithoutChangeRequestsAcknowledgedInput, UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutChangeRequestsAcknowledgedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutChangeRequestsAcknowledgedInput, UserUncheckedUpdateWithoutChangeRequestsAcknowledgedInput>
+  }
+
+  export type UserUpdateWithoutChangeRequestsAcknowledgedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutChangeRequestsAcknowledgedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type WorkItemCreateWithoutLateCancellationInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutLateCancellationInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutLateCancellationInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutLateCancellationInput, WorkItemUncheckedCreateWithoutLateCancellationInput>
+  }
+
+  export type UserCreateWithoutLateCancellationsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+  }
+
+  export type UserUncheckedCreateWithoutLateCancellationsInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+  }
+
+  export type UserCreateOrConnectWithoutLateCancellationsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutLateCancellationsInput, UserUncheckedCreateWithoutLateCancellationsInput>
+  }
+
+  export type WorkItemUpsertWithoutLateCancellationInput = {
+    update: XOR<WorkItemUpdateWithoutLateCancellationInput, WorkItemUncheckedUpdateWithoutLateCancellationInput>
+    create: XOR<WorkItemCreateWithoutLateCancellationInput, WorkItemUncheckedCreateWithoutLateCancellationInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutLateCancellationInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutLateCancellationInput, WorkItemUncheckedUpdateWithoutLateCancellationInput>
+  }
+
+  export type WorkItemUpdateWithoutLateCancellationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutLateCancellationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutLateCancellationsInput = {
+    update: XOR<UserUpdateWithoutLateCancellationsInput, UserUncheckedUpdateWithoutLateCancellationsInput>
+    create: XOR<UserCreateWithoutLateCancellationsInput, UserUncheckedCreateWithoutLateCancellationsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutLateCancellationsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutLateCancellationsInput, UserUncheckedUpdateWithoutLateCancellationsInput>
+  }
+
+  export type UserUpdateWithoutLateCancellationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutLateCancellationsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+  }
+
   export type WorkItemCreateWithoutDepartmentInput = {
     id?: string
     state: $Enums.WorkItemState
@@ -74538,6 +83472,10 @@ export namespace Prisma {
     order: OrderCreateNestedOneWithoutWorkItemsInput
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -74571,6 +83509,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -74604,6 +83546,7 @@ export namespace Prisma {
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutOriginDepartmentInput = {
@@ -74617,6 +83560,7 @@ export namespace Prisma {
     designVersionId?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutOriginDepartmentInput = {
@@ -74658,6 +83602,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
@@ -74672,6 +83617,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
@@ -74728,6 +83674,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
+    currentSpecVersionId?: StringNullableFilter<"WorkItem"> | string | null
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutOriginDepartmentInput = {
@@ -75435,6 +84382,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -75481,6 +84433,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -75509,6 +84466,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -75542,6 +84503,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -75774,6 +84739,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -75820,6 +84790,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -75960,6 +84935,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
@@ -75974,6 +84950,7 @@ export namespace Prisma {
     pricingModeHint?: string | null
     isActive?: boolean
     createdAt?: Date | string
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
@@ -76055,6 +85032,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -76101,11 +85083,194 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutAssignedWorkItemsInput, UserUncheckedCreateWithoutAssignedWorkItemsInput>
+  }
+
+  export type SpecVersionCreateWithoutCurrentForInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutCurrentForInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutCurrentForInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutCurrentForInput, SpecVersionUncheckedCreateWithoutCurrentForInput>
+  }
+
+  export type SpecVersionCreateWithoutWorkItemInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutWorkItemInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type SpecVersionCreateManyWorkItemInputEnvelope = {
+    data: SpecVersionCreateManyWorkItemInput | SpecVersionCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChangeRequestCreateWithoutWorkItemInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutWorkItemInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type ChangeRequestCreateManyWorkItemInputEnvelope = {
+    data: ChangeRequestCreateManyWorkItemInput | ChangeRequestCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type LateCancellationCreateWithoutWorkItemInput = {
+    id?: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutLateCancellationsInput
+  }
+
+  export type LateCancellationUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type LateCancellationCreateOrConnectWithoutWorkItemInput = {
+    where: LateCancellationWhereUniqueInput
+    create: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
   }
 
   export type WorkItemTransitionCreateWithoutWorkItemInput = {
@@ -76221,6 +85386,7 @@ export namespace Prisma {
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutWorkItemInput = {
@@ -76234,6 +85400,7 @@ export namespace Prisma {
     designVersionId?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutWorkItemInput = {
@@ -76485,6 +85652,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
@@ -76499,6 +85667,7 @@ export namespace Prisma {
     pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
@@ -76592,6 +85761,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -76638,6 +85812,153 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type SpecVersionUpsertWithoutCurrentForInput = {
+    update: XOR<SpecVersionUpdateWithoutCurrentForInput, SpecVersionUncheckedUpdateWithoutCurrentForInput>
+    create: XOR<SpecVersionCreateWithoutCurrentForInput, SpecVersionUncheckedCreateWithoutCurrentForInput>
+    where?: SpecVersionWhereInput
+  }
+
+  export type SpecVersionUpdateToOneWithWhereWithoutCurrentForInput = {
+    where?: SpecVersionWhereInput
+    data: XOR<SpecVersionUpdateWithoutCurrentForInput, SpecVersionUncheckedUpdateWithoutCurrentForInput>
+  }
+
+  export type SpecVersionUpdateWithoutCurrentForInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutCurrentForInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: SpecVersionWhereUniqueInput
+    update: XOR<SpecVersionUpdateWithoutWorkItemInput, SpecVersionUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type SpecVersionUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: SpecVersionWhereUniqueInput
+    data: XOR<SpecVersionUpdateWithoutWorkItemInput, SpecVersionUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type SpecVersionUpdateManyWithWhereWithoutWorkItemInput = {
+    where: SpecVersionScalarWhereInput
+    data: XOR<SpecVersionUpdateManyMutationInput, SpecVersionUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type SpecVersionScalarWhereInput = {
+    AND?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+    OR?: SpecVersionScalarWhereInput[]
+    NOT?: SpecVersionScalarWhereInput | SpecVersionScalarWhereInput[]
+    id?: StringFilter<"SpecVersion"> | string
+    workItemId?: StringFilter<"SpecVersion"> | string
+    version?: IntFilter<"SpecVersion"> | number
+    origin?: EnumSpecVersionOriginFilter<"SpecVersion"> | $Enums.SpecVersionOrigin
+    productTypeId?: StringNullableFilter<"SpecVersion"> | string | null
+    description?: StringNullableFilter<"SpecVersion"> | string | null
+    quantity?: IntNullableFilter<"SpecVersion"> | number | null
+    widthValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    heightValue?: DecimalNullableFilter<"SpecVersion"> | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: EnumWorkItemDimensionUnitNullableFilter<"SpecVersion"> | $Enums.WorkItemDimensionUnit | null
+    material?: StringNullableFilter<"SpecVersion"> | string | null
+    finishNotes?: StringNullableFilter<"SpecVersion"> | string | null
+    stateAtCreation?: EnumWorkItemStateFilter<"SpecVersion"> | $Enums.WorkItemState
+    reason?: StringNullableFilter<"SpecVersion"> | string | null
+    createdById?: StringNullableFilter<"SpecVersion"> | string | null
+    createdAt?: DateTimeFilter<"SpecVersion"> | Date | string
+  }
+
+  export type ChangeRequestUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: ChangeRequestWhereUniqueInput
+    update: XOR<ChangeRequestUpdateWithoutWorkItemInput, ChangeRequestUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<ChangeRequestCreateWithoutWorkItemInput, ChangeRequestUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type ChangeRequestUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: ChangeRequestWhereUniqueInput
+    data: XOR<ChangeRequestUpdateWithoutWorkItemInput, ChangeRequestUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type ChangeRequestUpdateManyWithWhereWithoutWorkItemInput = {
+    where: ChangeRequestScalarWhereInput
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type LateCancellationUpsertWithoutWorkItemInput = {
+    update: XOR<LateCancellationUpdateWithoutWorkItemInput, LateCancellationUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<LateCancellationCreateWithoutWorkItemInput, LateCancellationUncheckedCreateWithoutWorkItemInput>
+    where?: LateCancellationWhereInput
+  }
+
+  export type LateCancellationUpdateToOneWithWhereWithoutWorkItemInput = {
+    where?: LateCancellationWhereInput
+    data: XOR<LateCancellationUpdateWithoutWorkItemInput, LateCancellationUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type LateCancellationUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutLateCancellationsNestedInput
+  }
+
+  export type LateCancellationUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type WorkItemTransitionUpsertWithWhereUniqueWithoutWorkItemInput = {
@@ -76949,6 +86270,10 @@ export namespace Prisma {
     order: OrderCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -76982,6 +86307,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -77001,6 +86330,58 @@ export namespace Prisma {
 
   export type WorkItemCreateManyProductTypeInputEnvelope = {
     data: WorkItemCreateManyProductTypeInput | WorkItemCreateManyProductTypeInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SpecVersionCreateWithoutProductTypeInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    createdBy?: UserCreateNestedOneWithoutSpecVersionsCreatedInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutProductTypeInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutProductTypeInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput>
+  }
+
+  export type SpecVersionCreateManyProductTypeInputEnvelope = {
+    data: SpecVersionCreateManyProductTypeInput | SpecVersionCreateManyProductTypeInput[]
     skipDuplicates?: boolean
   }
 
@@ -77142,6 +86523,22 @@ export namespace Prisma {
     data: XOR<WorkItemUpdateManyMutationInput, WorkItemUncheckedUpdateManyWithoutProductTypeInput>
   }
 
+  export type SpecVersionUpsertWithWhereUniqueWithoutProductTypeInput = {
+    where: SpecVersionWhereUniqueInput
+    update: XOR<SpecVersionUpdateWithoutProductTypeInput, SpecVersionUncheckedUpdateWithoutProductTypeInput>
+    create: XOR<SpecVersionCreateWithoutProductTypeInput, SpecVersionUncheckedCreateWithoutProductTypeInput>
+  }
+
+  export type SpecVersionUpdateWithWhereUniqueWithoutProductTypeInput = {
+    where: SpecVersionWhereUniqueInput
+    data: XOR<SpecVersionUpdateWithoutProductTypeInput, SpecVersionUncheckedUpdateWithoutProductTypeInput>
+  }
+
+  export type SpecVersionUpdateManyWithWhereWithoutProductTypeInput = {
+    where: SpecVersionScalarWhereInput
+    data: XOR<SpecVersionUpdateManyMutationInput, SpecVersionUncheckedUpdateManyWithoutProductTypeInput>
+  }
+
   export type ProductPricingPolicyUpsertWithoutProductTypeInput = {
     update: XOR<ProductPricingPolicyUpdateWithoutProductTypeInput, ProductPricingPolicyUncheckedUpdateWithoutProductTypeInput>
     create: XOR<ProductPricingPolicyCreateWithoutProductTypeInput, ProductPricingPolicyUncheckedCreateWithoutProductTypeInput>
@@ -77235,6 +86632,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
@@ -77268,6 +86669,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
@@ -77328,6 +86733,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -77374,6 +86784,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -77414,6 +86829,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
@@ -77447,6 +86866,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -77513,6 +86936,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -77559,6 +86987,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -77583,6 +87016,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
@@ -77616,6 +87053,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
@@ -77676,6 +87117,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -77722,6 +87168,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -77762,6 +87213,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
@@ -77795,6 +87250,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -77861,6 +87320,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -77907,6 +87371,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -77931,6 +87400,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     returns?: ReturnCreateNestedManyWithoutWorkItemInput
@@ -77964,6 +87437,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
@@ -78024,6 +87501,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -78070,6 +87552,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
@@ -78121,6 +87608,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
@@ -78167,6 +87659,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
@@ -78185,6 +87682,7 @@ export namespace Prisma {
     originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutDesignVersionInput = {
@@ -78198,6 +87696,7 @@ export namespace Prisma {
     note?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutDesignVersionInput = {
@@ -78243,6 +87742,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUpdateManyWithoutWorkItemNestedInput
@@ -78276,6 +87779,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -78342,6 +87849,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -78388,6 +87900,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsApprovedInput = {
@@ -78445,6 +87962,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
@@ -78491,6 +88013,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
@@ -78531,6 +88058,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -78564,6 +88095,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -78624,6 +88159,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsRaisedInput = {
@@ -78670,6 +88210,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsRaisedInput = {
@@ -78748,6 +88293,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
@@ -78794,6 +88344,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
@@ -78868,6 +88423,51 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ChangeRequestCreateWithoutReturnInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutReturnInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutReturnInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+  }
+
   export type WorkItemUpsertWithoutReturnsInput = {
     update: XOR<WorkItemUpdateWithoutReturnsInput, WorkItemUncheckedUpdateWithoutReturnsInput>
     create: XOR<WorkItemCreateWithoutReturnsInput, WorkItemUncheckedCreateWithoutReturnsInput>
@@ -78901,6 +88501,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -78934,6 +88538,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -79000,6 +88608,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
@@ -79046,6 +88659,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutReturnsInput = {
@@ -79136,6 +88754,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
@@ -79182,6 +88805,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DesignVersionUpsertWithoutReturnsInput = {
@@ -79257,6 +88885,57 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"ReturnAttachment"> | Date | string
   }
 
+  export type ChangeRequestUpsertWithoutReturnInput = {
+    update: XOR<ChangeRequestUpdateWithoutReturnInput, ChangeRequestUncheckedUpdateWithoutReturnInput>
+    create: XOR<ChangeRequestCreateWithoutReturnInput, ChangeRequestUncheckedCreateWithoutReturnInput>
+    where?: ChangeRequestWhereInput
+  }
+
+  export type ChangeRequestUpdateToOneWithWhereWithoutReturnInput = {
+    where?: ChangeRequestWhereInput
+    data: XOR<ChangeRequestUpdateWithoutReturnInput, ChangeRequestUncheckedUpdateWithoutReturnInput>
+  }
+
+  export type ChangeRequestUpdateWithoutReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutReturnInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type ReturnCreateWithoutAttachmentsInput = {
     id?: string
     category: $Enums.RejectionCategory
@@ -79268,6 +88947,7 @@ export namespace Prisma {
     originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutAttachmentsInput = {
@@ -79281,6 +88961,7 @@ export namespace Prisma {
     note?: string | null
     designVersionId?: string | null
     createdAt?: Date | string
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutAttachmentsInput = {
@@ -79310,6 +88991,7 @@ export namespace Prisma {
     originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutAttachmentsInput = {
@@ -79323,6 +89005,7 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type WorkItemCreateWithoutVendorProductionRecordsInput = {
@@ -79347,6 +89030,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -79380,6 +89067,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -79440,6 +89131,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput = {
@@ -79486,6 +89182,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput = {
@@ -79526,6 +89227,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -79559,6 +89264,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -79625,6 +89334,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput = {
@@ -79671,6 +89385,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type CustomerCreateWithoutPhonesInput = {
@@ -80290,6 +90009,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -80323,6 +90046,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -80406,6 +90133,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -80439,6 +90170,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -80558,6 +90293,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileVersionsUploadedInput = {
@@ -80604,6 +90344,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileVersionsUploadedInput = {
@@ -80726,6 +90471,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileVersionsUploadedInput = {
@@ -80772,6 +90522,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type FileObjectCreateWithoutAttachmentsInput = {
@@ -80843,6 +90598,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -80889,6 +90649,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -80982,6 +90747,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -81028,6 +90798,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFileAuditEventsInput = {
@@ -81074,6 +90849,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileAuditEventsInput = {
@@ -81120,6 +90900,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileAuditEventsInput = {
@@ -81182,6 +90967,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileAuditEventsInput = {
@@ -81228,6 +91018,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFileConfigsUpdatedInput = {
@@ -81274,6 +91069,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileConfigsUpdatedInput = {
@@ -81320,6 +91120,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileConfigsUpdatedInput = {
@@ -81382,6 +91187,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileConfigsUpdatedInput = {
@@ -81428,6 +91238,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutPaymentsInput = {
@@ -81554,6 +91369,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPaymentsRecordedInput = {
@@ -81600,6 +91420,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPaymentsRecordedInput = {
@@ -81753,6 +91578,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPaymentsRecordedInput = {
@@ -81799,6 +91629,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceVoidedInput = {
@@ -81845,6 +91680,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceVoidedInput = {
@@ -81891,6 +91731,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceVoidedInput = {
@@ -81953,6 +91798,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceVoidedInput = {
@@ -81999,6 +91849,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutExpensesInput = {
@@ -82058,6 +91913,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -82091,6 +91950,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -82151,6 +92014,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesCreatedInput = {
@@ -82197,6 +92065,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesCreatedInput = {
@@ -82292,6 +92165,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -82325,6 +92202,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -82391,6 +92272,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesCreatedInput = {
@@ -82437,6 +92323,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ExpenseApprovalUpsertWithoutExpenseInput = {
@@ -82535,6 +92426,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesApprovedInput = {
@@ -82581,6 +92477,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesApprovedInput = {
@@ -82680,6 +92581,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesApprovedInput = {
@@ -82726,6 +92632,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutDirectCostsInput = {
@@ -82785,6 +92696,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -82818,6 +92733,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -82878,6 +92797,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDirectCostsCreatedInput = {
@@ -82924,6 +92848,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDirectCostsCreatedInput = {
@@ -83004,6 +92933,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -83037,6 +92970,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -83103,6 +93040,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDirectCostsCreatedInput = {
@@ -83149,6 +93091,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type CustomerCreateWithoutCustomerCreditInput = {
@@ -83240,6 +93187,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreditsUpdatedInput = {
@@ -83286,6 +93238,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreditsUpdatedInput = {
@@ -83399,6 +93356,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreditsUpdatedInput = {
@@ -83445,6 +93407,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceConfigUpdatesInput = {
@@ -83491,6 +93458,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceConfigUpdatesInput = {
@@ -83537,6 +93509,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceConfigUpdatesInput = {
@@ -83599,6 +93576,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceConfigUpdatesInput = {
@@ -83645,6 +93627,11 @@ export namespace Prisma {
     expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type SessionCreateWithoutUserInput = {
@@ -83904,6 +93891,10 @@ export namespace Prisma {
     order: OrderCreateNestedOneWithoutWorkItemsInput
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -83937,6 +93928,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -84114,6 +94109,7 @@ export namespace Prisma {
     assignedTo: UserCreateNestedOneWithoutReturnsAssignedToMeInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutRaisedByInput = {
@@ -84127,6 +94123,7 @@ export namespace Prisma {
     designVersionId?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutRaisedByInput = {
@@ -84150,6 +94147,7 @@ export namespace Prisma {
     originDepartment: DepartmentCreateNestedOneWithoutReturnsInput
     designVersion?: DesignVersionCreateNestedOneWithoutReturnsInput
     attachments?: ReturnAttachmentCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnUncheckedCreateWithoutAssignedToInput = {
@@ -84163,6 +94161,7 @@ export namespace Prisma {
     designVersionId?: string | null
     createdAt?: Date | string
     attachments?: ReturnAttachmentUncheckedCreateNestedManyWithoutReturnInput
+    changeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutReturnInput
   }
 
   export type ReturnCreateOrConnectWithoutAssignedToInput = {
@@ -84686,6 +94685,242 @@ export namespace Prisma {
 
   export type FinanceConfigCreateManyUpdatedByInputEnvelope = {
     data: FinanceConfigCreateManyUpdatedByInput | FinanceConfigCreateManyUpdatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SpecVersionCreateWithoutCreatedByInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutSpecVersionsInput
+    productType?: ProductTypeCreateNestedOneWithoutSpecVersionsInput
+    currentFor?: WorkItemCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+    currentFor?: WorkItemUncheckedCreateNestedOneWithoutCurrentSpecVersionInput
+    baseOfChangeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutBaseSpecVersionInput
+    resultOfChangeRequest?: ChangeRequestUncheckedCreateNestedOneWithoutResultingSpecVersionInput
+  }
+
+  export type SpecVersionCreateOrConnectWithoutCreatedByInput = {
+    where: SpecVersionWhereUniqueInput
+    create: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type SpecVersionCreateManyCreatedByInputEnvelope = {
+    data: SpecVersionCreateManyCreatedByInput | SpecVersionCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChangeRequestCreateWithoutRequestedByInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutRequestedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutRequestedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput>
+  }
+
+  export type ChangeRequestCreateManyRequestedByInputEnvelope = {
+    data: ChangeRequestCreateManyRequestedByInput | ChangeRequestCreateManyRequestedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChangeRequestCreateWithoutDecidedByInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+    productionAcknowledgedBy?: UserCreateNestedOneWithoutChangeRequestsAcknowledgedInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutDecidedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutDecidedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput>
+  }
+
+  export type ChangeRequestCreateManyDecidedByInputEnvelope = {
+    data: ChangeRequestCreateManyDecidedByInput | ChangeRequestCreateManyDecidedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ChangeRequestCreateWithoutProductionAcknowledgedByInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: Date | string | null
+    workItem: WorkItemCreateNestedOneWithoutChangeRequestsInput
+    baseSpecVersion: SpecVersionCreateNestedOneWithoutBaseOfChangeRequestsInput
+    requestedBy: UserCreateNestedOneWithoutChangeRequestsRequestedInput
+    decidedBy?: UserCreateNestedOneWithoutChangeRequestsDecidedInput
+    resultingSpecVersion?: SpecVersionCreateNestedOneWithoutResultOfChangeRequestInput
+    return?: ReturnCreateNestedOneWithoutChangeRequestInput
+  }
+
+  export type ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+  }
+
+  export type ChangeRequestCreateOrConnectWithoutProductionAcknowledgedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    create: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput>
+  }
+
+  export type ChangeRequestCreateManyProductionAcknowledgedByInputEnvelope = {
+    data: ChangeRequestCreateManyProductionAcknowledgedByInput | ChangeRequestCreateManyProductionAcknowledgedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type LateCancellationCreateWithoutCreatedByInput = {
+    id?: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutLateCancellationInput
+  }
+
+  export type LateCancellationUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    workItemId: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdAt?: Date | string
+  }
+
+  export type LateCancellationCreateOrConnectWithoutCreatedByInput = {
+    where: LateCancellationWhereUniqueInput
+    create: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type LateCancellationCreateManyCreatedByInputEnvelope = {
+    data: LateCancellationCreateManyCreatedByInput | LateCancellationCreateManyCreatedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -85370,6 +95605,102 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"FinanceConfig"> | Date | string
   }
 
+  export type SpecVersionUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: SpecVersionWhereUniqueInput
+    update: XOR<SpecVersionUpdateWithoutCreatedByInput, SpecVersionUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<SpecVersionCreateWithoutCreatedByInput, SpecVersionUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type SpecVersionUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: SpecVersionWhereUniqueInput
+    data: XOR<SpecVersionUpdateWithoutCreatedByInput, SpecVersionUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type SpecVersionUpdateManyWithWhereWithoutCreatedByInput = {
+    where: SpecVersionScalarWhereInput
+    data: XOR<SpecVersionUpdateManyMutationInput, SpecVersionUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type ChangeRequestUpsertWithWhereUniqueWithoutRequestedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    update: XOR<ChangeRequestUpdateWithoutRequestedByInput, ChangeRequestUncheckedUpdateWithoutRequestedByInput>
+    create: XOR<ChangeRequestCreateWithoutRequestedByInput, ChangeRequestUncheckedCreateWithoutRequestedByInput>
+  }
+
+  export type ChangeRequestUpdateWithWhereUniqueWithoutRequestedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    data: XOR<ChangeRequestUpdateWithoutRequestedByInput, ChangeRequestUncheckedUpdateWithoutRequestedByInput>
+  }
+
+  export type ChangeRequestUpdateManyWithWhereWithoutRequestedByInput = {
+    where: ChangeRequestScalarWhereInput
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyWithoutRequestedByInput>
+  }
+
+  export type ChangeRequestUpsertWithWhereUniqueWithoutDecidedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    update: XOR<ChangeRequestUpdateWithoutDecidedByInput, ChangeRequestUncheckedUpdateWithoutDecidedByInput>
+    create: XOR<ChangeRequestCreateWithoutDecidedByInput, ChangeRequestUncheckedCreateWithoutDecidedByInput>
+  }
+
+  export type ChangeRequestUpdateWithWhereUniqueWithoutDecidedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    data: XOR<ChangeRequestUpdateWithoutDecidedByInput, ChangeRequestUncheckedUpdateWithoutDecidedByInput>
+  }
+
+  export type ChangeRequestUpdateManyWithWhereWithoutDecidedByInput = {
+    where: ChangeRequestScalarWhereInput
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyWithoutDecidedByInput>
+  }
+
+  export type ChangeRequestUpsertWithWhereUniqueWithoutProductionAcknowledgedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    update: XOR<ChangeRequestUpdateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedUpdateWithoutProductionAcknowledgedByInput>
+    create: XOR<ChangeRequestCreateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedCreateWithoutProductionAcknowledgedByInput>
+  }
+
+  export type ChangeRequestUpdateWithWhereUniqueWithoutProductionAcknowledgedByInput = {
+    where: ChangeRequestWhereUniqueInput
+    data: XOR<ChangeRequestUpdateWithoutProductionAcknowledgedByInput, ChangeRequestUncheckedUpdateWithoutProductionAcknowledgedByInput>
+  }
+
+  export type ChangeRequestUpdateManyWithWhereWithoutProductionAcknowledgedByInput = {
+    where: ChangeRequestScalarWhereInput
+    data: XOR<ChangeRequestUpdateManyMutationInput, ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByInput>
+  }
+
+  export type LateCancellationUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: LateCancellationWhereUniqueInput
+    update: XOR<LateCancellationUpdateWithoutCreatedByInput, LateCancellationUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<LateCancellationCreateWithoutCreatedByInput, LateCancellationUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: LateCancellationWhereUniqueInput
+    data: XOR<LateCancellationUpdateWithoutCreatedByInput, LateCancellationUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type LateCancellationUpdateManyWithWhereWithoutCreatedByInput = {
+    where: LateCancellationScalarWhereInput
+    data: XOR<LateCancellationUpdateManyMutationInput, LateCancellationUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type LateCancellationScalarWhereInput = {
+    AND?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
+    OR?: LateCancellationScalarWhereInput[]
+    NOT?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
+    id?: StringFilter<"LateCancellation"> | string
+    workItemId?: StringFilter<"LateCancellation"> | string
+    stateAtCancellation?: EnumWorkItemStateFilter<"LateCancellation"> | $Enums.WorkItemState
+    reason?: StringFilter<"LateCancellation"> | string
+    costIncurred?: DecimalFilter<"LateCancellation"> | Decimal | DecimalJsLike | number | string
+    currency?: StringFilter<"LateCancellation"> | string
+    producedQuantitySoFar?: IntNullableFilter<"LateCancellation"> | number | null
+    costNote?: StringNullableFilter<"LateCancellation"> | string | null
+    createdById?: StringFilter<"LateCancellation"> | string
+    createdAt?: DateTimeFilter<"LateCancellation"> | Date | string
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -85414,6 +95745,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -85460,6 +95796,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -85522,6 +95863,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -85568,6 +95914,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -85614,6 +95965,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -85660,6 +96016,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -85722,6 +96083,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -85768,6 +96134,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -85943,6 +96314,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -85989,6 +96365,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -86072,6 +96453,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -86118,6 +96504,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -86191,6 +96582,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -86237,6 +96633,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -86288,6 +96689,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -86334,6 +96740,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -86396,6 +96807,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -86442,6 +96858,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -86499,6 +96920,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -86545,6 +96971,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -86591,6 +97022,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -86637,6 +97073,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -86726,6 +97167,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -86772,6 +97218,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -86851,6 +97302,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -86897,6 +97353,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -86959,6 +97420,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -87005,6 +97471,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ProductTypeCreateWithoutPricingPolicyInput = {
@@ -87017,6 +97488,7 @@ export namespace Prisma {
     createdAt?: Date | string
     defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
     workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
   }
@@ -87031,6 +97503,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
   }
@@ -87084,6 +97557,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingPoliciesUpdatedInput = {
@@ -87130,6 +97608,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingPoliciesUpdatedInput = {
@@ -87158,6 +97641,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
     workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
   }
@@ -87172,6 +97656,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
   }
@@ -87231,6 +97716,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingPoliciesUpdatedInput = {
@@ -87277,6 +97767,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ProductTypeCreateWithoutPriceListsInput = {
@@ -87289,6 +97784,7 @@ export namespace Prisma {
     createdAt?: Date | string
     defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
     workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
   }
@@ -87303,6 +97799,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
   }
@@ -87356,6 +97853,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPriceListsCreatedInput = {
@@ -87402,6 +97904,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPriceListsCreatedInput = {
@@ -87454,6 +97961,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
     workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
   }
@@ -87468,6 +97976,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
   }
@@ -87527,6 +98036,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPriceListsCreatedInput = {
@@ -87573,6 +98087,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type PriceTierUpsertWithWhereUniqueWithoutPriceListInput = {
@@ -87717,6 +98236,7 @@ export namespace Prisma {
     createdAt?: Date | string
     defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
     workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
   }
@@ -87731,6 +98251,7 @@ export namespace Prisma {
     isActive?: boolean
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
   }
@@ -87784,6 +98305,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingRulesCreatedInput = {
@@ -87830,6 +98356,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingRulesCreatedInput = {
@@ -87909,6 +98440,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
     workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
   }
@@ -87923,6 +98455,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
   }
@@ -87982,6 +98515,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingRulesCreatedInput = {
@@ -88028,6 +98566,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricesInput = {
@@ -88052,6 +98595,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -88085,6 +98632,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -88145,6 +98696,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemPricesSetInput = {
@@ -88191,6 +98747,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemPricesSetInput = {
@@ -88231,6 +98792,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -88264,6 +98829,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -88330,6 +98899,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemPricesSetInput = {
@@ -88376,6 +98950,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricingStatusInput = {
@@ -88400,6 +98979,10 @@ export namespace Prisma {
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
     department?: DepartmentCreateNestedOneWithoutWorkItemsInput
     assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
@@ -88433,6 +99016,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
     transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
     phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
     designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -88493,6 +99080,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingStatusesUpdatedInput = {
@@ -88539,6 +99131,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
     creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
     financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingStatusesUpdatedInput = {
@@ -88579,6 +99176,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -88612,6 +99213,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -88678,6 +99283,11 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingStatusesUpdatedInput = {
@@ -88724,6 +99334,91 @@ export namespace Prisma {
     directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
     creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
     financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type ChangeRequestCreateManyBaseSpecVersionInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestUpdateWithoutBaseSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutBaseSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type WorkItemCreateManyDepartmentInput = {
@@ -88747,6 +99442,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
   }
 
   export type ReturnCreateManyOriginDepartmentInput = {
@@ -88797,6 +99493,10 @@ export namespace Prisma {
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -88830,6 +99530,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -88863,6 +99567,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReturnUpdateWithoutOriginDepartmentInput = {
@@ -88876,6 +99581,7 @@ export namespace Prisma {
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutOriginDepartmentInput = {
@@ -88889,6 +99595,7 @@ export namespace Prisma {
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateManyWithoutOriginDepartmentInput = {
@@ -88927,6 +99634,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
@@ -88941,6 +99649,7 @@ export namespace Prisma {
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
@@ -89295,6 +100004,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
   }
 
   export type PaymentCreateManyOrderInput = {
@@ -89354,6 +100064,10 @@ export namespace Prisma {
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -89387,6 +100101,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -89420,6 +100138,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type PaymentUpdateWithoutOrderInput = {
@@ -89531,6 +100250,44 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SpecVersionCreateManyWorkItemInput = {
+    id?: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ChangeRequestCreateManyWorkItemInput = {
+    id?: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
   export type WorkItemTransitionCreateManyWorkItemInput = {
     id?: string
     from: $Enums.WorkItemState
@@ -89627,6 +100384,126 @@ export namespace Prisma {
     orderId: string
     createdById: string
     createdAt?: Date | string
+  }
+
+  export type SpecVersionUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChangeRequestUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type WorkItemTransitionUpdateWithoutWorkItemInput = {
@@ -89747,6 +100624,7 @@ export namespace Prisma {
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutWorkItemInput = {
@@ -89760,6 +100638,7 @@ export namespace Prisma {
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateManyWithoutWorkItemInput = {
@@ -89952,6 +100831,25 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+  }
+
+  export type SpecVersionCreateManyProductTypeInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdById?: string | null
+    createdAt?: Date | string
   }
 
   export type PriceListCreateManyProductTypeInput = {
@@ -89999,6 +100897,10 @@ export namespace Prisma {
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
     assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -90032,6 +100934,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -90065,6 +100971,67 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type SpecVersionUpdateWithoutProductTypeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    createdBy?: UserUpdateOneWithoutSpecVersionsCreatedNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutProductTypeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutProductTypeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdById?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type PriceListUpdateWithoutProductTypeInput = {
@@ -90164,6 +101131,7 @@ export namespace Prisma {
     originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutDesignVersionInput = {
@@ -90177,6 +101145,7 @@ export namespace Prisma {
     note?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateManyWithoutDesignVersionInput = {
@@ -90530,6 +101499,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    currentSpecVersionId?: string | null
   }
 
   export type WorkItemTransitionCreateManyActorInput = {
@@ -90774,6 +101744,96 @@ export namespace Prisma {
     approvalThreshold: Decimal | DecimalJsLike | number | string
     shopTimezone?: string
     updatedAt?: Date | string
+  }
+
+  export type SpecVersionCreateManyCreatedByInput = {
+    id?: string
+    workItemId: string
+    version: number
+    origin: $Enums.SpecVersionOrigin
+    productTypeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    stateAtCreation: $Enums.WorkItemState
+    reason?: string | null
+    createdAt?: Date | string
+  }
+
+  export type ChangeRequestCreateManyRequestedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateManyDecidedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+    productionAcknowledgedById?: string | null
+  }
+
+  export type ChangeRequestCreateManyProductionAcknowledgedByInput = {
+    id?: string
+    workItemId: string
+    status?: $Enums.ChangeRequestStatus
+    baseSpecVersionId: string
+    proposedPatch: JsonNullValueInput | InputJsonValue
+    requestReason: string
+    requestedById: string
+    createdAt?: Date | string
+    pausedRunningTimerAt?: Date | string | null
+    isAdminOverride?: boolean
+    decidedById?: string | null
+    decidedAt?: Date | string | null
+    decisionNote?: string | null
+    outcome?: $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: string | null
+    returnId?: string | null
+    productionAcknowledgedAt?: Date | string | null
+  }
+
+  export type LateCancellationCreateManyCreatedByInput = {
+    id?: string
+    workItemId: string
+    stateAtCancellation: $Enums.WorkItemState
+    reason: string
+    costIncurred: Decimal | DecimalJsLike | number | string
+    currency?: string
+    producedQuantitySoFar?: number | null
+    costNote?: string | null
+    createdAt?: Date | string
   }
 
   export type SessionUpdateWithoutUserInput = {
@@ -91026,6 +102086,10 @@ export namespace Prisma {
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
     department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
@@ -91059,6 +102123,10 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
     transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
     phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
     designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -91092,6 +102160,7 @@ export namespace Prisma {
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type WorkItemTransitionUpdateWithoutActorInput = {
@@ -91259,6 +102328,7 @@ export namespace Prisma {
     assignedTo?: UserUpdateOneRequiredWithoutReturnsAssignedToMeNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutRaisedByInput = {
@@ -91272,6 +102342,7 @@ export namespace Prisma {
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateManyWithoutRaisedByInput = {
@@ -91297,6 +102368,7 @@ export namespace Prisma {
     originDepartment?: DepartmentUpdateOneRequiredWithoutReturnsNestedInput
     designVersion?: DesignVersionUpdateOneWithoutReturnsNestedInput
     attachments?: ReturnAttachmentUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateWithoutAssignedToInput = {
@@ -91310,6 +102382,7 @@ export namespace Prisma {
     designVersionId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     attachments?: ReturnAttachmentUncheckedUpdateManyWithoutReturnNestedInput
+    changeRequest?: ChangeRequestUncheckedUpdateOneWithoutReturnNestedInput
   }
 
   export type ReturnUncheckedUpdateManyWithoutAssignedToInput = {
@@ -91835,6 +102908,282 @@ export namespace Prisma {
     approvalThreshold?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
     shopTimezone?: StringFieldUpdateOperationsInput | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SpecVersionUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutSpecVersionsNestedInput
+    productType?: ProductTypeUpdateOneWithoutSpecVersionsNestedInput
+    currentFor?: WorkItemUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentFor?: WorkItemUncheckedUpdateOneWithoutCurrentSpecVersionNestedInput
+    baseOfChangeRequests?: ChangeRequestUncheckedUpdateManyWithoutBaseSpecVersionNestedInput
+    resultOfChangeRequest?: ChangeRequestUncheckedUpdateOneWithoutResultingSpecVersionNestedInput
+  }
+
+  export type SpecVersionUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    version?: IntFieldUpdateOperationsInput | number
+    origin?: EnumSpecVersionOriginFieldUpdateOperationsInput | $Enums.SpecVersionOrigin
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    stateAtCreation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ChangeRequestUpdateWithoutRequestedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutRequestedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutRequestedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUpdateWithoutDecidedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+    productionAcknowledgedBy?: UserUpdateOneWithoutChangeRequestsAcknowledgedNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutDecidedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutDecidedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    productionAcknowledgedById?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type ChangeRequestUpdateWithoutProductionAcknowledgedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    workItem?: WorkItemUpdateOneRequiredWithoutChangeRequestsNestedInput
+    baseSpecVersion?: SpecVersionUpdateOneRequiredWithoutBaseOfChangeRequestsNestedInput
+    requestedBy?: UserUpdateOneRequiredWithoutChangeRequestsRequestedNestedInput
+    decidedBy?: UserUpdateOneWithoutChangeRequestsDecidedNestedInput
+    resultingSpecVersion?: SpecVersionUpdateOneWithoutResultOfChangeRequestNestedInput
+    return?: ReturnUpdateOneWithoutChangeRequestNestedInput
+  }
+
+  export type ChangeRequestUncheckedUpdateWithoutProductionAcknowledgedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    status?: EnumChangeRequestStatusFieldUpdateOperationsInput | $Enums.ChangeRequestStatus
+    baseSpecVersionId?: StringFieldUpdateOperationsInput | string
+    proposedPatch?: JsonNullValueInput | InputJsonValue
+    requestReason?: StringFieldUpdateOperationsInput | string
+    requestedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pausedRunningTimerAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    isAdminOverride?: BoolFieldUpdateOperationsInput | boolean
+    decidedById?: NullableStringFieldUpdateOperationsInput | string | null
+    decidedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    decisionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    outcome?: NullableEnumChangeRequestOutcomeFieldUpdateOperationsInput | $Enums.ChangeRequestOutcome | null
+    resultingSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    returnId?: NullableStringFieldUpdateOperationsInput | string | null
+    productionAcknowledgedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type LateCancellationUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutLateCancellationNestedInput
+  }
+
+  export type LateCancellationUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type LateCancellationUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    stateAtCancellation?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    reason?: StringFieldUpdateOperationsInput | string
+    costIncurred?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    currency?: StringFieldUpdateOperationsInput | string
+    producedQuantitySoFar?: NullableIntFieldUpdateOperationsInput | number | null
+    costNote?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type RolePermissionCreateManyRoleInput = {
