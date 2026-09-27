@@ -11,10 +11,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getActor } from "~/server/auth";
 import {
+  clearRecipientOverride,
   DomainNotificationError,
   isSchedulerRunning,
   parseDuration,
   runDelayTick,
+  setRecipientOverride,
   startDelayScheduler,
   stopDelayScheduler,
   updateThreshold,
@@ -176,6 +178,69 @@ export async function updateThresholdsForm(formData: FormData): Promise<void> {
 
 export async function triggerSchedulerForm(): Promise<void> {
   const result = await triggerSchedulerAction();
+  if (!result.ok && result.message) redirectWithError(result.message);
+}
+
+/** Every repeated control under `key` (checkboxes / multi-selects). */
+function formList(formData: FormData, key: string): string[] {
+  return formData
+    .getAll(key)
+    .filter((value): value is string => typeof value === "string" && value.length > 0);
+}
+
+/**
+ * Comma-separated user ids from the override form — both separators accepted,
+ * because an Arabic-first UI invites pasting `،`.
+ */
+function parseUserIds(raw: string): string[] {
+  return raw
+    .split(/[,،]/)
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+}
+
+/**
+ * Create or REPLACE one catalog type's recipient override (FR-017).
+ *
+ * Replacement, not merge: what the form shows is what gets stored, and the
+ * union with the catalog default happens later, at resolve time.
+ */
+export async function setRecipientOverrideAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const actor = await getActor();
+    await setRecipientOverride(actor, {
+      type: formStr(formData, "type"),
+      userIds: parseUserIds(formStr(formData, "userIds")),
+      roles: formList(formData, "roles"),
+      permissions: formList(formData, "permissions"),
+      departmentIds: formList(formData, "departmentIds"),
+      reason: formStr(formData, REASON),
+    });
+    revalidatePath("/admin/notifications");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, message: messageFor(error) };
+  }
+}
+
+/** Drop the override, restoring the catalog default — reason still REQUIRED. */
+export async function clearRecipientOverrideAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const actor = await getActor();
+    await clearRecipientOverride(actor, formStr(formData, "type"), formStr(formData, REASON));
+    revalidatePath("/admin/notifications");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, message: messageFor(error) };
+  }
+}
+
+/** The override form's single entry point — one reason field serves both buttons. */
+export async function recipientOverrideForm(formData: FormData): Promise<void> {
+  const result =
+    formStr(formData, "op") === "clear"
+      ? await clearRecipientOverrideAction(formData)
+      : await setRecipientOverrideAction(formData);
   if (!result.ok && result.message) redirectWithError(result.message);
 }
 

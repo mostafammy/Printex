@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import type { NotificationView } from "~/server/notifications";
-import { formatBadge, toArabicDigits } from "~/server/notifications";
+import { formatBadge, toArabicDigits } from "~/lib/ar-format";
 import ar from "~/messages/ar.json";
 import { NotificationDropdown } from "./NotificationDropdown";
 import { useNotificationStream } from "./use-notification-stream";
@@ -46,17 +46,31 @@ export function NotificationBell(props: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [rows, setRows] = useState<NotificationView[]>([...initialRows]);
+  // A genuine re-read failure (the Server Action or router.refresh threw),
+  // surfaced next to the bell with a retry — contracts/ui.md §Dropdown
+  // error state. Not a transport warning: that is the polling dot below.
+  const [error, setError] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
   // Re-read through the server on any invalidation. Never trusting the
   // client's own count: the server is the only authority for read state.
   const refresh = useCallback(async () => {
-    await revalidate?.();
-    router.refresh();
+    try {
+      await revalidate?.();
+      router.refresh();
+      setError(false);
+    } catch {
+      setError(true);
+    }
   }, [revalidate, router]);
 
-  useNotificationStream({
+  const retry = () => {
+    setError(false);
+    void refresh();
+  };
+
+  const { transport } = useNotificationStream({
     onNotification: () => {
       void refresh();
     },
@@ -88,7 +102,7 @@ export function NotificationBell(props: NotificationBellProps) {
   }, [open]);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative flex items-center gap-1.5" ref={containerRef}>
       <button
         type="button"
         aria-label={N.unreadBadgeAria.replace("{count}", toArabicDigits(count))}
@@ -109,6 +123,27 @@ export function NotificationBell(props: NotificationBellProps) {
           </span>
         )}
       </button>
+
+      {/* FR-030: transport is display-only — a muted dot with a tooltip,
+          never a warning colour or an alert. */}
+      {transport === "polling" && (
+        <span
+          aria-hidden="true"
+          title={N.transportPolling}
+          className="size-1.5 shrink-0 rounded-full bg-muted-foreground/50"
+        />
+      )}
+
+      {/* The genuine read-failure surface: message + retry, inline so it
+          never overlaps the dropdown and stays a header widget. */}
+      {error && (
+        <span role="status" className="flex items-center gap-1.5 whitespace-nowrap text-xs">
+          <span className="text-muted-foreground">{N.loadError}</span>
+          <button type="button" onClick={retry} className="underline-offset-4 hover:underline">
+            {N.retry}
+          </button>
+        </span>
+      )}
 
       {open && (
         <NotificationDropdown

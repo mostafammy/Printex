@@ -39,6 +39,7 @@ import { lookup, renderEntry } from "./catalog";
 import { resolveRecipients } from "./recipients";
 import { publish, publishCount } from "./stream";
 import { thresholdMap } from "./thresholds";
+import { timerState } from "./timers";
 
 const LEASE_ID = "delay-scheduler";
 
@@ -433,8 +434,6 @@ export async function runDelayTick(): Promise<DelayTickResult> {
   }
 }
 
-let interval: ReturnType<typeof setInterval> | null = null;
-
 /**
  * Starts the interval. Idempotent: a second call does NOT create a second
  * interval (this is the in-process half of the exactly-once guarantee,
@@ -442,12 +441,18 @@ let interval: ReturnType<typeof setInterval> | null = null;
  * downtime is evaluated rather than skipped (FR-051) — a shop that was closed
  * all weekend must see Monday morning's overnight staleness, not wait for the
  * first interval to elapse.
+ *
+ * The guard reads the PROCESS-WIDE slot (`./timers`, `globalThis`), not
+ * module state: a dev hot reload re-instantiates this module with a fresh
+ * `let`, and a module-local guard would let the new instance stack a second
+ * interval on the orphaned old one (T087).
  */
 export function startDelayScheduler(opts?: { intervalMinutes?: number }): void {
-  if (interval) return;
+  const timers = timerState();
+  if (timers.delayTimer) return;
 
   const minutes = opts?.intervalMinutes ?? getNotificationConfig().scheduler.intervalMinutes;
-  interval = setInterval(() => {
+  timers.delayTimer = setInterval(() => {
     void runDelayTick();
   }, minutes * 60_000);
 
@@ -466,14 +471,15 @@ export function startDelayScheduler(opts?: { intervalMinutes?: number }): void {
  * expose at all.
  */
 export function stopDelayScheduler(): void {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
+  const timers = timerState();
+  if (timers.delayTimer) {
+    clearInterval(timers.delayTimer);
+    timers.delayTimer = undefined;
   }
   void releaseLease(processOwnerId());
 }
 
 /** True when this process holds a live interval. */
 export function isSchedulerRunning(): boolean {
-  return interval !== null;
+  return timerState().delayTimer !== undefined;
 }

@@ -11,7 +11,7 @@
 
 import Link from "next/link";
 import type { NotificationView } from "~/server/notifications";
-import { toArabicDigits } from "~/server/notifications";
+import { toArabicDigits } from "~/lib/ar-format";
 import ar from "~/messages/ar.json";
 import { SEVERITY_CLASS, relativeTime } from "./notification-list";
 

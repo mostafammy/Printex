@@ -19,7 +19,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { NotificationView } from "~/server/notifications";
-import { toArabicDigits } from "~/server/notifications";
+import { toArabicDigits } from "~/lib/ar-format";
 import ar from "~/messages/ar.json";
 
 const N = ar.notifications;

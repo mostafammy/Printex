@@ -361,3 +361,17 @@ With multiple developers:
 - 053 must import `Actor` from `~/server/auth`, never `~/server/core` (the core `Actor` lacks `permissions`)
 - The scheduler and processor run under a system identity, not a signed-in `Actor`; only their manual trigger is `admin.config`-authorized
 - Commit after each task or logical group; stop at each checkpoint to validate the story independently
+
+---
+
+## Phase 11: Convergence
+
+**Purpose**: Gaps found by `/speckit-converge` between the spec/plan/tasks and the
+implementation as it stands (append-only; existing tasks untouched).
+
+- [X] T083 Add the per-catalog-type recipient-override EDITOR to `/admin/notifications` — catalog default shown, `إلغاء التجاوز` clear action, required reason on save — plus the `setRecipientOverrideAction` Server Action, per FR-017, US5 scenario and contracts/ui.md §Recipient overrides (missing)
+- [X] T084 Add per-phase recipient PICKERS (roles / permissions / departments) to the thresholds table so each phase's alert recipient lists are editable from the screen and take effect without a code change, wired through `updateThresholdsAction`, per FR-035, SC-015, contracts/ui.md §Thresholds table (partial)
+- [X] T085 Render the bell's transport indicator (`transport === "polling"` muted dot + tooltip) and its error state with the already-defined `notifications.loadError` / `notifications.retry` keys, per FR-030 and contracts/ui.md §NotificationBell (partial)
+- [X] T086 Complete the delayed-work surface: add the product column and the priority / department / date-range filters to `/delayed`, and fix the empty-state pairing so a filtered-empty view shows the generic message and the unfiltered-empty view explains that no threshold is enabled, per FR-055, contracts/ui.md §Delayed-work list (partial)
+- [X] T087 Move the scheduler and delivery-loop guards to `globalThis` (a dev hot-reload re-instantiates the module and stacks a second interval) and start both at process boot via Next's `instrumentation.ts` rather than first shell render, keeping the layout calls as idempotent backstops, per T035, plan §Architecture (scheduler/processor), FR-051 (partial)
+- [X] T088 Add the `no-restricted-imports` module-boundary rule for `~/server/notifications` to `eslint.config.js`, mirroring the existing rules for core/auth/orders/pricing, so the barrel truly is the only public import surface, per plan §Module boundary (missing)

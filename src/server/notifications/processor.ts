@@ -30,6 +30,7 @@ import { describeError, DomainNotificationError } from "./errors";
 import { recipientOverride } from "./overrides";
 import { resolveRecipients, unionSpecs, type RecipientSpec } from "./recipients";
 import { publish, publishCount } from "./stream";
+import { timerState } from "./timers";
 
 export interface ProcessResult {
   readonly processed: number;
@@ -461,8 +462,6 @@ async function unreadCountFor(userId: string): Promise<number | null> {
 
 // --- the delivery loop (T024 / FR-028) -------------------------------------
 
-let processorInterval: ReturnType<typeof setInterval> | null = null;
-
 /**
  * Claims a batch on a short interval so an outbox row becomes a notification
  * without waiting for the 5-minute delay tick.
@@ -490,14 +489,20 @@ let processorInterval: ReturnType<typeof setInterval> | null = null;
  * Never throws: `processOutboxBatch` fails only when the claim query itself
  * is down, and a failed tick must not crash the interval — the next tick
  * retries, and the Admin screen shows the queue's state either way.
+ *
+ * The guard reads the PROCESS-WIDE slot (`./timers`, `globalThis`), not
+ * module state: a dev hot reload re-instantiates this module with a fresh
+ * `let`, and a module-local guard would let the new instance stack a second
+ * interval on the orphaned old one (T087).
  */
 export function startOutboxProcessor(opts?: { processorIntervalMs?: number }): void {
-  if (processorInterval) return;
+  const timers = timerState();
+  if (timers.processorTimer) return;
 
   const { scheduler } = getNotificationConfig();
   const ms = opts?.processorIntervalMs ?? scheduler.processorIntervalMs;
 
-  processorInterval = setInterval(() => {
+  timers.processorTimer = setInterval(() => {
     void processOutboxBatch().catch(() => undefined);
   }, ms);
 
@@ -514,15 +519,16 @@ export function startOutboxProcessor(opts?: { processorIntervalMs?: number }): v
  * center must never be.
  */
 export function stopOutboxProcessor(): void {
-  if (processorInterval) {
-    clearInterval(processorInterval);
-    processorInterval = null;
+  const timers = timerState();
+  if (timers.processorTimer) {
+    clearInterval(timers.processorTimer);
+    timers.processorTimer = undefined;
   }
 }
 
 /** True when this process holds a live delivery interval. */
 export function isOutboxProcessorRunning(): boolean {
-  return processorInterval !== null;
+  return timerState().processorTimer !== undefined;
 }
 
 /**

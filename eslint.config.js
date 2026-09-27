@@ -234,10 +234,21 @@ export default tseslint.config(
     },
   },
   {
-    // Nothing outside `src/server/pricing/**` (and tests/**) may deep-import
-    // pricing internals; application code uses the pricing barrel.
+    // Module-boundary rule, two barrels, ONE rule entry (T088):
+    //   - Nothing outside `src/server/pricing/**` (and tests/**) may
+    //     deep-import pricing internals; application code uses the pricing
+    //     barrel.
+    //   - Nothing outside `src/server/notifications/**` (and tests/**) may
+    //     deep-import notifications internals; application code uses the
+    //     notifications barrel.
+    // They share this block because ESLint flat config REPLACES a rule's
+    // options per file instead of merging them — a second block that also
+    // set `no-restricted-imports` would leave only whichever block comes
+    // last in the array enforced and silently disable every other barrel
+    // rule above. Pattern style is unchanged from the original pricing rule:
+    // the `!` exclusions keep the bare barrel import legal.
     files: ["**/*.ts", "**/*.tsx"],
-    ignores: ["src/server/pricing/**", "tests/**"],
+    ignores: ["src/server/pricing/**", "src/server/notifications/**", "tests/**"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -247,6 +258,15 @@ export default tseslint.config(
               group: ["~/server/pricing/**", "!~/server/pricing", "!~/server/pricing/index"],
               message:
                 "Import from the public barrel `~/server/pricing` instead of reaching into pricing internals.",
+            },
+            {
+              group: [
+                "~/server/notifications/**",
+                "!~/server/notifications",
+                "!~/server/notifications/index",
+              ],
+              message:
+                "Import from the public barrel `~/server/notifications` instead of reaching into notifications internals.",
             },
           ],
         },

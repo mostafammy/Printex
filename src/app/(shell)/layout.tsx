@@ -34,9 +34,11 @@ export default async function ShellLayout({
     departmentIds: actor.departmentIds,
   };
 
-  // Both intervals start with the server process, not with a request — and
-  // both are idempotent, so a render (or dev's hot reload) never stacks a
-  // second one:
+  // Boot start lives in `src/instrumentation.ts` (`register()` runs once per
+  // server process, FR-051). These calls are idempotent BACKSTOPS for any
+  // render that happens without it: the timer guard is process-wide
+  // (src/server/notifications/timers.ts), so a render — or dev's hot reload —
+  // never stacks a second interval (T087):
   //
   //  - the OUTBOX processor delivers notifications every ~500ms. Without it,
   //    an outbox row would sit PENDING until the delay tick, and SC-001's

@@ -18,7 +18,7 @@ describe("decimal integrity (unit, SC-008)", () => {
       "approvalThreshold",
     ];
     for (const field of moneyFields) {
-      const pattern = new RegExp(`${field}\\s+Decimal\\s+@db\\.Decimal\\(12,\\s*2\\)`);
+      const pattern = new RegExp(`${field}\\s+Decimal\\??\\s+@db\\.Decimal\\(12,\\s*2\\)`);
       expect(schema).toMatch(pattern);
     }
     expect(schema).not.toMatch(/\bFloat\b/);

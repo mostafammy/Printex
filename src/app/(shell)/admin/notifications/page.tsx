@@ -13,15 +13,21 @@
 // typing the URL sees a refusal rather than a table of controls that would
 // each fail on submit.
 
-import { getActor } from "~/server/auth";
+import { ALL_PERMISSIONS, ALL_ROLE_KEYS, getActor } from "~/server/auth";
+import { db } from "~/server/db";
 import {
+  CATALOG,
   isSchedulerRunning,
+  listRecipientOverrides,
   readThresholds,
   schedulerStatus,
   type DelayPhase,
+  type OverrideView,
+  type RecipientSpec,
 } from "~/server/notifications";
 import ar from "~/messages/ar.json";
 import {
+  recipientOverrideForm,
   setSchedulerRunningForm,
   triggerSchedulerForm,
   updateThresholdsForm,
@@ -36,6 +42,27 @@ const PHASE_LABEL: Record<DelayPhase, string> = {
   PRODUCTION: N.phaseProduction,
   COLLECTION: N.phaseCollection,
 };
+
+/** One readable line for a recipient spec — roles, permissions, departments, ids. */
+function describeSpec(spec: RecipientSpec, deptNames: ReadonlyMap<string, string>): string {
+  const parts = [
+    ...(spec.roles ?? []),
+    ...(spec.permissions ?? []),
+    ...(spec.departmentIds ?? []).map((id) => deptNames.get(id) ?? id),
+    ...(spec.userIds ?? []),
+  ];
+  return parts.length > 0 ? parts.join("، ") : "—";
+}
+
+/** The catalog default, or a note when the default depends on the event's context. */
+function describeDefault(
+  entry: (typeof CATALOG)[number],
+  deptNames: ReadonlyMap<string, string>,
+): string {
+  return typeof entry.recipients === "function"
+    ? N.overridesDynamic
+    : describeSpec(entry.recipients, deptNames);
+}
 
 export default async function AdminNotificationsPage({
   searchParams,
@@ -52,7 +79,18 @@ export default async function AdminNotificationsPage({
   // The outbox panel's own key (contract permission table): audit.view.
   const canInspectOutbox = actor.permissions.has("audit.view");
 
-  const [thresholds, status] = await Promise.all([readThresholds(), schedulerStatus(actor)]);
+  const [thresholds, status, overrides, departments] = await Promise.all([
+    readThresholds(),
+    schedulerStatus(actor),
+    listRecipientOverrides(),
+    db.department.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
+  const deptNames = new Map(departments.map((dept) => [dept.id, dept.name]));
+  const overrideByType = new Map<string, OverrideView>(overrides.map((row) => [row.type, row]));
   const running = isSchedulerRunning() || status.running;
 
   return (
@@ -100,16 +138,78 @@ export default async function AdminNotificationsPage({
                     <span className="mt-1 block text-xs text-muted-foreground">{N.thresholdHint}</span>
                   </form>
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {threshold.alertRoles.length > 0 && (
-                    <span className="block">{threshold.alertRoles.join("، ")}</span>
-                  )}
-                  {threshold.alertPermissions.length > 0 && (
-                    <span className="block">{threshold.alertPermissions.join("، ")}</span>
-                  )}
-                  {threshold.alertRoles.length === 0 && threshold.alertPermissions.length === 0 && (
-                    <span>{N.overridesEmpty}</span>
-                  )}
+                <td className="px-4 py-3">
+                  {/* Editable pickers. Associated with the row's SAVE form by
+                      id (the `form` attribute), so one حفظ posts phase +
+                      thresholdMinutes + every recipient list together
+                      (T084 / SC-015). */}
+                  <div className="flex flex-col gap-2">
+                    <label
+                      className="text-xs font-medium text-muted-foreground"
+                      htmlFor={`alertRoles-${threshold.phase}`}
+                    >
+                      {N.recipientsRoles}
+                    </label>
+                    <select
+                      id={`alertRoles-${threshold.phase}`}
+                      name="alertRoles"
+                      form={`threshold-save-${threshold.phase}`}
+                      multiple
+                      size={3}
+                      defaultValue={[...threshold.alertRoles]}
+                      className="min-h-16 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      {ALL_ROLE_KEYS.map((role) => (
+                        <option key={role} value={role}>
+                          {role}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label
+                      className="text-xs font-medium text-muted-foreground"
+                      htmlFor={`alertPermissions-${threshold.phase}`}
+                    >
+                      {N.recipientsPermissions}
+                    </label>
+                    <select
+                      id={`alertPermissions-${threshold.phase}`}
+                      name="alertPermissions"
+                      form={`threshold-save-${threshold.phase}`}
+                      multiple
+                      size={4}
+                      defaultValue={[...threshold.alertPermissions]}
+                      className="min-h-20 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      {ALL_PERMISSIONS.map((permission) => (
+                        <option key={permission} value={permission}>
+                          {permission}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label
+                      className="text-xs font-medium text-muted-foreground"
+                      htmlFor={`alertDepartments-${threshold.phase}`}
+                    >
+                      {N.recipientsDepartments}
+                    </label>
+                    <select
+                      id={`alertDepartments-${threshold.phase}`}
+                      name="alertDepartmentIds"
+                      form={`threshold-save-${threshold.phase}`}
+                      multiple
+                      size={3}
+                      defaultValue={[...threshold.alertDepartmentIds]}
+                      className="min-h-16 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                    >
+                      {departments.map((dept) => (
+                        <option key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <form action={updateThresholdsForm} className="contents">
@@ -130,7 +230,11 @@ export default async function AdminNotificationsPage({
                   </form>
                 </td>
                 <td className="px-4 py-3">
-                  <form action={updateThresholdsForm} className="flex flex-col gap-2">
+                  <form
+                    action={updateThresholdsForm}
+                    className="flex flex-col gap-2"
+                    id={`threshold-save-${threshold.phase}`}
+                  >
                     <input type="hidden" name="phase" value={threshold.phase} />
                     <input
                       type="hidden"
@@ -145,6 +249,7 @@ export default async function AdminNotificationsPage({
                       type="text"
                       name="reason"
                       required
+                      title={N.thresholdReasonRequired}
                       placeholder={`${N.thresholdReasonLabel} — ${N.thresholdReasonRequired}`}
                       className="w-40 rounded-md border border-border bg-background px-2 py-1 text-sm"
                     />
@@ -210,6 +315,161 @@ export default async function AdminNotificationsPage({
               </button>
             </form>
           </div>
+        </div>
+      </section>
+
+      {/* --- recipient overrides — one card per catalog type (FR-017 / T083) --- */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{N.overridesTitle}</h2>
+        <p className="text-sm text-muted-foreground">{N.overridesHint}</p>
+
+        <div className="flex flex-col gap-4">
+          {CATALOG.map((entry) => {
+            const current = overrideByType.get(entry.type);
+            return (
+              <div key={entry.type} className="rounded-lg border border-border bg-card p-4 text-sm">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <code className="text-xs font-semibold">{entry.type}</code>
+                  <span className="text-xs text-muted-foreground">{entry.title}</span>
+                </div>
+
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {N.overridesDefault}: {describeDefault(entry, deptNames)}
+                </p>
+                <p className="text-xs">
+                  {current
+                    ? `${N.overridesCurrent}: ${describeSpec(current, deptNames)}`
+                    : N.overridesEmpty}
+                </p>
+
+                <form action={recipientOverrideForm} className="mt-3 flex flex-col gap-2">
+                  <input type="hidden" name="type" value={entry.type} />
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="flex flex-col gap-1">
+                      <label
+                        className="text-xs font-medium text-muted-foreground"
+                        htmlFor={`ov-roles-${entry.type}`}
+                      >
+                        {N.recipientsRoles}
+                      </label>
+                      <select
+                        id={`ov-roles-${entry.type}`}
+                        name="roles"
+                        multiple
+                        size={3}
+                        defaultValue={[...(current?.roles ?? [])]}
+                        className="min-h-16 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                      >
+                        {ALL_ROLE_KEYS.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label
+                        className="text-xs font-medium text-muted-foreground"
+                        htmlFor={`ov-permissions-${entry.type}`}
+                      >
+                        {N.recipientsPermissions}
+                      </label>
+                      <select
+                        id={`ov-permissions-${entry.type}`}
+                        name="permissions"
+                        multiple
+                        size={3}
+                        defaultValue={[...(current?.permissions ?? [])]}
+                        className="min-h-16 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                      >
+                        {ALL_PERMISSIONS.map((permission) => (
+                          <option key={permission} value={permission}>
+                            {permission}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label
+                        className="text-xs font-medium text-muted-foreground"
+                        htmlFor={`ov-departments-${entry.type}`}
+                      >
+                        {N.recipientsDepartments}
+                      </label>
+                      <select
+                        id={`ov-departments-${entry.type}`}
+                        name="departmentIds"
+                        multiple
+                        size={3}
+                        defaultValue={[...(current?.departmentIds ?? [])]}
+                        className="min-h-16 rounded-md border border-border bg-background px-2 py-1 text-xs"
+                      >
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label
+                        className="text-xs font-medium text-muted-foreground"
+                        htmlFor={`ov-userIds-${entry.type}`}
+                      >
+                        {N.recipientsUserIds}
+                      </label>
+                      <input
+                        id={`ov-userIds-${entry.type}`}
+                        type="text"
+                        name="userIds"
+                        defaultValue={(current?.userIds ?? []).join(", ")}
+                        placeholder={N.recipientsUserIds}
+                        className="rounded-md border border-border bg-background px-2 py-1 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* ONE reason field serves both buttons — the reason is what
+                      FR-061 requires recorded, and the client rejects empty
+                      it before the server ever sees the submit. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="sr-only" htmlFor={`ov-reason-${entry.type}`}>
+                      {N.thresholdReasonLabel}
+                    </label>
+                    <input
+                      id={`ov-reason-${entry.type}`}
+                      type="text"
+                      name="reason"
+                      required
+                      title={N.thresholdReasonRequired}
+                      placeholder={`${N.thresholdReasonLabel} — ${N.thresholdReasonRequired}`}
+                      className="w-56 rounded-md border border-border bg-background px-2 py-1 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      name="op"
+                      value="set"
+                      className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90"
+                    >
+                      {N.overridesSave}
+                    </button>
+                    <button
+                      type="submit"
+                      name="op"
+                      value="clear"
+                      className="rounded-md border border-border px-3 py-1 text-xs hover:bg-muted"
+                    >
+                      {N.overridesClear}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            );
+          })}
         </div>
       </section>
 

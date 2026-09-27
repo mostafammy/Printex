@@ -116,10 +116,15 @@ export function formatAge(minutes: number): string {
  * Arabic-Indic digits. The bell badge and every age render in the shop's
  * numeral system (constitution IX); `99+` and `100` stay ASCII because that
  * bound is a UI convention, not prose.
+ *
+ * The implementation lives in `~/lib/ar-format` so the CLIENT-side bell can
+ * import the same function — a client module may not pull this feature's
+ * barrel (it transitively reaches `next/headers` and breaks `next build`).
+ * Re-exported here so the public barrel contract is unchanged (SC-012: one
+ * implementation, never two).
  */
-export function toArabicDigits(value: number | string): string {
-  return String(value).replace(/[0-9]/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]!);
-}
+export { toArabicDigits } from "~/lib/ar-format";
+import { toArabicDigits } from "~/lib/ar-format";
 
 /** Full minutes of a duration input: `30` → 30, `4h` → 240, `1h30m` → 90. */
 export function parseDuration(input: string): number | null {

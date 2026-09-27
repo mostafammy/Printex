@@ -23,7 +23,6 @@ import { audit } from "~/server/auth";
 import { db } from "~/server/db";
 import { spellingsOf } from "./catalog";
 import { DomainNotificationError } from "./errors";
-import { toArabicDigits } from "./delays";
 
 export type NotificationSeverityValue = "INFO" | "ACTION" | "URGENT";
 
@@ -315,7 +314,10 @@ export async function archive(
   return loadView(notificationId);
 }
 
-/** The bell's display string: the exact count, or `99+` at 100 and above. */
-export function formatBadge(count: number): string {
-  return count >= 100 ? "99+" : toArabicDigits(count);
-}
+/**
+ * The bell's display string: the exact count, or `99+` at 100 and above.
+ * Implementation shared with the client bell via `~/lib/ar-format` — a
+ * client module cannot import this barrel (it reaches `next/headers`
+ * transitively), and duplicating the badge logic would fork it (SC-012).
+ */
+export { formatBadge } from "~/lib/ar-format";
