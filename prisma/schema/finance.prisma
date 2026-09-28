@@ -15,27 +15,27 @@ enum FinanceVoidEntity {
 }
 
 model Payment {
-  id      String @id @default(cuid())
-  orderId String
-  order   Order  @relation(fields: [orderId], references: [id])
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id])
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
   /// Positive Decimal EGP. Never Float (constitution Money).
-  amount      Decimal @db.Decimal(12, 2)
-  currency    String  @default("EGP")
+  amount        Decimal  @db.Decimal(12, 2)
+  currency      String   @default("EGP")
   /// Label snapshot of the configured method at record time (FR-003).
-  method      String
+  method        String
   /// Label snapshot of the configured source/location at record time.
-  source      String
-  note        String?
+  source        String
+  note          String?
   /// Payment date+time, UTC; <= now at insert (FR-002, FR-027).
-  occurredAt  DateTime
-  recordedAt  DateTime @default(now())
-  recordedById String
-  recordedBy   User     @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
+  occurredAt    DateTime
+  recordedAt    DateTime @default(now())
+  recordedById  String
+  recordedBy    User     @relation("PaymentRecordedBy", fields: [recordedById], references: [id])
   /// Sequential per shop; gaps allowed only from rolled-back allocations
   /// (native autoincrement — Order.number precedent).
-  receiptNumber Int @unique @default(autoincrement())
+  receiptNumber Int      @unique @default(autoincrement())
 
   @@index([orderId])
   @@index([customerId])
@@ -51,31 +51,31 @@ model FinanceVoid {
   /// Required non-empty; validated before audit.record (001 reason policy).
   reason     String
   voidedById String
-  voidedBy   User     @relation("FinanceVoidedBy", fields: [voidedById], references: [id])
-  voidedAt   DateTime @default(now())
+  voidedBy   User              @relation("FinanceVoidedBy", fields: [voidedById], references: [id])
+  voidedAt   DateTime          @default(now())
 
   @@unique([entityType, entityId])
   @@index([entityId])
 }
 
 model Expense {
-  id      String  @id @default(cuid())
+  id          String    @id @default(cuid())
   /// Positive Decimal EGP.
-  amount  Decimal @db.Decimal(12, 2)
+  amount      Decimal   @db.Decimal(12, 2)
   /// Label snapshot of the configured category at record time (FR-014).
-  category String
+  category    String
   /// User-chosen calendar date (UTC midnight of that date).
   expenseDate DateTime
   /// Responsible employee display name (PRD §31) — may be a non-user.
   employee    String
   description String
   orderId     String?
-  order       Order?   @relation(fields: [orderId], references: [id])
+  order       Order?    @relation(fields: [orderId], references: [id])
   workItemId  String?
   workItem    WorkItem? @relation(fields: [workItemId], references: [id])
   createdById String
-  createdBy   User     @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
+  createdBy   User      @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
 
   approval ExpenseApproval?
 
@@ -95,18 +95,18 @@ model ExpenseApproval {
 }
 
 model DirectCost {
-  id      String  @id @default(cuid())
-  amount  Decimal @db.Decimal(12, 2)
+  id          String    @id @default(cuid())
+  amount      Decimal   @db.Decimal(12, 2)
   /// User-chosen calendar date (UTC midnight of that date).
   costDate    DateTime
   description String
   orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
+  order       Order     @relation(fields: [orderId], references: [id])
   workItemId  String?
   workItem    WorkItem? @relation(fields: [workItemId], references: [id])
   createdById String
-  createdBy   User     @relation("DirectCostCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
+  createdBy   User      @relation("DirectCostCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
 
   @@index([orderId])
   @@index([workItemId])
@@ -115,29 +115,29 @@ model DirectCost {
 /// Finance-owned credit standing associated with a customer (FR-010) —
 /// NOT a mutation of the 010-owned Customer master row.
 model CustomerCredit {
-  customerId      String   @id
-  customer        Customer @relation(fields: [customerId], references: [id])
-  creditApproved  Boolean  @default(false)
+  customerId     String   @id
+  customer       Customer @relation(fields: [customerId], references: [id])
+  creditApproved Boolean  @default(false)
   /// Warn-only in V1 (Clarifications 2026-09-25) — never blocks anything.
-  creditLimit     Decimal? @db.Decimal(12, 2)
+  creditLimit    Decimal? @db.Decimal(12, 2)
   /// Required non-empty reason (052-local policy, validated pre-audit).
-  updatedById     String
-  updatedBy       User     @relation("CustomerCreditUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt       DateTime @updatedAt
+  updatedById    String
+  updatedBy      User     @relation("CustomerCreditUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime @updatedAt
 }
 
 /// Singleton runtime configuration, seeded from config/052-finance.yaml
 /// (FileConfig precedent). Money rows keep label snapshots — history is
 /// unaffected by config edits.
 model FinanceConfig {
-  id                String  @id @default("finance-config")
+  id                String   @id @default("finance-config")
   paymentMethods    Json
   paymentSources    Json
   /// [{ label: string, active: boolean }]
   expenseCategories Json
-  approvalThreshold Decimal @db.Decimal(12, 2)
-  shopTimezone      String  @default("Africa/Cairo")
+  approvalThreshold Decimal  @db.Decimal(12, 2)
+  shopTimezone      String   @default("Africa/Cairo")
   updatedById       String
-  updatedBy         User    @relation("FinanceConfigUpdatedBy", fields: [updatedById], references: [id])
+  updatedBy         User     @relation("FinanceConfigUpdatedBy", fields: [updatedById], references: [id])
   updatedAt         DateTime @updatedAt
 }
