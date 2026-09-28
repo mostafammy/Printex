@@ -15,10 +15,8 @@ export interface RawWorkItemRow {
   readonly id: string;
   readonly orderId: string;
   readonly order: {
-    readonly number: number;
-    readonly priority: "NORMAL" | "URGENT";
-    readonly dueDate: Date | null;
-    readonly customer: { readonly name: string };
+    readonly number: number; readonly priority: "NORMAL" | "URGENT";
+    readonly dueDate: Date | null; readonly customer: { readonly name: string };
   };
   readonly description: string | null;
   readonly productType: { readonly name: string; readonly defaultDepartmentId: string | null } | null;
@@ -28,12 +26,7 @@ export interface RawWorkItemRow {
   readonly assignee: { readonly id: string; readonly name: string } | null;
   readonly createdAt: Date;
   readonly dueDate: Date | null;
-  readonly transitions: readonly {
-    readonly id: string;
-    readonly from: string;
-    readonly to: string;
-    readonly at: Date;
-  }[];
+  readonly transitions: readonly { readonly id: string; readonly from: string; readonly to: string; readonly at: Date }[];
   readonly pricingStatus: { readonly status: "PENDING" | "PRICED" | "DISPUTED" } | null;
   readonly reworkCount?: number;
 }
@@ -72,14 +65,11 @@ function getTargetMinutes(row: RawWorkItemRow, targets: StationTargets): number 
   const p = STATE_PLACEMENT[row.state];
   if (p === "OFF_BOARD") return null;
   const cfg = targets[p.station];
-  if (!cfg) return null;
-  return row.order.priority === "URGENT" ? cfg.urgent : cfg.normal;
+  return cfg ? (row.order.priority === "URGENT" ? cfg.urgent : cfg.normal) : null;
 }
 
 function getCardTitle(row: RawWorkItemRow): string {
-  if (row.description) return row.description;
-  if (row.productType) return row.productType.name;
-  return "أمر عمل";
+  return row.description ?? row.productType?.name ?? "أمر عمل";
 }
 
 function getReworkCount(row: RawWorkItemRow): number {
