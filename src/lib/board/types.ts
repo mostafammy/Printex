@@ -64,12 +64,21 @@ export interface BlockedHint {
   readonly reasonAr: string;
 }
 
+export interface BoardPagination {
+  readonly page: number;
+  readonly pageSize: number;
+  readonly totalCount?: number;
+  readonly hasMore: boolean;
+  readonly nextCursor: number | null;
+}
+
 export interface BoardMeta {
   readonly slice: SliceId;
   readonly availableSlices: readonly SliceId[];
   readonly totalVisible: number;
   readonly hiddenSiblingCounts: Readonly<Record<string, number>>;
   readonly blockedHints: readonly BlockedHint[];
+  readonly pagination?: BoardPagination;
 }
 
 export interface BoardFilters {
@@ -90,6 +99,7 @@ export interface BoardSnapshot {
   readonly slice: SliceId;
   readonly availableSlices: readonly SliceId[];
   readonly blockedHints: readonly BlockedHint[];
+  readonly pagination?: BoardPagination;
 }
 
 export interface BoardUpdate {
@@ -136,6 +146,10 @@ export interface GroupMoveResult {
 export interface SnapshotRequest {
   readonly slice?: SliceId;
   readonly filters?: BoardFilters;
+  readonly pagination?: {
+    readonly page?: number;
+    readonly pageSize?: number;
+  };
 }
 
 export type ChoreographyKind =
