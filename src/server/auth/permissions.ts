@@ -33,6 +33,7 @@ export type Permission =
   | "customer.manage"
   // Work item routing
   | "workitem.assign_designer"
+  | "workitem.send_to_production"
   // Design
   | "design.work"
   | "design.review"
@@ -97,6 +98,7 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   "order.cancel",
   "customer.manage",
   "workitem.assign_designer",
+  "workitem.send_to_production",
   "design.work",
   "design.review",
   "production.operate",
