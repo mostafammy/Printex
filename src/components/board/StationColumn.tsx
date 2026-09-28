@@ -110,17 +110,24 @@ function BlockedBanner({ hint }: { readonly hint?: string }) {
 
 function SubLaneList({
   station,
+  fillWidth,
   onOrderHover,
   onCardClick,
   onMoveKey,
 }: StationColumnProps) {
   const isMultiLane = station.lanes.length > 1;
-  // Lanes stack as rows. Side-by-side lanes look tidier on a wide monitor,
-  // but a sub-lane is a FIFO queue: a queue is read top to bottom, and
-  // splitting one across columns destroys the order an operator is scanning
-  // for. Each lane still fills the column and scrolls independently.
+  // A station that fills the screen (fillWidth) has the width to put its
+  // lanes side by side, and comparing lane depths at a glance is the point —
+  // a 280-340px column in the full board cannot, since four lanes across
+  // 300px is a 75px card, which is where the design station degraded into
+  // unreadable chips. There the lanes stack as rows instead.
+  const lanesAsColumns = isMultiLane && fillWidth === true;
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-1.5">
+    <div
+      className={`flex min-h-0 flex-1 gap-2 overflow-hidden p-1.5 ${
+        lanesAsColumns ? "flex-row" : "flex-col"
+      }`}
+    >
       {station.lanes.map((lane) => (
         // min-h-0 is load-bearing: a flex child defaults to min-height:auto,
         // so it refuses to shrink below its content and flex-1 never bounds

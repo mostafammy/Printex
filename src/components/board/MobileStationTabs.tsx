@@ -68,7 +68,7 @@ function StationTab({
       // The rail is outside any [data-station] ancestor, so the --ticket-*
       // component tokens are not set here; point them at the station's
       // semantic fill and wash directly, scoped to this one button.
-      className={`flex w-full items-center gap-2.5 rounded-[var(--board-radius)] border-s-4 px-3 py-2.5 text-start transition-colors ${
+      className={`mb-2 flex w-full items-center gap-2.5 rounded-[var(--board-radius)] border-s-4 px-3 py-2.5 text-start transition-colors ${
         active ? "bg-[var(--station-wash)]" : "hover:bg-muted/50"
       }`}
       style={
@@ -112,7 +112,9 @@ export const MobileStationTabs = React.memo(function MobileStationTabs({
     <nav
       role="tablist"
       aria-label="محطات المطبعة"
-      className="flex shrink-0 flex-col gap-px overflow-y-auto p-2"
+      // No gap: each rail button carries its own mb-2, which separates them
+      // in both the stacked and any future wrapped layout.
+      className="flex shrink-0 flex-col overflow-y-auto p-2"
     >
       {list.map((st) => (
         <StationTab

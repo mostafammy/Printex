@@ -143,7 +143,7 @@ function VirtualRow({
         {cardIds.map((cardId) => (
           <div
             key={cardId}
-            className="m-1 flex min-w-0 flex-1"
+            className="m-2 flex min-w-0 flex-1"
             style={{ flexBasis: 0 }}
           >
             <JobTicket
