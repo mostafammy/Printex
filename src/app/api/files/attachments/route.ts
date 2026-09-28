@@ -75,10 +75,10 @@ export async function POST(request: Request) {
     const attachmentId = await fileService.attach({
       entityType: validated.entityType,
       entityId: validated.entityId,
-      stream: file.stream() as any,
+      stream: file.stream(),
       fileName: validated.fileName,
       kind: validated.kind,
-      actor: { id: actor.id } as any,
+      actor,
     });
 
     return NextResponse.json({ id: attachmentId }, { status: 201 });
