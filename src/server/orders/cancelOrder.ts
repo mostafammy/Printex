@@ -8,6 +8,8 @@ import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import { transitionWorkItem, asUserId, asWorkItemId } from "~/server/core";
 import type { Actor as CoreActor, DomainError } from "~/server/core";
+// Importing the barrel registers 016's guards before any transition here.
+import { LATE_CANCELLATION_REQUIRED } from "~/server/changes";
 
 function toCoreActor(actor: Actor): CoreActor {
   return { userId: asUserId(actor.userId), roles: actor.roles, departmentIds: actor.departmentIds };
@@ -86,18 +88,28 @@ export async function cancelWorkItem(actor: Actor, workItemId: string, reason: s
 
 const TERMINAL_STATES = new Set(["DELIVERED", "COMPLETED", "CANCELLED"]);
 
+function guardCodeOf(error: DomainError): string | undefined {
+  const details = error.details as { guardCode?: unknown } | undefined;
+  return error.code === "GUARD_FAILED" && typeof details?.guardCode === "string"
+    ? details.guardCode
+    : undefined;
+}
+
 export async function cancelOrder(
   actor: Actor,
   orderId: string,
   reason: string,
 ): Promise<{
   cancelledWorkItemIds: string[];
+  requiresLateCancellation: string[];
   failedWorkItemIds: { id: string; reason: string }[];
 }> {
   authorize(actor, "order.cancel");
   const parsedReason = z.string().trim().min(1).parse(reason);
 
   const cancelledWorkItemIds: string[] = [];
+  // Items already in production: listed, not silently skipped (016 FR-026).
+  const requiresLateCancellation: string[] = [];
   const failedWorkItemIds: { id: string; reason: string }[] = [];
 
   await db.$transaction(
@@ -122,13 +134,17 @@ export async function cancelOrder(
         });
         if (result.ok) {
           cancelledWorkItemIds.push(wi.id);
+        } else if (guardCodeOf(result.error) === LATE_CANCELLATION_REQUIRED) {
+          requiresLateCancellation.push(wi.id);
         } else {
           failedWorkItemIds.push({ id: wi.id, reason: result.error.message });
         }
       }
     },
+    // One transition per item in one transaction: Prisma's implicit 5 s
+    // budget is too tight for a many-item order over the remote pooler.
     { timeout: 20000, maxWait: 10000 },
   );
 
-  return { cancelledWorkItemIds, failedWorkItemIds };
+  return { cancelledWorkItemIds, requiresLateCancellation, failedWorkItemIds };
 }

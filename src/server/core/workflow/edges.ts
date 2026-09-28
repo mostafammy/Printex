@@ -5,6 +5,10 @@
 // from `ASSIGNED`; `ASSIGNED`'s only outgoing edges are `IN_DESIGN` and
 // `CANCELLED`. `REWORK_REQUIRED`'s own outgoing edges (`IN_DESIGN` or
 // `ASSIGNED`, depending on rejection category) are unaffected.
+//
+// 016-change-control research.md §7: `REWORK_REQUIRED` added as an allowed edge
+// from `APPROVED`, `WAITING_PRICING`, and `READY_FOR_PRODUCTION` for customer-change
+// send-back-to-design on items with an approved design.
 
 import type { WorkItemState } from "./states";
 
@@ -15,9 +19,9 @@ export const ALLOWED_EDGES: Readonly<Record<WorkItemState, readonly WorkItemStat
   DESIGN_COMPLETED: ["WAITING_REVIEW", "APPROVED", "CANCELLED"],
   WAITING_REVIEW: ["APPROVED", "REWORK_REQUIRED", "CANCELLED"],
   REWORK_REQUIRED: ["IN_DESIGN", "ASSIGNED", "CANCELLED"],
-  APPROVED: ["WAITING_PRICING", "READY_FOR_PRODUCTION", "CANCELLED"],
-  WAITING_PRICING: ["READY_FOR_PRODUCTION", "CANCELLED"],
-  READY_FOR_PRODUCTION: ["IN_PRODUCTION", "CANCELLED"],
+  APPROVED: ["WAITING_PRICING", "READY_FOR_PRODUCTION", "REWORK_REQUIRED", "CANCELLED"],
+  WAITING_PRICING: ["READY_FOR_PRODUCTION", "REWORK_REQUIRED", "CANCELLED"],
+  READY_FOR_PRODUCTION: ["IN_PRODUCTION", "REWORK_REQUIRED", "CANCELLED"],
   // 014-production research.md §2: REWORK_REQUIRED added for US5's
   // send-back-to-design from an in-production Work Item.
   IN_PRODUCTION: ["PRODUCTION_COMPLETED", "REWORK_REQUIRED", "CANCELLED"],

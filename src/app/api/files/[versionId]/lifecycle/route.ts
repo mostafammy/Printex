@@ -1,8 +1,8 @@
 // Lifecycle route — 050-files
 // void/archive/supersede with reason validation and server authorization
 
-import { getActor } from "@/server/auth/getActor.js";
-import { fileService, authorizeFileLifecycle, authorizeFileApprove } from "@/server/files/index.js";
+import { getActor } from "~/server/auth";
+import { fileService, authorizeFileLifecycle, authorizeFileApprove } from "~/server/files";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";

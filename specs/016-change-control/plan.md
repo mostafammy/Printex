@@ -90,7 +90,7 @@ indexed `findFirst`. There are no per-row queries (research §17).
   `WorkItem.state`.
 - Every specification write goes through `applySpecChangeInTx` (FR-010), and every refusal is
   server-side.
-- `SpecVersion` and `LateCancellation` are append-only at the database level (REVOKE, mirroring
+- `SpecVersion` and `LateCancellation` are append-only at the database level (REVOKE, plus an update-blocking trigger on the FK target `SpecVersion`; mirroring
   `audit-event-append-only.sql`). `ChangeRequest` rows are updated only by the single guarded
   `PENDING → terminal` transition and the one-time acknowledgment. They are never deleted.
 - No `any`: Zod at every input boundary, and discriminated unions for results, holds, diffs, and
@@ -122,7 +122,7 @@ Constitution Check" below.*
 |---|---|---|
 | I. Order → Work Item Is the Canonical Model | Versions, change requests, and late-cancellation records all belong to one Work Item. There is no parallel "job" object. Adding Work Items mid-production stays per-Work-Item (FR-030) | PASS |
 | II. Business Gates Are Inviolable | In-production edits require a change request plus approval (FR-011–013). Completion is blocked while a change is pending or unacknowledged (FR-012/014). The pricing gate is protected by resetting pricing on every change (FR-021–023). Admin override is explicit, reasoned, and audited (FR-027/028) | PASS |
-| III. History Is Append-Only | Every change appends a version, and the original stays readable (FR-004, PRD §47). `SpecVersion`/`LateCancellation` have DB-level REVOKE UPDATE/DELETE. Change-request decisions are recorded, never erased. Every step is audited (FR-029) | PASS |
+| III. History Is Append-Only | Every change appends a version, and the original stays readable (FR-004, PRD §47). `SpecVersion` (REVOKE DELETE + BEFORE UPDATE trigger) and `LateCancellation` (REVOKE UPDATE, DELETE) are append-only at the DB level. Change-request decisions are recorded, never erased. Every step is audited (FR-029) | PASS |
 | IV. Files Are Immutable, Private Versions | No file bytes are written. Customer-change returns reuse 013's `Return` (no attachments required) | PASS (N/A) |
 | V. The Server Is the Only Authority | All policy is enforced server-side: `specEditPolicy`, guards inside `transitionWorkItem`, and `authorize` in each command. Direct `editSpec` on `IN_PRODUCTION` is refused whatever the client (FR-010). State changes go only through `transitionWorkItem` | PASS |
 | VI. Configuration Over Hard-Coding | The approver set is a permission assigned to roles as DB data, not a role name in code. Recipients are resolved from permissions, assignee, and department (research §19). No product-specific logic | PASS |
@@ -220,7 +220,7 @@ prisma/
 ├── seed.ts                               # + change.approve → HEAD_DESIGNER, ADMIN_OWNER
 └── manual-sql/
     ├── 016-spec-version-backfill.sql     # idempotent v1 backfill + pointer + verification
-    └── 016-change-control-constraints.sql# partial unique index + REVOKE UPDATE/DELETE
+    └── 016-change-control-constraints.sql# partial unique index + append-only guards
 
 eslint.config.js                          # + barrel-only rule for ~/server/changes/**;
                                           #   SHARED rule (c) exemption for src/server/core/aspects/** (if absent; owner-confirmed 2026-09-24)
@@ -276,7 +276,7 @@ direction:
 |---|---|---|
 | I | `SpecVersion.workItemId`, `ChangeRequest.workItemId`, and `LateCancellation.workItemId @unique` are all FKs to `WorkItem`. There is no order-level spec (data-model.md) | PASS |
 | II | Hold guards on `IN_PRODUCTION → PRODUCTION_COMPLETED | REWORK_REQUIRED`, plus the resume check (research §5). The approval `updateMany where status=PENDING` makes a request decidable exactly once (§13). `JOB_LEFT_PRODUCTION` refusal (§13). Pricing reset atomic via in-tx listeners (§9). The self-exemption is limited to the exact `changeRequestId` in `meta` | PASS |
-| III | REVOKE on `SpecVersion`/`LateCancellation`. `ChangeRequest` has no delete path and decided fields are written only once (guarded `updateMany`). Backfill never updates `WorkItem.updatedAt` or existing audit rows. The mirror columns are written only together with a new version | PASS |
+| III | Append-only guards on `SpecVersion` (REVOKE DELETE + trigger) and `LateCancellation` (REVOKE). `ChangeRequest` has no delete path and decided fields are written only once (guarded `updateMany`). Backfill never updates `WorkItem.updatedAt` or existing audit rows. The mirror columns are written only together with a new version | PASS |
 | IV | No file writes. `Return` is created with no attachments | PASS (N/A) |
 | V | contracts/change-control.md authorization table: every command has permission plus scope, checked inside the transaction after loading state. `editSpec` in `IN_PRODUCTION` → `CHANGE_REQUEST_REQUIRED` (integration test T034 in tasks.md). Guards protect 011's cancel paths and 014's complete/send-back without trusting callers | PASS |
 | VI | `change.approve` assignment is seed data, editable in 001's Admin. Recipients via `usersWithPermission`. Currency is a `LateCancellation.currency` column defaulting to `"EGP"`, not a UI constant | PASS |

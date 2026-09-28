@@ -1,9 +1,9 @@
 // LAN upload route — 050-files
 // Authenticated actor, schema validation, streamed request handling, no active version on failure.
 
-import { getActor } from "@/server/auth/getActor.js";
-import { fileService, type UploadInput } from "@/server/files/index.js";
-import { validateUploadInput, FileError, FileErrorCode } from "@/server/files/schemas.js";
+import { getActor } from "~/server/auth";
+import { fileService, type UploadInput } from "~/server/files";
+import { validateUploadInput, FileError, FileErrorCode } from "~/server/files/schemas";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";

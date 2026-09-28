@@ -15,6 +15,15 @@ export interface NotifyEvent {
     readonly userIds?: readonly string[];
     readonly roles?: readonly string[];
     readonly departmentIds?: readonly string[];
+    /// 053-notifications FR-016 — a fourth, additive addressing mode.
+    /// 016's change-control events and 091's `ops.*` alerts are specified in
+    /// terms of permissions, and role addressing is strictly coarser: a shop
+    /// may have several Head Designers but a permission held by one person.
+    /// Absent means "no permission-addressed recipients", which is exactly the
+    /// pre-053 behaviour, so this is backward-compatible. This is the one
+    /// documented extension to a 002 contract 002 states was frozen — raised
+    /// with Fady in plan.md §Deliberate deviation, additive only.
+    readonly permissions?: readonly string[];
   };
   readonly payload?: JsonValue;
 }
@@ -34,6 +43,7 @@ export async function notify(tx: Prisma.TransactionClient, event: NotifyEvent): 
       recipientUserIds: [...(event.recipients.userIds ?? [])],
       recipientRoles: [...(event.recipients.roles ?? [])],
       recipientDepartmentIds: [...(event.recipients.departmentIds ?? [])],
+      recipientPermissions: [...(event.recipients.permissions ?? [])],
       // Prisma's `Json` input type accepts our recursive `JsonValue` shape
       // structurally; `?? undefined` keeps an omitted payload as SQL NULL
       // rather than writing the JSON literal `null`.

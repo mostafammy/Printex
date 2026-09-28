@@ -77,6 +77,17 @@ model User {
   directCostsCreated             DirectCost[]             @relation("DirectCostCreatedBy")
   creditsUpdated                 CustomerCredit[]         @relation("CustomerCreditUpdatedBy")
   financeConfigUpdates           FinanceConfig[]          @relation("FinanceConfigUpdatedBy")
+  // --- 053-notifications reverse relations ---
+  notifications                  Notification[]           @relation("NotificationRecipient")
+  thresholdUpdates               DelayThreshold[]         @relation("DelayThresholdUpdatedBy")
+  recipientOverrideUpdates       NotificationTypeOverride[] @relation("NotificationTypeOverrideUpdatedBy")
+
+  // --- Reverse relations to change-control.prisma (016-change-control) ---
+  specVersionsCreated        SpecVersion[]      @relation("SpecVersionCreatedBy")
+  changeRequestsRequested    ChangeRequest[]    @relation("ChangeRequestRequestedBy")
+  changeRequestsDecided      ChangeRequest[]    @relation("ChangeRequestDecidedBy")
+  changeRequestsAcknowledged ChangeRequest[]    @relation("ChangeRequestAcknowledgedBy")
+  lateCancellations          LateCancellation[] @relation("LateCancellationCreatedBy")
 
   @@unique([email])
   @@map("user")

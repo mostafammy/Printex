@@ -13,11 +13,19 @@ import ar from "~/messages/ar.json";
 interface ShellHeaderProps {
   readonly userName?: string;
   readonly roleLabel?: string;
+  /**
+   * Slot for the notification bell (053, FR-020). Rendered beside the live
+   * system indicator so the bell appears on every authenticated page for
+   * every role. Optional so the header still renders when no bell is passed —
+   * e.g. a screen that resolves an actor but has no notification context.
+   */
+  readonly bell?: React.ReactNode;
 }
 
 export function ShellHeader({
   userName = "مستخدم النظام",
   roleLabel = "مسؤول",
+  bell,
 }: ShellHeaderProps) {
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center justify-between border-b border-border/70 bg-card/70 px-4 sm:px-6 backdrop-blur-2xl shadow-xs">
@@ -69,6 +77,10 @@ export function ShellHeader({
           </span>
           <span className="text-[11px]">متصل بالخادم</span>
         </div>
+
+        {/* Notification bell (053, FR-020) — present on every
+            authenticated page for every role. */}
+        {bell}
 
         {/* User Identity Chip */}
         <div className="flex items-center gap-2.5 rounded-full border border-border/70 bg-card/60 p-1 ps-3.5 shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-primary/30 hover:bg-card">

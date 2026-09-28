@@ -2,13 +2,13 @@
 // Generic evidence attachments (rejection, discrepancy, expense, audit event, message)
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { type Prisma, AttachmentKind } from "../../../generated/prisma/index.js";
-import type { Actor } from "@/server/auth/getActor.js";
-import { type LocalDiskStorageAdapter, createLocalDiskAdapter } from "@/server/core/storage/local-disk.js";
-import { streamToTempFile } from "./integrity.js";
-import { validateAttachmentInput, FileError, FileErrorCode } from "./schemas.js";
-import { audit } from "@/server/auth/audit.js";
-import { db as prisma } from "@/server/db.js";
+import { type Prisma, AttachmentKind } from "../../../generated/prisma";
+import type { Actor } from "~/server/auth";
+import { audit } from "~/server/auth";
+import { db as prisma } from "~/server/db";
+import { type LocalDiskStorageAdapter, createLocalDiskAdapter } from "~/server/core/storage/local-disk";
+import { streamToTempFile } from "./integrity";
+import { validateAttachmentInput, FileError, FileErrorCode } from "./schemas";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 

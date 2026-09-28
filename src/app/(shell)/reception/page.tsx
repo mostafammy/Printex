@@ -14,6 +14,7 @@ import {
   ArrowUpRight,
   Building,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
 import {
@@ -21,6 +22,7 @@ import {
   getReceptionQueueStats,
   changeOrderPriority,
 } from "~/server/orders";
+import { getDelayedWorkItemIds } from "~/server/notifications";
 import type { OrderQueueRow } from "~/server/orders";
 import { DEFAULT_PAGE_SIZE } from "~/server/pagination";
 import { Button } from "~/components/ui/button";
@@ -71,7 +73,14 @@ export default async function ReceptionQueuePage({
   const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
 
   const [{ rows, nextCursor }, { totalCount, urgentCount, incompleteCount, inProductionCount }] =
-    await Promise.all([listReceptionQueuePage(actor, { page }), getReceptionQueueStats(actor)]);
+    await Promise.all([
+      // 053's reserved seam: 011 sets `OrderQueueRow.delayed` from the set of
+      // currently-delayed Work Item ids. This is a BINDING, not a rewrite —
+      // 011's query, authorization, and ordering are untouched, and the queue
+      // still works unchanged if this callback is absent (011 FR-008a, FR-058).
+      listReceptionQueuePage(actor, { page, getDelayedWorkItemIds }),
+      getReceptionQueueStats(actor),
+    ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -309,6 +318,16 @@ export default async function ReceptionQueuePage({
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30 px-2.5 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 shadow-2xs">
                             <AlertCircle className="h-3.5 w-3.5" />
                             {S.badgeIncomplete}
+                          </span>
+                        )}
+                        {/* 053 (FR-056 / contracts/ui.md): the delayed badge in
+                            011's EXISTING status-badge cell, next to
+                            "غير مكتمل". Purely a binding — 011's row shape and
+                            ordering are untouched. */}
+                        {row.delayed && (
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-rose-500/15 to-red-500/15 border border-rose-500/30 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 shadow-2xs">
+                            <Clock className="h-3.5 w-3.5" />
+                            {ar.notifications.badgeDelayed}
                           </span>
                         )}
                         {row.priority !== "URGENT" && row.isComplete !== false && (

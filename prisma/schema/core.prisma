@@ -191,6 +191,17 @@ model WorkItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// --- 016-change-control ------------------------------------------------
+  /// Current SpecVersion. Nullable only for the circular insert and the
+  /// window before backfill (research.md §14); non-null for every Work Item
+  /// after backfill (verified by query + contract test).
+  currentSpecVersionId String?        @unique
+  currentSpecVersion   SpecVersion?   @relation("WorkItemCurrentSpecVersion", fields: [currentSpecVersionId], references: [id])
+  specVersions         SpecVersion[]  @relation("WorkItemSpecVersions")
+  changeRequests       ChangeRequest[]
+  lateCancellation     LateCancellation?
+  /// --- end 016-change-control ---------------------------------------------
+
   transitions             WorkItemTransition[]
   phaseTimings            PhaseTiming[]
   designVersions          DesignVersion[]
@@ -202,6 +213,8 @@ model WorkItem {
   // --- 052-finance reverse relations ---
   expenses                Expense[]
   directCosts             DirectCost[]
+  // --- 053-notifications reverse relation ---
+  delayBreaches           DelayBreach[]
 
   @@index([orderId, state])
   // Review queue (getReviewQueue) filters on `state` alone; My Queue /
@@ -228,6 +241,7 @@ model ProductType {
   createdAt             DateTime    @default(now())
 
   workItems            WorkItem[]
+  specVersions         SpecVersion[] @relation("SpecVersionProductType")
   pricingPolicy        ProductPricingPolicy?
   priceLists           PriceList[]
   customerPricingRules CustomerPricingRule[]
@@ -329,7 +343,8 @@ model Return {
   designVersion      DesignVersion?    @relation(fields: [designVersionId], references: [id])
   createdAt          DateTime          @default(now())
 
-  attachments ReturnAttachment[]
+  attachments   ReturnAttachment[]
+  changeRequest ChangeRequest?
 
   @@index([workItemId, createdAt])
 }
@@ -380,10 +395,31 @@ model NotificationEvent {
   recipientDepartmentIds String[]
   payload                Json?
   createdAt              DateTime  @default(now())
-  /// Left null; written by 053.
+  /// Set once when 053 has fully processed this event; null = unprocessed.
+  /// 002 reserved this column for 053; 053 reuses it rather than adding a
+  /// parallel marker, so one row has exactly one answer to "was this
+  /// delivered?" (003-free — see specs/053-notifications/data-model.md
+  /// §NotificationEvent, A-001).
   deliveredAt            DateTime?
-  /// Left null; written by 053.
-  deliveryStatus         String?
+  /// PENDING / PROCESSED / FAILED / UNMAPPED. 002 shipped this as `String?`
+  /// and never wrote it, so the retype is a safe ALTER (every existing row is
+  /// NULL). The migration backfills NULL → PENDING BEFORE adding the claim
+  /// index — without it the claim predicate silently skips every event the
+  /// live features (012/013/014/015/016) have already recorded.
+  deliveryStatus         DeliveryStatus?
+  /// 053-only processing columns. No emitter writes these.
+  attemptCount           Int       @default(0)
+  lastAttemptAt          DateTime?
+  lastError              String?
+  /// Fourth addressing mode (FR-016, additive to 002's three).
+  recipientPermissions   String[]  @default([])
+
+  /// 053's notifications. The outbox row is the delivery audit trail and is
+  /// retained after processing (FR-063), so this is a plain reference, never
+  /// a cascade.
+  notifications          Notification[]
 
   @@index([entityType, entityId])
+  @@index([deliveredAt, deliveryStatus, createdAt])
+  @@index([type, createdAt])
 }

@@ -1,0 +1,131 @@
+// Order Change Control models — specs/016-change-control/data-model.md
+// Multi-file Prisma schema (prismaSchemaFolder preview feature).
+// Relations to models in core.prisma and identity.prisma resolve transparently.
+
+// --- Enums -----------------------------------------------------------------
+
+/// research.md §1/§2. Origin of a specification version (FR-002).
+enum SpecVersionOrigin {
+  INITIAL        // created with the Work Item (011 creation paths)
+  BACKFILL       // migration backfill or runtime self-heal (FR-005); createdById = null
+  DIRECT_EDIT    // editSpec / 011 editWorkItem (US2)
+  CHANGE_REQUEST // approveChangeRequest (US3)
+  ADMIN_OVERRIDE // adminOverrideSpec (US7)
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  CLOSED_BY_CANCELLATION
+}
+
+enum ChangeRequestOutcome {
+  CONTINUE_PRODUCTION
+  REDESIGN
+}
+
+// --- Models ----------------------------------------------------------------
+
+/// One immutable specification snapshot. Append-only: REVOKE UPDATE, DELETE
+/// (manual-sql/016-change-control-constraints.sql). Columns mirror WorkItem's
+/// 011 descriptive fields exactly (types, precision, enum).
+model SpecVersion {
+  id              String                 @id @default(cuid())
+  workItemId      String
+  workItem        WorkItem               @relation("WorkItemSpecVersions", fields: [workItemId], references: [id])
+  /// 1, 2, 3 … per Work Item, never reused.
+  version         Int
+  origin          SpecVersionOrigin
+
+  productTypeId   String?
+  productType     ProductType?           @relation("SpecVersionProductType", fields: [productTypeId], references: [id])
+  description     String?
+  quantity        Int?
+  widthValue      Decimal?               @db.Decimal(10, 2)
+  heightValue     Decimal?               @db.Decimal(10, 2)
+  dimensionUnit   WorkItemDimensionUnit?
+  material        String?
+  finishNotes     String?
+
+  /// WorkItem.state when this version was created (FR-002).
+  stateAtCreation WorkItemState
+  /// Required for ADMIN_OVERRIDE and CHANGE_REQUEST (copied from the request); optional otherwise.
+  reason          String?
+  /// Null only for origin = BACKFILL.
+  createdById     String?
+  createdBy       User?                  @relation("SpecVersionCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime               @default(now())
+
+  /// Back-relations
+  currentFor            WorkItem?      @relation("WorkItemCurrentSpecVersion")
+  baseOfChangeRequests  ChangeRequest[] @relation("ChangeRequestBaseVersion")
+  resultOfChangeRequest ChangeRequest? @relation("ChangeRequestResultingVersion")
+
+  @@unique([workItemId, version])
+}
+
+/// A customer's requested modification to an IN_PRODUCTION Work Item (US3), or
+/// the auto-approved record of an in-production Admin override (FR-028).
+/// Never deleted. Fields below the divider are written exactly once by the
+/// guarded PENDING → terminal update (research.md §13).
+model ChangeRequest {
+  id                String              @id @default(cuid())
+  workItemId        String
+  workItem          WorkItem            @relation(fields: [workItemId], references: [id])
+  status            ChangeRequestStatus @default(PENDING)
+  baseSpecVersionId String
+  baseSpecVersion   SpecVersion         @relation("ChangeRequestBaseVersion", fields: [baseSpecVersionId], references: [id])
+  /// SpecPatch (contracts/change-control.md) — validated by specPatchSchema on
+  /// write AND re-parsed on read; never consumed untyped.
+  proposedPatch     Json
+  requestReason     String
+  requestedById     String
+  requestedBy       User                @relation("ChangeRequestRequestedBy", fields: [requestedById], references: [id])
+  createdAt         DateTime            @default(now())
+  /// Set when createChangeRequest closed an open ACTIVE PhaseTiming segment (FR-012).
+  pausedRunningTimerAt DateTime?
+  isAdminOverride   Boolean             @default(false)
+
+  // ── decision (written once) ─────────────────────────────────────────────
+  decidedById       String?
+  decidedBy         User?               @relation("ChangeRequestDecidedBy", fields: [decidedById], references: [id])
+  decidedAt         DateTime?
+  /// Rejection/withdrawal reason (required then) or approval note (optional).
+  decisionNote      String?
+  /// Non-null iff status = APPROVED.
+  outcome           ChangeRequestOutcome?
+  resultingSpecVersionId String?        @unique
+  resultingSpecVersion   SpecVersion?   @relation("ChangeRequestResultingVersion", fields: [resultingSpecVersionId], references: [id])
+  /// Non-null iff outcome = REDESIGN.
+  returnId          String?             @unique
+  return            Return?             @relation(fields: [returnId], references: [id])
+
+  // ── production acknowledgment (outcome = CONTINUE_PRODUCTION only) ──────
+  productionAcknowledgedAt   DateTime?
+  productionAcknowledgedById String?
+  productionAcknowledgedBy   User?      @relation("ChangeRequestAcknowledgedBy", fields: [productionAcknowledgedById], references: [id])
+
+  @@index([workItemId, status])
+  @@index([status, createdAt])
+}
+
+/// Permanent record of a cancellation after production started (US6). Source
+/// record for 052's direct cost (PRD §30). Append-only (REVOKE UPDATE, DELETE).
+model LateCancellation {
+  id                    String        @id @default(cuid())
+  workItemId            String        @unique
+  workItem              WorkItem      @relation(fields: [workItemId], references: [id])
+  stateAtCancellation   WorkItemState
+  reason                String
+  /// Exact decimal, >= 0, entered explicitly (FR-024).
+  costIncurred          Decimal       @db.Decimal(12, 2)
+  /// Configured column, default EGP (constitution VI) — not a UI constant.
+  currency              String        @default("EGP")
+  producedQuantitySoFar Int?
+  costNote              String?
+  createdById           String
+  createdBy             User          @relation("LateCancellationCreatedBy", fields: [createdById], references: [id])
+  createdAt             DateTime      @default(now())
+}

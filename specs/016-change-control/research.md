@@ -413,8 +413,10 @@ here.
    "spec_version.backfilled"`, `entityType: "Migration"`, `entityId: "016-change-control"`,
    `after: { count }`, `actorId: null`). It does not touch `WorkItem.updatedAt`.
 3. **Constraints and append-only**: `prisma/manual-sql/016-change-control-constraints.sql` holds
-   the partial unique index (§13) and `REVOKE UPDATE, DELETE ON "SpecVersion", "LateCancellation"
-   FROM CURRENT_USER`, mirroring `audit-event-append-only.sql` (the same non-superuser
+   the partial unique index (§13), `REVOKE DELETE` plus a `BEFORE UPDATE` trigger
+   (`spec_version_forbid_update`) on `"SpecVersion"`, and `REVOKE UPDATE, DELETE` on
+   `"LateCancellation"`. SpecVersion can't use REVOKE UPDATE because it is an FK target, and FK
+   checks take `FOR KEY SHARE`, which needs the UPDATE privilege. This mirrors `audit-event-append-only.sql` (the same non-superuser
    prerequisite applies). Every statement is idempotent. It MUST be re-applied after any `db push`,
    in case Prisma drops the index it cannot model. The app-level row lock (§13) keeps correctness
    even if the index is missing.

@@ -1,6 +1,6 @@
 import { createHash } from "crypto";
 import { Readable } from "node:stream";
-import { getFilesConfig } from "./config.js";
+import { getFilesConfig } from "./config";
 
 export interface StreamIntegrityResult {
   size: number;

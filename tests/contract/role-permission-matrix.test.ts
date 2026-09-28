@@ -34,7 +34,7 @@ const EXPECTED_MATRIX: Record<string, string[]> = {
     "workitem.send_to_production",
   ],
   DESIGNER: ["design.work"],
-  HEAD_DESIGNER: ["design.review"],
+  HEAD_DESIGNER: ["change.approve", "design.review"],
   PRODUCTION_OPERATOR: ["files.download_production", "production.operate"],
   PRINT_RECEPTION_DELIVERY: ["collection.receive", "delivery.record"],
   ACCOUNTING: ["expense.record", "finance.view", "payment.record", "payment.void"],
@@ -93,5 +93,32 @@ describe("role × permission matrix (contract)", () => {
 
     expect(actualPerms).toHaveLength(23);
     expect(actualPerms).toEqual(allPermsSorted);
+  });
+
+  it("HEAD_DESIGNER and ADMIN_OWNER have change.approve; other seeded roles do not (016 FR-013)", async () => {
+    const roles = await testDb.role.findMany({ include: { permissions: true } });
+    const permsByRole = new Map<string, string[]>();
+    for (const role of roles) {
+      permsByRole.set(
+        role.key,
+        role.permissions.map((p) => p.permission),
+      );
+    }
+
+    expect(permsByRole.get("HEAD_DESIGNER")).toContain("change.approve");
+    expect(permsByRole.get("ADMIN_OWNER")).toContain("change.approve");
+
+    const rolesWithoutChangeApprove = [
+      "RECEPTION",
+      "DESIGNER",
+      "PRODUCTION_OPERATOR",
+      "PRINT_RECEPTION_DELIVERY",
+      "ACCOUNTING",
+    ] as const;
+
+    for (const roleKey of rolesWithoutChangeApprove) {
+      expect(permsByRole.get(roleKey)).toBeDefined();
+      expect(permsByRole.get(roleKey)).not.toContain("change.approve");
+    }
   });
 });
