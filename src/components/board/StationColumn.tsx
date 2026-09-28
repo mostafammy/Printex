@@ -110,26 +110,17 @@ function BlockedBanner({ hint }: { readonly hint?: string }) {
 
 function SubLaneList({
   station,
-  fillWidth,
   onOrderHover,
   onCardClick,
   onMoveKey,
 }: StationColumnProps) {
   const isMultiLane = station.lanes.length > 1;
-  // Lane arrangement follows the column's width, not a fixed rule.
-  //
-  // One station filling the screen (fillWidth) has room to put its lanes side
-  // by side as columns, and comparing lane depths at a glance is the point.
-  // A 260-340px column in the full board cannot: four lanes across 300px is a
-  // 75px card, which is where the design station degraded into unreadable
-  // chips with ellipsised text. There the lanes stack as rows instead.
-  const lanesAsColumns = isMultiLane && fillWidth === true;
+  // Lanes stack as rows. Side-by-side lanes look tidier on a wide monitor,
+  // but a sub-lane is a FIFO queue: a queue is read top to bottom, and
+  // splitting one across columns destroys the order an operator is scanning
+  // for. Each lane still fills the column and scrolls independently.
   return (
-    <div
-      className={`flex min-h-0 flex-1 gap-2 overflow-hidden p-1.5 ${
-        lanesAsColumns ? "flex-row" : "flex-col"
-      }`}
-    >
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-1.5">
       {station.lanes.map((lane) => (
         // min-h-0 is load-bearing: a flex child defaults to min-height:auto,
         // so it refuses to shrink below its content and flex-1 never bounds
@@ -196,7 +187,7 @@ export function StationColumn(props: StationColumnProps) {
   // every column reacts to a drag without the parent re-rendering them.
   // An explicit prop still wins, which is what the tests use.
   const liveDropState = useDragOffer(props.station.id);
-  const { cls: stateCls, dimmed: isDimmed } = resolveDropStyle(
+  const { cls: stateCls, over: isOver, dimmed: isDimmed } = resolveDropStyle(
     props.dropState ?? liveDropState,
   );
 
@@ -210,12 +201,25 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card ${stateCls} ${
-        props.fillWidth ? "w-full min-w-0" : "w-[clamp(240px,21vw,300px)] shrink-0"
+      // Flexible width, not a fixed clamp: seven columns share the width
+      // available, so each takes an equal share between a readable floor and
+      // a ceiling. A fixed width left the board with dead space on a wide
+      // monitor and pushed the last column off-screen on a narrow one.
+      className={`relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-muted/30 transition-all duration-200 ease-out ${stateCls} ${
+        props.fillWidth ? "w-full min-w-0" : "min-w-[280px] max-w-[340px]"
       }`}
     >
       <ColumnHeader station={props.station} count={cardCount} now={now} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}
+      {isOver && (
+        // The one piece of copy on the whole board that tells the operator
+        // what will happen if they let go right now.
+        <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
+          <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground shadow-lg">
+            أفلت البطاقة هنا
+          </span>
+        </div>
+      )}
       <SubLaneList {...props} />
     </section>
   );

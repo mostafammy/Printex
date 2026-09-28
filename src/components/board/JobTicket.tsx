@@ -2,13 +2,18 @@
 
 /**
  * JobTicket physical print shop ticket component.
- * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-003, FR-007, FR-008)
+ * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-003, FR-007, FR-008;
+ *  card treatment from 817f251 / main)
  *
  * The card is both a drag handle and a button. Tapping it used to be a no-op
  * because the page mounted `<Board />` without an `onCardClick`, which left
  * drag-and-drop and a physical keyboard's `m` as the only ways to move a job
- * on a touch screen. The explicit `نقل` control below is the non-drag path,
- * so a wet hand never has to attempt a drag.
+ * on a touch screen. The `نقل` control in the footer is the non-drag path, so a
+ * wet hand never has to attempt a drag.
+ *
+ * It rides on the footer rather than adding a row of its own: the card was
+ * three rows — reference, identity, perforated footer — and a separate move
+ * block below them made a large empty box the biggest thing in the card.
  */
 
 import React from "react";
@@ -44,11 +49,8 @@ function TicketHeader({
   );
 
   return (
-    // One line, no wrapping: order reference and status on the same row, so a
-    // queue of jobs scans as a single column of references.
-    //
     // min-w-0 + overflow-hidden: the order tag and the status group are both
-    // intrinsically wide, and without a bound the row overflowed its card and
+    // intrinsically wide, and with no bound the row overflowed its card and
     // painted a horizontal scrollbar that stayed visible while the lane
     // scrolled vertically — a stray line standing beside the column.
     <div className="flex min-w-0 items-center justify-between gap-1.5 overflow-hidden">
@@ -60,7 +62,7 @@ function TicketHeader({
         onHover={onOrderHover}
         onGroupClick={onGroupClick}
       />
-      <div className="flex shrink-0 items-center gap-1 overflow-hidden">
+      <div className="flex shrink-0 items-center gap-1">
         {/* Registration mark — the print-shop ⌖, aria-hidden because it
             carries no information a screen reader needs. */}
         <span
@@ -91,12 +93,12 @@ function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
   const isPending = pricing === "PENDING";
   return (
     <span
-      className={`px-1 text-[11px] font-semibold leading-4 ${
+      className={`rounded px-1 text-[11px] font-medium ${
         isPriced
-          ? "text-emerald-600"
+          ? "bg-emerald-500/10 text-emerald-600"
           : isPending
-            ? "text-amber-600"
-            : "text-destructive"
+            ? "bg-amber-500/10 text-amber-600"
+            : "bg-destructive/10 text-destructive"
       }`}
     >
       {isPriced ? "مسعّر" : isPending ? "قيد التسعير" : "نزاع"}
@@ -104,33 +106,60 @@ function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
   );
 }
 
-function TicketFooter({ card }: { readonly card: BoardCard }) {
+function TicketFooter({
+  card,
+  onMove,
+}: {
+  readonly card: BoardCard;
+  readonly onMove?: (card: BoardCard) => void;
+}) {
   return (
-    // Pricing sits with the identity line, not the footer: it is a state the
-    // operator triages on, and the footer row now belongs to the move control.
-    <div className="mt-1 flex items-center justify-between gap-2">
-      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
-        {card.quantity ? `${card.quantity} نسخة` : ""}
-      </span>
-      <PricingBadge pricing={card.pricing} />
+    // The perforation: a dashed rule is what makes the card read as a torn job
+    // docket rather than a generic card. The move control rides on this row
+    // so the card keeps its three-row shape.
+    <div className="mt-auto flex items-center justify-between gap-1 border-t border-dashed pt-2 text-[11px] text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-1">
+        {card.quantity && <span className="shrink-0">{card.quantity} نسخة</span>}
+        {card.assignee && (
+          <span className="truncate">· {card.assignee.name}</span>
+        )}
+      </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        <PricingBadge pricing={card.pricing} />
+        {/* 44px tall hit area over a 26px visible box, via a pseudo-element
+            that extends past the box without affecting layout. The touch
+            floor matters more here than the visual height, and a taller
+            button made it overflow the fixed-height card. */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMove?.(card);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="relative flex h-6 shrink-0 items-center rounded border border-border/70 bg-card px-1.5 text-[10px] font-semibold text-muted-foreground transition-colors after:absolute after:inset-y-[-9px] after:inset-x-0 after:content-[''] hover:bg-muted hover:text-foreground"
+        >
+          نقل
+        </button>
+      </div>
     </div>
   );
 }
 
-function TicketCustomerTitle({ customerName, title }: { readonly customerName: string; readonly title: string }) {
+function TicketCustomerTitle({
+  customerName,
+  title,
+}: {
+  readonly customerName: string;
+  readonly title: string;
+}) {
   return (
-    // Title first and largest: it is what the operator is looking for. The
-    // customer sits above it as a quiet qualifier.
-    //
-    // Clamped to two lines. An unbounded title made its card taller than
-    // every other card in the row, which is what turned a lane of tickets
-    // into a staircase of ragged edges.
-    <div className="mt-1.5 flex min-w-0 flex-col">
-      <span className="truncate text-[11px] text-muted-foreground">{customerName}</span>
-      <span
-        className="line-clamp-2 text-sm font-bold leading-snug text-foreground"
-        title={title}
-      >
+    // The customer is the quieter of the two, the title is what the operator
+    // scans for. Clamped to two lines so a long title cannot make its card
+    // taller than the rest of the row.
+    <div className="my-2 flex min-w-0 flex-col">
+      <span className="truncate text-xs font-semibold text-foreground/80">{customerName}</span>
+      <span className="line-clamp-2 text-sm font-bold text-foreground" title={title}>
         {title}
       </span>
     </div>
@@ -156,8 +185,8 @@ export const JobTicketView = React.memo(function JobTicketView({
   const stateLabel = STATE_AR_LABELS[card.state] ?? card.state;
 
   // The accessible name carries the facts the visual card shows but a screen
-  // reader would otherwise miss: the order reference, how much time is left,
-  // and the two states that mean "act now" (URGENT, pricing dispute).
+  // reader would otherwise miss: the order reference, the quantity, and the
+  // two states that mean "act now" (URGENT, pricing dispute).
   const facts = [
     `#${card.orderNumber}`,
     card.quantity ? `${card.quantity} نسخة` : null,
@@ -191,25 +220,17 @@ export const JobTicketView = React.memo(function JobTicketView({
       aria-label={accessibleName}
       onClick={() => onClick?.(card)}
       onKeyDown={onKeyDown}
-      // A soft card: rounded corners and a lift on hover, with the station's
-      // ink as a rule on the reading edge. In RTL the start edge is the right,
-      // so a job announces its station by position before it announces it by
-      // hue.
-      //
-      // h-full plus a clamped title is what makes a row of tickets the same
-      // height. Without it each card is as tall as its own longest line, and
-      // a row of jobs reads as a ragged staircase instead of a grid.
-      //
-      // overflow-hidden is a guard as much as a style: any row that outgrows
-      // the card is clipped rather than painting outside the box, which is
-      // what produced the stray line that stayed beside the column while the
-      // lane scrolled.
-      className={`group relative flex h-full w-full cursor-grab flex-col overflow-hidden rounded-lg border bg-card p-2.5 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing ${
+      // h-full against the lane's fixed row height is what makes a row of
+      // tickets align. overflow-hidden is a guard as much as a style: any
+      // inner row that outgrows the card is clipped rather than painting
+      // outside the box.
+      className={`group relative flex h-full w-full cursor-grab flex-col justify-between overflow-hidden rounded-lg bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing ${
         isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
       } ${isDragging ? "opacity-30" : ""}`}
-      // One style prop: a second one silently replaces the first, which is
-      // how the soft elevation went missing. --ticket-bar is the station's
-      // fill, the token 817f251 paired with the 4px reading-edge rule.
+      // One style prop: a second one silently replaces the first. The
+      // station's fill enters as a 4px rule on the reading edge, which in
+      // RTL is the right, so a job announces its station by position before
+      // it announces it by hue.
       style={{
         borderInlineStartWidth: "4px",
         borderInlineStartColor: "var(--ticket-bar, var(--primary))",
@@ -217,34 +238,7 @@ export const JobTicketView = React.memo(function JobTicketView({
     >
       <TicketHeader card={card} onOrderHover={onOrderHover} onGroupClick={onGroupClick} />
       <TicketCustomerTitle customerName={card.customerName} title={card.title} />
-      <TicketFooter card={card} />
-      {/* The non-drag move path. The card is a fixed height and this row is
-          mt-auto, so the button lands flush at the bottom on every card
-          instead of overflowing the box — the overflow was drawing as a
-          stray line beside the card that stayed put while the lane scrolled. */}
-      <div className="mt-auto flex items-center justify-end gap-2 border-t border-dashed border-border/60 pt-1.5">
-        {card.assignee && (
-          <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
-            {card.assignee.name}
-          </span>
-        )}
-        {/* 44px tall hit area over a 32px visible box, via a pseudo-element
-            that extends past the box without affecting layout. Shrinking the
-            button to fit instead would break the touch floor this board is
-            held to; letting it stay 44px made it overflow the fixed-height
-            card and paint a stray line beside it. */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onMoveKey?.(card);
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="relative flex h-8 min-w-16 shrink-0 items-center justify-center rounded-md border bg-card px-3 text-xs font-semibold text-muted-foreground transition-colors after:absolute after:inset-y-[calc(-50%+0.75rem)] after:inset-x-0 after:content-[''] hover:bg-muted hover:text-foreground"
-        >
-          نقل
-        </button>
-      </div>
+      <TicketFooter card={card} onMove={onMoveKey} />
     </div>
   );
 });
