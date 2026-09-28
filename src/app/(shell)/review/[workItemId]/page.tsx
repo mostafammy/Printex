@@ -140,7 +140,7 @@ export default async function ReviewDetailPage({
   } catch (caught) {
     if (caught instanceof DomainReviewError) {
       return (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
             <AlertCircle className="h-8 w-8" />
           </div>
@@ -181,7 +181,7 @@ export default async function ReviewDetailPage({
       </div>
 
       {/* ── Hero Review Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-amber-500/10 to-orange-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -225,7 +225,7 @@ export default async function ReviewDetailPage({
         {/* Left Column: Spec + Design Versions */}
         <div className="flex flex-col gap-6 lg:col-span-7">
           {/* Order specification card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
@@ -262,7 +262,7 @@ export default async function ReviewDetailPage({
           </section>
 
           {/* Current version card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                 <FileCheck className="h-5 w-5" />
@@ -305,7 +305,7 @@ export default async function ReviewDetailPage({
           </section>
 
           {/* Prior versions */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
                 <Layers className="h-5 w-5" />
@@ -343,7 +343,7 @@ export default async function ReviewDetailPage({
         {/* Right Column: Approval & Rejection Forms */}
         <div className="flex flex-col gap-6 lg:col-span-5">
           {/* Approve Card */}
-          <section className="apple-card p-6 sm:p-7 border-emerald-500/20 bg-linear-to-b from-card to-emerald-500/5">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-emerald-500/20 bg-linear-to-b from-card to-emerald-500/5">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
@@ -378,7 +378,7 @@ export default async function ReviewDetailPage({
           </section>
 
           {/* Reject Card */}
-          <section className="apple-card p-6 sm:p-7 border-destructive/20 bg-linear-to-b from-card to-destructive/5">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-destructive/20 bg-linear-to-b from-card to-destructive/5">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/15 text-destructive">
                 <XCircle className="h-5 w-5" />
