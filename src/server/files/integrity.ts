@@ -25,12 +25,7 @@ export async function streamToTempFile(
   tempPath: string,
   options: BoundedStreamOptions = {}
 ): Promise<StreamIntegrityResult> {
-  const config = getFilesConfig();
-  const {
-    highWaterMark = 200 * 1024 * 1024, // 200 MB default
-    maxSize = getFilesConfig().maxFileSizeBytes,
-    timeoutMs = 30_000, // 30s per chunk
-  } = options;
+  const maxSize = options.maxSize ?? getFilesConfig().maxFileSizeBytes;
 
   const { createWriteStream } = await import("fs");
   const { pipeline } = await import("stream/promises");
@@ -77,8 +72,8 @@ export async function streamToTempFile(
     const runPipeline = pipeline as unknown as (...streams: unknown[]) => Promise<void>;
     await runPipeline(
       Readable.fromWeb(readable as Parameters<typeof Readable.fromWeb>[0]),
-      timeoutStream as unknown as NodeJS.ReadableStream,
-      transformStream as unknown as NodeJS.ReadableStream,
+      timeoutStream,
+      transformStream,
       writer
     );
   } catch (error) {
