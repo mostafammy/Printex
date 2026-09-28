@@ -13,8 +13,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
-import { getOperatorQueue } from "~/server/production";
+import { getOperatorQueuePage, getOperatorQueueStats } from "~/server/production";
 import { Button } from "~/components/ui/button";
+import { PaginationBar } from "~/components/pagination-bar";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -28,12 +29,20 @@ function formatDate(date: Date): string {
   }).format(date);
 }
 
-export default async function ProductionQueuePage() {
+export default async function ProductionQueuePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await getActor();
-  const rows = await getOperatorQueue(actor);
+  const params = await searchParams;
+  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
 
-  const urgentCount = rows.filter((r) => r.priority === "URGENT").length;
-  const revisedCount = rows.filter((r) => r.hasPendingFileRevision).length;
+  const [{ rows, nextCursor }, { totalCount, urgentCount, revisedCount }] = await Promise.all([
+    getOperatorQueuePage(actor, { page }),
+    getOperatorQueueStats(actor),
+  ]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -46,7 +55,7 @@ export default async function ProductionQueuePage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-700 dark:text-blue-400">
               <Printer className="h-3 w-3" />
-              <span>{rows.length} في خط الإنتاج</span>
+              <span>{totalCount} في خط الإنتاج</span>
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -57,7 +66,7 @@ export default async function ProductionQueuePage() {
 
       {/* Apple VisionOS Bento Stats Metric Row */}
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               إجمالي في الطباعة
@@ -68,7 +77,7 @@ export default async function ProductionQueuePage() {
           </div>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
-              {rows.length}
+              {totalCount}
             </span>
             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
               أمر تشغيل
@@ -76,7 +85,7 @@ export default async function ProductionQueuePage() {
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-muted-foreground">
@@ -103,7 +112,7 @@ export default async function ProductionQueuePage() {
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               ملفات معدلة
@@ -125,7 +134,7 @@ export default async function ProductionQueuePage() {
 
       {/* Main Table / Empty State */}
       {rows.length === 0 ? (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-500/15 to-indigo-500/15 text-blue-600 border border-blue-500/20 shadow-xs">
             <CheckCircle2 className="h-8 w-8" />
           </div>
@@ -137,7 +146,7 @@ export default async function ProductionQueuePage() {
           </p>
         </div>
       ) : (
-        <div className="apple-card overflow-hidden">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-start text-sm">
               <thead>
@@ -224,6 +233,11 @@ export default async function ProductionQueuePage() {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* PaginationBar */}
+          <div className="border-t border-border/70 p-4">
+            <PaginationBar page={page} nextCursor={nextCursor} totalCount={totalCount} />
           </div>
         </div>
       )}
