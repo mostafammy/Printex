@@ -132,14 +132,20 @@ function VirtualRow({
           against a min-content intrinsic size, which is what collapsed the
           cards. flex-basis:0 + min-w-0 makes the track purely fractional.
 
-          The row is a fixed height and the card stretches to fill it, so every
-          ticket in a row is the same height. */}
-      <div
-        className="flex"
-        style={{ gap: `${CARD_GAP}px`, height: `${CARD_HEIGHT}px` }}
-      >
+          Spacing is m-1 on each card rather than a gap on the row: a gap
+          only separates horizontally, so a lane rendered as a single column
+          had cards touching. Margin on the card itself gives the same
+          breathing room in both axes.
+
+          The row is a fixed height and the card stretches to fill it, so
+          every ticket in a row is the same height. */}
+      <div className="flex" style={{ height: `${CARD_HEIGHT}px` }}>
         {cardIds.map((cardId) => (
-          <div key={cardId} className="flex min-w-0 flex-1" style={{ flexBasis: 0 }}>
+          <div
+            key={cardId}
+            className="m-1 flex min-w-0 flex-1"
+            style={{ flexBasis: 0 }}
+          >
             <JobTicket
               cardId={cardId}
               onOrderHover={onOrderHover}
