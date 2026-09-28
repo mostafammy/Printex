@@ -33,7 +33,7 @@ export function ViewModeSwitcher({ mode, onChange }: ViewModeSwitcherProps) {
     <div
       role="radiogroup"
       aria-label="طريقة عرض اللوحة"
-      className="flex items-center gap-px rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-muted/40 p-px"
+      className="flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/40 p-0.5"
     >
       {OPTIONS.map((opt) => {
         const isActive = mode === opt.id;
@@ -44,9 +44,9 @@ export function ViewModeSwitcher({ mode, onChange }: ViewModeSwitcherProps) {
             role="radio"
             aria-checked={isActive}
             onClick={() => onChange(opt.id)}
-            className={`flex min-h-11 items-center gap-1.5 px-3 text-xs font-semibold transition-colors ${
+            className={`flex min-h-11 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition-colors ${
               isActive
-                ? "bg-card text-foreground"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

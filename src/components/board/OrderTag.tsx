@@ -77,10 +77,14 @@ export const OrderTag = React.memo(function OrderTag({
   return (
     <div
       data-testid={`order-tag-${orderId}`}
-      // A reference plate, not a pill: flat tint, hairline border, 2px corner.
-      // The hue groups an order's cards together; the square keeps it from
-      // competing with the station's own colour.
-      className={`inline-flex items-center gap-1.5 rounded-[var(--board-radius)] border px-1.5 text-[11px] font-semibold leading-4 transition-colors ${
+      // A reference plate, not a pill: flat tint, hairline border, soft
+      // corner. The hue groups an order's cards together.
+      //
+      // min-w-0 + shrink: the tag is intrinsically wide (group handle, number,
+      // sibling count) and in a narrow card it forced the header row past the
+      // card's edge, which painted a horizontal scrollbar that stayed put
+      // while the lane scrolled vertically.
+      className={`inline-flex min-w-0 shrink items-center gap-1.5 overflow-hidden rounded-[var(--board-radius)] border px-1.5 text-[11px] font-semibold leading-4 transition-colors ${
         isHighlighted ? "ring-2 ring-offset-1 ring-primary" : ""
       }`}
       style={chipStyle}
@@ -88,10 +92,10 @@ export const OrderTag = React.memo(function OrderTag({
       onMouseLeave={() => onHover?.(null)}
     >
       <OrderGroupButton orderId={orderId} orderNumber={orderNumber} onGroupClick={onGroupClick} />
-      <span className="font-mono">#{orderNumber}</span>
+      <span className="shrink-0 font-mono">#{orderNumber}</span>
       <OrderCountBadge eligible={eligibleCount} total={totalCount} />
       {hiddenSiblingCount && hiddenSiblingCount > 0 ? (
-        <span className="text-[10px] opacity-80" title={`${hiddenSiblingCount} بطاقات أخرى في محطات خارج نطاق هذا العرض`}>
+        <span className="shrink-0 text-[10px] opacity-80" title={`${hiddenSiblingCount} بطاقات أخرى في محطات خارج نطاق هذا العرض`}>
           +{hiddenSiblingCount}
         </span>
       ) : null}

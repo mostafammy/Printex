@@ -243,22 +243,19 @@
 
 /* ── Board form ──────────────────────────────────────────────────────────────
    The board's shape language, kept separate from the colour language above.
-   The ink hues stay exactly as authored — they are the station identity, the
-   one thing an operator reads at a glance — but the surface treatment is
-   industrial rather than consumer-software: 2px corners, hairline rules, and
-   no elevation. A soft shadow on a queue of identical cards reads as noise; a
-   1px rule reads as a machine label plate.
+   Reverting to the softer surface that read better on a floor: rounded
+   cards, a soft elevation on hover, and pill-shaped counts. The ink hues are
+   untouched either way — they are the station identity.
 
    Nothing here renames or overrides a token above. The board components are
-   the only consumers, so every other page in the app is untouched. */
+   the only consumers, so every other page in the app is unaffected. */
 :root {
-  --board-radius: 2px;
+  --board-radius: 0.75rem;
   --board-line: 1px;
-  /* Structural rules sit a step stronger than the station tint, so a column
-     frame still holds where the wash is very light (key/graphite). */
   --board-line-strong: var(--line-perforation);
   --board-surface: var(--surface-ticket);
-  --board-elevate: none;
+  --board-elevate: 0 1px 2px 0 rgba(0, 0, 0, 0.02), 0 6px 20px -3px rgba(0, 0, 0, 0.03);
+  --board-elevate-hover: 0 8px 24px -2px rgba(0, 0, 0, 0.05), 0 20px 48px -6px rgba(0, 0, 0, 0.08);
 }
 
 .dark {

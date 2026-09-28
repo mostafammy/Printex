@@ -33,10 +33,15 @@ export interface SubLaneProps {
   readonly onMoveKey?: (card: BoardCard) => void;
 }
 
-// A tiled card is shorter than a full-width one. The virtualizer
-// self-corrects via measureElement, but a close first estimate avoids the
-// scroll jump on first paint.
-const CARD_HEIGHT = 132;
+// A fixed row height is what makes a lane read as a grid rather than a
+// staircase. Every card is the same height, so a row's bottom edges line up
+// and the eye can scan across instead of down.
+//
+// Sized for the tallest card the ticket can produce: header row, a two-line
+// title, the identity row, then the 44px move control. The virtualizer
+// self-corrects via measureElement, but a fixed estimate keeps the first
+// paint from jumping.
+const CARD_HEIGHT = 148;
 const CARD_MIN_WIDTH = 240;
 const CARD_GAP = 8;
 
@@ -64,10 +69,10 @@ function LaneHeader({
       <h3 className="truncate text-xs font-bold text-foreground">{labelAr}</h3>
       {showCount && (
         <span
-          className={`shrink-0 px-1 font-mono text-xs font-bold tabular-nums leading-4 ${
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
             count === 0
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              : "text-muted-foreground"
+              ? "bg-emerald-500/10 text-emerald-600"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           {count}
@@ -84,7 +89,7 @@ function LaneHeader({
  */
 function EmptyLane({ labelAr }: { readonly labelAr: string }) {
   return (
-    <div className="flex items-center gap-1.5 border border-dashed border-[var(--board-line-strong)] px-2 py-2 text-[11px] text-muted-foreground">
+    <div className="flex items-center gap-2 rounded-[var(--board-radius)] border border-dashed border-[var(--board-line-strong)] bg-background/40 px-3 py-4 text-xs text-muted-foreground">
       <span aria-hidden="true" className="text-emerald-600">
         ●
       </span>
@@ -126,17 +131,16 @@ function VirtualRow({
     >
       {/* flex, not grid: `1fr` in a grid cell can produce a zero-basis track
           against a min-content intrinsic size, which is what collapsed the
-          cards. flex-basis:0 + min-w-0 makes the track purely fractional. */}
+          cards. flex-basis:0 + min-w-0 makes the track purely fractional.
+
+          The row is a fixed height, and the card stretches to fill it, so
+          every ticket in a row is the same height. */}
       <div
         className="flex"
-        style={{ gap: `${CARD_GAP}px`, paddingBottom: `${CARD_GAP}px` }}
+        style={{ gap: `${CARD_GAP}px`, height: `${CARD_HEIGHT}px` }}
       >
         {cardIds.map((cardId) => (
-          <div
-            key={cardId}
-            className="min-w-0 flex-1"
-            style={{ flexBasis: 0 }}
-          >
+          <div key={cardId} className="flex min-w-0 flex-1" style={{ flexBasis: 0 }}>
             <JobTicket
               cardId={cardId}
               onOrderHover={onOrderHover}
@@ -185,7 +189,7 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
   const virtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => CARD_HEIGHT + CARD_GAP,
+    estimateSize: () => CARD_HEIGHT,
     overscan: 3,
   });
 

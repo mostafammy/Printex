@@ -48,7 +48,7 @@ function SliceDropdown({
           id="board-slice"
           value={activeSlice}
           onChange={(e) => onSelectSlice(e.target.value as SliceId)}
-          className="min-h-11 appearance-none rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card ps-2.5 pe-7 text-[13px] font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-11 appearance-none rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card ps-3 pe-8 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           {availableSlices.map((sliceId) => {
             const def = SLICES.find((s) => s.id === sliceId);
@@ -90,7 +90,7 @@ function FilterToggleChip({ active, onClick, icon, label, activeClass }: FilterT
       type="button"
       onClick={onClick}
       aria-pressed={active ?? false}
-      className={`inline-flex min-h-11 items-center gap-1.5 rounded-[var(--board-radius)] border px-2.5 text-xs font-semibold transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-[var(--board-radius)] border px-3 text-[13px] font-medium transition-colors ${
         active
           ? activeClass
           : "border-[var(--board-line-strong)] bg-card text-muted-foreground hover:text-foreground"

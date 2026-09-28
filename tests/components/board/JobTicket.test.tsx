@@ -56,7 +56,22 @@ describe("JobTicket Component", () => {
     // hand. The card's own click used to be a no-op in production.
     const moveButton = screen.getByRole("button", { name: "نقل" });
     expect(moveButton).toBeInTheDocument();
-    expect(moveButton).toHaveClass("min-h-11");
+
+    // The 44px touch floor is met by a pseudo-element that extends the hit
+    // area past the 32px visible box, so the control stays compact enough to
+    // sit inside a fixed-height card without overflowing it.
+    expect(moveButton).toHaveClass("after:absolute");
+  });
+
+  it("keeps the ticket at a fixed height so a row of cards aligns", () => {
+    render(<JobTicket card={mockCard} />);
+
+    // h-full on a fixed-height row, plus a line-clamped title: without both,
+    // a long job title makes its card taller than its neighbours and the
+    // lane reads as a staircase instead of a grid.
+    const ticket = screen.getByTestId(`job-ticket-${mockCard.id}`);
+    expect(ticket).toHaveClass("h-full");
+    expect(screen.getByText(mockCard.title)).toHaveClass("line-clamp-2");
   });
 
   it("handles keyboard shortcut M to trigger onMoveKey", () => {

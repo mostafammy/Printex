@@ -68,14 +68,14 @@ function ColumnHeader({
 }) {
   const IconComponent = ICONS[station.icon] ?? Inbox;
   return (
-    // Industrial form: the header is a label plate, not a card. Flat wash,
-    // hairline rule under it, no shadow, 2px corners on the tile.
-    <header className="flex items-center gap-2.5 border-b border-[var(--board-line-strong)] bg-[var(--ticket-wash)] px-3 py-2">
+    // Soft header: the station's ink tint behind a rounded tile icon, with a
+    // hairline rule under it. The station reads as the primary object.
+    <header className="flex items-center gap-2.5 border-b border-[var(--board-line-strong)] bg-[var(--ticket-wash)] px-3.5 py-2.5">
       <span
-        className="flex size-8 shrink-0 items-center justify-center rounded-[2px] text-white"
+        className="flex size-9 shrink-0 items-center justify-center rounded-[var(--board-radius)] text-white"
         style={{ backgroundColor: "var(--ticket-bar)" }}
       >
-        <IconComponent className="size-4" aria-hidden="true" />
+        <IconComponent className="size-[18px]" aria-hidden="true" />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Arabic is cursive: no tracking, and no negative letter-spacing. */}
@@ -85,7 +85,7 @@ function ColumnHeader({
         <div className="flex items-center gap-1.5">
           <span
             data-testid={`station-count-${station.id}`}
-            className="font-mono text-[11px] font-semibold tabular-nums text-muted-foreground"
+            className="text-[11px] font-semibold tabular-nums text-muted-foreground"
           >
             {count}
           </span>
@@ -187,12 +187,10 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      // No outer border: the column's own edge is the frame, and a border
-      // here sat between the station and its lanes as a dead line. The
-      // station identity comes from the header wash and the rule beneath it.
-      // min-h-0 lets the lane list shrink and scroll inside rather than
-      // pushing the page taller than the viewport.
-      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[var(--board-surface)] transition-colors ${
+      // The column is a soft bordered panel: the station owns its frame, and
+      // a rounded edge plus a hairline separates one station from the next
+      // without a heavy rule between them.
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] transition-shadow ${
         props.fillWidth ? "w-full min-w-0" : "w-[clamp(260px,22vw,340px)] shrink-0"
       } ${stateCls}`}
     >

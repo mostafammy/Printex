@@ -46,7 +46,12 @@ function TicketHeader({
   return (
     // One line, no wrapping: order reference and status on the same row, so a
     // queue of jobs scans as a single column of references.
-    <div className="flex items-center justify-between gap-1.5">
+    //
+    // min-w-0 + overflow-hidden: the order tag and the status group are both
+    // intrinsically wide, and without a bound the row overflowed its card and
+    // painted a horizontal scrollbar that stayed visible while the lane
+    // scrolled vertically — a stray line standing beside the column.
+    <div className="flex min-w-0 items-center justify-between gap-1.5 overflow-hidden">
       <OrderTag
         orderId={card.orderId}
         orderNumber={card.orderNumber}
@@ -55,7 +60,7 @@ function TicketHeader({
         onHover={onOrderHover}
         onGroupClick={onGroupClick}
       />
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1 overflow-hidden">
         {/* Registration mark — the print-shop ⌖, aria-hidden because it
             carries no information a screen reader needs. */}
         <span
@@ -66,14 +71,12 @@ function TicketHeader({
           ⌖
         </span>
         {card.priority === "URGENT" && (
-          // Solid, not tinted: urgency is the one fact that must win the
-          // attention contest against 30 identical cards.
-          <span className="bg-destructive px-1 py-px text-[11px] font-bold leading-4 text-destructive-foreground">
+          <span className="rounded-sm bg-destructive/15 px-1.5 py-0.5 text-[11px] font-bold text-destructive">
             عاجل
           </span>
         )}
         {card.reworkCount > 0 && (
-          <span className="bg-amber-500/15 px-1 py-px text-[11px] font-bold leading-4 text-amber-700 dark:text-amber-400">
+          <span className="rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[11px] font-bold text-amber-700 dark:text-amber-400">
             تعديل #{card.reworkCount}
           </span>
         )}
@@ -118,9 +121,18 @@ function TicketCustomerTitle({ customerName, title }: { readonly customerName: s
   return (
     // Title first and largest: it is what the operator is looking for. The
     // customer sits above it as a quiet qualifier.
-    <div className="mt-1.5 flex flex-col">
+    //
+    // Clamped to two lines. An unbounded title made its card taller than
+    // every other card in the row, which is what turned a lane of tickets
+    // into a staircase of ragged edges.
+    <div className="mt-1.5 flex min-w-0 flex-col">
       <span className="truncate text-[11px] text-muted-foreground">{customerName}</span>
-      <span className="truncate text-sm font-bold leading-snug text-foreground">{title}</span>
+      <span
+        className="line-clamp-2 text-sm font-bold leading-snug text-foreground"
+        title={title}
+      >
+        {title}
+      </span>
     </div>
   );
 }
@@ -179,36 +191,50 @@ export const JobTicketView = React.memo(function JobTicketView({
       aria-label={accessibleName}
       onClick={() => onClick?.(card)}
       onKeyDown={onKeyDown}
-      // Industrial card: 2px corner, hairline border, no shadow. The
-      // station's ink enters as a 4px rule on the reading edge — in RTL the
-      // start edge is the right, so a job announces its station by position
-      // before it announces it by hue.
-      className={`group relative flex w-full flex-col justify-between overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2 text-start transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+      // A soft card: rounded corners and a lift on hover, with the station's
+      // ink as a rule on the reading edge. In RTL the start edge is the right,
+      // so a job announces its station by position before it announces it by
+      // hue.
+      //
+      // h-full plus a clamped title is what makes a row of tickets the same
+      // height. Without it each card is as tall as its own longest line, and
+      // a row of jobs reads as a ragged staircase instead of a grid.
+      //
+      // overflow-hidden is a guard as much as a style: any row that outgrows
+      // the card is clipped rather than painting outside the box, which is
+      // what produced the stray line that stayed beside the column while the
+      // lane scrolled.
+      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2.5 text-start transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary hover:shadow-[var(--board-elevate-hover)] ${
         isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
       } ${isDragging ? "opacity-30" : ""}`}
-      // --ticket-edge rather than --ticket-bar: the fill of a graphite ("key")
-      // station is near-black, and a 4px near-black stripe read as a
-      // rendering artifact rather than as the station's identity. The edge
-      // token is the one authored for non-text marks, at 3px.
+      // One style prop: a second one silently replaces the first, which is
+      // how the soft elevation went missing. --ticket-edge rather than
+      // --ticket-bar, because the fill of a graphite ("key") station is
+      // near-black and read as a rendering artifact at 4px.
       style={{
         borderInlineStartWidth: "3px",
         borderInlineStartColor: "var(--ticket-edge, var(--primary))",
+        boxShadow: "var(--board-elevate)",
       }}
     >
       <TicketHeader card={card} onOrderHover={onOrderHover} onGroupClick={onGroupClick} />
       <TicketCustomerTitle customerName={card.customerName} title={card.title} />
       <TicketFooter card={card} />
-      <div className="mt-1.5 flex items-center justify-end gap-2 border-t border-dashed border-[var(--board-line-strong)] pt-0.5">
+      {/* The non-drag move path. The card is a fixed height and this row is
+          mt-auto, so the button lands flush at the bottom on every card
+          instead of overflowing the box — the overflow was drawing as a
+          stray line beside the card that stayed put while the lane scrolled. */}
+      <div className="mt-auto flex items-center justify-end gap-2 border-t border-dashed border-[var(--board-line-strong)] pt-1.5">
         {card.assignee && (
           <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
             {card.assignee.name}
           </span>
         )}
-        {/* The non-drag move path. Inline on the last row rather than a
-            full-width block below it: the previous version made an empty
-            white box the largest element in the card, inverting the
-            hierarchy so the primary action shouted and the job title
-            whispered. */}
+        {/* 44px tall hit area over a 32px visible box, via a pseudo-element
+            that extends past the box without affecting layout. Shrinking the
+            button to fit instead would break the touch floor this board is
+            held to; letting it stay 44px made it overflow the fixed-height
+            card and paint a stray line beside it. */}
         <button
           type="button"
           onClick={(e) => {
@@ -216,7 +242,7 @@ export const JobTicketView = React.memo(function JobTicketView({
             onMoveKey?.(card);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex min-h-11 shrink-0 items-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="relative flex h-8 min-w-16 shrink-0 items-center justify-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-3 text-xs font-semibold text-muted-foreground transition-colors after:absolute after:inset-y-[calc(-50%+0.75rem)] after:inset-x-0 after:content-[''] hover:bg-muted hover:text-foreground"
         >
           نقل
         </button>
