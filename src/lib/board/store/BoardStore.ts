@@ -1,15 +1,6 @@
-/**
- * Observable in-memory normalized store for board cards and lanes.
- * (specs/017-press-floor-board/contracts/board-engine.md §BoardStore, plan.md S1, S2-S)
- */
-
 import type { WorkItemState } from "~/server/board";
 import type { Clock } from "../ports";
-import type {
-  BoardCard,
-  BoardMeta,
-  BoardSnapshot,
-} from "../types";
+import type { BoardCard, BoardMeta, BoardSnapshot } from "../types";
 import { type FrameScheduler, FrameBatcher } from "./FrameBatcher";
 import { LaneIndex } from "./LaneIndex";
 import { TopicEmitter } from "./TopicEmitter";
@@ -27,21 +18,13 @@ export class BoardStore {
   readonly #batcher: FrameBatcher;
   readonly #pendingMoves = new Map<string, PendingMove>();
   readonly #dirtyTopics = new Set<string>();
-
   #snapshot: BoardSnapshot;
   #cachedMeta: BoardMeta | null = null;
 
-  constructor(
-    snapshot: BoardSnapshot,
-    _clock: Clock,
-    scheduler?: FrameScheduler,
-  ) {
+  constructor(snapshot: BoardSnapshot, _clock: Clock, scheduler?: FrameScheduler) {
     this.#batcher = new FrameBatcher(scheduler);
     this.#snapshot = snapshot;
-    for (const card of snapshot.cards) {
-      this.#cards.set(card.id, card);
-      this.#laneIndex.insert(card.state, card.id, this.#cards);
-    }
+    this.#insertCards(snapshot.cards, new Set());
   }
 
   getCard(id: string): BoardCard | undefined {
@@ -53,17 +36,14 @@ export class BoardStore {
   }
 
   getMeta(): BoardMeta {
-    if (!this.#cachedMeta) {
-      this.#cachedMeta = {
-        slice: this.#snapshot.slice,
-        availableSlices: this.#snapshot.availableSlices,
-        totalVisible: this.#cards.size,
-        hiddenSiblingCounts: this.#snapshot.hiddenSiblingCounts,
-        blockedHints: this.#snapshot.blockedHints,
-        pagination: this.#snapshot.pagination,
-      };
-    }
-    return this.#cachedMeta;
+    return (this.#cachedMeta ??= {
+      slice: this.#snapshot.slice,
+      availableSlices: this.#snapshot.availableSlices,
+      totalVisible: this.#cards.size,
+      hiddenSiblingCounts: this.#snapshot.hiddenSiblingCounts,
+      blockedHints: this.#snapshot.blockedHints,
+      pagination: this.#snapshot.pagination,
+    });
   }
 
   subscribe(topic: string, listener: () => void): () => void {
@@ -97,11 +77,10 @@ export class BoardStore {
     const pending = this.#pendingMoves.get(token);
     if (!pending) return;
     this.#pendingMoves.delete(token);
-    const { cardId, originalCard, targetState } = pending;
-    this.#cards.set(cardId, originalCard);
-    this.#laneIndex.remove(targetState, cardId);
-    this.#laneIndex.insert(originalCard.state, cardId, this.#cards);
-    this.#markDirty([`card:${cardId}`, `lane:${targetState}`, `lane:${originalCard.state}`, "meta"]);
+    this.#cards.set(pending.cardId, pending.originalCard);
+    this.#laneIndex.remove(pending.targetState, pending.cardId);
+    this.#laneIndex.insert(pending.originalCard.state, pending.cardId, this.#cards);
+    this.#markDirty([`card:${pending.cardId}`, `lane:${pending.targetState}`, `lane:${pending.originalCard.state}`, "meta"]);
   }
 
   upsert(cards: readonly BoardCard[]): void {
@@ -136,17 +115,35 @@ export class BoardStore {
     this.#flushDirty();
   }
 
-  replace(snapshot: BoardSnapshot): void {
-    this.#cards.clear();
-    this.#laneIndex.clear();
-    this.#snapshot = snapshot;
-    const dirty = new Set<string>(["meta"]);
-    for (const card of snapshot.cards) {
+  #insertCards(cards: readonly BoardCard[], dirty: Set<string>): void {
+    for (const card of cards) {
       this.#cards.set(card.id, card);
       this.#laneIndex.insert(card.state, card.id, this.#cards);
       dirty.add(`lane:${card.state}`);
       dirty.add(`card:${card.id}`);
     }
+  }
+
+  replace(snapshot: BoardSnapshot): void {
+    this.#cards.clear();
+    this.#laneIndex.clear();
+    this.#snapshot = snapshot;
+    const dirty = new Set<string>(["meta"]);
+    this.#insertCards(snapshot.cards, dirty);
+    this.#cachedMeta = null;
+    this.#emitter.emitMany(dirty);
+  }
+
+  append(snapshot: BoardSnapshot): void {
+    const dirty = new Set<string>(["meta"]);
+    const existing = new Set(this.#cards.keys());
+    const newCards = snapshot.cards.filter((c) => !existing.has(c.id));
+    this.#insertCards(newCards, dirty);
+    this.#snapshot = {
+      ...this.#snapshot,
+      cards: [...this.#snapshot.cards, ...newCards],
+      pagination: snapshot.pagination,
+    };
     this.#cachedMeta = null;
     this.#emitter.emitMany(dirty);
   }
