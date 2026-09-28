@@ -25,11 +25,6 @@ export interface MobileStationTabsProps {
   readonly onSelectStation: (id: StationId) => void;
   /** Restricts the list to the active slice's stations. */
   readonly stationIds?: readonly StationId[];
-  /**
-   * Horizontal strip under a toolbar (the old phone affordance) rather than
-   * the full-board side rail. Kept so the phone layout can stay compact.
-   */
-  readonly phoneOnly?: boolean;
 }
 
 function StationTab({
@@ -67,17 +62,23 @@ function StationTab({
       tabIndex={active ? 0 : -1}
       onClick={() => onSelect(id)}
       data-station={id}
-      className={`flex w-full items-center gap-2.5 rounded-lg border-s-4 px-3 py-2.5 text-start transition-colors ${
+      // A label plate, not a chip: square corner, the station's ink as a 3px
+      // rule on the reading edge, and a flat wash only when selected. The ink
+      // is present whether or not the station is active, so the rail reads as
+      // a colour key for the whole floor at a glance.
+      className={`flex w-full items-center gap-2 rounded-[var(--board-radius)] border-s-[3px] px-2 py-2 text-start transition-colors ${
         active
           ? "border-s-[var(--ticket-bar)] bg-[var(--ticket-wash)]"
-          : "border-s-transparent hover:bg-muted/50"
+          : "border-s-[color-mix(in_oklch,var(--ticket-bar)_45%,transparent)] hover:bg-muted/50"
       }`}
       style={{ ["--ticket-bar" as string]: `var(--ink-${ink})` }}
     >
-      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+      <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
         {labelAr}
       </span>
-      <span className="text-xs font-bold tabular-nums text-muted-foreground">{count}</span>
+      <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
+        {count}
+      </span>
       <StationSummary stationStates={lanes.map((l) => l.state)} now={now} />
     </button>
   );
@@ -87,7 +88,6 @@ export const MobileStationTabs = React.memo(function MobileStationTabs({
   activeStationId,
   onSelectStation,
   stationIds,
-  phoneOnly = false,
 }: MobileStationTabsProps) {
   // Read once per render, not through a store selector: `Date.now()` returns
   // a fresh value on every snapshot read, which re-renders forever and trips
@@ -99,9 +99,7 @@ export const MobileStationTabs = React.memo(function MobileStationTabs({
     <nav
       role="tablist"
       aria-label="محطات المطبعة"
-      className={`flex shrink-0 flex-col gap-1 overflow-y-auto p-2 ${
-        phoneOnly ? "sm:hidden" : ""
-      }`}
+      className="flex shrink-0 flex-col gap-px overflow-y-auto p-2"
     >
       {list.map((st) => (
         <StationTab

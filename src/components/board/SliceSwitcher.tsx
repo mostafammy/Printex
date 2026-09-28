@@ -48,7 +48,7 @@ function SliceDropdown({
           id="board-slice"
           value={activeSlice}
           onChange={(e) => onSelectSlice(e.target.value as SliceId)}
-          className="min-h-11 appearance-none rounded-lg border border-border/60 bg-card ps-3 pe-8 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="min-h-11 appearance-none rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card ps-2.5 pe-7 text-[13px] font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           {availableSlices.map((sliceId) => {
             const def = SLICES.find((s) => s.id === sliceId);
@@ -90,10 +90,10 @@ function FilterToggleChip({ active, onClick, icon, label, activeClass }: FilterT
       type="button"
       onClick={onClick}
       aria-pressed={active ?? false}
-      className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 font-medium transition-colors ${
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-[var(--board-radius)] border px-2.5 text-xs font-semibold transition-colors ${
         active
           ? activeClass
-          : "border-border/60 bg-card text-muted-foreground hover:border-border hover:text-foreground"
+          : "border-[var(--board-line-strong)] bg-card text-muted-foreground hover:text-foreground"
       }`}
     >
       {icon}
@@ -147,7 +147,7 @@ function BoardPaginationControls({ pagination }: { readonly pagination: BoardPag
       {pagination.page > 1 && (
         <Link
           href={`/board?page=${pagination.page - 1}`}
-          className="rounded-lg border border-border/60 bg-card px-2 py-1 font-medium hover:bg-muted"
+          className="rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-2 py-1 font-medium hover:bg-muted"
         >
           السابق
         </Link>
@@ -158,7 +158,7 @@ function BoardPaginationControls({ pagination }: { readonly pagination: BoardPag
       {pagination.hasMore && (
         <Link
           href={`/board?page=${pagination.page + 1}`}
-          className="rounded-lg border border-border/60 bg-card px-2 py-1 font-medium hover:bg-muted"
+          className="rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-2 py-1 font-medium hover:bg-muted"
         >
           التالي
         </Link>
@@ -181,7 +181,7 @@ export function SliceSwitcher({
   ).length;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-xs">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--board-line-strong)] bg-background px-3 py-1.5">
       <div className="flex items-center gap-3">
         {viewSwitcher}
         <SliceDropdown
@@ -197,7 +197,7 @@ export function SliceSwitcher({
           <button
             type="button"
             onClick={() => onUpdateFilters({})}
-            className="min-h-11 rounded-lg px-2 text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="min-h-11 px-2 text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground"
           >
             مسح التصفية
           </button>

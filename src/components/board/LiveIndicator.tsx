@@ -75,7 +75,7 @@ export function LiveIndicator() {
       {banner && (
         <div
           role="status"
-          className={`fixed bottom-4 inset-inline-start-4 z-40 flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium text-white shadow-lg ${
+          className={`fixed bottom-4 inset-inline-start-4 z-40 flex items-center gap-2 rounded-[var(--board-radius)] px-2.5 py-1.5 text-xs font-semibold text-white ${
             banner.kind === "error"
               ? "bg-destructive"
               : banner.kind === "stale"
@@ -85,7 +85,7 @@ export function LiveIndicator() {
         >
           <span
             aria-hidden="true"
-            className={`h-2 w-2 rounded-full bg-white ${
+            className={`size-1.5 bg-white ${
               banner.kind === "error" ? "" : "animate-pulse"
             }`}
           />

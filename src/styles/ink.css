@@ -240,3 +240,27 @@
     --motion-duration-land: 0ms;
   }
 }
+
+/* ── Board form ──────────────────────────────────────────────────────────────
+   The board's shape language, kept separate from the colour language above.
+   The ink hues stay exactly as authored — they are the station identity, the
+   one thing an operator reads at a glance — but the surface treatment is
+   industrial rather than consumer-software: 2px corners, hairline rules, and
+   no elevation. A soft shadow on a queue of identical cards reads as noise; a
+   1px rule reads as a machine label plate.
+
+   Nothing here renames or overrides a token above. The board components are
+   the only consumers, so every other page in the app is untouched. */
+:root {
+  --board-radius: 2px;
+  --board-line: 1px;
+  /* Structural rules sit a step stronger than the station tint, so a column
+     frame still holds where the wash is very light (key/graphite). */
+  --board-line-strong: var(--line-perforation);
+  --board-surface: var(--surface-ticket);
+  --board-elevate: none;
+}
+
+.dark {
+  --board-line-strong: color-mix(in oklch, var(--line-perforation) 80%, transparent);
+}

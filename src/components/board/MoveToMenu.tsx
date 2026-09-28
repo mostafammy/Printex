@@ -39,7 +39,7 @@ function OptionItem({
         type="button"
         role="menuitem"
         onClick={() => onSelect(option)}
-        className={`flex min-h-11 w-full items-center justify-between rounded-md px-3 text-start text-sm font-medium transition-colors ${colorClass}`}
+        className={`flex min-h-11 w-full items-center justify-between rounded-[var(--board-radius)] px-2.5 text-start text-[13px] font-semibold transition-colors ${colorClass}`}
       >
         <span>{option.labelAr}</span>
         {option.kind !== "DIRECT" && (
@@ -151,14 +151,14 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
     >
       <div
         ref={menuRef}
-        className="w-full max-w-sm rounded-xl border border-border/60 bg-popover p-4 text-popover-foreground shadow-xl"
+        className="w-full max-w-sm rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-popover p-3 text-popover-foreground"
       >
-        <div className="mb-3 flex items-center justify-between border-b pb-2">
-          <h3 className="text-sm font-semibold">نقل إلى...</h3>
+        <div className="mb-2 flex items-center justify-between border-b border-[var(--board-line-strong)] pb-1.5">
+          <h3 className="text-sm font-bold">نقل إلى...</h3>
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 rounded-md px-2 text-sm text-muted-foreground hover:text-foreground"
+            className="min-h-11 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             إغلاق (Esc)
           </button>

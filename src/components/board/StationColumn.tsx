@@ -68,23 +68,24 @@ function ColumnHeader({
 }) {
   const IconComponent = ICONS[station.icon] ?? Inbox;
   return (
-    <header className="flex items-center gap-3 border-b border-[var(--ticket-edge)] bg-[var(--ticket-wash)] px-4 py-3">
+    // Industrial form: the header is a label plate, not a card. Flat wash,
+    // hairline rule under it, no shadow, 2px corners on the tile.
+    <header className="flex items-center gap-2.5 border-b border-[var(--board-line-strong)] bg-[var(--ticket-wash)] px-3 py-2">
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white"
+        className="flex size-8 shrink-0 items-center justify-center rounded-[2px] text-white"
         style={{ backgroundColor: "var(--ticket-bar)" }}
       >
-        <IconComponent className="h-5 w-5" aria-hidden="true" />
+        <IconComponent className="size-4" aria-hidden="true" />
       </span>
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Arabic is cursive: no tracking. The previous `tracking-tight` sat on
-            top of the app-wide -0.011em and damaged the letter joins. */}
-        <h2 className="truncate text-lg font-bold leading-tight text-foreground">
+        {/* Arabic is cursive: no tracking, and no negative letter-spacing. */}
+        <h2 className="truncate text-base font-bold leading-tight text-foreground">
           {station.labelAr}
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <span
             data-testid={`station-count-${station.id}`}
-            className="text-xs font-semibold tabular-nums text-muted-foreground"
+            className="font-mono text-[11px] font-semibold tabular-nums text-muted-foreground"
           >
             {count}
           </span>
@@ -116,8 +117,7 @@ function SubLaneList({
 }: StationColumnProps) {
   const isMultiLane = station.lanes.length > 1;
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3">
-      {station.lanes.map((lane) => (
+    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3">      {station.lanes.map((lane) => (
         <SubLane
           key={lane.state}
           state={lane.state}
@@ -168,7 +168,7 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`flex h-full flex-col overflow-hidden rounded-xl border border-[var(--ticket-edge)] bg-[var(--ticket-wash)] transition-shadow ${
+      className={`flex h-full flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] transition-colors ${
         props.fillWidth ? "w-full" : "min-w-[280px] max-w-[340px]"
       } ${stateCls}`}
     >

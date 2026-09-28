@@ -27,7 +27,17 @@ function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
   if (!card) return null;
   return (
     <DragOverlay dropAnimation={null}>
-      <div className="rotate-2 scale-105 shadow-2xl opacity-90 pointer-events-none cursor-grabbing">
+      {/* The lifted card keeps the board's industrial form: a 2px outline in
+          the station's ink, no rotation, no soft shadow. Rotation reads as
+          playfulness, which is wrong for a job being physically moved
+          between two places on a floor. */}
+      <div
+        className="pointer-events-none cursor-grabbing"
+        style={{
+          outline: "2px solid var(--ticket-bar, var(--primary))",
+          outlineOffset: "1px",
+        }}
+      >
         <JobTicket card={card} />
       </div>
     </DragOverlay>

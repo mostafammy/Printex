@@ -26,7 +26,12 @@ export interface SubLaneProps {
   readonly onMoveKey?: (card: BoardCard) => void;
 }
 
-const CARD_HEIGHT = 168;
+// The industrial card is shorter than the soft card it replaced: 2px
+// corners, 8px padding, a single-line footer, and a move control that
+// overlaps the card's own padding. Measured, not guessed — the virtualizer
+// self-corrects via measureElement, but a close first estimate avoids the
+// scroll jump on first paint.
+const CARD_HEIGHT = 148;
 
 /** Stable empty result, so a missing provider does not allocate a new array
     every render and defeat the selector's reference check. */
@@ -34,13 +39,16 @@ const EMPTY_IDS: readonly string[] = Object.freeze([]);
 
 function LaneHeader({ labelAr, count }: { readonly labelAr: string; readonly count: number }) {
   return (
-    <div className="flex items-center justify-between px-2 py-1.5">
-      <h3 className="text-sm font-bold text-foreground">{labelAr}</h3>
+    // A lane is a queue, so its header is a section rule with a count on the
+    // end — the count is set in mono so a column of numbers aligns and a
+    // stalled lane is visible without reading any label.
+    <div className="flex items-center justify-between gap-2 border-b border-[var(--board-line-strong)] px-2 py-1">
+      <h3 className="truncate text-xs font-bold text-foreground">{labelAr}</h3>
       <span
-        className={`rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
+        className={`shrink-0 px-1 font-mono text-xs font-bold tabular-nums leading-4 ${
           count === 0
-            ? "bg-emerald-500/10 text-emerald-600"
-            : "bg-muted text-muted-foreground"
+            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+            : "text-muted-foreground"
         }`}
       >
         {count}
@@ -51,12 +59,12 @@ function LaneHeader({ labelAr, count }: { readonly labelAr: string; readonly cou
 
 /**
  * An empty lane is a good fact, not an absence of one. An operator reading
- * "0" against a green pill learns the station is genuinely clear; the same
+ * "0" against a green mark learns the station is genuinely clear; the same
  * "0" in grey next to a busy station is ambiguous.
  */
 function EmptyLane({ labelAr }: { readonly labelAr: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-dashed border-[var(--ticket-edge)] bg-background/40 px-3 py-4 text-xs text-muted-foreground">
+    <div className="flex items-center gap-1.5 border border-dashed border-[var(--board-line-strong)] px-2 py-2 text-[11px] text-muted-foreground">
       <span aria-hidden="true" className="text-emerald-600">
         ●
       </span>
@@ -89,7 +97,7 @@ function VirtualRow({
       data-index={virtualItem.index}
       ref={measureRef}
       role="listitem"
-      className="absolute inset-e-0 pb-2"
+      className="absolute inset-e-0 pb-1"
       style={{ transform: `translateY(${virtualItem.start}px)` }}
     >
       <JobTicket

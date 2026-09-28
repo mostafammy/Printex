@@ -24,7 +24,7 @@ function OrderCountBadge({ eligible, total }: { readonly eligible?: number; read
   if (eligible === undefined || total === undefined || total <= 1) return null;
   return (
     <span
-      className="ms-1 rounded bg-black/10 px-1 py-0.2 font-mono text-[10px] font-bold"
+      className="ms-1 bg-black/10 px-1 font-mono text-[10px] font-bold leading-4"
       title={`${eligible} من أصل ${total} بطاقات قابلة للنقل`}
     >
       {eligible} من {total}
@@ -49,7 +49,7 @@ function OrderGroupButton({
         e.stopPropagation();
         onGroupClick(orderId);
       }}
-      className="cursor-grab active:cursor-grabbing p-0.5 -ms-1 hover:bg-black/10 rounded transition-colors"
+      className="-ms-1 cursor-grab p-0.5 transition-colors hover:bg-black/10 active:cursor-grabbing"
       aria-label={`نقل طلب #${orderNumber} جماعياً`}
     >
       <GripVertical className="h-3 w-3 opacity-60" />
@@ -77,7 +77,10 @@ export const OrderTag = React.memo(function OrderTag({
   return (
     <div
       data-testid={`order-tag-${orderId}`}
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold transition-all ${
+      // A reference plate, not a pill: flat tint, hairline border, 2px corner.
+      // The hue groups an order's cards together; the square keeps it from
+      // competing with the station's own colour.
+      className={`inline-flex items-center gap-1.5 rounded-[var(--board-radius)] border px-1.5 text-[11px] font-semibold leading-4 transition-colors ${
         isHighlighted ? "ring-2 ring-offset-1 ring-primary" : ""
       }`}
       style={chipStyle}

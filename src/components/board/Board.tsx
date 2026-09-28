@@ -66,7 +66,6 @@ function PhoneBoard(props: BoardProps & { readonly stationIds: readonly StationI
         activeStationId={activeStation.id}
         onSelectStation={setActiveId}
         stationIds={props.stationIds}
-        phoneOnly
       />
       <div className="flex min-h-0 flex-1 flex-col p-2">
         <StationColumn

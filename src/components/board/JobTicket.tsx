@@ -62,7 +62,9 @@ function TicketHeader({
   );
 
   return (
-    <div className="flex items-center justify-between gap-2">
+    // One line, no wrapping: order reference and status on the same row, so a
+    // queue of jobs scans as a single column of references.
+    <div className="flex items-center justify-between gap-1.5">
       <OrderTag
         orderId={card.orderId}
         orderNumber={card.orderNumber}
@@ -71,23 +73,25 @@ function TicketHeader({
         onHover={onOrderHover}
         onGroupClick={onGroupClick}
       />
-      <div className="flex items-center gap-1.5">
+      <div className="flex shrink-0 items-center gap-1">
         {/* Registration mark — the print-shop ⌖, aria-hidden because it
             carries no information a screen reader needs. */}
         <span
           aria-hidden="true"
           title="بطاقة عمل"
-          className="select-none font-mono text-sm text-muted-foreground/40"
+          className="select-none font-mono text-xs text-muted-foreground/40"
         >
           ⌖
         </span>
         {card.priority === "URGENT" && (
-          <span className="rounded-sm bg-destructive/15 px-1.5 py-0.5 text-xs font-bold text-destructive">
+          // Solid, not tinted: urgency is the one fact that must win the
+          // attention contest against 30 identical cards.
+          <span className="bg-destructive px-1 py-px text-[11px] font-bold leading-4 text-destructive-foreground">
             عاجل
           </span>
         )}
         {card.reworkCount > 0 && (
-          <span className="rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+          <span className="bg-amber-500/15 px-1 py-px text-[11px] font-bold leading-4 text-amber-700 dark:text-amber-400">
             تعديل #{card.reworkCount}
           </span>
         )}
@@ -102,12 +106,12 @@ function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
   const isPending = pricing === "PENDING";
   return (
     <span
-      className={`rounded px-1 text-[11px] font-medium ${
+      className={`px-1 text-[11px] font-semibold leading-4 ${
         isPriced
-          ? "bg-emerald-500/10 text-emerald-600"
+          ? "text-emerald-600"
           : isPending
-            ? "bg-amber-500/10 text-amber-600"
-            : "bg-destructive/10 text-destructive"
+            ? "text-amber-600"
+            : "text-destructive"
       }`}
     >
       {isPriced ? "مسعّر" : isPending ? "قيد التسعير" : "نزاع"}
@@ -117,13 +121,13 @@ function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
 
 function TicketFooter({ card }: { readonly card: BoardCard }) {
   return (
-    <div className="flex items-center justify-between border-t border-dashed border-[var(--ticket-edge)] pt-2 text-[11px] text-muted-foreground">
-      <div className="flex items-center gap-1">
-        {card.quantity && <span>{card.quantity} نسخة</span>}
-        {card.assignee && (
-          <span className="truncate max-w-[90px]">· {card.assignee.name}</span>
-        )}
-      </div>
+    // The perforation: a dashed rule is the detail that makes a card read as
+    // a torn job docket rather than a generic card. Kept, now as a hairline.
+    <div className="flex items-center justify-between gap-1 border-t border-dashed border-[var(--board-line-strong)] pt-1 text-[11px] text-muted-foreground">
+      <span className="truncate">
+        {card.quantity ? `${card.quantity} نسخة` : ""}
+        {card.assignee ? `${card.quantity ? " · " : ""}${card.assignee.name}` : ""}
+      </span>
       <PricingBadge pricing={card.pricing} />
     </div>
   );
@@ -131,9 +135,9 @@ function TicketFooter({ card }: { readonly card: BoardCard }) {
 
 function TicketCustomerTitle({ customerName, title }: { readonly customerName: string; readonly title: string }) {
   return (
-    <div className="my-2 flex flex-col">
-      <span className="truncate text-xs text-foreground">{customerName}</span>
-      <span className="truncate text-sm font-bold text-foreground">{title}</span>
+    <div className="my-1.5 flex flex-col">
+      <span className="truncate text-[11px] text-muted-foreground">{customerName}</span>
+      <span className="truncate text-sm font-bold leading-tight text-foreground">{title}</span>
     </div>
   );
 }
@@ -192,7 +196,11 @@ export const JobTicketView = React.memo(function JobTicketView({
       aria-label={accessibleName}
       onClick={() => onClick?.(card)}
       onKeyDown={onKeyDown}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border border-[var(--ticket-edge)] bg-[var(--surface-ticket)] p-3 text-start transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+      // Industrial card: 2px corner, hairline border, no shadow. The
+      // station's ink enters as a 4px rule on the reading edge — in RTL the
+      // start edge is the right, so a job announces its station by position
+      // before it announces it by hue.
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2 text-start transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
       } ${isDragging ? "opacity-30" : ""}`}
       style={{ borderInlineStartWidth: "4px", borderInlineStartColor: "var(--ticket-bar, var(--primary))" }}
@@ -200,8 +208,9 @@ export const JobTicketView = React.memo(function JobTicketView({
       <TicketHeader card={card} onOrderHover={onOrderHover} onGroupClick={onGroupClick} />
       <TicketCustomerTitle customerName={card.customerName} title={card.title} />
       <TicketFooter card={card} />
-      {/* The non-drag move path. `min-h-11` clears the 44px touch floor that
-          every other control on this board was failing. */}
+      {/* The non-drag move path. The hit box clears the 44px touch floor
+          while the visible rule stays thin, so the button costs the card
+          almost no density. */}
       <button
         type="button"
         onClick={(e) => {
@@ -209,7 +218,7 @@ export const JobTicketView = React.memo(function JobTicketView({
           onMoveKey?.(card);
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="mt-3 flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--ticket-edge)] bg-[var(--ticket-wash)] text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+        className="-mx-0.5 -mb-0.5 mt-1.5 flex min-h-11 items-center justify-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-transparent text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         نقل
       </button>

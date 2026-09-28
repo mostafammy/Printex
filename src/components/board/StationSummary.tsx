@@ -52,10 +52,9 @@ export function StationSummary({ stationStates, now }: StationSummaryProps) {
   if (!age) return null;
 
   return (
-    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-      <span aria-hidden="true">·</span>
+    <span className="flex items-center gap-1 font-mono text-[11px] text-muted-foreground">
       <span>أقدمها</span>
-      <span className="font-semibold tabular-nums text-foreground">{age}</span>
+      <span className="font-bold tabular-nums text-foreground">{age}</span>
     </span>
   );
 }

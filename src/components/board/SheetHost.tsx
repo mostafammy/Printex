@@ -88,7 +88,7 @@ export function SheetHost() {
         }
       }}
     >
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-popover p-4 text-popover-foreground">
         <SheetContent request={request} />
       </div>
     </div>
