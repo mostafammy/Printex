@@ -60,6 +60,7 @@ export class BoardStore {
         totalVisible: this.#cards.size,
         hiddenSiblingCounts: this.#snapshot.hiddenSiblingCounts,
         blockedHints: this.#snapshot.blockedHints,
+        pagination: this.#snapshot.pagination,
       };
     }
     return this.#cachedMeta;

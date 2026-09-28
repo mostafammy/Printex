@@ -14,14 +14,8 @@ import type { MotionTokens } from "./motion/tokens";
 export type { SliceId, MotionTokens };
 
 export type SheetId =
-  | "assign-designer"
-  | "reject-design"
-  | "send-back"
-  | "complete-production"
-  | "route-department"
-  | "cancel"
-  | "receive"
-  | "handover";
+  | "assign-designer" | "reject-design" | "send-back" | "complete-production"
+  | "route-department" | "cancel" | "receive" | "handover";
 
 export type SheetInput = Record<string, unknown>;
 
@@ -31,65 +25,45 @@ export interface MoveOption {
   readonly kind: "DIRECT" | "SHEET" | "SCREEN";
   readonly sheet: SheetId | null;
   readonly screenHref: string | null;
-  readonly backward: boolean;
-  readonly destructive: boolean;
-  readonly groupable: boolean;
+  readonly backward: boolean; readonly destructive: boolean; readonly groupable: boolean;
   readonly labelAr: string;
 }
 
 export interface BoardCard {
-  readonly id: string;
-  readonly orderId: string;
-  readonly orderNumber: number;
-  readonly orderTagHue: number;
-  readonly customerName: string;
-  readonly title: string;
-  readonly quantity: number | null;
-  readonly state: WorkItemState;
+  readonly id: string; readonly orderId: string; readonly orderNumber: number;
+  readonly orderTagHue: number; readonly customerName: string; readonly title: string;
+  readonly quantity: number | null; readonly state: WorkItemState;
   readonly priority: "URGENT" | "NORMAL";
   readonly pricing: "PENDING" | "PRICED" | "DISPUTED" | "NOT_REQUIRED";
-  readonly enteredStationAt: string;
-  readonly targetMinutes: number | null;
-  readonly dueAt: string | null;
+  readonly enteredStationAt: string; readonly targetMinutes: number | null; readonly dueAt: string | null;
   readonly reworkCount: number;
   readonly assignee: { readonly id: string; readonly name: string } | null;
   readonly departmentId: string | null;
   readonly moves: readonly MoveOption[];
-  readonly lastTransitionId: string | null;
-  readonly lastTransitionAt: string;
+  readonly lastTransitionId: string | null; readonly lastTransitionAt: string;
 }
 
 export interface BlockedHint {
-  readonly station: StationId;
-  readonly reasonAr: string;
+  readonly station: StationId; readonly reasonAr: string;
 }
 
 export interface BoardPagination {
-  readonly page: number;
-  readonly pageSize: number;
-  readonly totalCount?: number;
-  readonly hasMore: boolean;
-  readonly nextCursor: number | null;
+  readonly page: number; readonly pageSize: number;
+  readonly totalCount?: number; readonly hasMore: boolean; readonly nextCursor: number | null;
 }
 
 export interface BoardMeta {
-  readonly slice: SliceId;
-  readonly availableSlices: readonly SliceId[];
-  readonly totalVisible: number;
-  readonly hiddenSiblingCounts: Readonly<Record<string, number>>;
-  readonly blockedHints: readonly BlockedHint[];
-  readonly pagination?: BoardPagination;
+  readonly slice: SliceId; readonly availableSlices: readonly SliceId[];
+  readonly totalVisible: number; readonly hiddenSiblingCounts: Readonly<Record<string, number>>;
+  readonly blockedHints: readonly BlockedHint[]; readonly pagination?: BoardPagination;
 }
 
 export interface BoardFilters {
   readonly stations?: readonly StationId[];
-  readonly departmentIds?: readonly string[];
-  readonly designerIds?: readonly string[];
-  readonly urgentOnly?: boolean;
-  readonly overdueOnly?: boolean;
+  readonly departmentIds?: readonly string[]; readonly designerIds?: readonly string[];
+  readonly urgentOnly?: boolean; readonly overdueOnly?: boolean; readonly archive?: boolean;
   readonly pricing?: readonly ("PENDING" | "PRICED" | "DISPUTED")[];
   readonly customerQuery?: string;
-  readonly archive?: boolean;
 }
 
 export interface BoardSnapshot {
@@ -146,31 +120,16 @@ export interface GroupMoveResult {
 export interface SnapshotRequest {
   readonly slice?: SliceId;
   readonly filters?: BoardFilters;
-  readonly pagination?: {
-    readonly page?: number;
-    readonly pageSize?: number;
-  };
+  readonly pagination?: { readonly page?: number; readonly pageSize?: number };
 }
 
 export type ChoreographyKind =
-  | "lift"
-  | "travel"
-  | "stamp"
-  | "fly-back"
-  | "rework-arc"
-  | "roll-out"
-  | "land"
-  | "instant";
+  | "lift" | "travel" | "stamp" | "fly-back"
+  | "rework-arc" | "roll-out" | "land" | "instant";
 
 export interface RectLike {
-  readonly x: number;
-  readonly y: number;
-  readonly width: number;
-  readonly height: number;
-  readonly top: number;
-  readonly right: number;
-  readonly bottom: number;
-  readonly left: number;
+  readonly x: number; readonly y: number; readonly width: number; readonly height: number;
+  readonly top: number; readonly right: number; readonly bottom: number; readonly left: number;
 }
 
 export interface MotionContext {

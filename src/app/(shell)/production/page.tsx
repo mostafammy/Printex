@@ -237,7 +237,12 @@ export default async function ProductionQueuePage({
 
           {/* PaginationBar */}
           <div className="border-t border-border/70 p-4">
-            <PaginationBar page={page} nextCursor={nextCursor} totalCount={totalCount} />
+            <PaginationBar
+              basePath="/production"
+              page={page}
+              hasNextPage={nextCursor !== null}
+              totalPages={Math.ceil(totalCount / 25)}
+            />
           </div>
         </div>
       )}

@@ -8,6 +8,7 @@ import type { BlockedHint, BoardCard, BoardSnapshot, SnapshotRequest } from "~/l
 import type { Actor } from "~/server/auth";
 import type { WorkItemState } from "~/server/core";
 import { db } from "~/server/db";
+import { PageRequest } from "~/server/pagination";
 import { loadStationTargetsConfig, type StationTargets } from "./config";
 import { edgeCatalog } from "./edges";
 import { fetchRawWorkItemRows, mapRowToBoardCard, type RawWorkItemRow } from "./projection";
@@ -30,26 +31,38 @@ function buildSnapshotWhere(
   request?: SnapshotRequest,
   slice?: SliceId,
 ): Prisma.WorkItemWhereInput {
-  const where: Prisma.WorkItemWhereInput = {
-    AND: [toPrismaWhere(actor)],
-  };
-  const andList = where.AND as Prisma.WorkItemWhereInput[];
-
-  if (!request?.filters?.archive) {
-    andList.push({ state: { notIn: [...OFF_BOARD_STATES] } });
-  }
+  const andList: Prisma.WorkItemWhereInput[] = [toPrismaWhere(actor)];
+  if (!request?.filters?.archive) andList.push({ state: { notIn: [...OFF_BOARD_STATES] } });
 
   const sliceDef = SLICES.find((s) => s.id === slice);
   if (sliceDef && sliceDef.id !== "floor") {
-    const states = (
-      Object.entries(STATE_PLACEMENT) as [WorkItemState, (typeof STATE_PLACEMENT)[WorkItemState]][]
-    )
+    const states = (Object.entries(STATE_PLACEMENT) as [WorkItemState, (typeof STATE_PLACEMENT)[WorkItemState]][])
       .filter(([_, p]) => p !== "OFF_BOARD" && sliceDef.stations.includes(p.station))
       .map(([st]) => st);
     andList.push({ state: { in: states } });
   }
+  return { AND: andList };
+}
 
-  return where;
+function resolveTargetSlice(roles: Actor["roles"], requested?: SliceId) {
+  const availableSlices = resolveAvailableSlices(roles);
+  const defaultSlice = resolveDefaultSlice(roles);
+  const slice = requested && availableSlices.includes(requested) ? requested : defaultSlice;
+  return { slice, availableSlices };
+}
+
+async function resolvePagination(
+  ctx: { input?: SnapshotRequest["pagination"]; rowCount: number; where: Prisma.WorkItemWhereInput },
+  prismaClient = db,
+): Promise<BoardSnapshot["pagination"]> {
+  if (!ctx.input) return undefined;
+  const pageReq = PageRequest.of(ctx.input);
+  const totalCount = await prismaClient.workItem.count({ where: ctx.where });
+  const hasMore = pageReq.skip + ctx.rowCount < totalCount;
+  return {
+    page: pageReq.page, pageSize: pageReq.pageSize, totalCount,
+    hasMore, nextCursor: hasMore ? pageReq.page + 1 : null,
+  };
 }
 
 export async function getBoardSnapshot(
@@ -57,19 +70,16 @@ export async function getBoardSnapshot(
   request?: SnapshotRequest,
   prismaClient = db,
 ): Promise<BoardSnapshot> {
-  const availableSlices = resolveAvailableSlices(actor.roles);
-  const defaultSlice = resolveDefaultSlice(actor.roles);
-  const slice =
-    request?.slice && availableSlices.includes(request.slice)
-      ? request.slice
-      : defaultSlice;
-
+  const { slice, availableSlices } = resolveTargetSlice(actor.roles, request?.slice);
   const targets = loadStationTargetsConfig();
   const where = buildSnapshotWhere(actor, request, slice);
-  const rawRows = await fetchRawWorkItemRows(where, prismaClient);
+  const rawRows = await fetchRawWorkItemRows(where, prismaClient, request?.pagination);
   const cards = rawRows.map((r) => mapRowWithMoves(r, targets, actor));
 
-  const hiddenSiblingCounts = await computeHiddenSiblings(cards, prismaClient);
+  const [hiddenSiblingCounts, pagination] = await Promise.all([
+    computeHiddenSiblings(cards, prismaClient),
+    resolvePagination({ input: request?.pagination, rowCount: rawRows.length, where }, prismaClient),
+  ]);
   const blockedHints = computeBlockedHints(cards);
 
   return {
@@ -79,6 +89,7 @@ export async function getBoardSnapshot(
     slice,
     availableSlices,
     blockedHints,
+    pagination,
   };
 }
 
@@ -91,7 +102,6 @@ export async function getBoardCards(
   const where: Prisma.WorkItemWhereInput = {
     AND: [toPrismaWhere(actor), { id: { in: [...ids] } }],
   };
-
   const rawRows = await fetchRawWorkItemRows(where, prismaClient);
   return rawRows.map((r) => mapRowWithMoves(r, targets, actor));
 }
@@ -129,14 +139,8 @@ async function computeHiddenSiblings(
 }
 
 function computeBlockedHints(cards: readonly BoardCard[]): BlockedHint[] {
-  const hasPendingPricing = cards.some(
-    (c) =>
-      c.pricing === "PENDING" &&
-      (c.state === "PRODUCTION_COMPLETED" || c.state === "READY_FOR_COLLECTION"),
+  const hasPending = cards.some(
+    (c) => c.pricing === "PENDING" && (c.state === "PRODUCTION_COMPLETED" || c.state === "READY_FOR_COLLECTION"),
   );
-
-  if (hasPendingPricing) {
-    return [{ station: "delivered", reasonAr: "يجب حسم التسعير أولاً" }];
-  }
-  return [];
+  return hasPending ? [{ station: "delivered", reasonAr: "يجب حسم التسعير أولاً" }] : [];
 }

@@ -6,8 +6,9 @@
  */
 
 import React from "react";
+import Link from "next/link";
 import { SLICES, type SliceId } from "~/lib/board/slices";
-import type { BoardFilters } from "~/lib/board/types";
+import type { BoardFilters, BoardPagination } from "~/lib/board/types";
 import { AlertCircle, Archive, Flame } from "lucide-react";
 
 export interface SliceSwitcherProps {
@@ -16,6 +17,7 @@ export interface SliceSwitcherProps {
   readonly onSelectSlice: (slice: SliceId) => void;
   readonly filters: BoardFilters;
   readonly onUpdateFilters: (filters: BoardFilters) => void;
+  readonly pagination?: BoardPagination;
 }
 
 function SlicePills({
@@ -115,12 +117,42 @@ function FilterChips({
   );
 }
 
+function BoardPaginationControls({ pagination }: { readonly pagination: BoardPagination }) {
+  const totalPages = pagination.totalCount ? Math.ceil(pagination.totalCount / pagination.pageSize) : 1;
+  if (totalPages <= 1 && !pagination.hasMore) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {pagination.page > 1 && (
+        <Link
+          href={`/board?page=${pagination.page - 1}`}
+          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted"
+        >
+          السابق
+        </Link>
+      )}
+      <span className="font-mono text-[11px] px-1">
+        {pagination.page} / {totalPages}
+      </span>
+      {pagination.hasMore && (
+        <Link
+          href={`/board?page=${pagination.page + 1}`}
+          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted"
+        >
+          التالي
+        </Link>
+      )}
+    </div>
+  );
+}
+
 export function SliceSwitcher({
   activeSlice,
   availableSlices,
   onSelectSlice,
   filters,
   onUpdateFilters,
+  pagination,
 }: SliceSwitcherProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-xs">
@@ -129,7 +161,10 @@ export function SliceSwitcher({
         availableSlices={availableSlices}
         onSelectSlice={onSelectSlice}
       />
-      <FilterChips filters={filters} onUpdateFilters={onUpdateFilters} />
+      <div className="flex items-center gap-3">
+        {pagination && <BoardPaginationControls pagination={pagination} />}
+        <FilterChips filters={filters} onUpdateFilters={onUpdateFilters} />
+      </div>
     </div>
   );
 }

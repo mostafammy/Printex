@@ -5,13 +5,26 @@
 
 import { getActor } from "~/server/auth";
 import { getBoardSnapshot } from "~/server/board";
+import type { SliceId } from "~/lib/board/types";
 import { Board } from "~/components/board/Board";
 import { BoardProvider } from "~/components/board/BoardProvider";
 import { DndBridge } from "~/components/board/dnd/DndBridge";
 
-export default async function BoardPage() {
+export default async function BoardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await getActor();
-  const snapshot = await getBoardSnapshot(actor);
+  const params = await searchParams;
+  const pageParam = Array.isArray(params?.page) ? params.page[0] : params?.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
+  const sliceParam = Array.isArray(params?.slice) ? params.slice[0] : params?.slice;
+
+  const snapshot = await getBoardSnapshot(actor, {
+    slice: (sliceParam as SliceId) || undefined,
+    pagination: { page, pageSize: 50 },
+  });
 
   return (
     <BoardProvider initialSnapshot={snapshot}>
