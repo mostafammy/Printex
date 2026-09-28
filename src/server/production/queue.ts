@@ -8,6 +8,8 @@
 import { db } from "~/server/db";
 import { authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
+import { paginateInMemory } from "~/server/pagination";
+import type { PageInput, PageResult } from "~/server/pagination";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 
@@ -23,9 +25,7 @@ export interface ProductionQueueRow {
   hasPendingFileRevision: boolean;
 }
 
-export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]> {
-  authorize(actor, "production.operate");
-
+async function fetchSortedOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]> {
   const workItems = await db.workItem.findMany({
     where: { state: "READY_FOR_PRODUCTION" },
     include: {
@@ -61,8 +61,7 @@ export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow
     return { row, sortKey: enteredQueueAt.getTime() };
   });
 
-  // research.md §6: urgent first, then oldest enteredQueueAt within each
-  // bucket — identical comparator to 012/013's queues.
+  // research.md §6: urgent first, then oldest enteredQueueAt within each bucket
   rows.sort((a, b) => {
     if (a.row.priority === "URGENT" && b.row.priority !== "URGENT") return -1;
     if (a.row.priority !== "URGENT" && b.row.priority === "URGENT") return 1;
@@ -70,6 +69,35 @@ export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow
   });
 
   return rows.map(({ row }) => row);
+}
+
+export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]> {
+  authorize(actor, "production.operate");
+  return fetchSortedOperatorQueue(actor);
+}
+
+export async function getOperatorQueuePage(
+  actor: Actor,
+  input: PageInput = {},
+): Promise<PageResult<ProductionQueueRow>> {
+  authorize(actor, "production.operate");
+  return paginateInMemory(input, () => fetchSortedOperatorQueue(actor));
+}
+
+export async function getOperatorQueueStats(actor: Actor): Promise<{
+  totalCount: number;
+  urgentCount: number;
+  revisedCount: number;
+}> {
+  authorize(actor, "production.operate");
+  const all = await fetchSortedOperatorQueue(actor);
+  const urgentCount = all.filter((r) => r.priority === "URGENT").length;
+  const revisedCount = all.filter((r) => r.hasPendingFileRevision).length;
+  return {
+    totalCount: all.length,
+    urgentCount,
+    revisedCount,
+  };
 }
 
 /**
