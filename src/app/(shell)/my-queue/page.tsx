@@ -408,6 +408,11 @@ export default async function MyQueuePage({
               </tbody>
             </table>
           </div>
+
+          {/* PaginationBar */}
+          <div className="border-t border-border/70 p-4">
+            <PaginationBar page={page} nextCursor={nextCursor} totalCount={totalCount} />
+          </div>
         </div>
       )}
     </div>
