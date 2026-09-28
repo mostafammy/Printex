@@ -50,6 +50,7 @@ export { registerGuard, runGuards } from "./workflow/guards";
 
 // contracts/workflow.md: rejection categories
 export type { RejectionCategory } from "./workflow/rejectionCategory";
+export { REJECTION_CATEGORIES } from "./workflow/rejectionCategory";
 
 // contracts/workflow.md: read-only Work Item projection
 export type { WorkItemSnapshot } from "./workflow/snapshot";
