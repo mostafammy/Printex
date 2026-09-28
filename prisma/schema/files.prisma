@@ -44,16 +44,16 @@ enum AuditEntity {
 
 /// Immutable physical bytes, deduplicated by checksum (constitution IV).
 model FileObject {
-  id           String   @id @default(cuid())
+  id         String   @id @default(cuid())
   /// Opaque hash/ID-based key; never customer/folder naming. Unique.
-  storageKey   String   @unique
+  storageKey String   @unique
   /// Required, 0–5 GB inclusive.
-  sizeBytes    BigInt
+  sizeBytes  BigInt
   /// Required 64-hex checksum; unique for deduplication.
-  sha256       String   @unique
+  sha256     String   @unique
   /// Required; validated against configured allowlist.
-  mimeType     String
-  createdAt    DateTime @default(now())
+  mimeType   String
+  createdAt  DateTime @default(now())
 
   fileVersions FileVersion[]
   attachments  Attachment[]
@@ -63,40 +63,40 @@ model FileObject {
 
 /// Logical file attached to one Work Item and category.
 model FileAsset {
-  id            String       @id @default(cuid())
-  workItemId    String
-  workItem      WorkItem     @relation("FileAssetWorkItem", fields: [workItemId], references: [id])
-  category      FileCategory
+  id          String       @id @default(cuid())
+  workItemId  String
+  workItem    WorkItem     @relation("FileAssetWorkItem", fields: [workItemId], references: [id])
+  category    FileCategory
   /// Display/grouping name; never storage identity.
-  logicalName   String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  logicalName String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  fileVersions  FileVersion[]
+  fileVersions FileVersion[]
 
-  @@index([workItemId, category])
   @@unique([workItemId, category, logicalName])
+  @@index([workItemId, category])
 }
 
 /// Immutable upload metadata pointing to a FileObject.
 model FileVersion {
-  id              String               @id @default(cuid())
-  fileAssetId     String
-  fileAsset       FileAsset            @relation(fields: [fileAssetId], references: [id])
-  fileObjectId    String
-  fileObject      FileObject           @relation(fields: [fileObjectId], references: [id])
+  id            String              @id @default(cuid())
+  fileAssetId   String
+  fileAsset     FileAsset           @relation(fields: [fileAssetId], references: [id])
+  fileObjectId  String
+  fileObject    FileObject          @relation(fields: [fileObjectId], references: [id])
   /// Unique per FileAsset, starts at 1, monotonic under concurrency.
-  versionNumber   Int
+  versionNumber Int
   /// Display filename; validated, no path traversal.
-  originalName    String
-  uploadedById    String
-  uploadedBy      User                 @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
+  originalName  String
+  uploadedById  String
+  uploadedBy    User                @relation("DesignVersionUploadedBy", fields: [uploadedById], references: [id])
   /// Optional upload note.
-  note            String?
-  status          FileLifecycleStatus  @default(ACTIVE)
+  note          String?
+  status        FileLifecycleStatus @default(ACTIVE)
   /// Set only through markApproved; approval owner is 013.
-  approved        Boolean              @default(false)
-  createdAt       DateTime             @default(now())
+  approved      Boolean             @default(false)
+  createdAt     DateTime            @default(now())
 
   @@unique([fileAssetId, versionNumber])
   @@index([fileAssetId, createdAt])
@@ -104,20 +104,20 @@ model FileVersion {
 
 /// Generic link to an operational entity (rejection, discrepancy, expense, audit event, message).
 model Attachment {
-  id            String             @id @default(cuid())
-  fileObjectId  String
-  fileObject    FileObject         @relation(fields: [fileObjectId], references: [id])
+  id           String              @id @default(cuid())
+  fileObjectId String
+  fileObject   FileObject          @relation(fields: [fileObjectId], references: [id])
   /// Rejection, discrepancy, expense, audit event, message, or future configured target.
-  entityType    String
+  entityType   String
   /// Target identifier; polymorphic and authorized by owning feature.
-  entityId      String
+  entityId     String
   /// Display name.
-  originalName  String
-  kind          AttachmentKind
-  createdById   String
-  createdBy     User               @relation("ReturnAttachment", fields: [createdById], references: [id])
-  status        FileLifecycleStatus @default(ACTIVE)
-  createdAt     DateTime           @default(now())
+  originalName String
+  kind         AttachmentKind
+  createdById  String
+  createdBy    User                @relation("ReturnAttachment", fields: [createdById], references: [id])
+  status       FileLifecycleStatus @default(ACTIVE)
+  createdAt    DateTime            @default(now())
 
   @@index([entityType, entityId])
   @@index([fileObjectId])
@@ -126,17 +126,17 @@ model Attachment {
 /// Append-only audit trail for all file lifecycle mutations and approvals.
 /// Follows 001 audit.record contract.
 model FileAuditEvent {
-  id            String      @id @default(cuid())
-  actorId       String
-  actor         User        @relation("WorkItemTransitionActor", fields: [actorId], references: [id])
-  action        AuditAction
-  entity        AuditEntity
-  entityId      String
-  beforeValues  Json?
-  afterValues   Json?
+  id           String      @id @default(cuid())
+  actorId      String
+  actor        User        @relation("WorkItemTransitionActor", fields: [actorId], references: [id])
+  action       AuditAction
+  entity       AuditEntity
+  entityId     String
+  beforeValues Json?
+  afterValues  Json?
   /// Required for VOID, ARCHIVE, SUPERSEDE, APPROVE.
-  reason        String?
-  createdAt     DateTime    @default(now())
+  reason       String?
+  createdAt    DateTime    @default(now())
 
   @@index([entity, entityId])
   @@index([actorId, createdAt])
@@ -144,16 +144,16 @@ model FileAuditEvent {
 
 /// Runtime configuration singleton loaded from config/050-files.yaml at startup.
 model FileConfig {
-  id                String   @id @default("files-config")
+  id                   String   @id @default("files-config")
   /// Required array of MIME type patterns; validated on write.
-  mimeAllowlist     Json
+  mimeAllowlist        Json
   /// Required, 1–10 GB inclusive.
-  maxFileSizeBytes  BigInt
+  maxFileSizeBytes     BigInt
   /// Required array of { name: string, code: string }; managed by Admin UI.
-  departments       Json
+  departments          Json
   /// Required, 60–3600.
   previewExpirySeconds Int
-  updatedAt         DateTime @updatedAt
-  updatedById       String
-  updatedBy         User     @relation("WorkItemTransitionActor", fields: [updatedById], references: [id])
+  updatedAt            DateTime @updatedAt
+  updatedById          String
+  updatedBy            User     @relation("WorkItemTransitionActor", fields: [updatedById], references: [id])
 }
