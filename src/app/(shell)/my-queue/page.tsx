@@ -20,13 +20,15 @@ import {
 } from "lucide-react";
 import { getActor } from "~/server/auth";
 import {
-  getMyQueue,
+  getMyQueuePage,
+  getMyQueueStats,
   startTimer,
   pauseTimer,
   phaseDurations,
 } from "~/server/designers";
 import type { MyQueueRow } from "~/server/designers";
 import { Button } from "~/components/ui/button";
+import { PaginationBar } from "~/components/pagination-bar";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -74,9 +76,20 @@ async function pauseTimerAction(formData: FormData) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
-export default async function MyQueuePage() {
+export default async function MyQueuePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const actor = await getActor();
-  const rows = await getMyQueue(actor);
+  const params = await searchParams;
+  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
+
+  const [{ rows, nextCursor }, { totalCount, urgentCount, reworkCount }] = await Promise.all([
+    getMyQueuePage(actor, { page }),
+    getMyQueueStats(actor),
+  ]);
 
   const rowsWithDurations = await Promise.all(
     rows.map(async (row) => ({
@@ -85,9 +98,7 @@ export default async function MyQueuePage() {
     })),
   );
 
-  const urgentCount = rows.filter((r) => r.priority === "URGENT").length;
   const activeTimersCount = rows.filter((r) => r.hasOpenTimer).length;
-  const reworkCount = rows.filter((r) => r.isRework).length;
 
   return (
     <div className="flex flex-col gap-8">
@@ -100,7 +111,7 @@ export default async function MyQueuePage() {
             </h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               <Sparkles className="h-3 w-3 text-primary animate-pulse" />
-              <span>{rows.length} مهام</span>
+              <span>{totalCount} مهام</span>
             </span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -133,7 +144,7 @@ export default async function MyQueuePage() {
           </div>
           <div className="mt-4 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold tracking-tight text-foreground font-mono">
-              {rows.length}
+              {totalCount}
             </span>
             <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
               مهام قيد الانتظار
