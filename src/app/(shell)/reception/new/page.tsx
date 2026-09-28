@@ -129,7 +129,7 @@ export default async function NewOrderPage({
       </div>
 
       {/* ── Hero Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-primary/10 to-indigo-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-4">
@@ -151,7 +151,7 @@ export default async function NewOrderPage({
         <input type="hidden" name="itemCount" value={itemCount} />
 
         {/* ── Order Metadata Section ── */}
-        <section className="apple-card p-6 sm:p-7">
+        <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
           <div className="mb-4 flex items-center gap-2 border-b border-border/60 pb-3">
             <h2 className="text-sm font-bold text-foreground">بيانات الطلب العامة</h2>
           </div>
@@ -228,7 +228,7 @@ export default async function NewOrderPage({
           </div>
 
           {Array.from({ length: itemCount }, (_, i) => (
-            <div key={i} className="apple-card p-6 sm:p-7 relative">
+            <div key={i} className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 relative">
               <div className="mb-4 flex items-center justify-between border-b border-border/60 pb-3">
                 <span className="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 font-mono text-xs font-bold text-primary">
                   صنف #{i + 1}
