@@ -8,6 +8,8 @@
 import { db } from "~/server/db";
 import type { Actor } from "~/server/auth";
 import type { RejectionCategory } from "~/server/core";
+import { paginateInMemory } from "~/server/pagination";
+import type { PageInput, PageResult } from "~/server/pagination";
 
 const MY_QUEUE_STATES = ["ASSIGNED", "IN_DESIGN", "REWORK_REQUIRED"] as const;
 export type MyQueueRowState = (typeof MY_QUEUE_STATES)[number];
@@ -30,7 +32,7 @@ export interface MyQueueRow {
   hasOpenTimer: boolean;
 }
 
-export async function getMyQueue(actor: Actor): Promise<MyQueueRow[]> {
+async function fetchSortedMyQueue(actor: Actor): Promise<MyQueueRow[]> {
   const workItems = await db.workItem.findMany({
     where: { assigneeId: actor.userId, state: { in: [...MY_QUEUE_STATES] } },
     include: {
@@ -85,4 +87,42 @@ export async function getMyQueue(actor: Actor): Promise<MyQueueRow[]> {
   });
 
   return withSortKey.map(({ row }) => row);
+}
+
+export async function getMyQueue(actor: Actor): Promise<MyQueueRow[]> {
+  return fetchSortedMyQueue(actor);
+}
+
+export async function getMyQueuePage(
+  actor: Actor,
+  input: PageInput = {},
+): Promise<PageResult<MyQueueRow>> {
+  return paginateInMemory(input, () => fetchSortedMyQueue(actor));
+}
+
+export async function getMyQueueStats(actor: Actor): Promise<{
+  totalCount: number;
+  urgentCount: number;
+  reworkCount: number;
+}> {
+  const [totalCount, urgentCount, reworkCount] = await Promise.all([
+    db.workItem.count({
+      where: { assigneeId: actor.userId, state: { in: [...MY_QUEUE_STATES] } },
+    }),
+    db.workItem.count({
+      where: {
+        assigneeId: actor.userId,
+        state: { in: [...MY_QUEUE_STATES] },
+        order: { priority: "URGENT" },
+      },
+    }),
+    db.workItem.count({
+      where: {
+        assigneeId: actor.userId,
+        state: "REWORK_REQUIRED",
+      },
+    }),
+  ]);
+
+  return { totalCount, urgentCount, reworkCount };
 }
