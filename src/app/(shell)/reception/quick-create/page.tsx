@@ -75,7 +75,7 @@ export default async function QuickCreatePage() {
       </div>
 
       {/* ── Hero Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-amber-500/10 to-orange-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-4">
@@ -96,7 +96,7 @@ export default async function QuickCreatePage() {
       {/* ── Quick Create Form Card ── */}
       <form
         action={quickCreateAction}
-        className="apple-card flex max-w-xl flex-col gap-4 p-6 sm:p-8"
+        className="rounded-xl border border-border/70 bg-card shadow-xs flex max-w-xl flex-col gap-4 p-6 sm:p-8"
       >
         <div className="flex flex-col gap-1.5">
           <label htmlFor="customerId" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
