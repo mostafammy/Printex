@@ -4,7 +4,7 @@
  */
 
 import type { Prisma } from "../../../generated/prisma";
-import type { BlockedHint, BoardCard, BoardSnapshot, SnapshotRequest } from "~/lib/board/types";
+import type { BoardCard, BoardSnapshot, SnapshotRequest } from "~/lib/board/types";
 import type { Actor } from "~/server/auth";
 import type { WorkItemState } from "~/server/core";
 import { db } from "~/server/db";
@@ -15,6 +15,7 @@ import { fetchRawWorkItemRows, mapRowToBoardCard, type RawWorkItemRow } from "./
 import { type SliceId, SLICES, resolveAvailableSlices, resolveDefaultSlice } from "./slices";
 import { OFF_BOARD_STATES, STATE_PLACEMENT } from "./stations";
 import { toPrismaWhere } from "./visibility";
+import { getLaneSnapshot, computeBlockedHints, computeHiddenSiblings } from "./lanePage";
 
 function mapRowWithMoves(
   row: RawWorkItemRow,
@@ -71,6 +72,9 @@ export async function getBoardSnapshot(
   prismaClient = db,
 ): Promise<BoardSnapshot> {
   const { slice, availableSlices } = resolveTargetSlice(actor.roles, request?.slice);
+  if (request?.lanePageSize) {
+    return getLaneSnapshot({ actor, request, slice, availableSlices }, prismaClient);
+  }
   const targets = loadStationTargetsConfig();
   const where = buildSnapshotWhere(actor, request, slice);
   const rawRows = await fetchRawWorkItemRows(where, prismaClient, request?.pagination);
@@ -104,43 +108,4 @@ export async function getBoardCards(
   };
   const rawRows = await fetchRawWorkItemRows(where, prismaClient);
   return rawRows.map((r) => mapRowWithMoves(r, targets, actor));
-}
-
-function countVisibleByOrder(cards: readonly BoardCard[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const c of cards) {
-    if (c.state !== "COMPLETED" && c.state !== "CANCELLED") {
-      counts[c.orderId] = (counts[c.orderId] ?? 0) + 1;
-    }
-  }
-  return counts;
-}
-
-async function computeHiddenSiblings(
-  cards: readonly BoardCard[],
-  prismaClient = db,
-): Promise<Record<string, number>> {
-  const orderIds = [...new Set(cards.map((c) => c.orderId))];
-  if (orderIds.length === 0) return {};
-
-  const orderCounts = await prismaClient.workItem.groupBy({
-    by: ["orderId"],
-    where: { orderId: { in: orderIds }, state: { notIn: [...OFF_BOARD_STATES] } },
-    _count: { id: true },
-  });
-
-  const visibleCounts = countVisibleByOrder(cards);
-  const hidden: Record<string, number> = {};
-  for (const oc of orderCounts) {
-    const diff = oc._count.id - (visibleCounts[oc.orderId] ?? 0);
-    if (diff > 0) hidden[oc.orderId] = diff;
-  }
-  return hidden;
-}
-
-function computeBlockedHints(cards: readonly BoardCard[]): BlockedHint[] {
-  const hasPending = cards.some(
-    (c) => c.pricing === "PENDING" && (c.state === "PRODUCTION_COMPLETED" || c.state === "READY_FOR_COLLECTION"),
-  );
-  return hasPending ? [{ station: "delivered", reasonAr: "يجب حسم التسعير أولاً" }] : [];
 }

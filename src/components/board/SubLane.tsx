@@ -4,18 +4,22 @@
  * SubLane virtualized card list subscribing to "lane:<state>".
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, R8, plan.md S1, S5)
  *
- * Chunked infinite scroll: an IntersectionObserver sentinel at the end of
- * the list triggers exactly one controller.loadMore() (one page) each time
- * the user reaches the bottom. No scroll-spam, no draining the table.
+ * Chunked per-lane infinite scroll: an IntersectionObserver sentinel at
+ * the end of the list triggers exactly one loadMore(state) (one page for
+ * this lane only) each time the user reaches the bottom.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
+import { useFreshIds } from "./hooks/useFreshIds";
+import { useSentinelLoadMore } from "./hooks/useSentinelLoadMore";
 import { JobTicket } from "./JobTicket";
+import { LanePageControl } from "./LanePageControl";
+import { LaneSkeleton } from "./LaneSkeleton";
 
 export interface SubLaneProps {
   readonly state: WorkItemState;
@@ -33,6 +37,7 @@ function VirtualRow({
   virtualItem,
   cardId,
   measureRef,
+  freshIndex,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -40,17 +45,22 @@ function VirtualRow({
   readonly virtualItem: { readonly index: number; readonly start: number };
   readonly cardId: string;
   readonly measureRef: (node: HTMLDivElement | null) => void;
+  readonly freshIndex: number;
   readonly onOrderHover?: (id: string | null) => void;
   readonly onCardClick?: (c: BoardCard) => void;
   readonly onMoveKey?: (c: BoardCard) => void;
 }) {
+  const fresh = freshIndex >= 0;
   return (
     <div
       data-index={virtualItem.index}
       ref={measureRef}
       role="listitem"
-      className="absolute inset-x-0 pb-2"
-      style={{ transform: `translateY(${virtualItem.start}px)` }}
+      className={`absolute inset-x-0 pb-2${fresh ? " lane-card-enter" : ""}`}
+      style={{
+        transform: `translateY(${virtualItem.start}px)`,
+        animationDelay: fresh ? `${Math.min(freshIndex, 5) * 45}ms` : undefined,
+      }}
     >
       <JobTicket
         cardId={cardId}
@@ -74,40 +84,11 @@ function EmptyLanePlaceholder({ labelAr, state }: { readonly labelAr?: string; r
   );
 }
 
-function useSentinelLoadMore(
-  parentRef: React.RefObject<HTMLDivElement | null>,
-  sentinelRef: React.RefObject<HTMLDivElement | null>,
-) {
-  const controller = useBoardController();
-  const isFetchingRef = useRef(false);
-
-  useEffect(() => {
-    const root = parentRef.current;
-    const sentinel = sentinelRef.current;
-    if (!root || !sentinel) return;
-    if (typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.some((e) => e.isIntersecting);
-        if (!visible || isFetchingRef.current) return;
-        isFetchingRef.current = true;
-        // One chunk per intersection; the controller no-ops at the end
-        // (hasMore false), so reaching the true end stops fetching.
-        void controller.loadMore().finally(() => {
-          isFetchingRef.current = false;
-        });
-      },
-      { root, rootMargin: "100px", threshold: 0 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [parentRef, sentinelRef, controller]);
-}
-
 function VirtualCardItems({
   virtualItems,
   cardIds,
   measureRef,
+  fresh,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -115,6 +96,7 @@ function VirtualCardItems({
   readonly virtualItems: readonly VirtualItem[];
   readonly cardIds: readonly string[];
   readonly measureRef: (node: HTMLDivElement | null) => void;
+  readonly fresh: readonly string[];
   readonly onOrderHover?: (id: string | null) => void;
   readonly onCardClick?: (c: BoardCard) => void;
   readonly onMoveKey?: (c: BoardCard) => void;
@@ -130,6 +112,7 @@ function VirtualCardItems({
             virtualItem={vItem}
             cardId={cardId}
             measureRef={measureRef}
+            freshIndex={fresh.indexOf(cardId)}
             onOrderHover={onOrderHover}
             onCardClick={onCardClick}
             onMoveKey={onMoveKey}
@@ -140,10 +123,30 @@ function VirtualCardItems({
   );
 }
 
+function useLaneLoadNext(state: WorkItemState) {
+  const controller = useBoardController();
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
+
+  const loadNext = useCallback(() => {
+    if (loadingRef.current) return Promise.resolve();
+    loadingRef.current = true;
+    setLoading(true);
+    return controller.loadMore(state).finally(() => {
+      loadingRef.current = false;
+      setLoading(false);
+    });
+  }, [controller, state]);
+
+  return { loading, loadNext };
+}
+
 function VirtualizedCardList(props: VirtualizedCardListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  useSentinelLoadMore(parentRef, sentinelRef);
+  const { loading, loadNext } = useLaneLoadNext(props.state);
+  const fresh = useFreshIds(props.cardIds);
+  useSentinelLoadMore(parentRef, sentinelRef, loadNext);
 
   const virtualizer = useVirtualizer({
     count: props.cardIds.length,
@@ -157,19 +160,22 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       ref={parentRef}
       role="list"
       aria-label={props.labelAr ?? props.state}
-      className="relative flex-1 overflow-y-auto px-1 py-1"
+      className="relative flex-1 overflow-y-auto overscroll-contain px-1 py-1"
     >
       <div style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
         <VirtualCardItems
           virtualItems={virtualizer.getVirtualItems()}
           cardIds={props.cardIds}
           measureRef={virtualizer.measureElement}
+          fresh={fresh}
           onOrderHover={props.onOrderHover}
           onCardClick={props.onCardClick}
           onMoveKey={props.onMoveKey}
         />
       </div>
+      {loading && <LaneSkeleton />}
       <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />
+      <LanePageControl state={props.state} loaded={props.cardIds.length} loading={loading} onLoadMore={loadNext} />
     </div>
   );
 }

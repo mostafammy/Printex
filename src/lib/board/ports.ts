@@ -12,6 +12,8 @@ import type {
   FeedbackEvent,
   GroupMoveRequest,
   GroupMoveResult,
+  LanePage,
+  LanePageRequest,
   LiveStatus,
   MotionContext,
   MoveRequest,
@@ -28,6 +30,7 @@ export interface MoveGateway {
 
 export interface SnapshotGateway {
   snapshot(req: SnapshotRequest): Promise<BoardSnapshot>;
+  lanePage(req: LanePageRequest): Promise<LanePage>;
 }
 
 export interface LiveSource {

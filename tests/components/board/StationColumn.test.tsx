@@ -93,6 +93,13 @@ function createTestController(cards: BoardCard[] = testCards) {
     store,
     snapshotGateway: {
       snapshot: async () => testSnapshot,
+      lanePage: async (req) => ({
+        state: req.state,
+        cards: [],
+        pagination: {
+          page: 1, pageSize: 20, totalCount: 0, hasMore: false, nextCursor: null,
+        },
+      }),
     },
   });
 }

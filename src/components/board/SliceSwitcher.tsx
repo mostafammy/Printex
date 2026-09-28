@@ -5,11 +5,10 @@
  * (specs/017-press-floor-board/spec.md FR-021, FR-022, plan.md S1)
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { SLICES, type SliceId } from "~/lib/board/slices";
-import type { BoardFilters, BoardPagination } from "~/lib/board/types";
+import type { BoardFilters } from "~/lib/board/types";
 import { AlertCircle, Archive, Flame } from "lucide-react";
-import { useBoardController } from "./hooks/useBoardController";
 
 export interface SliceSwitcherProps {
   readonly activeSlice: SliceId;
@@ -17,7 +16,6 @@ export interface SliceSwitcherProps {
   readonly onSelectSlice: (slice: SliceId) => void;
   readonly filters: BoardFilters;
   readonly onUpdateFilters: (filters: BoardFilters) => void;
-  readonly pagination?: BoardPagination;
 }
 
 function SlicePills({
@@ -117,44 +115,12 @@ function FilterChips({
   );
 }
 
-function BoardPaginationControls({ pagination }: { readonly pagination: BoardPagination }) {
-  const controller = useBoardController();
-  const [isLoading, setIsLoading] = useState(false);
-  const totalPages = pagination.totalCount ? Math.ceil(pagination.totalCount / pagination.pageSize) : 1;
-  if (totalPages <= 1 && !pagination.hasMore) return null;
-
-  const handleLoadMore = () => {
-    if (isLoading) return;
-    setIsLoading(true);
-    void controller.loadMore().finally(() => setIsLoading(false));
-  };
-
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <span className="font-mono text-[11px] px-1">
-        {pagination.page} / {totalPages}
-      </span>
-      {pagination.hasMore && (
-        <button
-          type="button"
-          onClick={handleLoadMore}
-          disabled={isLoading}
-          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted disabled:opacity-50"
-        >
-          {isLoading ? "جاري التحميل..." : "تحميل المزيد"}
-        </button>
-      )}
-    </div>
-  );
-}
-
 export function SliceSwitcher({
   activeSlice,
   availableSlices,
   onSelectSlice,
   filters,
   onUpdateFilters,
-  pagination,
 }: SliceSwitcherProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-xs">
@@ -164,7 +130,6 @@ export function SliceSwitcher({
         onSelectSlice={onSelectSlice}
       />
       <div className="flex items-center gap-3">
-        {pagination && <BoardPaginationControls pagination={pagination} />}
         <FilterChips filters={filters} onUpdateFilters={onUpdateFilters} />
       </div>
     </div>

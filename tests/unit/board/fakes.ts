@@ -19,6 +19,8 @@ import type {
   FeedbackEvent,
   GroupMoveRequest,
   GroupMoveResult,
+  LanePage,
+  LanePageRequest,
   LiveStatus,
   MotionContext,
   MoveRequest,
@@ -91,7 +93,9 @@ export class FakeMoveGateway implements MoveGateway {
 
 export class FakeSnapshotGateway implements SnapshotGateway {
   readonly snapshotInvocations: SnapshotRequest[] = [];
+  readonly laneInvocations: LanePageRequest[] = [];
   mockSnapshot?: BoardSnapshot;
+  mockLanePage?: LanePage;
 
   async snapshot(req: SnapshotRequest): Promise<BoardSnapshot> {
     this.snapshotInvocations.push(req);
@@ -105,6 +109,24 @@ export class FakeSnapshotGateway implements SnapshotGateway {
       slice: "floor",
       availableSlices: ["floor"],
       blockedHints: [],
+    };
+  }
+
+  async lanePage(req: LanePageRequest): Promise<LanePage> {
+    this.laneInvocations.push(req);
+    if (this.mockLanePage) {
+      return this.mockLanePage;
+    }
+    return {
+      state: req.state,
+      cards: [],
+      pagination: {
+        page: req.pagination?.page ?? 1,
+        pageSize: req.pagination?.pageSize ?? 20,
+        totalCount: 0,
+        hasMore: false,
+        nextCursor: null,
+      },
     };
   }
 }

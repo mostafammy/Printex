@@ -53,19 +53,20 @@ export interface BoardPagination {
 }
 
 /**
- * Single chunk size for the press floor board's infinite scroll.
+ * Single chunk size for one lane's infinite scroll.
  *
- * The board always loads one small mound (`BOARD_PAGE_SIZE` cards) at a
- * time — initial snapshot is page 1, and every `loadMore()` appends exactly
- * one more page when the user reaches the end. No path fetches the whole
- * table unbounded.
+ * Every lane (work-item state) paginates independently: the initial snapshot
+ * carries page 1 per lane, and reaching a lane's end appends exactly one
+ * more page for that lane only. No lane ever triggers a fetch for another.
  */
-export const BOARD_PAGE_SIZE = 50;
+export const BOARD_LANE_PAGE_SIZE = 20;
 
 export interface BoardMeta {
   readonly slice: SliceId; readonly availableSlices: readonly SliceId[];
   readonly totalVisible: number; readonly hiddenSiblingCounts: Readonly<Record<string, number>>;
   readonly blockedHints: readonly BlockedHint[]; readonly pagination?: BoardPagination;
+  /** Seeding source for per-lane cursors; the loader owns live cursor truth. */
+  readonly lanePagination?: Readonly<Record<string, BoardPagination>>;
 }
 
 export interface BoardFilters {
@@ -84,6 +85,21 @@ export interface BoardSnapshot {
   readonly availableSlices: readonly SliceId[];
   readonly blockedHints: readonly BlockedHint[];
   readonly pagination?: BoardPagination;
+  /** Per-lane cursors keyed by work-item state — present in lane mode. */
+  readonly lanePagination?: Readonly<Record<string, BoardPagination>>;
+}
+
+export interface LanePageRequest {
+  readonly slice?: SliceId;
+  readonly filters?: BoardFilters;
+  readonly state: WorkItemState;
+  readonly pagination?: { readonly page?: number; readonly pageSize?: number };
+}
+
+export interface LanePage {
+  readonly state: WorkItemState;
+  readonly cards: readonly BoardCard[];
+  readonly pagination: BoardPagination;
 }
 
 export interface BoardUpdate {
@@ -131,6 +147,8 @@ export interface SnapshotRequest {
   readonly slice?: SliceId;
   readonly filters?: BoardFilters;
   readonly pagination?: { readonly page?: number; readonly pageSize?: number };
+  /** When set, the snapshot carries page 1 per lane instead of one global page. */
+  readonly lanePageSize?: number;
 }
 
 export type ChoreographyKind =

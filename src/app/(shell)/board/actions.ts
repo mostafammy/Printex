@@ -11,6 +11,8 @@ import type {
   BoardSnapshot,
   GroupMoveRequest,
   GroupMoveResult,
+  LanePage,
+  LanePageRequest,
   MoveRequest,
   MoveResult,
   SnapshotRequest,
@@ -18,6 +20,7 @@ import type {
 import { getActor } from "~/server/auth";
 import {
   getBoardCards,
+  getBoardLanePage,
   getBoardSnapshot,
   groupMoveWorkItems,
   moveWorkItem,
@@ -37,6 +40,13 @@ export async function getBoardCardsAction(
 ): Promise<BoardCard[]> {
   const actor = await getActor();
   return getBoardCards(actor, ids);
+}
+
+export async function getBoardLanePageAction(
+  request: LanePageRequest,
+): Promise<LanePage> {
+  const actor = await getActor();
+  return getBoardLanePage(actor, request);
 }
 
 export async function moveWorkItemAction(

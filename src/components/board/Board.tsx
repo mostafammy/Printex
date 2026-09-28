@@ -124,7 +124,6 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
         onSelectSlice={handleSlice}
         filters={filters}
         onUpdateFilters={handleFilters}
-        pagination={meta.pagination}
       />
       <MobileStationTabs activeStationId={activeMobileId} onSelectStation={setActiveMobileId} />
       <main tabIndex={0} aria-label="لوحة أرضية المطبعة" className="flex flex-1 overflow-hidden focus-visible:outline-hidden">

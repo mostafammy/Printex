@@ -1,93 +1,105 @@
 /**
- * Chunked board pagination (pure, no React/DOM/server coupling).
+ * Per-lane chunked board pagination (pure, no React/DOM/server coupling).
  *
- * Single home for the board's "one small mound at a time" invariant:
- * every snapshot request carries an explicit page/pageSize chunk, so no
- * caller can issue the unbounded fetch that previously loaded the whole
- * table after the first page.
+ * Every lane owns an independent cursor: resync seeds page 1 per lane,
+ * next() appends exactly one page for one lane, and restoreWindows()
+ * reloads only what each lane already showed. A lane's scroll position
+ * never triggers a fetch for another lane.
  */
 
-import type { BoardFilters, BoardMeta, BoardPagination, BoardSnapshot, SliceId } from "./types";
-import { BOARD_PAGE_SIZE } from "./types";
+import type { BoardFilters, BoardPagination, BoardSnapshot, LanePage, SliceId } from "./types";
+import { BOARD_LANE_PAGE_SIZE } from "./types";
 import type { SnapshotGateway } from "./ports";
+import type { WorkItemState } from "~/server/board";
 
-export interface PageChunk {
-  readonly page: number;
-  readonly pageSize: number;
-}
+export type LaneCursorMap = Readonly<Record<string, BoardPagination>>;
 
 export interface ChunkScope {
   readonly slice: SliceId;
   readonly filters: BoardFilters;
 }
 
-/** Next single chunk to append, or null at the end of the list. */
-export function nextChunk(meta: BoardMeta, fallbackSize: number): PageChunk | null {
-  const pagination = meta.pagination;
-  if (!pagination?.hasMore || !pagination.nextCursor) return null;
-  return { page: pagination.nextCursor, pageSize: pagination.pageSize ?? fallbackSize };
+export interface LaneCursor {
+  readonly page: number;
+  readonly size: number;
+  readonly hasMore: boolean;
+  readonly next: number | null;
+  readonly loading: boolean;
 }
 
-/**
- * Owns the board's chunk cursor and issues only bounded page requests.
- * resync() loads page 1, loadMore() appends one page, reconnect reloads
- * exactly the window already shown — never the whole table.
- */
-export class BoardChunkLoader {
-  #page: number;
-  #size: number;
+function cursorFromPagination(page: BoardPagination | undefined, fallbackSize: number): LaneCursor {
+  if (!page) return { page: 1, size: fallbackSize, hasMore: true, next: 1, loading: false };
+  return { page: page.page, size: page.pageSize, hasMore: page.hasMore, next: page.nextCursor, loading: false };
+}
+
+export class BoardLaneChunkLoader {
   readonly #gateway: SnapshotGateway;
+  readonly #defaultSize: number;
+  readonly #cursors = new Map<string, LaneCursor>();
 
-  constructor(gateway: SnapshotGateway, initialPage = 1, initialSize: number = BOARD_PAGE_SIZE) {
+  constructor(
+    gateway: SnapshotGateway,
+    laneMap?: LaneCursorMap,
+    defaultSize: number = BOARD_LANE_PAGE_SIZE,
+  ) {
     this.#gateway = gateway;
-    this.#page = initialPage;
-    this.#size = initialSize;
+    this.#defaultSize = defaultSize;
+    this.seedFrom(laneMap);
   }
 
-  get page(): number {
-    return this.#page;
+  seedFrom(laneMap?: LaneCursorMap): void {
+    this.#cursors.clear();
+    for (const [state, page] of Object.entries(laneMap ?? {})) {
+      this.#cursors.set(state, cursorFromPagination(page, this.#defaultSize));
+    }
   }
 
-  #track(page: number | undefined, size: number | undefined): void {
-    this.#page = page ?? 1;
-    if (size) this.#size = size;
+  cursorFor(state: WorkItemState): LaneCursor | undefined {
+    return this.#cursors.get(state);
   }
 
-  #request(scope: ChunkScope, chunk: PageChunk): Promise<BoardSnapshot> {
-    return this.#gateway.snapshot({
-      slice: scope.slice, filters: scope.filters, pagination: chunk,
-    });
+  /** Lanes holding more than their first chunk (reconnect candidates). */
+  loadedStates(): WorkItemState[] {
+    return [...this.#cursors.entries()]
+      .filter(([_, c]) => c.page > 1)
+      .map(([state]) => state as WorkItemState);
   }
 
-  /** First chunk — every resync starts here, never unbounded. */
+  /** Lane-mode resync: page 1 per lane, cursors reseeded. */
   async first(scope: ChunkScope): Promise<BoardSnapshot> {
-    const snapshot = await this.#request(scope, { page: 1, pageSize: this.#size });
-    this.#track(snapshot.pagination?.page, snapshot.pagination?.pageSize);
+    const snapshot = await this.#gateway.snapshot({
+      slice: scope.slice, filters: scope.filters, lanePageSize: this.#defaultSize,
+    });
+    this.#cursors.clear();
+    this.seedFrom(snapshot.lanePagination);
     return snapshot;
   }
 
-  /** Exactly one next chunk, or null at the end of the list. */
-  async next(scope: ChunkScope, meta: BoardMeta): Promise<BoardSnapshot | null> {
-    const chunk = nextChunk(meta, this.#size);
-    if (!chunk) return null;
-    const snapshot = await this.#request(scope, chunk);
-    this.#page = chunk.page;
-    this.#size = chunk.pageSize;
-    return snapshot;
+  /** Exactly one next chunk for one lane, or null at that lane's end. */
+  async next(scope: ChunkScope, state: WorkItemState): Promise<LanePage | null> {
+    const cursor = this.#cursors.get(state) ?? cursorFromPagination(undefined, this.#defaultSize);
+    if (cursor.loading || !cursor.hasMore || !cursor.next) return null;
+    this.#cursors.set(state, { ...cursor, loading: true });
+    try {
+      const page = await this.#gateway.lanePage({
+        slice: scope.slice, filters: scope.filters, state,
+        pagination: { page: cursor.next, pageSize: cursor.size },
+      });
+      this.#cursors.set(state, cursorFromPagination(page.pagination, cursor.size));
+      return page;
+    } catch (error) {
+      this.#cursors.set(state, { ...cursor, loading: false });
+      throw error;
+    }
   }
 
-  /** Reconnect window: exactly the chunks shown so far, recounted as chunks. */
-  async window(scope: ChunkScope): Promise<BoardSnapshot> {
-    const width = this.#size * Math.max(this.#page, 1);
-    const snapshot = await this.#request(scope, { page: 1, pageSize: width });
-    const totalCount = snapshot.pagination?.totalCount;
-    const hasMore = totalCount === undefined
-      ? snapshot.cards.length >= width
-      : snapshot.cards.length < totalCount;
-    const pagination: BoardPagination = {
-      page: this.#page, pageSize: this.#size, totalCount,
-      hasMore, nextCursor: hasMore ? this.#page + 1 : null,
-    };
-    return { ...snapshot, pagination };
+  /** Reconnect window for one lane: everything it already showed. */
+  async window(scope: ChunkScope, state: WorkItemState): Promise<LanePage | null> {
+    const cursor = this.#cursors.get(state);
+    if (!cursor || cursor.page <= 1) return null;
+    return this.#gateway.lanePage({
+      slice: scope.slice, filters: scope.filters, state,
+      pagination: { page: 1, pageSize: cursor.size * cursor.page },
+    });
   }
 }
