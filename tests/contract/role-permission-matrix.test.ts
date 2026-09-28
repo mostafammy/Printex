@@ -31,6 +31,7 @@ const EXPECTED_MATRIX: Record<string, string[]> = {
     "order.edit",
     "pricing.use_fixed",
     "workitem.assign_designer",
+    "workitem.send_to_production",
   ],
   DESIGNER: ["design.work"],
   HEAD_DESIGNER: ["design.review"],
@@ -76,7 +77,7 @@ describe("role × permission matrix (contract)", () => {
     }
   });
 
-  it("ADMIN_OWNER has exactly 22 permissions matching ALL_PERMISSIONS", async () => {
+  it("ADMIN_OWNER has exactly 23 permissions matching ALL_PERMISSIONS", async () => {
     const adminOwnerRole = await testDb.role.findUnique({
       where: { key: "ADMIN_OWNER" },
       include: { permissions: true },
@@ -90,7 +91,7 @@ describe("role × permission matrix (contract)", () => {
     const actualPerms = adminOwnerRole!.permissions.map((p) => p.permission).sort();
     const allPermsSorted = [...ALL_PERMISSIONS].sort();
 
-    expect(actualPerms).toHaveLength(22);
+    expect(actualPerms).toHaveLength(23);
     expect(actualPerms).toEqual(allPermsSorted);
   });
 });
