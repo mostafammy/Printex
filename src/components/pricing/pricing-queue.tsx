@@ -10,8 +10,8 @@ export function PricingQueue({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="apple-bento-card flex flex-col items-center justify-center p-14 text-center border-amber-500/20 bg-gradient-to-br from-amber-500/[0.02] via-card to-card">
-        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-xs apple-glow-amber">
+      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.02] via-card to-card flex flex-col items-center justify-center p-14 text-center shadow-xs">
+        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 shadow-xs">
           <CheckCircle2 className="h-8 w-8" />
         </div>
         <h3 className="text-lg font-bold text-foreground">
@@ -25,7 +25,7 @@ export function PricingQueue({
   }
 
   return (
-    <div className="apple-bento-card overflow-hidden border-border/70">
+    <div className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-sm">
           <thead>
@@ -49,7 +49,7 @@ export function PricingQueue({
               return (
                 <tr
                   key={row.workItemId}
-                  className="apple-interactive-row group transition-colors duration-150"
+                  className="hover:bg-muted/40 group transition-colors duration-150"
                 >
                   {/* Customer */}
                   <td className="px-6 py-4">
@@ -79,7 +79,7 @@ export function PricingQueue({
                   {/* Priority */}
                   <td className="px-6 py-4">
                     {row.priority === "URGENT" ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 apple-glow-rose">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400">
                         <span className="relative flex h-2 w-2">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
