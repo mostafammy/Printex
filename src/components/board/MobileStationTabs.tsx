@@ -30,7 +30,6 @@ export interface MobileStationTabsProps {
 function StationTab({
   id,
   labelAr,
-  ink,
   lanes,
   active,
   now,
@@ -38,7 +37,6 @@ function StationTab({
 }: {
   readonly id: StationId;
   readonly labelAr: string;
-  readonly ink: string;
   readonly lanes: readonly { readonly state: string }[];
   readonly active: boolean;
   readonly now: number;
@@ -66,12 +64,21 @@ function StationTab({
       // rule on the reading edge, and a flat wash only when selected. The ink
       // is present whether or not the station is active, so the rail reads as
       // a colour key for the whole floor at a glance.
+      //
+      // The rail is outside any [data-station] ancestor, so the --ticket-*
+      // component tokens are not set here; point them at the station's
+      // semantic fill and wash directly, scoped to this one button.
       className={`flex w-full items-center gap-2 rounded-[var(--board-radius)] border-s-[3px] px-2 py-2 text-start transition-colors ${
-        active
-          ? "border-s-[var(--ticket-bar)] bg-[var(--ticket-wash)]"
-          : "border-s-[color-mix(in_oklch,var(--ticket-bar)_45%,transparent)] hover:bg-muted/50"
+        active ? "bg-[var(--station-wash)]" : "hover:bg-muted/50"
       }`}
-      style={{ ["--ticket-bar" as string]: `var(--ink-${ink})` }}
+      style={
+        {
+          borderInlineStartColor: active
+            ? `var(--station-${id}-fill)`
+            : `color-mix(in oklch, var(--station-${id}-fill) 45%, transparent)`,
+          "--station-wash": `var(--station-${id}-wash)`,
+        } as React.CSSProperties
+      }
     >
       <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
         {labelAr}
@@ -106,7 +113,6 @@ export const MobileStationTabs = React.memo(function MobileStationTabs({
           key={st.id}
           id={st.id}
           labelAr={st.labelAr}
-          ink={st.ink}
           lanes={st.lanes}
           active={st.id === activeStationId}
           now={now}
