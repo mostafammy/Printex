@@ -37,7 +37,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
   sizeBytes,
 }) => {
   const isPdf = mimeType === "application/pdf" || originalName.toLowerCase().endsWith(".pdf");
-  const isImage = (mimeType?.startsWith("image/") || /\.(png|jpe?g|webp|gif|svg)$/i.test(originalName)) &&
+  const isImage = (Boolean(mimeType?.startsWith("image/")) || /\.(png|jpe?g|webp|gif|svg)$/i.test(originalName)) &&
     !mimeType?.includes("adobe") && !mimeType?.includes("photoshop") && !/\.(ai|psd|cdr)$/i.test(originalName);
 
   if (isPdf) {
@@ -63,6 +63,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     return (
       <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-muted/20 text-center gap-2">
         {previewUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={previewUrl}
             alt={originalName}
