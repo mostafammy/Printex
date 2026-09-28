@@ -27,6 +27,7 @@ psql("REVOKE UPDATE, DELETE ON audit_event FROM printex_app;");
 // immutable rows (payments, voids, expenses, approvals, costs) but never
 // UPDATE or DELETE them — tests assert the database refuses direct SQL too.
 psql("REVOKE UPDATE, DELETE ON \"Payment\", \"FinanceVoid\", \"Expense\", \"ExpenseApproval\", \"DirectCost\" FROM printex_app;");
+psql(readFileSync("prisma/manual-sql/board-transition-notify.sql", "utf-8"));
 
 if (args.has("reset")) {
   console.log("Test database reset and seeded.");
