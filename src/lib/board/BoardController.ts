@@ -19,6 +19,8 @@ import type {
   SheetInput,
   SliceId,
 } from "./types";
+import { BOARD_PAGE_SIZE } from "./types";
+import { BoardChunkLoader, type ChunkScope } from "./boardChunkPagination";
 import { GroupMoveCommand } from "./commands/GroupMoveCommand";
 import type { CommandOutcome } from "./commands/BoardCommand";
 import type { SheetManager } from "./sheets/SheetManager";
@@ -37,20 +39,25 @@ export interface BoardControllerDeps {
 }
 
 export class BoardController {
-  readonly #store: BoardStore; readonly #snapshotGateway: SnapshotGateway;
+  readonly #store: BoardStore;
   readonly #moveGateway?: MoveGateway; readonly #motion?: MotionPort;
   readonly #feedback?: FeedbackPort; readonly #dropPolicies?: DropPolicyResolver;
   readonly #dragSession?: DragSession; readonly #sheetManager?: SheetManager;
   readonly #liveUnsub?: () => void;
-  #currentSlice: SliceId;
-  #currentFilters: BoardFilters = {};
+  #currentSlice: SliceId; #currentFilters: BoardFilters = {};
   #disposed = false;
+  readonly #chunks: BoardChunkLoader;
   // Guard: prevents concurrent loadMore() calls from rapid scroll events.
   #isLoadingMore = false;
 
   constructor(deps: BoardControllerDeps) {
-    this.#store = deps.store; this.#snapshotGateway = deps.snapshotGateway;
-    this.#currentSlice = deps.store.getMeta().slice;
+    this.#store = deps.store;
+    const meta = deps.store.getMeta();
+    this.#currentSlice = meta.slice;
+    this.#chunks = new BoardChunkLoader(
+      deps.snapshotGateway, meta.pagination?.page ?? 1,
+      meta.pagination?.pageSize ?? BOARD_PAGE_SIZE,
+    );
     this.#moveGateway = deps.moveGateway; this.#motion = deps.motion;
     this.#feedback = deps.feedback; this.#dropPolicies = deps.dropPolicies;
     this.#dragSession = deps.dragSession; this.#sheetManager = deps.sheetManager;
@@ -59,7 +66,7 @@ export class BoardController {
       this.#liveUnsub = deps.liveSource.subscribe(
         (u) => { void this.#handleLiveUpdate(u); },
         (s) => { this.#handleLiveStatus(s); },
-        () => { void this.resync(); },
+        () => { void this.#resyncLoadedWindow(); },
       );
     }
   }
@@ -99,23 +106,38 @@ export class BoardController {
     if (option) await this.executeMove(this.#dragSession.activeCard, option);
   }
 
+  #scope(): ChunkScope {
+    return { slice: this.#currentSlice, filters: this.#currentFilters };
+  }
+
   async resync(slice?: SliceId, filters?: BoardFilters): Promise<void> {
     if (this.#disposed) return;
-    const snapshot = await this.#snapshotGateway.snapshot({ slice, filters });
+    if (slice !== undefined) this.#currentSlice = slice;
+    if (filters !== undefined) this.#currentFilters = filters;
+    const snapshot = await this.#chunks.first(this.#scope());
     if (!this.#disposed) this.#store.replace(snapshot);
   }
 
+  async #resyncLoadedWindow(): Promise<void> {
+    if (this.#disposed || this.#chunks.page <= 1) {
+      await this.resync();
+      return;
+    }
+    const snapshot = await this.#chunks.window(this.#scope());
+    if (!this.#disposed) this.#store.replace(snapshot);
+  }
+
+  /**
+   * Appends exactly one more chunk (the next page) when the user reaches
+   * the end of the list. One call = one page; never drains the remainder
+   * of the table.
+   */
   async loadMore(): Promise<void> {
     if (this.#disposed || this.#isLoadingMore) return;
-    const meta = this.#store.getMeta();
-    if (!meta.pagination?.hasMore || !meta.pagination.nextCursor) return;
     this.#isLoadingMore = true;
     try {
-      const next = await this.#snapshotGateway.snapshot({
-        slice: this.#currentSlice, filters: this.#currentFilters,
-        pagination: { page: meta.pagination.nextCursor, pageSize: meta.pagination.pageSize },
-      });
-      if (!this.#disposed) this.#store.append(next);
+      const next = await this.#chunks.next(this.#scope(), this.#store.getMeta());
+      if (next && !this.#disposed) this.#store.append(next);
     } finally {
       this.#isLoadingMore = false;
     }

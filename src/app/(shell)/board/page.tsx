@@ -6,6 +6,7 @@
 import { getActor } from "~/server/auth";
 import { getBoardSnapshot } from "~/server/board";
 import type { SliceId } from "~/lib/board/types";
+import { BOARD_PAGE_SIZE } from "~/lib/board/types";
 import { Board } from "~/components/board/Board";
 import { BoardProvider } from "~/components/board/BoardProvider";
 import { DndBridge } from "~/components/board/dnd/DndBridge";
@@ -23,7 +24,7 @@ export default async function BoardPage({
 
   const snapshot = await getBoardSnapshot(actor, {
     slice: (sliceParam as SliceId) || undefined,
-    pagination: { page, pageSize: 50 },
+    pagination: { page, pageSize: BOARD_PAGE_SIZE },
   });
 
   return (

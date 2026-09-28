@@ -52,6 +52,16 @@ export interface BoardPagination {
   readonly totalCount?: number; readonly hasMore: boolean; readonly nextCursor: number | null;
 }
 
+/**
+ * Single chunk size for the press floor board's infinite scroll.
+ *
+ * The board always loads one small mound (`BOARD_PAGE_SIZE` cards) at a
+ * time — initial snapshot is page 1, and every `loadMore()` appends exactly
+ * one more page when the user reaches the end. No path fetches the whole
+ * table unbounded.
+ */
+export const BOARD_PAGE_SIZE = 50;
+
 export interface BoardMeta {
   readonly slice: SliceId; readonly availableSlices: readonly SliceId[];
   readonly totalVisible: number; readonly hiddenSiblingCounts: Readonly<Record<string, number>>;

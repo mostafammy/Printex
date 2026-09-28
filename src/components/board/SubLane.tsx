@@ -4,10 +4,12 @@
  * SubLane virtualized card list subscribing to "lane:<state>".
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, R8, plan.md S1, S5)
  *
- * Infinite scroll: passive scroll event listener triggers loadMore() when user scrolls near the bottom.
+ * Chunked infinite scroll: an IntersectionObserver sentinel at the end of
+ * the list triggers exactly one controller.loadMore() (one page) each time
+ * the user reaches the bottom. No scroll-spam, no draining the table.
  */
 
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
@@ -72,27 +74,34 @@ function EmptyLanePlaceholder({ labelAr, state }: { readonly labelAr?: string; r
   );
 }
 
-function useScrollLoadMore(parentRef: React.RefObject<HTMLDivElement | null>) {
+function useSentinelLoadMore(
+  parentRef: React.RefObject<HTMLDivElement | null>,
+  sentinelRef: React.RefObject<HTMLDivElement | null>,
+) {
   const controller = useBoardController();
   const isFetchingRef = useRef(false);
 
-  const handleScroll = useCallback(() => {
-    const el = parentRef.current;
-    if (!el || isFetchingRef.current) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
-      isFetchingRef.current = true;
-      void controller.loadMore().finally(() => {
-        isFetchingRef.current = false;
-      });
-    }
-  }, [parentRef, controller]);
-
   useEffect(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [parentRef, handleScroll]);
+    const root = parentRef.current;
+    const sentinel = sentinelRef.current;
+    if (!root || !sentinel) return;
+    if (typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        if (!visible || isFetchingRef.current) return;
+        isFetchingRef.current = true;
+        // One chunk per intersection; the controller no-ops at the end
+        // (hasMore false), so reaching the true end stops fetching.
+        void controller.loadMore().finally(() => {
+          isFetchingRef.current = false;
+        });
+      },
+      { root, rootMargin: "100px", threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [parentRef, sentinelRef, controller]);
 }
 
 function VirtualCardItems({
@@ -133,7 +142,8 @@ function VirtualCardItems({
 
 function VirtualizedCardList(props: VirtualizedCardListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  useScrollLoadMore(parentRef);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useSentinelLoadMore(parentRef, sentinelRef);
 
   const virtualizer = useVirtualizer({
     count: props.cardIds.length,
@@ -159,6 +169,7 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
           onMoveKey={props.onMoveKey}
         />
       </div>
+      <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />
     </div>
   );
 }

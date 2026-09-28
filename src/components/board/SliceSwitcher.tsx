@@ -5,11 +5,11 @@
  * (specs/017-press-floor-board/spec.md FR-021, FR-022, plan.md S1)
  */
 
-import React from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import { SLICES, type SliceId } from "~/lib/board/slices";
 import type { BoardFilters, BoardPagination } from "~/lib/board/types";
 import { AlertCircle, Archive, Flame } from "lucide-react";
+import { useBoardController } from "./hooks/useBoardController";
 
 export interface SliceSwitcherProps {
   readonly activeSlice: SliceId;
@@ -118,29 +118,31 @@ function FilterChips({
 }
 
 function BoardPaginationControls({ pagination }: { readonly pagination: BoardPagination }) {
+  const controller = useBoardController();
+  const [isLoading, setIsLoading] = useState(false);
   const totalPages = pagination.totalCount ? Math.ceil(pagination.totalCount / pagination.pageSize) : 1;
   if (totalPages <= 1 && !pagination.hasMore) return null;
 
+  const handleLoadMore = () => {
+    if (isLoading) return;
+    setIsLoading(true);
+    void controller.loadMore().finally(() => setIsLoading(false));
+  };
+
   return (
     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      {pagination.page > 1 && (
-        <Link
-          href={`/board?page=${pagination.page - 1}`}
-          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted"
-        >
-          السابق
-        </Link>
-      )}
       <span className="font-mono text-[11px] px-1">
         {pagination.page} / {totalPages}
       </span>
       {pagination.hasMore && (
-        <Link
-          href={`/board?page=${pagination.page + 1}`}
-          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted"
+        <button
+          type="button"
+          onClick={handleLoadMore}
+          disabled={isLoading}
+          className="rounded-md border border-border/60 bg-card/60 px-2 py-0.5 font-medium hover:bg-muted disabled:opacity-50"
         >
-          التالي
-        </Link>
+          {isLoading ? "جاري التحميل..." : "تحميل المزيد"}
+        </button>
       )}
     </div>
   );
