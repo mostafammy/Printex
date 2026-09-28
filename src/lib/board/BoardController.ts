@@ -37,29 +37,23 @@ export interface BoardControllerDeps {
 }
 
 export class BoardController {
-  readonly #store: BoardStore;
-  readonly #snapshotGateway: SnapshotGateway;
-  readonly #moveGateway?: MoveGateway;
-  readonly #motion?: MotionPort;
-  readonly #feedback?: FeedbackPort;
-  readonly #dropPolicies?: DropPolicyResolver;
-  readonly #dragSession?: DragSession;
-  readonly #sheetManager?: SheetManager;
+  readonly #store: BoardStore; readonly #snapshotGateway: SnapshotGateway;
+  readonly #moveGateway?: MoveGateway; readonly #motion?: MotionPort;
+  readonly #feedback?: FeedbackPort; readonly #dropPolicies?: DropPolicyResolver;
+  readonly #dragSession?: DragSession; readonly #sheetManager?: SheetManager;
   readonly #liveUnsub?: () => void;
   #currentSlice: SliceId;
   #currentFilters: BoardFilters = {};
   #disposed = false;
+  // Guard: prevents concurrent loadMore() calls from rapid scroll events.
+  #isLoadingMore = false;
 
   constructor(deps: BoardControllerDeps) {
-    this.#store = deps.store;
+    this.#store = deps.store; this.#snapshotGateway = deps.snapshotGateway;
     this.#currentSlice = deps.store.getMeta().slice;
-    this.#snapshotGateway = deps.snapshotGateway;
-    this.#moveGateway = deps.moveGateway;
-    this.#motion = deps.motion;
-    this.#feedback = deps.feedback;
-    this.#dropPolicies = deps.dropPolicies;
-    this.#dragSession = deps.dragSession;
-    this.#sheetManager = deps.sheetManager;
+    this.#moveGateway = deps.moveGateway; this.#motion = deps.motion;
+    this.#feedback = deps.feedback; this.#dropPolicies = deps.dropPolicies;
+    this.#dragSession = deps.dragSession; this.#sheetManager = deps.sheetManager;
 
     if (deps.liveSource) {
       this.#liveUnsub = deps.liveSource.subscribe(
@@ -89,7 +83,6 @@ export class BoardController {
   get feedback(): FeedbackPort | undefined { return this.#feedback; }
   get currentSlice(): SliceId { return this.#currentSlice; }
   get currentFilters(): BoardFilters { return this.#currentFilters; }
-
   getCard(id: string): BoardCard | undefined { return this.#store.getCard(id); }
   getLane(state: WorkItemState): readonly string[] { return this.#store.getLane(state); }
   getMeta(): BoardMeta { return this.#store.getMeta(); }
@@ -112,6 +105,22 @@ export class BoardController {
     if (!this.#disposed) this.#store.replace(snapshot);
   }
 
+  async loadMore(): Promise<void> {
+    if (this.#disposed || this.#isLoadingMore) return;
+    const meta = this.#store.getMeta();
+    if (!meta.pagination?.hasMore || !meta.pagination.nextCursor) return;
+    this.#isLoadingMore = true;
+    try {
+      const next = await this.#snapshotGateway.snapshot({
+        slice: this.#currentSlice, filters: this.#currentFilters,
+        pagination: { page: meta.pagination.nextCursor, pageSize: meta.pagination.pageSize },
+      });
+      if (!this.#disposed) this.#store.append(next);
+    } finally {
+      this.#isLoadingMore = false;
+    }
+  }
+
   async switchSlice(slice: SliceId): Promise<void> {
     this.#currentSlice = slice;
     BoardViewPrefs.save({ slice, filters: this.#currentFilters });
@@ -125,11 +134,10 @@ export class BoardController {
   }
 
   async initFromPrefs(): Promise<void> {
-    const saved = BoardViewPrefs.load(this.#currentSlice);
-    if (saved.slice !== this.#currentSlice || Object.keys(saved.filters).length > 0) {
-      this.#currentSlice = saved.slice;
-      this.#currentFilters = saved.filters;
-      await this.resync(saved.slice, saved.filters);
+    const s = BoardViewPrefs.load(this.#currentSlice);
+    if (s.slice !== this.#currentSlice || Object.keys(s.filters).length > 0) {
+      this.#currentSlice = s.slice; this.#currentFilters = s.filters;
+      await this.resync(s.slice, s.filters);
     }
   }
 
@@ -138,8 +146,7 @@ export class BoardController {
       return { success: false, messageAr: "بوابة النقل غير متوفرة" };
     }
     return new GroupMoveCommand(
-      { store: this.#store, gateway: this.#moveGateway, feedback: this.#feedback },
-      req,
+      { store: this.#store, gateway: this.#moveGateway, feedback: this.#feedback }, req,
     ).execute();
   }
 
