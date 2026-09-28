@@ -122,7 +122,7 @@ export default async function MyQueuePage() {
       {/* Apple VisionOS Bento Stats Metric Row */}
       <div className="grid grid-cols-2 gap-4.5 lg:grid-cols-4">
         {/* Card 1: Total Queue */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-indigo-500/10 via-card to-card border-indigo-500/25 hover:border-indigo-500/45 hover:shadow-indigo-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-indigo-500/10 via-card to-card border-indigo-500/25 hover:border-indigo-500/45 hover:shadow-indigo-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               إجمالي الطابور
@@ -142,7 +142,7 @@ export default async function MyQueuePage() {
         </div>
 
         {/* Card 2: Active Timers */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25 hover:border-emerald-500/45 hover:shadow-emerald-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25 hover:border-emerald-500/45 hover:shadow-emerald-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-muted-foreground">
@@ -170,7 +170,7 @@ export default async function MyQueuePage() {
         </div>
 
         {/* Card 3: Urgent Tasks */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               مهام عاجلة
@@ -190,7 +190,7 @@ export default async function MyQueuePage() {
         </div>
 
         {/* Card 4: Rework Required */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               إعادة تعديل
@@ -212,7 +212,7 @@ export default async function MyQueuePage() {
 
       {/* Main Content Area */}
       {rows.length === 0 ? (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-primary/10 via-indigo-500/10 to-transparent border border-primary/20 shadow-xs">
             <CheckCircle2 className="h-8 w-8 text-primary" />
           </div>
@@ -229,7 +229,7 @@ export default async function MyQueuePage() {
           </div>
         </div>
       ) : (
-        <div className="apple-card overflow-hidden">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-start text-sm">
               <thead>
