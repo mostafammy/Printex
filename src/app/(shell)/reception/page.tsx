@@ -269,7 +269,7 @@ export default async function ReceptionQueuePage({
                     key={row.orderId}
                     className={`group transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                       row.priority === "URGENT"
-                        ? "bg-rose-500/[0.02] hover:bg-muted/40 shadow-[inset_3px_0_0_#ff3b30]"
+                        ? "status-edge-urgent hover:bg-muted/40"
                         : "hover:bg-muted/40"
                     }`}
                   >

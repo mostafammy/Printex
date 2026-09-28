@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   Clock,
   CheckCircle2,
   Inbox,
@@ -23,6 +24,10 @@ import type { Actor } from "~/server/core";
 import { filterNavByPermissions, navItems, type NavItem } from "../nav";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  // `Bell` is requested by two nav entries (nav.ts) but was missing here, so
+  // both silently fell through to the `Layers` fallback and rendered a stack
+  // icon for anything notification-related.
+  Bell,
   Clock,
   CheckCircle2,
   Inbox,
@@ -118,10 +123,11 @@ function SidebarNavItem({ item }: { item: NavItem }) {
   return (
     <Link
       href={item.href}
-      className={`group relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] ${
+      aria-current={isActive ? "page" : undefined}
+      className={`group relative flex items-center justify-between rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         isActive
           ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] dark:from-primary/25 dark:via-primary/15"
-          : "text-foreground/80 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-foreground hover:translate-x-[-2px]"
+          : "text-foreground/80 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] hover:text-foreground"
       }`}
     >
       <div className="flex items-center gap-3">
@@ -132,18 +138,21 @@ function SidebarNavItem({ item }: { item: NavItem }) {
               : `${colorInfo.bg} shadow-2xs`
           }`}
         >
-          <IconComponent className="h-4 w-4" />
+          <IconComponent aria-hidden="true" className="h-4 w-4" />
         </div>
         <span className="tracking-tight text-[13.5px]">{item.label}</span>
       </div>
 
-      {isActive ? (
-        <div
+      {/* No active-state indicator bar. The active row already reads as
+          active through its background tint, bold weight, and primary text;
+          the old vertical pill added a third channel for no extra clarity. */}
+      {!isActive && (
+        /* Points into the content (end-ward) so it reads as "enter" in RTL.
+           `ChevronLeft` + `translate-x-[-2px]` pointed the opposite way. */
+        <ChevronLeft
           aria-hidden="true"
-          className="h-5 w-1.5 rounded-full bg-gradient-to-b from-primary to-indigo-600 shadow-[0_0_10px_rgba(0,113,227,0.7)] animate-pulse"
+          className="h-4 w-4 text-muted-foreground/30 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
         />
-      ) : (
-        <ChevronLeft className="h-4 w-4 text-muted-foreground/30 opacity-0 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-[-2px]" />
       )}
     </Link>
   );
@@ -173,9 +182,12 @@ export function SidebarNav({ actor }: { actor: Actor }) {
     >
       {groupedSections.map(({ sectionKey, items: sectionItems }) => (
         <div key={sectionKey} className="flex flex-col gap-1.5">
-          <div className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80">
+          {/* `uppercase` does nothing on Arabic script and `text-[11px]` sat
+              under the contrast threshold; `text-2xs` is the meta-label size
+              now that the token is declared. */}
+          <h2 className="px-3 text-2xs font-semibold tracking-wider text-muted-foreground">
             {SECTION_HEADERS[sectionKey] ?? sectionKey}
-          </div>
+          </h2>
           <div className="flex flex-col gap-1">
             {sectionItems.map((item) => (
               <SidebarNavItem key={item.id} item={item} />

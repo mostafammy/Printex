@@ -255,9 +255,9 @@ export default async function MyQueuePage() {
                       key={row.workItemId}
                       className={`group transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                         row.hasOpenTimer
-                          ? "bg-emerald-500/[0.04] dark:bg-emerald-500/[0.08] shadow-[inset_3px_0_0_#34c759]"
+                          ? "status-edge-running"
                           : row.priority === "URGENT"
-                            ? "bg-rose-500/[0.02] hover:bg-muted/40 shadow-[inset_3px_0_0_#ff3b30]"
+                            ? "status-edge-urgent hover:bg-muted/40"
                             : "hover:bg-muted/40"
                       }`}
                     >
