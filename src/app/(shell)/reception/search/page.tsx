@@ -52,11 +52,11 @@ export default async function SearchOrdersPage({
       </div>
 
       {/* ── Hero Search Header ── */}
-      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-cyan-500/[0.06] via-card to-card border-cyan-500/25">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-cyan-500/[0.06] via-card to-card border-cyan-500/25">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-cyan-500/15 via-blue-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative flex items-start gap-4">
-          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 apple-glow-cyan">
+          <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/25 ">
             <Search className="h-8 w-8" />
             <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-card">
               <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -74,7 +74,7 @@ export default async function SearchOrdersPage({
       </div>
 
       {/* ── Search Bar Card ── */}
-      <div className="apple-bento-card p-6 sm:p-7 border-border/70">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-border/70">
         <form action="/reception/search" className="flex max-w-xl items-end gap-3">
           <div className="flex flex-1 flex-col gap-1.5">
             <label htmlFor="q" className="text-xs font-bold text-foreground">
@@ -100,7 +100,7 @@ export default async function SearchOrdersPage({
 
       {/* ── Search Results ── */}
       {q && results.length === 0 && (
-        <div className="apple-bento-card flex flex-col items-center justify-center p-14 text-center border-border/70">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-14 text-center border-border/70">
           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60 text-muted-foreground">
             <Search className="h-7 w-7" />
           </div>
@@ -112,7 +112,7 @@ export default async function SearchOrdersPage({
       )}
 
       {results.length > 0 && (
-        <div className="apple-bento-card overflow-hidden border-border/70">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs overflow-hidden border-border/70">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-border/70 bg-muted/40 text-muted-foreground text-xs font-bold">
@@ -132,7 +132,7 @@ export default async function SearchOrdersPage({
                     .join("");
 
                   return (
-                    <tr key={r.orderId} className="apple-interactive-row transition-colors">
+                    <tr key={r.orderId} className="hover:bg-muted/40 transition-colors">
                       <td className="px-6 py-4 font-bold text-foreground">
                         <Link
                           href={`/orders/${r.orderId}`}

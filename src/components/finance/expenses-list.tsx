@@ -42,8 +42,8 @@ type Props = {
 export function ExpensesList({ rows, page, nextPage, filters, canModerate, canApprove }: Props) {
   if (rows.length === 0) {
     return (
-      <div className="apple-bento-card flex flex-col items-center justify-center p-14 text-center border-border/70">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs apple-glow-emerald">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-14 text-center">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
           <Receipt className="h-7 w-7" />
         </div>
         <p className="text-base font-bold text-foreground">{S.paymentsEmpty}</p>
@@ -68,7 +68,7 @@ export function ExpensesList({ rows, page, nextPage, filters, canModerate, canAp
         {rows.map((row) => (
           <li
             key={row.id}
-            className={`apple-bento-card p-5 transition-all border-border/70 ${
+            className={`rounded-2xl border p-5 transition-all border-border/70 bg-card shadow-xs ${
               row.voided ? "opacity-60 bg-muted/20" : "hover:border-emerald-500/30"
             }`}
           >
@@ -99,7 +99,7 @@ export function ExpensesList({ rows, page, nextPage, filters, canModerate, canAp
                   </span>
                 )}
                 {row.awaitingApproval && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-500/25 apple-glow-amber">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-500/25">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
@@ -149,7 +149,7 @@ export function ExpensesList({ rows, page, nextPage, filters, canModerate, canAp
                 {canApprove && row.awaitingApproval && (
                   <form action={approveExpenseAction}>
                     <input type="hidden" name="expenseId" value={row.id} />
-                    <Button type="submit" variant="default" size="xs" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs apple-glow-emerald">
+                    <Button type="submit" variant="default" size="xs" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs">
                       <CheckCircle2 className="h-3.5 w-3.5" />
                       <span>{S.approve}</span>
                     </Button>

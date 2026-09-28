@@ -567,7 +567,7 @@ export default async function OrderDetailPage({
       </div>
 
       {/* ── Hero Order Master Bento Card ── */}
-      <section className="apple-bento-card relative p-6 sm:p-8 bg-gradient-to-br from-primary/[0.04] via-card to-card border-border/70">
+      <section className="rounded-2xl border border-border/70 bg-card shadow-xs relative p-6 sm:p-8 bg-gradient-to-br from-primary/[0.04] via-card to-card border-border/70">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           {/* Customer & Order Title */}
           <div className="flex items-start gap-4">
@@ -602,7 +602,7 @@ export default async function OrderDetailPage({
                 </span>
 
                 {detail.order.priority === "URGENT" ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 apple-glow-rose">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/25 px-3 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 ">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
@@ -692,7 +692,7 @@ export default async function OrderDetailPage({
       </section>
 
       {/* ── Apple Visual Workflow Stepper ── */}
-      <section className="apple-bento-card p-6 sm:p-7">
+      <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
         <h2 className="mb-4 text-xs font-bold tracking-wider uppercase text-muted-foreground">
           مسار تنفيذ الطلب (Workflow Journey)
         </h2>
@@ -705,7 +705,7 @@ export default async function OrderDetailPage({
                 key={station.key}
                 className={`relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all ${
                   isCurrent
-                    ? "border-primary/40 bg-primary/10 shadow-md apple-glow-blue"
+                    ? "border-primary/40 bg-primary/10 shadow-md "
                     : isCompleted
                     ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
                     : "border-border/60 bg-muted/20 opacity-60"
@@ -758,7 +758,7 @@ export default async function OrderDetailPage({
             return (
               <div
                 key={wi.id}
-                className="apple-bento-card p-6 sm:p-7 border-border/70 hover:border-primary/30 transition-all"
+                className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-border/70 hover:border-primary/30 transition-all"
               >
                 {/* Work Item Header */}
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-4">
@@ -1064,7 +1064,7 @@ export default async function OrderDetailPage({
       </section>
 
       {/* ── Add Work Item Bento Card ── */}
-      <section className="apple-bento-card p-6 sm:p-7 bg-gradient-to-br from-primary/[0.03] via-card to-card border-primary/20">
+      <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 bg-gradient-to-br from-primary/[0.03] via-card to-card border-primary/20">
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Plus className="h-5 w-5" />
@@ -1142,7 +1142,7 @@ export default async function OrderDetailPage({
       </section>
 
       {/* ── Order Timeline Stream ── */}
-      <section className="apple-bento-card p-6 sm:p-7">
+      <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
         <div className="mb-4 flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
             <History className="h-5 w-5" />

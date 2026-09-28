@@ -1,0 +1,24 @@
+# Minutes a Work Item may spend at a station before it counts as overdue.
+# Source: specs/017-press-floor-board/data-model.md §1.3, research.md R10, FR-007
+stationTargets:
+  reception:
+    normal: 30
+    urgent: 10
+  design:
+    normal: 1440
+    urgent: 240
+  review:
+    normal: 240
+    urgent: 60
+  pricing:
+    normal: 240
+    urgent: 60
+  production:
+    normal: 2880
+    urgent: 480
+  collection:
+    normal: 1440
+    urgent: 240
+  delivered:
+    normal: 0
+    urgent: 0

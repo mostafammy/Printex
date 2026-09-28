@@ -41,14 +41,14 @@ export async function OrderFinancePanel({ orderId }: Props) {
 
   if (summary.status === "UNAVAILABLE") {
     return (
-      <section className="apple-card p-6 text-sm text-muted-foreground">
+      <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 text-sm text-muted-foreground">
         {summary.reason}
       </section>
     );
   }
 
   return (
-    <section aria-labelledby="order-finance-heading" className="apple-card p-6 sm:p-7">
+    <section aria-labelledby="order-finance-heading" className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
       {/* ── Heading & Status ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
         <div className="flex items-center gap-2.5">

@@ -31,6 +31,7 @@ const EXPECTED_MATRIX: Record<string, string[]> = {
     "order.edit",
     "pricing.use_fixed",
     "workitem.assign_designer",
+    "workitem.send_to_production",
   ],
   DESIGNER: ["design.work"],
   HEAD_DESIGNER: ["change.approve", "design.review"],

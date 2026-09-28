@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./ink.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -61,15 +62,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-
-  /* Apple System Palette */
-  --color-apple-blue: var(--apple-blue);
-  --color-apple-indigo: var(--apple-indigo);
-  --color-apple-purple: var(--apple-purple);
-  --color-apple-teal: var(--apple-teal);
-  --color-apple-green: var(--apple-green);
-  --color-apple-orange: var(--apple-orange);
-  --color-apple-red: var(--apple-red);
 }
 
 :root {
@@ -108,15 +100,6 @@
   --chart-5: oklch(0.62 0.24 28); /* Apple Crimson #FF3B30 */
   --radius: 0.875rem;
 
-  /* Apple System Tokens */
-  --apple-blue: #0071e3;
-  --apple-indigo: #5856d6;
-  --apple-purple: #af52de;
-  --apple-teal: #30b0c7;
-  --apple-green: #34c759;
-  --apple-orange: #ff9500;
-  --apple-red: #ff3b30;
-
   /* Sidebar */
   --sidebar: oklch(0.99 0.003 250);
   --sidebar-foreground: oklch(0.2 0.015 260);
@@ -129,13 +112,13 @@
 }
 
 .dark {
-  --background: oklch(0.12 0.012 260); /* Apple Obsidian Dark #101014 */
+  --background: oklch(0.12 0.012 260); /* Obsidian Dark */
   --foreground: oklch(0.96 0.005 250);
-  --card: oklch(0.17 0.014 260); /* Apple Dark Grouped Card #1C1C1E */
+  --card: oklch(0.17 0.014 260);
   --card-foreground: oklch(0.96 0.005 250);
   --popover: oklch(0.19 0.014 260);
   --popover-foreground: oklch(0.96 0.005 250);
-  --primary: oklch(0.62 0.22 255); /* Apple Vibrant Blue Dark #0A84FF */
+  --primary: oklch(0.62 0.22 255);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.22 0.012 260);
   --secondary-foreground: oklch(0.94 0.005 250);
@@ -159,14 +142,6 @@
   --chart-4: oklch(0.58 0.24 285);
   --chart-5: oklch(0.65 0.22 25);
 
-  --apple-blue: #0a84ff;
-  --apple-indigo: #5e5ce6;
-  --apple-purple: #bf5af2;
-  --apple-teal: #64d2ff;
-  --apple-green: #30d158;
-  --apple-orange: #ff9f0a;
-  --apple-red: #ff453a;
-
   --sidebar: oklch(0.15 0.012 260);
   --sidebar-foreground: oklch(0.96 0.005 250);
   --sidebar-primary: oklch(0.62 0.22 255);
@@ -180,7 +155,6 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
   body {
     @apply bg-background text-foreground selection:bg-primary/20 selection:text-primary antialiased;

@@ -8,6 +8,8 @@
 import { db } from "~/server/db";
 import { authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
+import { paginateQuery } from "~/server/pagination";
+import type { PageInput, PageResult } from "~/server/pagination";
 import { DomainProductionError } from "./errors";
 import { effectiveDepartmentId } from "./department";
 
@@ -24,52 +26,71 @@ export interface ProductionQueueRow {
 }
 
 export async function getOperatorQueue(actor: Actor): Promise<ProductionQueueRow[]> {
+  const page = await getOperatorQueuePage(actor, { page: 1, pageSize: 100 });
+  return [...page.rows];
+}
+
+function buildOperatorQueueWhere(actor: Actor) {
+  const deptIds = [...actor.departmentIds];
+  return {
+    state: "READY_FOR_PRODUCTION" as const,
+    OR: [
+      { departmentId: { in: deptIds } },
+      { departmentId: null, productType: { defaultDepartmentId: { in: deptIds } } },
+    ],
+  };
+}
+
+export async function getOperatorQueuePage(
+  actor: Actor,
+  input: PageInput = {},
+): Promise<PageResult<ProductionQueueRow>> {
   authorize(actor, "production.operate");
+  const where = buildOperatorQueueWhere(actor);
 
-  const workItems = await db.workItem.findMany({
-    where: { state: "READY_FOR_PRODUCTION" },
-    include: {
-      order: { include: { customer: { select: { name: true } } } },
-      productType: { select: { name: true, defaultDepartmentId: true } },
-      transitions: { orderBy: { at: "desc" } },
-    },
+  return paginateQuery(input, async (skip, take) => {
+    const items = await db.workItem.findMany({
+      where,
+      orderBy: [{ order: { priority: "desc" } }, { createdAt: "asc" }],
+      skip,
+      take,
+      include: {
+        order: { include: { customer: { select: { name: true } } } },
+        productType: { select: { name: true, defaultDepartmentId: true } },
+        transitions: { where: { to: "READY_FOR_PRODUCTION" }, orderBy: { at: "desc" }, take: 1 },
+      },
+    });
+
+    return items.map((wi) => {
+      const enteredAt = wi.transitions[0]?.at ?? wi.createdAt;
+      return {
+        workItemId: wi.id,
+        orderId: wi.orderId,
+        orderNumber: wi.order.number,
+        customerName: wi.order.customer.name,
+        productTypeName: wi.productType?.name ?? null,
+        departmentId: effectiveDepartmentId(wi) ?? "",
+        priority: wi.order.priority,
+        enteredQueueAt: enteredAt,
+        hasPendingFileRevision: wi.pendingFileRevisionAt !== null,
+      };
+    });
   });
+}
 
-  const scoped = workItems
-    .map((wi) => ({ wi, departmentId: effectiveDepartmentId(wi) }))
-    .filter(
-      (entry): entry is typeof entry & { departmentId: string } =>
-        entry.departmentId !== null && actor.departmentIds.includes(entry.departmentId),
-    );
-
-  const rows = scoped.map(({ wi, departmentId }) => {
-    const enteredQueueTransition = wi.transitions.find((t) => t.to === "READY_FOR_PRODUCTION");
-    const enteredQueueAt = enteredQueueTransition?.at ?? wi.createdAt;
-
-    const row: ProductionQueueRow = {
-      workItemId: wi.id,
-      orderId: wi.orderId,
-      orderNumber: wi.order.number,
-      customerName: wi.order.customer.name,
-      productTypeName: wi.productType?.name ?? null,
-      departmentId,
-      priority: wi.order.priority,
-      enteredQueueAt,
-      hasPendingFileRevision: wi.pendingFileRevisionAt !== null,
-    };
-
-    return { row, sortKey: enteredQueueAt.getTime() };
-  });
-
-  // research.md §6: urgent first, then oldest enteredQueueAt within each
-  // bucket — identical comparator to 012/013's queues.
-  rows.sort((a, b) => {
-    if (a.row.priority === "URGENT" && b.row.priority !== "URGENT") return -1;
-    if (a.row.priority !== "URGENT" && b.row.priority === "URGENT") return 1;
-    return a.sortKey - b.sortKey;
-  });
-
-  return rows.map(({ row }) => row);
+export async function getOperatorQueueStats(actor: Actor): Promise<{
+  totalCount: number;
+  urgentCount: number;
+  revisedCount: number;
+}> {
+  authorize(actor, "production.operate");
+  const where = buildOperatorQueueWhere(actor);
+  const [totalCount, urgentCount, revisedCount] = await Promise.all([
+    db.workItem.count({ where }),
+    db.workItem.count({ where: { ...where, order: { priority: "URGENT" } } }),
+    db.workItem.count({ where: { ...where, pendingFileRevisionAt: { not: null } } }),
+  ]);
+  return { totalCount, urgentCount, revisedCount };
 }
 
 /**

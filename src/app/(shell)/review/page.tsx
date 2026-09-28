@@ -66,7 +66,7 @@ export default async function ReviewQueuePage({
 
       {/* Apple VisionOS Bento Stats Metric Row */}
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-purple-500/10 via-card to-card border-purple-500/25 hover:border-purple-500/45 hover:shadow-purple-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-purple-500/10 via-card to-card border-purple-500/25 hover:border-purple-500/45 hover:shadow-purple-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               إجمالي للمراجعة
@@ -85,7 +85,7 @@ export default async function ReviewQueuePage({
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-muted-foreground">
@@ -112,7 +112,7 @@ export default async function ReviewQueuePage({
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               معاد مراجعته
@@ -134,7 +134,7 @@ export default async function ReviewQueuePage({
 
       {/* Main Table / Empty State */}
       {rows.length === 0 ? (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-purple-500/15 to-indigo-500/15 text-purple-600 border border-purple-500/20 shadow-xs">
             <CheckCircle2 className="h-8 w-8" />
           </div>
@@ -146,7 +146,7 @@ export default async function ReviewQueuePage({
           </p>
         </div>
       ) : (
-        <div className="apple-card overflow-hidden">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-start text-sm">
               <thead>

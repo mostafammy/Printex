@@ -571,8 +571,10 @@ of a customer name, and jump to it.
   and sub-lanes are presentation only (constitution I). The single exception is FR-015a: one new
   action and permission for an edge that already exists but that nothing could perform.
 - **System-driven transitions**: "Design complete → waiting review / approved", "approved → waiting
-  pricing / ready for production" and "delivered → completed" are performed by the system as today
-  and are never drag targets. The plan MUST classify every workflow edge as board-droppable (with
+  pricing / ready for production", "waiting pricing → ready for production once priced" and
+  "delivered → completed" are performed by the system and are never drag targets. The two
+  pricing-related routings do not exist in code yet. They are delivered by PRI-66, which 017
+  depends on. The plan MUST classify every workflow edge as board-droppable (with
   its existing action and inputs), detail-screen-only (FR-016), or system-driven.
 - **Pricing**: Entering or approving a price stays on the existing pricing screen (FR-016). The
   board shows the Pricing column and badges only.

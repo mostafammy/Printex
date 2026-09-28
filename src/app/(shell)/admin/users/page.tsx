@@ -174,7 +174,7 @@ export default async function AdminUsersPage({
       <h1 className="text-xl font-semibold">{S.adminUsersPageTitle}</h1>
 
       {/* ── Create User Form ───────────────────────────────────────────── */}
-      <section className="apple-card p-6 sm:p-8">
+      <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-8">
         <h2 className="mb-4 text-base font-bold text-foreground">{S.createUserHeading}</h2>
         <form action={createUserAction} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -254,7 +254,7 @@ export default async function AdminUsersPage({
       </section>
 
       {/* ── Users Table ────────────────────────────────────────────────── */}
-      <div className="apple-card overflow-hidden">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
           <thead className="bg-muted text-muted-foreground">
