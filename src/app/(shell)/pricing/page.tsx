@@ -15,12 +15,12 @@ export default async function PricingQueuePage() {
   return (
     <div className="flex flex-col gap-8 pb-10">
       {/* ── Hero Pricing Header ── */}
-      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-amber-500/[0.06] via-card to-card border-amber-500/25">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-amber-500/[0.06] via-card to-card border-amber-500/25">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25 apple-glow-amber">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-md shadow-amber-500/25 ">
               <Tag className="h-8 w-8" />
               <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-card">
                 <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -59,7 +59,7 @@ export default async function PricingQueuePage() {
 
       {/* ── Bento Stats Row ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="apple-bento-card p-5 bg-gradient-to-br from-amber-500/[0.04] via-card to-card border-amber-500/20">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 bg-gradient-to-br from-amber-500/[0.04] via-card to-card border-amber-500/20">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">معلق للتسعير</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
@@ -74,7 +74,7 @@ export default async function PricingQueuePage() {
           </div>
         </div>
 
-        <div className="apple-bento-card p-5 bg-gradient-to-br from-rose-500/[0.04] via-card to-card border-rose-500/20">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 bg-gradient-to-br from-rose-500/[0.04] via-card to-card border-rose-500/20">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">طلبات عاجلة</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
@@ -89,7 +89,7 @@ export default async function PricingQueuePage() {
           </div>
         </div>
 
-        <div className="apple-bento-card p-5 bg-gradient-to-br from-blue-500/[0.04] via-card to-card border-blue-500/20">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 bg-gradient-to-br from-blue-500/[0.04] via-card to-card border-blue-500/20">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">حالة المحرك</span>
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
