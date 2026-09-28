@@ -52,12 +52,12 @@ export default async function ExpensesPage({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Hero Expenses Header ── */}
-      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-emerald-500/[0.06] via-card to-card border-emerald-500/25">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-emerald-500/[0.06] via-card to-card border-emerald-500/25">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 apple-glow-emerald">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25 ">
               <Receipt className="h-8 w-8" />
               <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-teal-400 ring-2 ring-card">
                 <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -89,7 +89,7 @@ export default async function ExpensesPage({
       <ExpenseForm />
 
       {/* ── Filters Toolbar Card ── */}
-      <div className="apple-bento-card p-5 border-border/70">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 border-border/70">
         <form method="get" className="flex flex-wrap items-end gap-3 text-xs">
           <div className="flex flex-col gap-1">
             <span className="font-semibold text-muted-foreground">{S.expenseDate} (من)</span>
