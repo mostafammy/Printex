@@ -136,11 +136,11 @@ model Order {
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())
 
-  workItems    WorkItem[]
+  workItems   WorkItem[]
   // --- 052-finance reverse relations ---
-  payments     Payment[]
-  expenses     Expense[]
-  directCosts  DirectCost[]
+  payments    Payment[]
+  expenses    Expense[]
+  directCosts DirectCost[]
 
   // Status is NOT a column — see contracts/orders.md (deriveOrderStatus).
 
@@ -178,9 +178,9 @@ model WorkItem {
   /// --- 014-production fields ---------------------------------------------
   /// Set on completion (US4, FR-006/FR-007). Required by completeProduction();
   /// validated non-null and > 0 before the completion transition runs.
-  producedQuantity Int?
+  producedQuantity      Int?
   /// Optional free-text notes recorded at completion.
-  productionNotes  String?
+  productionNotes       String?
   /// Non-null while a newer DesignVersion was approved during IN_PRODUCTION
   /// and the operator has not yet acknowledged it (US7, FR-013). Set by the
   /// approval path (013's approveDesign), cleared by acknowledgeFileRevision().
@@ -196,12 +196,12 @@ model WorkItem {
   designVersions          DesignVersion[]
   returns                 Return[]
   vendorProductionRecords VendorProductionRecord[]
-  fileAssets FileAsset[] @relation("FileAssetWorkItem")
-  prices     WorkItemPrice[]
-  pricingStatus PricingStatus?
+  fileAssets              FileAsset[]              @relation("FileAssetWorkItem")
+  prices                  WorkItemPrice[]
+  pricingStatus           PricingStatus?
   // --- 052-finance reverse relations ---
-  expenses    Expense[]
-  directCosts DirectCost[]
+  expenses                Expense[]
+  directCosts             DirectCost[]
 
   @@index([orderId, state])
   // Review queue (getReviewQueue) filters on `state` alone; My Queue /
@@ -227,9 +227,9 @@ model ProductType {
   isActive              Boolean     @default(true)
   createdAt             DateTime    @default(now())
 
-  workItems WorkItem[]
-  pricingPolicy ProductPricingPolicy?
-  priceLists PriceList[]
+  workItems            WorkItem[]
+  pricingPolicy        ProductPricingPolicy?
+  priceLists           PriceList[]
   customerPricingRules CustomerPricingRule[]
 }
 
@@ -298,7 +298,7 @@ model DesignVersion {
   /// Set once by 013's approveDesign; never cleared (constitution IV).
   approvedAt   DateTime?
   approvedById String?
-  approvedBy   User?      @relation("DesignVersionApprovedBy", fields: [approvedById], references: [id])
+  approvedBy   User?     @relation("DesignVersionApprovedBy", fields: [approvedById], references: [id])
 
   returns Return[]
 
@@ -311,23 +311,23 @@ model DesignVersion {
 /// (spec.md User Story 6). Immutable — no application code path updates or
 /// deletes a row here (constitution III).
 model Return {
-  id                 String             @id @default(cuid())
+  id                 String            @id @default(cuid())
   workItemId         String
-  workItem           WorkItem           @relation(fields: [workItemId], references: [id])
+  workItem           WorkItem          @relation(fields: [workItemId], references: [id])
   raisedById         String
-  raisedBy           User               @relation("ReturnRaisedBy", fields: [raisedById], references: [id])
+  raisedBy           User              @relation("ReturnRaisedBy", fields: [raisedById], references: [id])
   originDepartmentId String
-  originDepartment   Department         @relation(fields: [originDepartmentId], references: [id])
+  originDepartment   Department        @relation(fields: [originDepartmentId], references: [id])
   category           RejectionCategory
   assignedToId       String
-  assignedTo         User               @relation("ReturnAssignedTo", fields: [assignedToId], references: [id])
+  assignedTo         User              @relation("ReturnAssignedTo", fields: [assignedToId], references: [id])
   explanation        String
   note               String?
   /// Nullable — only set when raised from 013's own design-review rejection
   /// flow; a future 014/051-originated return has no design version.
   designVersionId    String?
-  designVersion      DesignVersion?     @relation(fields: [designVersionId], references: [id])
-  createdAt          DateTime           @default(now())
+  designVersion      DesignVersion?    @relation(fields: [designVersionId], references: [id])
+  createdAt          DateTime          @default(now())
 
   attachments ReturnAttachment[]
 
