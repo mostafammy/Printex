@@ -28,7 +28,7 @@ export interface FilePanelProps {
   workItemId: string;
   categories?: string[];
   fileVersions?: FileVersionItem[];
-  workItem?: any;
+  workItem?: unknown;
   loading?: boolean;
   error?: string;
   forbidden?: boolean;
@@ -277,7 +277,7 @@ export const FilePanel: React.FC<FilePanelProps> = ({
                       <td className="p-2 text-muted-foreground whitespace-nowrap">
                         {formatDate(v.createdAt)}
                       </td>
-                      <td className="p-2 text-muted-foreground">{v.note || "-"}</td>
+                      <td className="p-2 text-muted-foreground">{v.note ?? "-"}</td>
                       <td className="p-2">
                         <span
                           className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
