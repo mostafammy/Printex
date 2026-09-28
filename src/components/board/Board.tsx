@@ -7,7 +7,7 @@
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-020, FR-034, FR-035c)
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { STATIONS } from "~/lib/board/stations";
 import { SLICES, type SliceId } from "~/lib/board/slices";
 import type { StationId } from "~/server/board";
@@ -34,17 +34,68 @@ export interface BoardProps {
 }
 
 function FullBoardGrid(props: BoardProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+
+  // A 7-station board is wider than most screens, and the overflow was
+  // invisible: the last column rendered sliced mid-card with a truncated
+  // header and no hint that it continued. In RTL the overflow runs to the
+  // left, so the scroll direction and the "more stations" hint have to be
+  // on the start side.
+  const measure = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setEdges({
+      start: el.scrollLeft > 4,
+      end: el.scrollLeft + el.clientWidth < el.scrollWidth - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", measure, { passive: true });
+    window.addEventListener("resize", measure);
+    return () => {
+      el.removeEventListener("scroll", measure);
+      window.removeEventListener("resize", measure);
+    };
+  }, [measure]);
+
   return (
-    <div className="hidden flex-1 gap-3 overflow-x-auto p-4 select-none lg:flex">
-      {STATIONS.map((station) => (
-        <StationColumn
-          key={station.id}
-          station={station}
-          onOrderHover={props.onOrderHover}
-          onCardClick={props.onCardClick}
-          onMoveKey={props.onMoveKey}
+    <div className="relative hidden min-h-0 min-w-0 flex-1 lg:flex">
+      {/* Edge fades are the affordance: they mark the cut and say which way
+          to scroll. `pointer-events-none` so they never eat a drag. */}
+      {edges.start && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 start-0 z-10 w-10 bg-gradient-to-r from-background to-transparent"
         />
-      ))}
+      )}
+      {edges.end && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 end-0 z-10 w-10 bg-gradient-to-l from-background to-transparent"
+        />
+      )}
+      <div
+        ref={scrollRef}
+        // min-h-0 on the scroller and on each column: a flex child defaults to
+        // min-height:auto, so without it the columns grow to their content and
+        // the horizontal scroller never becomes scrollable in either axis.
+        className="flex min-h-0 flex-1 gap-3 overflow-x-auto overflow-y-hidden p-4 select-none"
+      >
+        {STATIONS.map((station) => (
+          <StationColumn
+            key={station.id}
+            station={station}
+            onOrderHover={props.onOrderHover}
+            onCardClick={props.onCardClick}
+            onMoveKey={props.onMoveKey}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -191,7 +242,10 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   };
 
   return (
-    <div dir="rtl" data-testid="press-floor-board" className="relative flex h-full w-full flex-col overflow-hidden bg-background">
+    <div dir="rtl" data-testid="press-floor-board" className="relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background">
+      {/* No card frame and no page padding: the station column is the frame.
+          A border around the board on top of the shell's own margins read as
+          a card floating on a page, and cost the lane its width twice. */}
       <SliceSwitcher
         activeSlice={meta.slice}
         availableSlices={meta.availableSlices}
@@ -207,7 +261,7 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
         tabIndex={0}
         role="region"
         aria-label="لوحة أرضية المطبعة"
-        className="flex min-h-0 flex-1 overflow-hidden focus-visible:outline-hidden"
+        className="flex min-h-0 min-w-0 flex-1 overflow-hidden focus-visible:outline-hidden"
       >
         <BoardBody
           viewMode={viewMode}

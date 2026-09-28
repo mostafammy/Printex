@@ -86,7 +86,13 @@ function StationTab({
       <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
         {count}
       </span>
-      <StationSummary stationStates={lanes.map((l) => l.state)} now={now} />
+      {/* The oldest-job age only earns its place when the station is busy.
+          A 180px rail showing the same "4 د" on all seven rows is noise; a
+          stalled station is the one worth surfacing, so it shows there and
+          the empty ones stay quiet. */}
+      {count > 0 && (
+        <StationSummary stationStates={lanes.map((l) => l.state)} now={now} />
+      )}
     </button>
   );
 }

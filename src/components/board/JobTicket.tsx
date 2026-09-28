@@ -14,7 +14,7 @@
 import React from "react";
 import { useDraggable } from "@dnd-kit/core";
 import type { WorkItemState } from "~/server/board";
-import { STATE_PLACEMENT } from "~/lib/board/stations";
+import { STATE_AR_LABELS, STATE_PLACEMENT } from "~/lib/board/stations";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { OrderTag } from "./OrderTag";
@@ -27,24 +27,6 @@ export interface JobTicketProps {
   readonly onClick?: (card: BoardCard) => void;
   readonly onMoveKey?: (card: BoardCard) => void;
 }
-
-const STATE_AR_LABELS: Readonly<Record<WorkItemState, string>> = {
-  NEW: "جديد",
-  ASSIGNED: "معين",
-  IN_DESIGN: "قيد التصميم",
-  REWORK_REQUIRED: "تعديل مطلوب",
-  DESIGN_COMPLETED: "مكتمل التصميم",
-  WAITING_REVIEW: "بانتظار المراجعة",
-  APPROVED: "معتمد",
-  WAITING_PRICING: "بانتظار التسعير",
-  READY_FOR_PRODUCTION: "جاهز للإنتاج",
-  IN_PRODUCTION: "قيد الإنتاج",
-  PRODUCTION_COMPLETED: "مكتمل الإنتاج",
-  READY_FOR_COLLECTION: "جاهز للتسليم",
-  DELIVERED: "تم التسليم",
-  COMPLETED: "مكتمل",
-  CANCELLED: "ملغي",
-};
 
 function TicketHeader({
   card,
@@ -121,12 +103,11 @@ function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
 
 function TicketFooter({ card }: { readonly card: BoardCard }) {
   return (
-    // The perforation: a dashed rule is the detail that makes a card read as
-    // a torn job docket rather than a generic card. Kept, now as a hairline.
-    <div className="flex items-center justify-between gap-1 border-t border-dashed border-[var(--board-line-strong)] pt-1 text-[11px] text-muted-foreground">
-      <span className="truncate">
+    // Pricing sits with the identity line, not the footer: it is a state the
+    // operator triages on, and the footer row now belongs to the move control.
+    <div className="mt-1 flex items-center justify-between gap-2">
+      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
         {card.quantity ? `${card.quantity} نسخة` : ""}
-        {card.assignee ? `${card.quantity ? " · " : ""}${card.assignee.name}` : ""}
       </span>
       <PricingBadge pricing={card.pricing} />
     </div>
@@ -135,9 +116,11 @@ function TicketFooter({ card }: { readonly card: BoardCard }) {
 
 function TicketCustomerTitle({ customerName, title }: { readonly customerName: string; readonly title: string }) {
   return (
-    <div className="my-1.5 flex flex-col">
+    // Title first and largest: it is what the operator is looking for. The
+    // customer sits above it as a quiet qualifier.
+    <div className="mt-1.5 flex flex-col">
       <span className="truncate text-[11px] text-muted-foreground">{customerName}</span>
-      <span className="truncate text-sm font-bold leading-tight text-foreground">{title}</span>
+      <span className="truncate text-sm font-bold leading-snug text-foreground">{title}</span>
     </div>
   );
 }
@@ -200,28 +183,44 @@ export const JobTicketView = React.memo(function JobTicketView({
       // station's ink enters as a 4px rule on the reading edge — in RTL the
       // start edge is the right, so a job announces its station by position
       // before it announces it by hue.
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2 text-start transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+      className={`group relative flex w-full flex-col justify-between overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2 text-start transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
         isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
       } ${isDragging ? "opacity-30" : ""}`}
-      style={{ borderInlineStartWidth: "4px", borderInlineStartColor: "var(--ticket-bar, var(--primary))" }}
+      // --ticket-edge rather than --ticket-bar: the fill of a graphite ("key")
+      // station is near-black, and a 4px near-black stripe read as a
+      // rendering artifact rather than as the station's identity. The edge
+      // token is the one authored for non-text marks, at 3px.
+      style={{
+        borderInlineStartWidth: "3px",
+        borderInlineStartColor: "var(--ticket-edge, var(--primary))",
+      }}
     >
       <TicketHeader card={card} onOrderHover={onOrderHover} onGroupClick={onGroupClick} />
       <TicketCustomerTitle customerName={card.customerName} title={card.title} />
       <TicketFooter card={card} />
-      {/* The non-drag move path. The hit box clears the 44px touch floor
-          while the visible rule stays thin, so the button costs the card
-          almost no density. */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onMoveKey?.(card);
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
-        className="-mx-0.5 -mb-0.5 mt-1.5 flex min-h-11 items-center justify-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-transparent text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        نقل
-      </button>
+      <div className="mt-1.5 flex items-center justify-end gap-2 border-t border-dashed border-[var(--board-line-strong)] pt-0.5">
+        {card.assignee && (
+          <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+            {card.assignee.name}
+          </span>
+        )}
+        {/* The non-drag move path. Inline on the last row rather than a
+            full-width block below it: the previous version made an empty
+            white box the largest element in the card, inverting the
+            hierarchy so the primary action shouted and the job title
+            whispered. */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveKey?.(card);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="flex min-h-11 shrink-0 items-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] px-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          نقل
+        </button>
+      </div>
     </div>
   );
 });

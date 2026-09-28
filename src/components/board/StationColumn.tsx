@@ -116,16 +116,35 @@ function SubLaneList({
   onMoveKey,
 }: StationColumnProps) {
   const isMultiLane = station.lanes.length > 1;
+  // Lane arrangement follows the column's width, not a fixed rule.
+  //
+  // One station filling the screen (fillWidth) has room to put its lanes
+  // side by side as columns, and comparing lane depths at a glance is the
+  // point. A 280-340px column in the full board cannot: four lanes across
+  // 300px is a 75px card, which is where the design station degraded into
+  // unreadable chips with ellipsised text. There the lanes stack as rows
+  // instead, and each gets the full column width.
+  const lanesAsColumns = isMultiLane && fillWidth === true;
   return (
-    <div className="flex flex-1 flex-col gap-4 overflow-hidden p-3">      {station.lanes.map((lane) => (
-        <SubLane
-          key={lane.state}
-          state={lane.state}
-          labelAr={isMultiLane ? lane.labelAr : undefined}
-          onOrderHover={onOrderHover}
-          onCardClick={onCardClick}
-          onMoveKey={onMoveKey}
-        />
+    <div
+      className={`flex min-h-0 flex-1 gap-3 overflow-hidden p-3 ${
+        lanesAsColumns ? "flex-row" : "flex-col"
+      }`}
+    >
+      {station.lanes.map((lane) => (
+        // min-h-0 is load-bearing: a flex child defaults to min-height:auto,
+        // so it refuses to shrink below its content and flex-1 never bounds
+        // it. Without it the lane's overflow-y-auto has nothing to scroll
+        // against and the page stops scrolling vertically.
+        <div key={lane.state} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <SubLane
+            state={lane.state}
+            labelAr={isMultiLane ? lane.labelAr : undefined}
+            onOrderHover={onOrderHover}
+            onCardClick={onCardClick}
+            onMoveKey={onMoveKey}
+          />
+        </div>
       ))}
     </div>
   );
@@ -168,8 +187,13 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`flex h-full flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] transition-colors ${
-        props.fillWidth ? "w-full" : "min-w-[280px] max-w-[340px]"
+      // No outer border: the column's own edge is the frame, and a border
+      // here sat between the station and its lanes as a dead line. The
+      // station identity comes from the header wash and the rule beneath it.
+      // min-h-0 lets the lane list shrink and scroll inside rather than
+      // pushing the page taller than the viewport.
+      className={`flex h-full min-h-0 flex-col overflow-hidden bg-[var(--board-surface)] transition-colors ${
+        props.fillWidth ? "w-full min-w-0" : "w-[clamp(260px,22vw,340px)] shrink-0"
       } ${stateCls}`}
     >
       <ColumnHeader station={props.station} count={cardCount} now={now} />

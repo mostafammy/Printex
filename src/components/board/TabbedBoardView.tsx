@@ -48,7 +48,7 @@ export function TabbedBoardView({
   }, [visibleStations, activeStationId]);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:flex-row">
       <MobileStationTabs
         activeStationId={activeStation.id}
         onSelectStation={onSelectStation}
@@ -57,7 +57,7 @@ export function TabbedBoardView({
       <div
         role="tabpanel"
         aria-label={activeStation.labelAr}
-        className="flex min-h-0 flex-1 flex-col p-3 sm:p-4"
+        className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 sm:p-4"
       >
         <StationColumn
           station={activeStation}
