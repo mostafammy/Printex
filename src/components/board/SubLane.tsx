@@ -13,34 +13,25 @@
  * Virtualization is over ROWS, not cards: the row count is
  * ceil(cards / columns), and columns come from the measured width. Within a
  * row, cards flow in reading order (first right in RTL) so a lane is still
- * scanned oldest-first.
+ * scanned oldest-first. The windowing itself lives in ./lanes.
  */
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
-import { JobTicket } from "./JobTicket";
 import { STATE_AR_LABELS } from "~/lib/board/stations";
+import { useLaneVirtualizer, VirtualCardItems } from "./lanes/LaneVirtualizer";
 
 export interface SubLaneProps {
   readonly state: WorkItemState;
   readonly labelAr?: string;
-  readonly onOrderHover?: (orderId: string | null) => void;
-  readonly onCardClick?: (card: BoardCard) => void;
-  readonly onMoveKey?: (card: BoardCard) => void;
+  readonly onOrderHover?: (id: string | null) => void;
+  readonly onCardClick?: (c: BoardCard) => void;
+  readonly onMoveKey?: (c: BoardCard) => void;
 }
 
-// A fixed row height is what makes a lane read as a grid rather than a
-// staircase. Every card is the same height, so a row's bottom edges line up
-// and the eye can scan across instead of down.
-//
-// Sized for the tallest card the ticket can produce: header row, a two-line
-// title, the identity row, then the move control. A fixed estimate keeps the
-// first paint from jumping.
-const CARD_HEIGHT = 148;
 const CARD_MIN_WIDTH = 240;
 const CARD_GAP = 8;
 
@@ -93,68 +84,6 @@ function EmptyLane({ labelAr }: { readonly labelAr: string }) {
         ●
       </span>
       <span>{labelAr} — لا توجد عناصر الآن</span>
-    </div>
-  );
-}
-
-interface VirtualizedCardListProps extends SubLaneProps {
-  readonly cardIds: readonly string[];
-}
-
-function VirtualRow({
-  virtualItem,
-  cardIds,
-  measureRef,
-  onOrderHover,
-  onCardClick,
-  onMoveKey,
-}: {
-  readonly virtualItem: { readonly index: number; readonly start: number };
-  readonly cardIds: readonly string[];
-  readonly measureRef: (node: HTMLDivElement | null) => void;
-  readonly onOrderHover?: (id: string | null) => void;
-  readonly onCardClick?: (c: BoardCard) => void;
-  readonly onMoveKey?: (c: BoardCard) => void;
-}) {
-  return (
-    <div
-      data-index={virtualItem.index}
-      ref={measureRef}
-      role="listitem"
-      // inset-x-0, not inset-e-0: `inset-e-0` sets only the inline-END
-      // edge, so the row keeps an auto inline-start and shrink-wraps to its
-      // content — which is why cards came out ragged-width and left-hugging
-      // inside a full-width station instead of stacking flush.
-      className="absolute inset-x-0"
-      style={{ transform: `translateY(${virtualItem.start}px)` }}
-    >
-      {/* flex, not grid: `1fr` in a grid cell can produce a zero-basis track
-          against a min-content intrinsic size, which is what collapsed the
-          cards. flex-basis:0 + min-w-0 makes the track purely fractional.
-
-          Spacing is m-1 on each card rather than a gap on the row: a gap
-          only separates horizontally, so a lane rendered as a single column
-          had cards touching. Margin on the card itself gives the same
-          breathing room in both axes.
-
-          The row is a fixed height and the card stretches to fill it, so
-          every ticket in a row is the same height. */}
-      <div className="flex" style={{ height: `${CARD_HEIGHT}px` }}>
-        {cardIds.map((cardId) => (
-          <div
-            key={cardId}
-            className="m-2 flex min-w-0 flex-1"
-            style={{ flexBasis: 0 }}
-          >
-            <JobTicket
-              cardId={cardId}
-              onOrderHover={onOrderHover}
-              onClick={onCardClick}
-              onMoveKey={onMoveKey}
-            />
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -212,65 +141,15 @@ function useColumns(parentRef: React.RefObject<HTMLDivElement | null>) {
   return columns;
 }
 
-function VirtualCardItems({
-  virtualItems,
-  cardIds,
-  columns,
-  measureRef,
-  onOrderHover,
-  onCardClick,
-  onMoveKey,
-}: {
-  readonly virtualItems: readonly VirtualItem[];
+interface VirtualizedCardListProps extends SubLaneProps {
   readonly cardIds: readonly string[];
-  readonly columns: number;
-  readonly measureRef: (node: HTMLDivElement | null) => void;
-  readonly onOrderHover?: (id: string | null) => void;
-  readonly onCardClick?: (c: BoardCard) => void;
-  readonly onMoveKey?: (c: BoardCard) => void;
-}) {
-  return (
-    <>
-      {virtualItems.map((vItem) => {
-        // The virtual index is a row index; map it back to the cards it holds.
-        const start = vItem.index * columns;
-        const rowIds = cardIds.slice(start, start + columns);
-        if (rowIds.length === 0) return null;
-        return (
-          <VirtualRow
-            key={vItem.key}
-            virtualItem={vItem}
-            cardIds={rowIds}
-            measureRef={measureRef}
-            onOrderHover={onOrderHover}
-            onCardClick={onCardClick}
-            onMoveKey={onMoveKey}
-          />
-        );
-      })}
-    </>
-  );
 }
 
 function VirtualizedCardList(props: VirtualizedCardListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   useScrollLoadMore(parentRef);
   const columns = useColumns(parentRef);
-
-  const virtualizer = useVirtualizer({
-    count: Math.ceil(props.cardIds.length / columns),
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => CARD_HEIGHT,
-    overscan: 3,
-  });
-
-  // A column change re-flows every row, so the previous scroll offset is no
-  // longer meaningful; returning to the top beats landing mid-card.
-  useEffect(() => {
-    const el = parentRef.current;
-    // scrollTo is a no-op stub in jsdom, so feature-detect rather than assume.
-    if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0 });
-  }, [columns]);
+  const { virtualizer } = useLaneVirtualizer(parentRef, props.cardIds.length, columns);
 
   return (
     <div
@@ -285,10 +164,7 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       // never becomes scrollable.
       className="relative min-h-0 flex-1 overflow-y-auto px-1 pb-2"
     >
-      <div
-        className="relative w-full"
-        style={{ height: `${virtualizer.getTotalSize()}px` }}
-      >
+      <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
         <VirtualCardItems
           virtualItems={virtualizer.getVirtualItems()}
           cardIds={props.cardIds}

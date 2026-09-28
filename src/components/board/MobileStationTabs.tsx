@@ -16,7 +16,7 @@
 
 import React from "react";
 import { STATIONS } from "~/lib/board/stations";
-import type { StationId } from "~/server/board";
+import type { StationId, WorkItemState } from "~/server/board";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { StationSummary } from "./StationSummary";
 
@@ -27,6 +27,45 @@ export interface MobileStationTabsProps {
   readonly stationIds?: readonly StationId[];
 }
 
+/**
+ * How many jobs a station holds right now, summed over its lanes. Exported
+ * because the station column's header counts the same thing, and two copies
+ * of a per-lane sum are two chances for the rail and the column to disagree.
+ */
+export function useStationCardCount(
+  id: StationId,
+  lanes: readonly { readonly state: WorkItemState }[],
+) {
+  return useBoardSelector(
+    `station-count:${id}`,
+    (store) => lanes.reduce((sum, lane) => sum + store.getLane(lane.state).length, 0),
+    0,
+  );
+}
+
+function tabInk(id: StationId, active: boolean): React.CSSProperties {
+  return {
+    borderInlineStartColor: active
+      ? `var(--station-${id}-fill)`
+      : `color-mix(in oklch, var(--station-${id}-fill) 45%, transparent)`,
+    "--station-wash": `var(--station-${id}-wash)`,
+  } as React.CSSProperties;
+}
+
+/**
+ * A label plate, not a chip: square corner, the station's ink as a 3px rule
+ * on the reading edge, and a flat wash only when selected. The ink is present
+ * whether or not the station is active, so the rail reads as a colour key for
+ * the whole floor at a glance.
+ *
+ * The rail sits outside any [data-station] ancestor, so the --ticket-*
+ * component tokens are not set here; point them at the station's semantic
+ * fill and wash directly, scoped to this one button.
+ *
+ * The oldest-job age only earns its place when the station is busy. A 180px
+ * rail showing the same "4 د" on all seven rows is noise; a stalled station
+ * is the one worth surfacing, so it shows there and the empty ones stay quiet.
+ */
 function StationTab({
   id,
   labelAr,
@@ -37,20 +76,13 @@ function StationTab({
 }: {
   readonly id: StationId;
   readonly labelAr: string;
-  readonly lanes: readonly { readonly state: string }[];
+  readonly lanes: readonly { readonly state: WorkItemState }[];
   readonly active: boolean;
   readonly now: number;
   readonly onSelect: (id: StationId) => void;
 }) {
-  const count = useBoardSelector(
-    `station-count:${id}`,
-    (store) => {
-      let sum = 0;
-      for (const lane of lanes) sum += store.getLane(lane.state as never).length;
-      return sum;
-    },
-    0,
-  );
+  const count = useStationCardCount(id, lanes);
+  const laneStates = lanes.map((l) => l.state);
 
   return (
     <button
@@ -60,25 +92,10 @@ function StationTab({
       tabIndex={active ? 0 : -1}
       onClick={() => onSelect(id)}
       data-station={id}
-      // A label plate, not a chip: square corner, the station's ink as a 3px
-      // rule on the reading edge, and a flat wash only when selected. The ink
-      // is present whether or not the station is active, so the rail reads as
-      // a colour key for the whole floor at a glance.
-      //
-      // The rail is outside any [data-station] ancestor, so the --ticket-*
-      // component tokens are not set here; point them at the station's
-      // semantic fill and wash directly, scoped to this one button.
       className={`mb-2 flex w-full items-center gap-2.5 rounded-[var(--board-radius)] border-s-4 px-3 py-2.5 text-start transition-colors ${
         active ? "bg-[var(--station-wash)]" : "hover:bg-muted/50"
       }`}
-      style={
-        {
-          borderInlineStartColor: active
-            ? `var(--station-${id}-fill)`
-            : `color-mix(in oklch, var(--station-${id}-fill) 45%, transparent)`,
-          "--station-wash": `var(--station-${id}-wash)`,
-        } as React.CSSProperties
-      }
+      style={tabInk(id, active)}
     >
       <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
         {labelAr}
@@ -86,13 +103,7 @@ function StationTab({
       <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
         {count}
       </span>
-      {/* The oldest-job age only earns its place when the station is busy.
-          A 180px rail showing the same "4 د" on all seven rows is noise; a
-          stalled station is the one worth surfacing, so it shows there and
-          the empty ones stay quiet. */}
-      {count > 0 && (
-        <StationSummary stationStates={lanes.map((l) => l.state)} now={now} />
-      )}
+      {count > 0 && <StationSummary stationStates={laneStates} now={now} />}
     </button>
   );
 }

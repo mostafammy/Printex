@@ -30,11 +30,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Station } from "~/lib/board/stations";
-import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
-import { useBoardSelector } from "./hooks/useBoardSelector";
 import { SubLane } from "./SubLane";
 import { StationSummary } from "./StationSummary";
+import { useStationCardCount } from "./MobileStationTabs";
+
 import { useDragOffer } from "./dnd/useDragOffer";
 
 const ICONS: Readonly<Record<string, LucideIcon>> = {
@@ -178,17 +178,7 @@ export function StationColumn(props: StationColumnProps) {
   // idle-animation invariant (SC-007) exists precisely to catch that.
   const now = Date.now();
 
-  const cardCount = useBoardSelector(
-    `station-count:${props.station.id}`,
-    (store) => {
-      let sum = 0;
-      for (const lane of props.station.lanes) {
-        sum += store.getLane(lane.state).length;
-      }
-      return sum;
-    },
-    0,
-  );
+  const cardCount = useStationCardCount(props.station.id, props.station.lanes);
 
   // When no dropState is passed in, read it live from the drag session, so
   // every column reacts to a drag without the parent re-rendering them.

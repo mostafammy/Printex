@@ -46,8 +46,16 @@ export function useBoardSelector<T>(
     return cacheRef.current.value;
   }, [store]);
 
+  // No store mounted: a no-op subscribe that never fires. Written as a named
+  // function rather than `() => {}` so the intent survives, and so nothing
+  // here is mistaken for a missing unsubscribe.
   const subscribe = useCallback(
-    (onStoreChange: () => void) => (store ? store.subscribe(topic, onStoreChange) : () => {}),
+    (onStoreChange: () => void) =>
+      store
+        ? store.subscribe(topic, onStoreChange)
+        : function noopSubscribe(): () => void {
+            return () => undefined;
+          },
     [store, topic],
   );
 

@@ -13,7 +13,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import type { FeedbackEvent } from "~/lib/board/types";
+import type { FeedbackEvent, LiveStatus } from "~/lib/board/types";
 import type { FeedbackCenter } from "~/lib/board/feedback/FeedbackCenter";
 import { useBoardController } from "./hooks/useBoardController";
 
@@ -22,23 +22,51 @@ type Banner =
   | { readonly kind: "ok"; readonly text: string }
   | { readonly kind: "error"; readonly text: string };
 
+function fromStatus(status: LiveStatus): Banner | null {
+  switch (status) {
+    case "stale":
+    case "connecting":
+    case "resyncing":
+    case "closed":
+      return { kind: "stale", text: "غير متصل — يتم إعادة الاتصال" };
+    case "open":
+      return { kind: "ok", text: "تم تحديث الاتصال" };
+  }
+}
+
 function fromEvent(e: FeedbackEvent): Banner | null {
   switch (e.type) {
     case "LIVE_STATUS_CHANGED":
-      if (e.status === "stale" || e.status === "connecting" || e.status === "closed") {
-        return { kind: "stale", text: "غير متصل — يتم إعادة الاتصال" };
-      }
-      if (e.status === "open") return { kind: "ok", text: "تم تحديث الاتصال" };
-      return null;
+      return fromStatus(e.status);
     case "MOVE_REFUSED":
       return { kind: "error", text: `تعذّر النقل: ${e.messageAr}` };
     case "MOVED_BY_OTHER":
       return { kind: "ok", text: `${e.actorName} نقل هذا الطلب إلى ${e.toState}` };
     case "MOVE_COMMITTED":
-      return null;
-    default:
+    case "GROUP_MOVE_DONE":
       return null;
   }
+}
+
+function BannerPill({ banner }: { readonly banner: Banner }) {
+  const surface =
+    banner.kind === "error"
+      ? "bg-destructive"
+      : banner.kind === "stale"
+        ? "bg-amber-600"
+        : "bg-emerald-600";
+  return (
+    <div
+      role="status"
+      className={`fixed bottom-4 inset-inline-start-4 z-40 flex items-center gap-2 rounded-[var(--board-radius)] px-2.5 py-1.5 text-xs font-semibold text-white ${surface}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`size-1.5 bg-white ${banner.kind === "error" ? "" : "animate-pulse"}`}
+      />
+      <span>{banner.text}</span>
+    </div>
+  );
 }
 
 export function LiveIndicator() {
@@ -72,26 +100,7 @@ export function LiveIndicator() {
       <div aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </div>
-      {banner && (
-        <div
-          role="status"
-          className={`fixed bottom-4 inset-inline-start-4 z-40 flex items-center gap-2 rounded-[var(--board-radius)] px-2.5 py-1.5 text-xs font-semibold text-white ${
-            banner.kind === "error"
-              ? "bg-destructive"
-              : banner.kind === "stale"
-                ? "bg-amber-600"
-                : "bg-emerald-600"
-          }`}
-        >
-          <span
-            aria-hidden="true"
-            className={`size-1.5 bg-white ${
-              banner.kind === "error" ? "" : "animate-pulse"
-            }`}
-          />
-          <span>{banner.text}</span>
-        </div>
-      )}
+      {banner && <BannerPill banner={banner} />}
     </>
   );
 }

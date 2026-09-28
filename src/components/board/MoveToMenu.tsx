@@ -20,6 +20,14 @@ export interface MoveToMenuProps {
   readonly onClose: () => void;
 }
 
+const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+
+function optionColorClass(option: MoveOption): string {
+  if (option.destructive) return "text-destructive hover:bg-destructive/10";
+  if (option.backward) return "text-amber-700 hover:bg-amber-500/10 dark:text-amber-400";
+  return "hover:bg-accent";
+}
+
 function OptionItem({
   option,
   onSelect,
@@ -27,19 +35,13 @@ function OptionItem({
   readonly option: MoveOption;
   readonly onSelect: (o: MoveOption) => void;
 }) {
-  const colorClass = option.destructive
-    ? "text-destructive hover:bg-destructive/10"
-    : option.backward
-      ? "text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
-      : "hover:bg-accent";
-
   return (
     <li role="none">
       <button
         type="button"
         role="menuitem"
         onClick={() => onSelect(option)}
-        className={`flex min-h-11 w-full items-center justify-between rounded-[var(--board-radius)] px-2.5 text-start text-[13px] font-semibold transition-colors ${colorClass}`}
+        className={`flex min-h-11 w-full items-center justify-between rounded-[var(--board-radius)] px-2.5 text-start text-[13px] font-semibold transition-colors ${optionColorClass(option)}`}
       >
         <span>{option.labelAr}</span>
         {option.kind !== "DIRECT" && (
@@ -75,10 +77,31 @@ function OptionsList({
   );
 }
 
-const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
+/** Tab wraps inside the dialog, so focus cannot walk out of it. */
+function trapTab(e: KeyboardEvent, root: HTMLElement) {
+  if (e.key !== "Tab") return false;
+  const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE));
+  if (focusable.length === 0) return false;
+  const firstEl = focusable[0]!;
+  const lastEl = focusable[focusable.length - 1]!;
+  const active = document.activeElement;
+  if (!root.contains(active)) {
+    e.preventDefault();
+    firstEl.focus();
+  } else if (e.shiftKey && active === firstEl) {
+    e.preventDefault();
+    lastEl.focus();
+  } else if (!e.shiftKey && active === lastEl) {
+    e.preventDefault();
+    firstEl.focus();
+  }
+  return true;
+}
 
-export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
-  const controller = useBoardController();
+function useDialogBehavior(
+  isOpen: boolean,
+  onClose: () => void,
+): React.RefObject<HTMLDivElement | null> {
   const menuRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
@@ -89,8 +112,7 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
 
     // Focus the first option so the dialog opens somewhere actionable rather
     // than at the top of the document behind the overlay.
-    const first = menuRef.current?.querySelector<HTMLElement>(FOCUSABLE);
-    first?.focus();
+    menuRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -98,24 +120,7 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
         onClose();
         return;
       }
-      if (e.key !== "Tab" || !menuRef.current) return;
-
-      // Trap Tab inside the dialog.
-      const focusable = Array.from(
-        menuRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
-      );
-      if (focusable.length === 0) return;
-      const firstEl = focusable[0]!;
-      const lastEl = focusable[focusable.length - 1]!;
-      const active = document.activeElement;
-
-      if (e.shiftKey && (active === firstEl || !menuRef.current.contains(active))) {
-        e.preventDefault();
-        lastEl.focus();
-      } else if (!e.shiftKey && active === lastEl) {
-        e.preventDefault();
-        firstEl.focus();
-      }
+      if (menuRef.current) trapTab(e, menuRef.current);
     };
 
     window.addEventListener("keydown", onKey);
@@ -133,12 +138,20 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
     }
   }, [isOpen]);
 
-  if (!isOpen || !card) return null;
-  const onSelect = (o: MoveOption) => {
-    onClose();
-    void controller.executeMove(card, o);
-  };
+  return menuRef;
+}
 
+function MoveDialog({
+  card,
+  onClose,
+  onSelect,
+  menuRef,
+}: {
+  readonly card: BoardCard;
+  readonly onClose: () => void;
+  readonly onSelect: (o: MoveOption) => void;
+  readonly menuRef: React.RefObject<HTMLDivElement | null>;
+}) {
   return (
     <div
       role="dialog"
@@ -166,5 +179,24 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
         <OptionsList moves={card.moves} onSelect={onSelect} />
       </div>
     </div>
+  );
+}
+
+export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
+  const controller = useBoardController();
+  const menuRef = useDialogBehavior(isOpen, onClose);
+
+  if (!isOpen || !card) return null;
+
+  return (
+    <MoveDialog
+      card={card}
+      onClose={onClose}
+      menuRef={menuRef}
+      onSelect={(o) => {
+        onClose();
+        void controller.executeMove(card, o);
+      }}
+    />
   );
 }
