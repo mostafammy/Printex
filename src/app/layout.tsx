@@ -26,6 +26,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html dir="rtl" lang="ar" className={ibmPlexSansArabic.variable}>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+      </head>
       <body className="font-sans">
         <AppBootLoader>{children}</AppBootLoader>
       </body>

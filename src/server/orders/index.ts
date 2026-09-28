@@ -39,3 +39,6 @@ export { changeOrderPriority, cancelWorkItem, cancelOrder, WorkItemTransitionErr
 // US7 / US8
 export { addWorkItem, editWorkItem } from "./workItems";
 export type { EditWorkItemPatch } from "./workItems";
+
+// 017 Floor Board
+export { sendToProduction } from "./sendToProduction";

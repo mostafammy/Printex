@@ -243,7 +243,7 @@ export default async function ProductionJobCardPage({
   } catch (caught) {
     if (caught instanceof DomainProductionError) {
       return (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
             <AlertCircle className="h-8 w-8" />
           </div>
@@ -285,7 +285,7 @@ export default async function ProductionJobCardPage({
       </div>
 
       {/* ── Hero Production Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-emerald-500/10 to-teal-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -345,7 +345,7 @@ export default async function ProductionJobCardPage({
 
       {/* ── Pending File Revision Banner ── */}
       {hasPendingRevision && (
-        <section className="apple-card border-amber-500/40 bg-amber-500/10 p-5 shadow-sm shadow-amber-500/10">
+        <section className="rounded-xl border border-border/70 bg-card shadow-xs border-amber-500/40 bg-amber-500/10 p-5 shadow-sm shadow-amber-500/10">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
@@ -375,7 +375,7 @@ export default async function ProductionJobCardPage({
         {/* Left Column: Spec + File Download + Vendor record */}
         <div className="flex flex-col gap-6 lg:col-span-7">
           {/* Read-only spec card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <FileText className="h-5 w-5" />
@@ -427,7 +427,7 @@ export default async function ProductionJobCardPage({
           )}
 
           {/* Approved file download card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
                 <Download className="h-5 w-5" />
@@ -466,7 +466,7 @@ export default async function ProductionJobCardPage({
 
           {/* External vendor controls */}
           {(card.vendorRecord !== null || isInProduction) && (
-            <section className="apple-card p-6 sm:p-7">
+            <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
               <div className="mb-4 flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                   <Truck className="h-5 w-5" />
@@ -528,7 +528,7 @@ export default async function ProductionJobCardPage({
         {/* Right Column: Timer + Complete + Return to Design */}
         <div className="flex flex-col gap-6 lg:col-span-5">
           {/* Timer controls card */}
-          <section className="apple-card p-6 sm:p-7">
+          <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
             <div className="mb-4 flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
                 <Clock className="h-5 w-5" />
@@ -577,7 +577,7 @@ export default async function ProductionJobCardPage({
 
           {/* Complete production card */}
           {isInProduction && (
-            <section className="apple-card p-6 sm:p-7 border-emerald-500/20 bg-linear-to-b from-card to-emerald-500/5">
+            <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-emerald-500/20 bg-linear-to-b from-card to-emerald-500/5">
               <div className="mb-4 flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-5 w-5" />
@@ -631,7 +631,7 @@ export default async function ProductionJobCardPage({
 
           {/* Send back to design card */}
           {isInProduction && (
-            <section className="apple-card p-6 sm:p-7 border-amber-500/20 bg-linear-to-b from-card to-amber-500/5">
+            <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-amber-500/20 bg-linear-to-b from-card to-amber-500/5">
               <div className="mb-4 flex items-center gap-2.5">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
                   <RotateCcw className="h-5 w-5" />

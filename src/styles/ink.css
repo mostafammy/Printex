@@ -1,0 +1,242 @@
+/*
+ * Feature 017: Press Floor Board Ink Visual Tokens
+ * Physical print inks: Cyan, Magenta, Violet, Yellow, Key, Orange, Green + Signal Red
+ * (specs/017-press-floor-board/contracts/ink-tokens.md, FR-027, FR-027a, FR-029)
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces - Light */
+  --surface-canvas: oklch(0.985 0.005 240);
+  --surface-ticket: oklch(1 0 0);
+  --surface-lane: oklch(0.96 0.005 240);
+  --line-perforation: oklch(0.85 0.01 240);
+
+  /* Primitives - Light Mode */
+  /* Cyan (Production) */
+  --ink-cyan-wash: oklch(0.95 0.03 220);
+  --ink-cyan-edge: oklch(0.65 0.16 220);
+  --ink-cyan-fill: oklch(0.68 0.17 220);
+  --ink-cyan-text: oklch(0.35 0.12 220);
+
+  /* Magenta (Design) */
+  --ink-magenta-wash: oklch(0.95 0.03 345);
+  --ink-magenta-edge: oklch(0.62 0.20 345);
+  --ink-magenta-fill: oklch(0.65 0.22 345);
+  --ink-magenta-text: oklch(0.36 0.18 345);
+
+  /* Violet (Review) */
+  --ink-violet-wash: oklch(0.95 0.03 295);
+  --ink-violet-edge: oklch(0.60 0.18 295);
+  --ink-violet-fill: oklch(0.63 0.20 295);
+  --ink-violet-text: oklch(0.35 0.16 295);
+
+  /* Yellow (Pricing) - text is dark ochre for 4.5:1 contrast */
+  --ink-yellow-wash: oklch(0.96 0.04 90);
+  --ink-yellow-edge: oklch(0.72 0.16 85);
+  --ink-yellow-fill: oklch(0.82 0.18 85);
+  --ink-yellow-text: oklch(0.36 0.13 85);
+
+  /* Key / Black (Reception) */
+  --ink-key-wash: oklch(0.94 0.005 240);
+  --ink-key-edge: oklch(0.45 0.01 240);
+  --ink-key-fill: oklch(0.32 0.01 240);
+  --ink-key-text: oklch(0.18 0.005 240);
+
+  /* Orange (Collection) */
+  --ink-orange-wash: oklch(0.95 0.04 55);
+  --ink-orange-edge: oklch(0.65 0.17 55);
+  --ink-orange-fill: oklch(0.70 0.19 55);
+  --ink-orange-text: oklch(0.36 0.15 55);
+
+  /* Green (Delivered) */
+  --ink-green-wash: oklch(0.95 0.03 145);
+  --ink-green-edge: oklch(0.62 0.16 145);
+  --ink-green-fill: oklch(0.66 0.18 145);
+  --ink-green-text: oklch(0.34 0.14 145);
+
+  /* Signal Red (Non-station signal: rework, destructive, overdue) */
+  --ink-red-wash: oklch(0.95 0.04 25);
+  --ink-red-edge: oklch(0.60 0.20 25);
+  --ink-red-fill: oklch(0.64 0.22 25);
+  --ink-red-text: oklch(0.36 0.18 25);
+
+  /* Semantic Station Tokens */
+  --station-reception-wash: var(--ink-key-wash);
+  --station-reception-edge: var(--ink-key-edge);
+  --station-reception-fill: var(--ink-key-fill);
+  --station-reception-text: var(--ink-key-text);
+
+  --station-design-wash: var(--ink-magenta-wash);
+  --station-design-edge: var(--ink-magenta-edge);
+  --station-design-fill: var(--ink-magenta-fill);
+  --station-design-text: var(--ink-magenta-text);
+
+  --station-review-wash: var(--ink-violet-wash);
+  --station-review-edge: var(--ink-violet-edge);
+  --station-review-fill: var(--ink-violet-fill);
+  --station-review-text: var(--ink-violet-text);
+
+  --station-pricing-wash: var(--ink-yellow-wash);
+  --station-pricing-edge: var(--ink-yellow-edge);
+  --station-pricing-fill: var(--ink-yellow-fill);
+  --station-pricing-text: var(--ink-yellow-text);
+
+  --station-production-wash: var(--ink-cyan-wash);
+  --station-production-edge: var(--ink-cyan-edge);
+  --station-production-fill: var(--ink-cyan-fill);
+  --station-production-text: var(--ink-cyan-text);
+
+  --station-collection-wash: var(--ink-orange-wash);
+  --station-collection-edge: var(--ink-orange-edge);
+  --station-collection-fill: var(--ink-orange-fill);
+  --station-collection-text: var(--ink-orange-text);
+
+  --station-delivered-wash: var(--ink-green-wash);
+  --station-delivered-edge: var(--ink-green-edge);
+  --station-delivered-fill: var(--ink-green-fill);
+  --station-delivered-text: var(--ink-green-text);
+
+  /* Signal Tokens */
+  --signal-backward-wash: var(--ink-red-wash);
+  --signal-backward-edge: var(--ink-red-edge);
+  --signal-backward-text: var(--ink-red-text);
+  --signal-destructive-wash: var(--ink-red-wash);
+  --signal-destructive-edge: var(--ink-red-edge);
+  --signal-destructive-text: var(--ink-red-text);
+  --signal-overdue-wash: var(--ink-red-wash);
+  --signal-overdue-edge: var(--ink-red-edge);
+  --signal-overdue-text: var(--ink-red-text);
+
+  /* Motion Tokens (WAAPI + CSS physics-based linear easing) */
+  --motion-spring: linear(0, 0.009, 0.035 2.1%, 0.141 4.4%, 0.723 12.9%, 0.938 16.7%, 1.017 20.2%, 1.047 24.1%, 1.037 27.8%, 1.009 33.2%, 0.997 38.6%, 1 45.4%, 1);
+  --motion-bounce: linear(0, 0.004, 0.016, 0.035, 0.063, 0.098, 0.141, 0.191, 0.25, 0.316, 0.391, 0.472, 0.563, 0.66, 0.766, 0.879, 1, 0.97, 0.95, 0.94, 0.94, 0.95, 0.97, 1);
+  --motion-duration-travel: 380ms;
+  --motion-duration-stamp: 220ms;
+  --motion-duration-flyback: 420ms;
+  --motion-duration-arc: 520ms;
+  --motion-duration-rollout: 480ms;
+  --motion-duration-land: 320ms;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces - Dark */
+  --surface-canvas: oklch(0.14 0.01 240);
+  --surface-ticket: oklch(0.20 0.015 240);
+  --surface-lane: oklch(0.17 0.012 240);
+  --line-perforation: oklch(0.30 0.01 240);
+
+  /* Primitives - Dark Mode */
+  --ink-cyan-wash: oklch(0.25 0.04 220);
+  --ink-cyan-edge: oklch(0.68 0.15 220);
+  --ink-cyan-fill: oklch(0.58 0.15 220);
+  --ink-cyan-text: oklch(0.85 0.11 220);
+
+  --ink-magenta-wash: oklch(0.25 0.04 345);
+  --ink-magenta-edge: oklch(0.68 0.18 345);
+  --ink-magenta-fill: oklch(0.58 0.18 345);
+  --ink-magenta-text: oklch(0.85 0.13 345);
+
+  --ink-violet-wash: oklch(0.25 0.04 295);
+  --ink-violet-edge: oklch(0.68 0.16 295);
+  --ink-violet-fill: oklch(0.58 0.16 295);
+  --ink-violet-text: oklch(0.85 0.12 295);
+
+  --ink-yellow-wash: oklch(0.26 0.04 90);
+  --ink-yellow-edge: oklch(0.75 0.16 85);
+  --ink-yellow-fill: oklch(0.68 0.16 85);
+  --ink-yellow-text: oklch(0.88 0.14 85);
+
+  /* Key in dark mode is graphite */
+  --ink-key-wash: oklch(0.25 0.01 240);
+  --ink-key-edge: oklch(0.60 0.01 240);
+  --ink-key-fill: oklch(0.45 0.01 240);
+  --ink-key-text: oklch(0.82 0 0);
+
+  --ink-orange-wash: oklch(0.25 0.04 55);
+  --ink-orange-edge: oklch(0.70 0.16 55);
+  --ink-orange-fill: oklch(0.60 0.16 55);
+  --ink-orange-text: oklch(0.86 0.13 55);
+
+  --ink-green-wash: oklch(0.25 0.04 145);
+  --ink-green-edge: oklch(0.68 0.15 145);
+  --ink-green-fill: oklch(0.58 0.15 145);
+  --ink-green-text: oklch(0.85 0.12 145);
+
+  --ink-red-wash: oklch(0.25 0.04 25);
+  --ink-red-edge: oklch(0.68 0.18 25);
+  --ink-red-fill: oklch(0.58 0.18 25);
+  --ink-red-text: oklch(0.85 0.14 25);
+}
+
+/* Component Tokens driven by [data-station] */
+[data-station="reception"] {
+  --ticket-wash: var(--station-reception-wash);
+  --ticket-edge: var(--station-reception-edge);
+  --ticket-bar: var(--station-reception-fill);
+  --ticket-text: var(--station-reception-text);
+  --lane-glow: var(--station-reception-edge);
+}
+
+[data-station="design"] {
+  --ticket-wash: var(--station-design-wash);
+  --ticket-edge: var(--station-design-edge);
+  --ticket-bar: var(--station-design-fill);
+  --ticket-text: var(--station-design-text);
+  --lane-glow: var(--station-design-edge);
+}
+
+[data-station="review"] {
+  --ticket-wash: var(--station-review-wash);
+  --ticket-edge: var(--station-review-edge);
+  --ticket-bar: var(--station-review-fill);
+  --ticket-text: var(--station-review-text);
+  --lane-glow: var(--station-review-edge);
+}
+
+[data-station="pricing"] {
+  --ticket-wash: var(--station-pricing-wash);
+  --ticket-edge: var(--station-pricing-edge);
+  --ticket-bar: var(--station-pricing-fill);
+  --ticket-text: var(--station-pricing-text);
+  --lane-glow: var(--station-pricing-edge);
+}
+
+[data-station="production"] {
+  --ticket-wash: var(--station-production-wash);
+  --ticket-edge: var(--station-production-edge);
+  --ticket-bar: var(--station-production-fill);
+  --ticket-text: var(--station-production-text);
+  --lane-glow: var(--station-production-edge);
+}
+
+[data-station="collection"] {
+  --ticket-wash: var(--station-collection-wash);
+  --ticket-edge: var(--station-collection-edge);
+  --ticket-bar: var(--station-collection-fill);
+  --ticket-text: var(--station-collection-text);
+  --lane-glow: var(--station-collection-edge);
+}
+
+[data-station="delivered"] {
+  --ticket-wash: var(--station-delivered-wash);
+  --ticket-edge: var(--station-delivered-edge);
+  --ticket-bar: var(--station-delivered-fill);
+  --ticket-text: var(--station-delivered-text);
+  --lane-glow: var(--station-delivered-edge);
+}
+
+/* Reduced motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-travel: 0ms;
+    --motion-duration-stamp: 0ms;
+    --motion-duration-flyback: 0ms;
+    --motion-duration-arc: 0ms;
+    --motion-duration-rollout: 0ms;
+    --motion-duration-land: 0ms;
+  }
+}

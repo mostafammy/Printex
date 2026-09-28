@@ -43,21 +43,18 @@ export function UnauthenticatedInterstitial({
   useEffect(() => {
     if (isPaused || isRedirecting) return;
 
+    if (timeLeftMs <= 0) {
+      performRedirect();
+      return;
+    }
+
     const interval = 100; // 100ms tick for smooth progress
     const timer = setInterval(() => {
-      setTimeLeftMs((prev) => {
-        const next = prev - interval;
-        if (next <= 0) {
-          clearInterval(timer);
-          performRedirect();
-          return 0;
-        }
-        return next;
-      });
+      setTimeLeftMs((prev) => Math.max(0, prev - interval));
     }, interval);
 
     return () => clearInterval(timer);
-  }, [isPaused, isRedirecting, performRedirect]);
+  }, [isPaused, isRedirecting, timeLeftMs, performRedirect]);
 
   const progressPercent = Math.max(0, Math.min(100, (timeLeftMs / totalDurationMs) * 100));
   const secondsDisplay = Math.ceil(timeLeftMs / 1000);

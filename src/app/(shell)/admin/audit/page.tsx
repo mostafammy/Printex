@@ -94,7 +94,7 @@ export default async function AdminAuditPage({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Hero Admin Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-indigo-500/10 to-purple-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex items-start gap-4">
@@ -113,7 +113,7 @@ export default async function AdminAuditPage({
       </div>
 
       {/* ── Filter Form Card ── */}
-      <section className="apple-card p-6 sm:p-7">
+      <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7">
         <div className="mb-4 flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">خيارات الفلترة والبحث المتقدم</h2>
@@ -215,7 +215,7 @@ export default async function AdminAuditPage({
       </section>
 
       {/* ── Audit Events Table Card ── */}
-      <div className="apple-card overflow-hidden">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead className="border-b border-border/70 bg-muted/40 text-muted-foreground font-semibold">

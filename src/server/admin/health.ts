@@ -9,6 +9,7 @@
 // `authorize()` itself before rendering anything from it.
 import { unstable_cache, revalidateTag } from "next/cache";
 import { db } from "~/server/db";
+import { getBoardLiveHub } from "~/server/board";
 
 export interface TableHealth {
   readonly name: string;
@@ -139,6 +140,21 @@ export const getDatabaseHealth = unstable_cache(loadDatabaseHealth, ["db-health"
   revalidate: 60,
   tags: [DB_HEALTH_CACHE_TAG],
 });
+
+export interface BoardLiveHealth {
+  readonly listening: boolean;
+  readonly subscribers: number;
+  readonly lastEventAt: string | null;
+}
+
+export function getBoardLiveHealth(): BoardLiveHealth {
+  const status = getBoardLiveHub().status();
+  return {
+    listening: status.listening,
+    subscribers: status.subscribers,
+    lastEventAt: status.lastEventAt ? status.lastEventAt.toISOString() : null,
+  };
+}
 
 export async function refreshDatabaseHealth(): Promise<void> {
   revalidateTag(DB_HEALTH_CACHE_TAG);

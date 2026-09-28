@@ -38,5 +38,5 @@
   were deliberately left to `/speckit-plan` (Complexity Tracking).
 - Ten product decisions were resolved with the owner before writing (see spec §Clarifications), so
   no [NEEDS CLARIFICATION] markers were needed.
-- Open items for `/speckit-clarify`: FR-021 role → slice defaults; classification of
-  `NEW → READY_FOR_PRODUCTION`; exact ink assignment per station.
+- The clarify session of 2026-09-26 resolved all open items (slice defaults, `NEW → READY_FOR_PRODUCTION`
+  via FR-015a, and station ink assignment). The plan classifies every edge (research R3).

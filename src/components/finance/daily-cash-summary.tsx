@@ -22,7 +22,7 @@ export function DailyCashSummary({ summary, methodFilter }: Props) {
   };
 
   return (
-    <div className="apple-bento-card p-6 sm:p-8 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25">
+    <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-card to-card p-6 sm:p-8 shadow-xs">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 pb-5">
         <div className="flex items-center gap-3.5">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/30">

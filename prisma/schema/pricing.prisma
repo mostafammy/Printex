@@ -36,39 +36,39 @@ enum PriceConfigStatus {
 }
 
 model ProductPricingPolicy {
-  id           String      @id @default(cuid())
-  productTypeId String     @unique
-  productType  ProductType @relation(fields: [productTypeId], references: [id])
-  mode         PricingMode
-  updatedById  String
-  updatedBy    User        @relation("PricingPolicyUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt    DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  productTypeId String      @unique
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  mode          PricingMode
+  updatedById   String
+  updatedBy     User        @relation("PricingPolicyUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt     DateTime    @updatedAt
 }
 
 model PriceList {
-  id             String           @id @default(cuid())
-  productTypeId  String
-  productType    ProductType      @relation(fields: [productTypeId], references: [id])
-  unit           PricingUnit
-  effectiveFrom  DateTime
-  effectiveTo    DateTime?
-  status         PriceConfigStatus @default(ACTIVE)
-  createdById    String
-  createdBy      User             @relation("PriceListCreatedBy", fields: [createdById], references: [id])
-  createdAt      DateTime         @default(now())
-  tiers          PriceTier[]
+  id            String            @id @default(cuid())
+  productTypeId String
+  productType   ProductType       @relation(fields: [productTypeId], references: [id])
+  unit          PricingUnit
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  status        PriceConfigStatus @default(ACTIVE)
+  createdById   String
+  createdBy     User              @relation("PriceListCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime          @default(now())
+  tiers         PriceTier[]
 
   @@index([productTypeId, unit, effectiveFrom, effectiveTo])
   @@index([status, effectiveFrom, effectiveTo])
 }
 
 model PriceTier {
-  id               String   @id @default(cuid())
-  priceListId      String
-  priceList        PriceList @relation(fields: [priceListId], references: [id])
-  minimumQuantity  Int
-  maximumQuantity  Int?
-  basePrice        Decimal  @db.Decimal(12, 2)
+  id              String    @id @default(cuid())
+  priceListId     String
+  priceList       PriceList @relation(fields: [priceListId], references: [id])
+  minimumQuantity Int
+  maximumQuantity Int?
+  basePrice       Decimal   @db.Decimal(12, 2)
 
   @@index([priceListId, minimumQuantity, maximumQuantity])
 }
@@ -95,16 +95,16 @@ model CustomerPricingRule {
 }
 
 model WorkItemPrice {
-  id              String       @id @default(cuid())
+  id              String      @id @default(cuid())
   workItemId      String
-  workItem        WorkItem     @relation(fields: [workItemId], references: [id])
-  amount          Decimal      @db.Decimal(12, 2)
-  currency        String       @default("EGP")
+  workItem        WorkItem    @relation(fields: [workItemId], references: [id])
+  amount          Decimal     @db.Decimal(12, 2)
+  currency        String      @default("EGP")
   source          PriceSource
   quoteBreakdown  Json?
   setById         String
-  setBy           User         @relation("WorkItemPriceSetBy", fields: [setById], references: [id])
-  setAt           DateTime     @default(now())
+  setBy           User        @relation("WorkItemPriceSetBy", fields: [setById], references: [id])
+  setAt           DateTime    @default(now())
   reason          String?
   specFingerprint String?
   replacedAt      DateTime?
@@ -114,15 +114,15 @@ model WorkItemPrice {
 }
 
 model PricingStatus {
-  workItemId      String             @id
-  workItem        WorkItem           @relation(fields: [workItemId], references: [id])
-  status          PricingStatusValue @default(PENDING)
-  waitingSince    DateTime?
-  disputeReason   String?
-  currentPriceId  String?
-  updatedById     String?
-  updatedBy       User?              @relation("PricingStatusUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt       DateTime           @updatedAt
+  workItemId     String             @id
+  workItem       WorkItem           @relation(fields: [workItemId], references: [id])
+  status         PricingStatusValue @default(PENDING)
+  waitingSince   DateTime?
+  disputeReason  String?
+  currentPriceId String?
+  updatedById    String?
+  updatedBy      User?              @relation("PricingStatusUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt      DateTime           @updatedAt
 
   @@index([status, waitingSince])
 }

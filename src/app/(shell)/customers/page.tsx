@@ -35,7 +35,7 @@ export default async function CustomersPage() {
 
       {/* Apple VisionOS Bento Metric Cards */}
       <div className="grid grid-cols-1 gap-4.5 sm:grid-cols-3">
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               إجمالي العملاء
@@ -54,7 +54,7 @@ export default async function CustomersPage() {
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-purple-500/10 via-card to-card border-purple-500/25 hover:border-purple-500/45 hover:shadow-purple-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-purple-500/10 via-card to-card border-purple-500/25 hover:border-purple-500/45 hover:shadow-purple-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               عملاء مصنفون
@@ -73,7 +73,7 @@ export default async function CustomersPage() {
           </div>
         </div>
 
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25 hover:border-emerald-500/45 hover:shadow-emerald-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/25 hover:border-emerald-500/45 hover:shadow-emerald-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               أرقام التواصل
@@ -95,7 +95,7 @@ export default async function CustomersPage() {
 
       {/* Customer Bento Grid */}
       {customers.length === 0 ? (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <Users className="h-8 w-8" />
           </div>
@@ -114,7 +114,7 @@ export default async function CustomersPage() {
             return (
               <div
                 key={customer.id}
-                className="apple-bento-card group relative flex flex-col justify-between p-5.5 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                className="rounded-2xl border border-border/70 bg-card shadow-xs group relative flex flex-col justify-between p-5.5 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
               >
                 <div>
                   <div className="flex items-start justify-between gap-3">

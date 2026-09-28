@@ -14,9 +14,14 @@ import {
   Clock,
   RefreshCw,
   Layers,
+  Radio,
 } from "lucide-react";
 import { getActor, authorize } from "~/server/auth";
-import { getDatabaseHealth, refreshDatabaseHealth } from "~/server/admin/health";
+import {
+  getDatabaseHealth,
+  getBoardLiveHealth,
+  refreshDatabaseHealth,
+} from "~/server/admin/health";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -68,6 +73,7 @@ export default async function AdminHealthPage() {
   authorize(actor, "admin.config");
 
   const health = await getDatabaseHealth();
+  const liveHealth = getBoardLiveHealth();
 
   const cacheHitLabel =
     health.cacheHitRatio === null ? "—" : `${(health.cacheHitRatio * 100).toFixed(1)}٪`;
@@ -115,7 +121,7 @@ export default async function AdminHealthPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* ── Hero Header ── */}
-      <div className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-linear-to-br from-emerald-500/10 to-cyan-500/5 blur-2xl pointer-events-none" />
 
         <div className="relative flex flex-wrap items-start justify-between gap-4">
@@ -148,7 +154,7 @@ export default async function AdminHealthPage() {
       {/* ── KPI Grid ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
-          <div key={stat.label} className="apple-card flex flex-col gap-3 p-5">
+          <div key={stat.label} className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col gap-3 p-5">
             <div
               className={`flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br ${stat.color} text-white shadow-sm`}
             >
@@ -162,8 +168,62 @@ export default async function AdminHealthPage() {
         ))}
       </div>
 
+      {/* ── Board Live Hub Diagnostics (T135) ── */}
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs p-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div
+            className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+              liveHealth.listening
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-destructive/10 text-destructive"
+            }`}
+          >
+            <Radio className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground">
+                البث المباشر للوحة العمليات (Live Hub)
+              </h2>
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-2xs font-semibold ${
+                  liveHealth.listening
+                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                    : "bg-destructive/15 text-destructive"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    liveHealth.listening ? "bg-emerald-500 animate-pulse" : "bg-destructive"
+                  }`}
+                />
+                {liveHealth.listening ? "متصل (Listening)" : "غير متصل"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              مراقبة أحداث Postgres NOTIFY وبث التحديثات الفورية (SSE) لشاشات المشغلين
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-6 text-xs">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-2xs text-muted-foreground">المشتركون النشطون</span>
+            <span className="font-mono font-bold text-foreground">
+              {formatCount(liveHealth.subscribers)}
+            </span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-2xs text-muted-foreground">آخر حدث بث</span>
+            <span className="font-mono font-medium text-foreground">
+              {liveHealth.lastEventAt ? formatRelativeTime(liveHealth.lastEventAt) : "لا توجد أحداث بعد"}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* ── Table Breakdown Card ── */}
-      <div className="apple-card overflow-hidden p-6 sm:p-7">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden p-6 sm:p-7">
         <div className="mb-5 flex items-center gap-2">
           <Layers className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-bold text-foreground">حجم البيانات حسب الجدول</h2>

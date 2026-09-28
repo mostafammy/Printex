@@ -138,7 +138,7 @@ export default async function ReceptionQueuePage({
       {/* Apple VisionOS Bento Stats Metric Row */}
       <div className="grid grid-cols-2 gap-4.5 lg:grid-cols-4">
         {/* Card 1: Reception Total */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-cyan-500/10 via-card to-card border-cyan-500/25 hover:border-cyan-500/45 hover:shadow-cyan-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-cyan-500/10 via-card to-card border-cyan-500/25 hover:border-cyan-500/45 hover:shadow-cyan-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               طلبات الاستقبال
@@ -158,7 +158,7 @@ export default async function ReceptionQueuePage({
         </div>
 
         {/* Card 2: Urgent Orders */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-rose-500/10 via-card to-card border-rose-500/25 hover:border-rose-500/45 hover:shadow-rose-500/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-muted-foreground">
@@ -186,7 +186,7 @@ export default async function ReceptionQueuePage({
         </div>
 
         {/* Card 3: Incomplete Specs */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-amber-500/10 via-card to-card border-amber-500/25 hover:border-amber-500/45 hover:shadow-amber-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               بيانات غير مكتملة
@@ -206,7 +206,7 @@ export default async function ReceptionQueuePage({
         </div>
 
         {/* Card 4: In Production */}
-        <div className="apple-bento-card group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
+        <div className="rounded-2xl border border-border/70 bg-card shadow-xs group p-5.5 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/25 hover:border-blue-500/45 hover:shadow-blue-500/10">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground">
               في مرحلة الإنتاج
@@ -228,7 +228,7 @@ export default async function ReceptionQueuePage({
 
       {/* Main Table / Empty State */}
       {rows.length === 0 ? (
-        <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
           <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-tr from-cyan-500/15 to-primary/15 text-cyan-600 border border-cyan-500/20 shadow-xs">
             <CheckCircle2 className="h-8 w-8" />
           </div>
@@ -250,7 +250,7 @@ export default async function ReceptionQueuePage({
           </div>
         </div>
       ) : (
-        <div className="apple-card overflow-hidden">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-start text-sm">
               <thead>

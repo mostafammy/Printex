@@ -52,7 +52,7 @@ export default async function DailyCashPage({
   return (
     <div className="flex flex-col gap-8">
       {/* Date Filter Bar */}
-      <div className="apple-bento-card p-5 border-border/70">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 border-border/70">
         <form method="get" className="flex flex-wrap items-end gap-3 text-sm">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-muted-foreground">{S.expenseDate}</span>
@@ -77,7 +77,7 @@ export default async function DailyCashPage({
       <DailyCashSummary summary={summary} methodFilter={methodFilter} />
 
       {/* FR-020 drill-down: the actual payments behind every figure above. */}
-      <section id="payments-of-day" className="apple-bento-card p-6 sm:p-8 border-border/70">
+      <section id="payments-of-day" className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-8 border-border/70">
         <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/60 pb-4">
           <h2 className="text-base font-bold text-foreground">{S.paymentsList}</h2>
           <span className="text-xs text-muted-foreground">
@@ -100,7 +100,7 @@ export default async function DailyCashPage({
             {payments.rows.map((payment) => (
               <li
                 key={payment.id}
-                className="apple-bento-card apple-interactive-row p-4.5 border-border/70 hover:border-emerald-500/30 transition-all"
+                className="rounded-2xl border border-border/70 bg-card shadow-xs hover:bg-muted/40 p-4.5 border-border/70 hover:border-emerald-500/30 transition-all"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">

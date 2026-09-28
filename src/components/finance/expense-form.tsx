@@ -20,7 +20,7 @@ export async function ExpenseForm() {
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <details className="group apple-bento-card overflow-hidden border-border/70">
+    <details className="group rounded-2xl border border-border/70 bg-card overflow-hidden shadow-xs">
       <summary className="flex cursor-pointer select-none items-center justify-between p-5 text-sm font-bold text-foreground hover:bg-muted/30 transition-colors">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">

@@ -99,7 +99,7 @@ export default async function DesignWorkspacePage({
 
   if (!workItem) {
     return (
-      <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+      <div className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
         <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
           <AlertCircle className="h-8 w-8" />
         </div>
@@ -137,12 +137,12 @@ export default async function DesignWorkspacePage({
       </div>
 
       {/* ── Hero Workspace Header ── */}
-      <div className="apple-bento-card relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-purple-500/[0.06] via-card to-card border-purple-500/25">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8 bg-gradient-to-br from-purple-500/[0.06] via-card to-card border-purple-500/25">
         <div className="absolute top-0 end-0 -mt-8 -me-8 h-48 w-48 rounded-full bg-gradient-to-br from-purple-500/15 via-indigo-500/10 to-transparent blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25 apple-glow-purple">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25 ">
               <Palette className="h-8 w-8" />
               <span className="absolute -bottom-1 -end-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-card">
                 <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
@@ -194,7 +194,7 @@ export default async function DesignWorkspacePage({
         {/* Left Column: Upload New Version & Mark Complete */}
         <div className="flex flex-col gap-6 lg:col-span-7">
           {/* Upload card */}
-          <section className="apple-bento-card p-6 sm:p-7 border-border/70">
+          <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-border/70">
             <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
@@ -219,7 +219,7 @@ export default async function DesignWorkspacePage({
                   <label className="text-xs font-semibold text-foreground">
                     {S.designVersionFileLabel}
                   </label>
-                  <div className="apple-dropzone rounded-2xl p-7 text-center cursor-pointer">
+                  <div className="rounded-xl border-2 border-dashed border-border/80 rounded-2xl p-7 text-center cursor-pointer">
                     <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
                       <UploadCloud className="h-6 w-6" />
                     </div>
@@ -262,7 +262,7 @@ export default async function DesignWorkspacePage({
           </section>
 
           {/* Mark design complete action card */}
-          <section className="apple-bento-card p-6 sm:p-7 border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] via-card to-card">
+          <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.03] via-card to-card">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-5 w-5" />
@@ -286,7 +286,7 @@ export default async function DesignWorkspacePage({
                   disabled={!canMarkComplete}
                   className={`w-full sm:w-auto ${
                     canMarkComplete
-                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 apple-glow-emerald"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-500/20 "
                       : ""
                   }`}
                 >
@@ -305,7 +305,7 @@ export default async function DesignWorkspacePage({
 
         {/* Right Column: Version History */}
         <div className="flex flex-col gap-6 lg:col-span-5">
-          <section className="apple-bento-card flex flex-col p-6 sm:p-7 h-full border-border/70">
+          <section className="rounded-2xl border border-border/70 bg-card shadow-xs flex flex-col p-6 sm:p-7 h-full border-border/70">
             <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
@@ -341,7 +341,7 @@ export default async function DesignWorkspacePage({
                     key={v.id}
                     className={`relative rounded-2xl border p-4.5 transition-all ${
                       idx === 0
-                        ? "border-primary/30 bg-primary/5 shadow-2xs apple-glow-blue"
+                        ? "border-primary/30 bg-primary/5 shadow-2xs "
                         : "border-border/60 bg-muted/20 hover:border-border/90 hover:bg-muted/30"
                     }`}
                   >

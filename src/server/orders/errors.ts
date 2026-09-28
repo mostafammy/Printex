@@ -12,10 +12,20 @@
  * message without string-matching `message`.
  */
 export class DomainOrderError extends Error {
-  readonly code: "ORDER_FINISHED" | "PAST_EDIT_WINDOW" | "TERMINAL_WORK_ITEM" | "DUPLICATE_NAME";
+  readonly code:
+    | "ORDER_FINISHED"
+    | "PAST_EDIT_WINDOW"
+    | "TERMINAL_WORK_ITEM"
+    | "DUPLICATE_NAME"
+    | "DESIGN_REQUIRED";
 
   constructor(
-    code: "ORDER_FINISHED" | "PAST_EDIT_WINDOW" | "TERMINAL_WORK_ITEM" | "DUPLICATE_NAME",
+    code:
+      | "ORDER_FINISHED"
+      | "PAST_EDIT_WINDOW"
+      | "TERMINAL_WORK_ITEM"
+      | "DUPLICATE_NAME"
+      | "DESIGN_REQUIRED",
     message: string,
   ) {
     super(message);

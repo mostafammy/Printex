@@ -4,7 +4,7 @@
 
 export { DomainProductionError } from "./errors";
 export type { DomainProductionErrorCode } from "./errors";
-export { getOperatorQueue, routeToDepartment } from "./queue";
+export { getOperatorQueue, getOperatorQueuePage, getOperatorQueueStats, routeToDepartment } from "./queue";
 export type { ProductionQueueRow } from "./queue";
 export { getJobCard } from "./jobCard";
 export type { JobCard, JobCardSpec, JobCardApprovedFile, VendorRecordSummary } from "./jobCard";

@@ -45,7 +45,7 @@ export function CustomerForm() {
     <form
       onSubmit={submit}
       dir="rtl"
-      className="apple-card flex flex-col gap-4 p-6 sm:p-7 max-w-lg"
+      className="rounded-xl border border-border/70 bg-card shadow-xs flex flex-col gap-4 p-6 sm:p-7 max-w-lg"
     >
       <div className="flex items-center gap-2.5 pb-1 border-b border-border/60">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
