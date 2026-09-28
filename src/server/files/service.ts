@@ -2,14 +2,14 @@
 // Core business logic: upload, list, approve, lifecycle, attachments
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { type Prisma, FileCategory, FileLifecycleStatus } from "../../../generated/prisma";
+import type { Prisma, FileCategory, FileLifecycleStatus } from "../../../generated/prisma";
 import type { Actor } from "~/server/auth";
 import { audit } from "~/server/auth";
 import { db as prisma } from "~/server/db";
-import { LocalDiskStorageAdapter, createLocalDiskAdapter } from "~/server/core/storage/local-disk";
-import { streamToTempFile, withRetry, verifyStreamIntegrity } from "./integrity";
+import { type LocalDiskStorageAdapter, createLocalDiskAdapter } from "~/server/core/storage/local-disk";
+import { streamToTempFile } from "./integrity";
 import { validateUploadInput, validateAttachmentInput, FileError, FileErrorCode } from "./schemas";
-import { canDownloadFileVersion, canListFileVersions, canPerformLifecycleAction, canApproveFileVersion } from "./authorization";
+import { canDownloadFileVersion, canPerformLifecycleAction, canApproveFileVersion } from "./authorization";
 import { createPreviewGrant, decodeAndVerifyGrant, encodeGrant } from "./signed-preview";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -67,7 +67,7 @@ export class FileService {
    * - Audits the operation
    */
   async upload(input: UploadInput): Promise<FileVersionOutput> {
-    const { workItemId, category, stream, fileName, note, actor } = input;
+    const { workItemId, category, stream, fileName, actor } = input;
 
     // Validate input
     // Note: fileSize and mimeType would come from the upload route after reading the stream
@@ -78,15 +78,13 @@ export class FileService {
       where: { workItemId, category },
     });
 
-    if (!fileAsset) {
-      fileAsset = await prisma.fileAsset.create({
-        data: {
-          workItemId,
-          category,
-          logicalName: fileName,
-        },
-      });
-    }
+    fileAsset ??= await prisma.fileAsset.create({
+      data: {
+        workItemId,
+        category,
+        logicalName: fileName,
+      },
+    });
 
     // Determine next version number
     const maxVersion = await prisma.fileVersion.findFirst({
@@ -107,7 +105,7 @@ export class FileService {
       const mimeType = this.getMimeType(input.fileName);
 
       // Validate upload
-      const validated = validateUploadInput({
+      validateUploadInput({
         workItemId,
         category,
         fileName: input.fileName,
@@ -152,14 +150,14 @@ export class FileService {
       const result = await prisma.$transaction(async (tx) => {
         // Select ACTIVE version IDs for audit
         const priorActive = await tx.fileVersion.findMany({
-          where: { fileAssetId: fileAsset!.id, status: "ACTIVE" },
+          where: { fileAssetId: fileAsset.id, status: "ACTIVE" },
           select: { id: true, status: true },
         });
 
         // Supersede prior versions
         if (priorActive.length > 0) {
           await tx.fileVersion.updateMany({
-            where: { fileAssetId: fileAsset!.id, status: "ACTIVE" },
+            where: { fileAssetId: fileAsset.id, status: "ACTIVE" },
             data: { status: "SUPERSEDED" },
           });
         }
@@ -167,8 +165,8 @@ export class FileService {
         // Create new FileVersion
         const fileVersion = await tx.fileVersion.create({
           data: {
-            fileAssetId: fileAsset!.id,
-            fileObjectId: fileObject!.id,
+            fileAssetId: fileAsset.id,
+            fileObjectId: fileObject.id,
             versionNumber: nextVersion,
             originalName: input.fileName,
             uploadedById: actor.userId,
@@ -305,7 +303,7 @@ export class FileService {
    * Void a file version.
    */
   async voidVersion(versionId: string, actor: Actor, reason: string): Promise<void> {
-    if (!reason || !reason.trim()) {
+    if (!reason?.trim()) {
       throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to void a file version");
     }
 
@@ -337,7 +335,7 @@ export class FileService {
    * Archive a file version.
    */
   async archiveVersion(versionId: string, actor: Actor, reason: string): Promise<void> {
-    if (!reason || !reason.trim()) {
+    if (!reason?.trim()) {
       throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to archive a file version");
     }
 
