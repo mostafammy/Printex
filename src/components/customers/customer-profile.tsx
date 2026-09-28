@@ -43,7 +43,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
       </div>
 
       {/* ── Hero Customer Header Card ── */}
-      <header className="apple-card relative overflow-hidden p-6 sm:p-8">
+      <header className="rounded-xl border border-border/70 bg-card shadow-xs relative overflow-hidden p-6 sm:p-8">
         <div className="absolute top-0 end-0 -mt-10 -me-10 h-52 w-52 rounded-full bg-linear-to-br from-primary/10 to-indigo-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -126,7 +126,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
       {/* ── Primary Bento Grid: Overview / Orders / Notes ── */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
         {/* Overview */}
-        <section className="apple-card p-6 flex flex-col justify-between">
+        <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 flex flex-col justify-between">
           <div>
             <div className="mb-3 flex items-center gap-2 text-primary">
               <Building2 className="h-4 w-4" />
@@ -142,7 +142,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
         </section>
 
         {/* Orders */}
-        <section className="apple-card p-6 flex flex-col">
+        <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 flex flex-col">
           <div className="mb-3 flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
             <Layers className="h-4 w-4" />
             <h2 className="text-sm font-bold text-foreground">Orders · الطلبات</h2>
@@ -153,7 +153,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
         </section>
 
         {/* Notes */}
-        <section className="apple-card p-6 flex flex-col justify-between">
+        <section className="rounded-xl border border-border/70 bg-card shadow-xs p-6 flex flex-col justify-between">
           <div>
             <div className="mb-3 flex items-center gap-2 text-amber-600 dark:text-amber-400">
               <FileText className="h-4 w-4" />
@@ -169,7 +169,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
       {/* ── Secondary Bento Grid: Financial Balance / Special Pricing / Messages ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3" aria-label="امتدادات الملف">
         {/* Payments Balance slot */}
-        <div className="apple-card p-6">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs p-6">
           <div className="mb-4 flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
             <CreditCard className="h-4 w-4" />
             <h3 className="text-sm font-bold text-foreground">الرصيد والحساب المالي</h3>
@@ -178,7 +178,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
         </div>
 
         {/* Special Pricing slot */}
-        <div className="apple-card p-6">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs p-6">
           <div className="mb-4 flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <Tag className="h-4 w-4" />
             <h3 className="text-sm font-bold text-foreground">قواعد الأسعار الخاصة</h3>
@@ -187,7 +187,7 @@ export function CustomerProfile({ customer, orders, notes, slots }: CustomerProf
         </div>
 
         {/* Messages slot */}
-        <div className="apple-card p-6">
+        <div className="rounded-xl border border-border/70 bg-card shadow-xs p-6">
           <div className="mb-4 flex items-center gap-2 text-cyan-600 dark:text-cyan-400">
             <MessageSquare className="h-4 w-4" />
             <h3 className="text-sm font-bold text-foreground">المراسلات والإشعارات</h3>
