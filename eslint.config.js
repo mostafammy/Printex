@@ -253,6 +253,113 @@ export default tseslint.config(
       ],
     },
   },
+  // --- 017 Press Floor Board architectural boundaries (T002, plan.md S4, R1) ---
+  {
+    // Nothing outside `src/server/board/**` (and tests/**) may deep-import
+    // board internals; application code uses the board barrel.
+    files: ["**/*.ts", "**/*.tsx"],
+    ignores: ["src/server/board/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/board/**", "!~/server/board", "!~/server/board/index"],
+              message:
+                "Import from the public barrel `~/server/board` (src/server/board/index.ts) instead of reaching into its internals.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // src/lib/board/** is a pure OOP engine (no React, DOM globals, components, or server logic)
+    files: ["src/lib/board/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react", message: "src/lib/board is a pure engine and must not import react." },
+            { name: "react-dom", message: "src/lib/board is a pure engine and must not import react-dom." },
+            { name: "next", message: "src/lib/board is a pure engine and must not import next." },
+          ],
+          patterns: [
+            {
+              group: ["next/**"],
+              message: "src/lib/board is a pure engine and must not import next/*.",
+            },
+            {
+              group: ["~/components/**", "**/components/**"],
+              message: "src/lib/board must not import components.",
+            },
+            {
+              group: ["~/server/!(board)/**", "~/server/*", "!~/server/board", "!~/server/board/**"],
+              message: "src/lib/board must not import src/server/**.",
+            },
+            {
+              group: ["~/server/board/**", "~/server/board"],
+              allowTypeImports: true,
+              message: "src/lib/board may only import types from src/server/board.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Components in 017 board and shell must not import src/server/** directly (only import type allowed)
+    files: [
+      "src/components/board/**/*.ts",
+      "src/components/board/**/*.tsx",
+      "src/components/shell/**/*.ts",
+      "src/components/shell/**/*.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["~/server/**", "**/server/**"],
+              allowTypeImports: true,
+              message:
+                "Components must not import src/server/** except as type imports. Use server actions or board controller instead.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // --- 017 Metric Limits (T003, plan.md S1) ---
+  {
+    files: [
+      "src/lib/board/**/*.ts",
+      "src/server/board/**/*.ts",
+      "src/components/board/**/*.ts",
+      "src/components/board/**/*.tsx",
+      "src/components/shell/**/*.ts",
+      "src/components/shell/**/*.tsx",
+    ],
+    rules: {
+      "max-lines": ["error", { max: 150, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": ["error", { max: 40, skipBlankLines: true, skipComments: true }],
+      complexity: ["error", 8],
+      "max-params": ["error", 3],
+      "max-depth": ["error", 3],
+    },
+  },
+  {
+    files: [
+      "src/components/board/**/*.tsx",
+      "src/components/shell/**/*.tsx",
+    ],
+    rules: {
+      "max-lines": ["error", { max: 200, skipBlankLines: true, skipComments: true }],
+    },
+  },
   {
     // (c) `core` functions return `Result<T, DomainError>` and never throw
     // (plan.md §5.2, §5.3) — except `StorageAdapter` *implementations* under
