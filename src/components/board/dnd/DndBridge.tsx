@@ -3,12 +3,17 @@
 /**
  * DndBridge: integrates @dnd-kit/core events with DragSession and BoardController.
  * (research.md R7, SC-010, plan.md S1)
+ *
+ * The live drop-target feedback from 817f251 lives here: onDragOver tells
+ * DragSession which station is under the pointer, and data-dragging is the
+ * hook the cursor rules in ink.css key off.
  */
 
 import {
   DndContext,
   DragOverlay,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
 import React, { useState } from "react";
@@ -27,17 +32,10 @@ function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
   if (!card) return null;
   return (
     <DragOverlay dropAnimation={null}>
-      {/* The lifted card keeps the board's industrial form: a 2px outline in
-          the station's ink, no rotation, no soft shadow. Rotation reads as
-          playfulness, which is wrong for a job being physically moved
-          between two places on a floor. */}
-      <div
-        className="pointer-events-none cursor-grabbing"
-        style={{
-          outline: "2px solid var(--ticket-bar, var(--primary))",
-          outlineOffset: "1px",
-        }}
-      >
+      {/* .drag-overlay-enter lifts and rotates the card as it leaves the
+          stack; the keyframes and their reduced-motion kill-switch live in
+          ink.css. */}
+      <div className="drag-overlay-enter cursor-grabbing">
         <JobTicket card={card} />
       </div>
     </DragOverlay>
@@ -54,11 +52,21 @@ export function DndBridge({ children }: DndBridgeProps) {
     if (c) { setActiveCard(c); controller.dragSession?.start(c); }
   };
 
-  const onEnd = (e: DragEndEvent) => {
+  // The hovered station is what separates a pulsing "over" column from a
+  // merely-ringed "offered" one; without this the operator cannot tell which
+  // of the valid columns the card would actually land in.
+  const onOver = (e: DragOverEvent) => {
+    controller.dragSession?.setOver(e.over?.id ? (String(e.over.id) as StationId) : null);
+  };
+
+  const endDrag = (station: StationId | null) => {
     setActiveCard(null);
-    const station = e.over?.id ? (String(e.over.id) as StationId) : null;
     if (station) { void controller.handleDropOnStation(station); }
     else { controller.dragSession?.cancel(); }
+  };
+
+  const onEnd = (e: DragEndEvent) => {
+    endDrag(e.over?.id ? (String(e.over.id) as StationId) : null);
   };
 
   return (
@@ -67,10 +75,16 @@ export function DndBridge({ children }: DndBridgeProps) {
       accessibility={{ announcements: ARABIC_DND_ANNOUNCEMENTS }}
       autoScroll={{ threshold: { x: 0.1, y: 0.1 }, acceleration: 10 }}
       onDragStart={onStart}
+      onDragOver={onOver}
       onDragEnd={onEnd}
       onDragCancel={() => { setActiveCard(null); controller.dragSession?.cancel(); }}
     >
-      {children}
+      {/* .contents keeps the wrapper out of the flex chain while still
+          carrying data-dragging, which the grabbing / not-allowed cursor
+          rules in ink.css select on. */}
+      <div className="contents" data-dragging={activeCard ? true : undefined}>
+        {children}
+      </div>
       <CardDragOverlay card={activeCard} />
     </DndContext>
   );

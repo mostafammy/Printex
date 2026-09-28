@@ -204,17 +204,15 @@ export const JobTicketView = React.memo(function JobTicketView({
       // the card is clipped rather than painting outside the box, which is
       // what produced the stray line that stayed beside the column while the
       // lane scrolled.
-      className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] p-2.5 text-start transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary hover:shadow-[var(--board-elevate-hover)] ${
+      className={`group relative flex h-full w-full cursor-grab flex-col overflow-hidden rounded-lg border bg-card p-2.5 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing ${
         isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
       } ${isDragging ? "opacity-30" : ""}`}
       // One style prop: a second one silently replaces the first, which is
-      // how the soft elevation went missing. --ticket-edge rather than
-      // --ticket-bar, because the fill of a graphite ("key") station is
-      // near-black and read as a rendering artifact at 4px.
+      // how the soft elevation went missing. --ticket-bar is the station's
+      // fill, the token 817f251 paired with the 4px reading-edge rule.
       style={{
-        borderInlineStartWidth: "3px",
-        borderInlineStartColor: "var(--ticket-edge, var(--primary))",
-        boxShadow: "var(--board-elevate)",
+        borderInlineStartWidth: "4px",
+        borderInlineStartColor: "var(--ticket-bar, var(--primary))",
       }}
     >
       <TicketHeader card={card} onOrderHover={onOrderHover} onGroupClick={onGroupClick} />
@@ -224,7 +222,7 @@ export const JobTicketView = React.memo(function JobTicketView({
           mt-auto, so the button lands flush at the bottom on every card
           instead of overflowing the box — the overflow was drawing as a
           stray line beside the card that stayed put while the lane scrolled. */}
-      <div className="mt-auto flex items-center justify-end gap-2 border-t border-dashed border-[var(--board-line-strong)] pt-1.5">
+      <div className="mt-auto flex items-center justify-end gap-2 border-t border-dashed border-border/60 pt-1.5">
         {card.assignee && (
           <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
             {card.assignee.name}
@@ -242,7 +240,7 @@ export const JobTicketView = React.memo(function JobTicketView({
             onMoveKey?.(card);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="relative flex h-8 min-w-16 shrink-0 items-center justify-center rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-3 text-xs font-semibold text-muted-foreground transition-colors after:absolute after:inset-y-[calc(-50%+0.75rem)] after:inset-x-0 after:content-[''] hover:bg-muted hover:text-foreground"
+          className="relative flex h-8 min-w-16 shrink-0 items-center justify-center rounded-md border bg-card px-3 text-xs font-semibold text-muted-foreground transition-colors after:absolute after:inset-y-[calc(-50%+0.75rem)] after:inset-x-0 after:content-[''] hover:bg-muted hover:text-foreground"
         >
           نقل
         </button>

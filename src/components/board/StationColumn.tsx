@@ -2,14 +2,19 @@
 
 /**
  * StationColumn rendering the station header, ink-tinted frame, count, oldest
- * job age, and sub-lanes.
- * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-002, FR-006)
+ * job age, sub-lanes, and live drop-target feedback.
+ * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-002, FR-006;
+ *  visual treatment from 817f251 "live drop-target feedback and polished drag motion")
  *
  * The station is the primary visual object on this board, so it owns the
  * colour: `ink.css` exposes `--station-<id>-{wash,edge,fill,text}` through the
- * `[data-station]` remap, and this component is where those tokens finally
- * reach the screen. Previously the station rendered `bg-muted/30` like every
- * other column and the ink system only survived as a 4px ticket hairline.
+ * `[data-station]` remap, and this component is where those tokens reach the
+ * screen.
+ *
+ * The drop states are three, not two. "over" is distinct from "offered": a
+ * column the card is currently hovering is pulsing under the pointer, while
+ * a merely-valid column is merely ringed. Collapsing them loses the one
+ * signal a floor operator reads mid-drag.
  */
 
 import React from "react";
@@ -30,6 +35,7 @@ import type { BoardCard } from "~/lib/board/types";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { SubLane } from "./SubLane";
 import { StationSummary } from "./StationSummary";
+import { useDragOffer } from "./dnd/useDragOffer";
 
 const ICONS: Readonly<Record<string, LucideIcon>> = {
   Inbox,
@@ -41,9 +47,12 @@ const ICONS: Readonly<Record<string, LucideIcon>> = {
   Truck,
 };
 
+/** Three visual states, not two: `over` is the column under the pointer. */
+export type DropVisual = "idle" | "offered" | "dimmed" | "over";
+
 export interface StationColumnProps {
   readonly station: Station;
-  readonly dropState?: "idle" | "offered" | "dimmed";
+  readonly dropState?: DropVisual;
   readonly blockedHint?: string;
   readonly onOrderHover?: (orderId: string | null) => void;
   readonly onCardClick?: (card: BoardCard) => void;
@@ -68,30 +77,21 @@ function ColumnHeader({
 }) {
   const IconComponent = ICONS[station.icon] ?? Inbox;
   return (
-    // Soft header: the station's ink tint behind a rounded tile icon, with a
-    // hairline rule under it. The station reads as the primary object.
-    <header className="flex items-center gap-2.5 border-b border-[var(--board-line-strong)] bg-[var(--ticket-wash)] px-3.5 py-2.5">
-      <span
-        className="flex size-9 shrink-0 items-center justify-center rounded-[var(--board-radius)] text-white"
-        style={{ backgroundColor: "var(--ticket-bar)" }}
-      >
-        <IconComponent className="size-[18px]" aria-hidden="true" />
-      </span>
-      <div className="flex min-w-0 flex-1 flex-col">
+    <header className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-2.5 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
+          <IconComponent className="h-4 w-4" aria-hidden="true" />
+        </span>
         {/* Arabic is cursive: no tracking, and no negative letter-spacing. */}
-        <h2 className="truncate text-base font-bold leading-tight text-foreground">
-          {station.labelAr}
-        </h2>
-        <div className="flex items-center gap-1.5">
-          <span
-            data-testid={`station-count-${station.id}`}
-            className="text-[11px] font-semibold tabular-nums text-muted-foreground"
-          >
-            {count}
-          </span>
-          <StationSummary stationStates={station.lanes.map((l) => l.state)} now={now} />
-        </div>
+        <h2 className="truncate text-sm font-bold text-foreground">{station.labelAr}</h2>
+        <StationSummary stationStates={station.lanes.map((l) => l.state)} now={now} />
       </div>
+      <span
+        data-testid={`station-count-${station.id}`}
+        className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold text-muted-foreground"
+      >
+        {count}
+      </span>
     </header>
   );
 }
@@ -101,7 +101,7 @@ function BlockedBanner({ hint }: { readonly hint?: string }) {
   return (
     <div
       role="status"
-      className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-400"
+      className="border-b bg-amber-500/10 px-2.5 py-1 text-[11px] font-medium text-amber-700 dark:text-amber-400"
     >
       {hint}
     </div>
@@ -118,16 +118,15 @@ function SubLaneList({
   const isMultiLane = station.lanes.length > 1;
   // Lane arrangement follows the column's width, not a fixed rule.
   //
-  // One station filling the screen (fillWidth) has room to put its lanes
-  // side by side as columns, and comparing lane depths at a glance is the
-  // point. A 280-340px column in the full board cannot: four lanes across
-  // 300px is a 75px card, which is where the design station degraded into
-  // unreadable chips with ellipsised text. There the lanes stack as rows
-  // instead, and each gets the full column width.
+  // One station filling the screen (fillWidth) has room to put its lanes side
+  // by side as columns, and comparing lane depths at a glance is the point.
+  // A 260-340px column in the full board cannot: four lanes across 300px is a
+  // 75px card, which is where the design station degraded into unreadable
+  // chips with ellipsised text. There the lanes stack as rows instead.
   const lanesAsColumns = isMultiLane && fillWidth === true;
   return (
     <div
-      className={`flex min-h-0 flex-1 gap-3 overflow-hidden p-3 ${
+      className={`flex min-h-0 flex-1 gap-2 overflow-hidden p-1.5 ${
         lanesAsColumns ? "flex-row" : "flex-col"
       }`}
     >
@@ -150,6 +149,30 @@ function SubLaneList({
   );
 }
 
+function resolveDropStyle(dropState: DropVisual): {
+  readonly cls: string;
+  readonly over: boolean;
+  readonly dimmed: boolean;
+} {
+  // .column-drop-over carries the lane-drop-pulse keyframes in ink.css.
+  if (dropState === "over") {
+    return { cls: "column-drop-over ring-2 ring-primary border-transparent", over: true, dimmed: false };
+  }
+  if (dropState === "offered") {
+    return {
+      cls: "ring-2 ring-primary/50 ring-offset-1 bg-primary/5 border-primary/30",
+      over: false,
+      dimmed: false,
+    };
+  }
+  if (dropState === "dimmed") {
+    // grayscale as well as opacity: a colour-only dim still reads as "coloured
+    // but faded" on a board whose stations are identified by hue.
+    return { cls: "opacity-40 grayscale-[40%] cursor-not-allowed", over: false, dimmed: true };
+  }
+  return { cls: "border-border/60", over: false, dimmed: false };
+}
+
 export function StationColumn(props: StationColumnProps) {
   // The age summary is relative to when this column last re-rendered for a
   // store change, not a ticking clock. A `Date.now()` selector would return a
@@ -169,13 +192,13 @@ export function StationColumn(props: StationColumnProps) {
     0,
   );
 
-  const isOffered = props.dropState === "offered";
-  const isDimmed = props.dropState === "dimmed";
-  const stateCls = isOffered
-    ? "ring-2 ring-[var(--ticket-bar)]"
-    : isDimmed
-      ? "opacity-40"
-      : "";
+  // When no dropState is passed in, read it live from the drag session, so
+  // every column reacts to a drag without the parent re-rendering them.
+  // An explicit prop still wins, which is what the tests use.
+  const liveDropState = useDragOffer(props.station.id);
+  const { cls: stateCls, dimmed: isDimmed } = resolveDropStyle(
+    props.dropState ?? liveDropState,
+  );
 
   const { setNodeRef } = useDroppable({
     id: props.station.id,
@@ -187,12 +210,9 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      // The column is a soft bordered panel: the station owns its frame, and
-      // a rounded edge plus a hairline separates one station from the next
-      // without a heavy rule between them.
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-[var(--board-surface)] transition-shadow ${
-        props.fillWidth ? "w-full min-w-0" : "w-[clamp(260px,22vw,340px)] shrink-0"
-      } ${stateCls}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-card ${stateCls} ${
+        props.fillWidth ? "w-full min-w-0" : "w-[clamp(240px,21vw,300px)] shrink-0"
+      }`}
     >
       <ColumnHeader station={props.station} count={cardCount} now={now} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}

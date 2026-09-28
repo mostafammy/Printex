@@ -64,11 +64,11 @@ function LaneHeader({
     //
     // A single-lane station hides it: the station header already carries the
     // same number one line above, and printing it twice read as a mistake.
-    <div className="flex items-center justify-between gap-2 border-b border-[var(--board-line-strong)] px-2 py-1">
-      <h3 className="truncate text-xs font-bold text-foreground">{labelAr}</h3>
+    <div className="flex items-center justify-between gap-2 border-b border-border/60 px-2 py-1">
+      <h3 className="truncate text-xs font-semibold text-muted-foreground">{labelAr}</h3>
       {showCount && (
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold tabular-nums ${
+          className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold tabular-nums ${
             count === 0
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-muted text-muted-foreground"
@@ -88,7 +88,7 @@ function LaneHeader({
  */
 function EmptyLane({ labelAr }: { readonly labelAr: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-[var(--board-radius)] border border-dashed border-[var(--board-line-strong)] bg-background/40 px-3 py-4 text-xs text-muted-foreground">
+    <div className="flex items-center gap-2 rounded-lg border border-dashed border-border/60 px-2.5 py-2 text-[11px] text-muted-foreground">
       <span aria-hidden="true" className="text-emerald-600">
         ●
       </span>

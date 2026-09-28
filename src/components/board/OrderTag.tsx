@@ -84,7 +84,7 @@ export const OrderTag = React.memo(function OrderTag({
       // sibling count) and in a narrow card it forced the header row past the
       // card's edge, which painted a horizontal scrollbar that stayed put
       // while the lane scrolled vertically.
-      className={`inline-flex min-w-0 shrink items-center gap-1.5 overflow-hidden rounded-[var(--board-radius)] border px-1.5 text-[11px] font-semibold leading-4 transition-colors ${
+      className={`inline-flex min-w-0 shrink items-center gap-1.5 overflow-hidden rounded-md border px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
         isHighlighted ? "ring-2 ring-offset-1 ring-primary" : ""
       }`}
       style={chipStyle}
