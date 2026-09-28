@@ -18,6 +18,12 @@ export interface SliceSwitcherProps {
   readonly filters: BoardFilters;
   readonly onUpdateFilters: (filters: BoardFilters) => void;
   readonly pagination?: BoardPagination;
+  /**
+   * Optional view-mode control, rendered at the start of the right-hand
+   * control group so it shares the toolbar's alignment and spacing rather
+   * than sitting on its own row.
+   */
+  readonly viewSwitcher?: React.ReactNode;
 }
 
 function SlicePills({
@@ -153,14 +159,18 @@ export function SliceSwitcher({
   filters,
   onUpdateFilters,
   pagination,
+  viewSwitcher,
 }: SliceSwitcherProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 bg-background/80 px-4 py-2 backdrop-blur-xs">
-      <SlicePills
-        activeSlice={activeSlice}
-        availableSlices={availableSlices}
-        onSelectSlice={onSelectSlice}
-      />
+      <div className="flex items-center gap-3">
+        {viewSwitcher}
+        <SlicePills
+          activeSlice={activeSlice}
+          availableSlices={availableSlices}
+          onSelectSlice={onSelectSlice}
+        />
+      </div>
       <div className="flex items-center gap-3">
         {pagination && <BoardPaginationControls pagination={pagination} />}
         <FilterChips filters={filters} onUpdateFilters={onUpdateFilters} />

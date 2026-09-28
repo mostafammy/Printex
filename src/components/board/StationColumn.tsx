@@ -39,6 +39,14 @@ export interface StationColumnProps {
   readonly onOrderHover?: (orderId: string | null) => void;
   readonly onCardClick?: (card: BoardCard) => void;
   readonly onMoveKey?: (card: BoardCard) => void;
+  /**
+   * Drop the fixed column width and fill the container. The 280–340px width
+   * only makes sense when seven columns share the board; the tabbed view
+   * shows one station at a time, and there capping it leaves the rest of the
+   * viewport empty. Defaults to the shared-width behaviour so the full board
+   * is unchanged.
+   */
+  readonly fillWidth?: boolean;
 }
 
 function ColumnHeader({
@@ -81,6 +89,7 @@ function BlockedBanner({ hint }: { readonly hint?: string }) {
 
 function SubLaneList({
   station,
+  fillWidth,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -93,6 +102,7 @@ function SubLaneList({
           key={lane.state}
           state={lane.state}
           labelAr={isMultiLane ? lane.labelAr : undefined}
+          grid={fillWidth === true}
           onOrderHover={onOrderHover}
           onCardClick={onCardClick}
           onMoveKey={onMoveKey}
@@ -129,7 +139,9 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`flex flex-col h-full min-w-[280px] max-w-[340px] flex-1 rounded-xl border bg-muted/30 transition-all ${stateCls}`}
+      className={`flex flex-col h-full flex-1 rounded-xl border bg-muted/30 transition-all ${
+        props.fillWidth ? "w-full" : "min-w-[280px] max-w-[340px]"
+      } ${stateCls}`}
     >
       <ColumnHeader station={props.station} count={cardCount} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}

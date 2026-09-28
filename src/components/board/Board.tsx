@@ -17,6 +17,8 @@ import { LiveIndicator } from "./LiveIndicator";
 import { GroupResultSheet } from "./GroupResultSheet";
 import { MobileStationTabs } from "./MobileStationTabs";
 import { SliceSwitcher } from "./SliceSwitcher";
+import { TabbedBoardView } from "./TabbedBoardView";
+import { ViewModeSwitcher, type BoardViewMode } from "./ViewModeSwitcher";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { useFocusRestoration } from "./hooks/useFocusRestoration";
@@ -102,6 +104,46 @@ function BoardModals({
   );
 }
 
+/**
+ * Chooses between the two presentations. Both branches render the same
+ * StationColumn components from the same store, so only the arrangement
+ * differs — the full board keeps DesktopBoardGrid + MobileBoardGrid exactly
+ * as they were.
+ */
+function BoardBody({
+  viewMode,
+  activeStationId,
+  onSelectStation,
+  onOrderHover,
+  onCardClick,
+  onMoveKey,
+}: {
+  readonly viewMode: BoardViewMode;
+  readonly activeStationId: StationId;
+  readonly onSelectStation: (id: StationId) => void;
+  readonly onOrderHover?: (orderId: string | null) => void;
+  readonly onCardClick?: (card: BoardCard) => void;
+  readonly onMoveKey: (card: BoardCard) => void;
+}) {
+  if (viewMode === "tabbed") {
+    return (
+      <TabbedBoardView
+        activeStationId={activeStationId}
+        onSelectStation={onSelectStation}
+        onOrderHover={onOrderHover}
+        onCardClick={onCardClick}
+        onMoveKey={onMoveKey}
+      />
+    );
+  }
+  return (
+    <>
+      <DesktopBoardGrid onOrderHover={onOrderHover} onCardClick={onCardClick} onMoveKey={onMoveKey} />
+      <MobileBoardGrid props={{ onOrderHover, onCardClick, onMoveKey }} activeId={activeStationId} />
+    </>
+  );
+}
+
 export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   const controller = useBoardController();
   useFocusRestoration(controller);
@@ -111,6 +153,10 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   const [activeMobileId, setActiveMobileId] = useState<StationId>("reception");
   const [groupResult, setGroupResult] = useGroupResultListener(controller);
   const [filters, setFilters] = useState<BoardFilters>(() => controller.currentFilters);
+  // Tabbed by default: a 7-station board asks for a wide horizontal scroll,
+  // which is the whole reason this view exists. The full board stays one
+  // click away and keeps every interaction it has today.
+  const [viewMode, setViewMode] = useState<BoardViewMode>("tabbed");
 
   const handleSlice = (s: SliceId) => { void controller.switchSlice(s); };
   const handleFilters = (f: BoardFilters) => { setFilters(f); void controller.updateFilters(f); };
@@ -125,11 +171,20 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
         filters={filters}
         onUpdateFilters={handleFilters}
         pagination={meta.pagination}
+        viewSwitcher={<ViewModeSwitcher mode={viewMode} onChange={setViewMode} />}
       />
-      <MobileStationTabs activeStationId={activeMobileId} onSelectStation={setActiveMobileId} />
+      {viewMode === "full" && (
+        <MobileStationTabs activeStationId={activeMobileId} onSelectStation={setActiveMobileId} />
+      )}
       <main tabIndex={0} aria-label="لوحة أرضية المطبعة" className="flex flex-1 overflow-hidden focus-visible:outline-hidden">
-        <DesktopBoardGrid onOrderHover={onOrderHover} onCardClick={onCardClick} onMoveKey={handleKey} />
-        <MobileBoardGrid props={{ onOrderHover, onCardClick, onMoveKey: handleKey }} activeId={activeMobileId} />
+        <BoardBody
+          viewMode={viewMode}
+          activeStationId={activeMobileId}
+          onSelectStation={setActiveMobileId}
+          onOrderHover={onOrderHover}
+          onCardClick={onCardClick}
+          onMoveKey={handleKey}
+        />
       </main>
       <BoardModals card={menuCard} onCloseMenu={() => setMenuCard(null)} groupResult={groupResult} onCloseGroup={() => setGroupResult(null)} />
     </div>

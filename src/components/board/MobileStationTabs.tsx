@@ -12,16 +12,25 @@ import type { StationId } from "~/server/board";
 export interface MobileStationTabsProps {
   readonly activeStationId: StationId;
   readonly onSelectStation: (id: StationId) => void;
+  /**
+   * Restricts the bar to phone viewports (`sm:hidden`, the original phone
+   * behaviour). The tabbed board view passes `false` because it needs the
+   * same tab affordance at every width.
+   */
+  readonly phoneOnly?: boolean;
 }
 
 export const MobileStationTabs = React.memo(function MobileStationTabs({
   activeStationId,
   onSelectStation,
+  phoneOnly = true,
 }: MobileStationTabsProps) {
   return (
     <nav
-      aria-label="محطات المطبعة للهاتف"
-      className="flex sm:hidden overflow-x-auto gap-1 border-b border-border/60 bg-muted/20 p-2 scrollbar-none"
+      aria-label="محطات المطبعة"
+      className={`flex overflow-x-auto gap-1 border-b border-border/60 bg-muted/20 p-2 scrollbar-none ${
+        phoneOnly ? "sm:hidden" : ""
+      }`}
     >
       {STATIONS.map((st) => {
         const isActive = st.id === activeStationId;

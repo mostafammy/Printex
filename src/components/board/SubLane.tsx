@@ -10,7 +10,7 @@
  * prevents concurrent `loadMore()` calls.
  */
 
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
@@ -24,6 +24,41 @@ export interface SubLaneProps {
   readonly onOrderHover?: (orderId: string | null) => void;
   readonly onCardClick?: (card: BoardCard) => void;
   readonly onMoveKey?: (card: BoardCard) => void;
+  /**
+   * Lay cards out in a responsive grid instead of one per row. Set by the
+   * tabbed board view, where a single station owns the full viewport width
+   * and a single column would leave most of it empty.
+   */
+  readonly grid?: boolean;
+}
+
+/** Narrowest a job ticket can be before its fields start wrapping badly. */
+const CARD_MIN_WIDTH = 260;
+const CARD_GAP = 8;
+
+/**
+ * Tracks an element's content-box width. `contentRect` excludes padding, so
+ * this is the width actually available to cards.
+ */
+function useContentWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = (w: number) =>
+      setWidth((prev) => (Math.abs(prev - w) > 1 ? w : prev));
+    measure(el.clientWidth);
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) measure(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return [ref, width] as const;
 }
 
 interface VirtualizedCardListProps extends SubLaneProps {
@@ -34,6 +69,8 @@ function VirtualRow({
   virtualItem,
   cardId,
   measureRef,
+  grid,
+  lanes,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -41,6 +78,8 @@ function VirtualRow({
   readonly virtualItem: { readonly index: number; readonly start: number };
   readonly cardId: string;
   readonly measureRef: (node: HTMLDivElement | null) => void;
+  readonly grid: boolean;
+  readonly lanes: number;
   readonly onOrderHover?: (id: string | null) => void;
   readonly onCardClick?: (c: BoardCard) => void;
   readonly onMoveKey?: (c: BoardCard) => void;
@@ -50,8 +89,17 @@ function VirtualRow({
       data-index={virtualItem.index}
       ref={measureRef}
       role="listitem"
-      className="absolute inset-x-0 pb-2"
-      style={{ transform: `translateY(${virtualItem.start}px)` }}
+      // Single column: `inset-x-0` pins each row to the full lane width,
+      // which is what a one-ticket-per-row list wants.
+      // Grid: the virtualizer positions the row vertically only, so the
+      // width has to come from the lane count and the box needs an explicit
+      // start inset — an absolutely positioned element with no inset falls
+      // to its static position, which in RTL is the right edge.
+      className={`absolute start-0 pb-2 ${grid ? "" : "inset-e-0"}`}
+      style={{
+        transform: `translateY(${virtualItem.start}px)`,
+        width: grid ? `calc(100% / ${lanes})` : undefined,
+      }}
     >
       <JobTicket
         cardId={cardId}
@@ -78,14 +126,26 @@ function EmptyLanePlaceholder({ labelAr, state }: { readonly labelAr?: string; r
 function VirtualizedCardList(props: VirtualizedCardListProps) {
   const controller = useBoardController();
   const parentRef = useRef<HTMLDivElement>(null);
+  const [measureRef, containerWidth] = useContentWidth<HTMLDivElement>();
   // Prevent concurrent loadMore calls.
   const isFetchingRef = useRef(false);
+
+  // Card grid: as many tickets per row as fit at CARD_MIN_WIDTH. Falls back
+  // to 1 before the first measurement so the first paint is a single column
+  // rather than a grid sized against a zero-width container.
+  const lanes = props.grid
+    ? containerWidth > 0
+      ? Math.max(1, Math.floor(containerWidth / CARD_MIN_WIDTH))
+      : 1
+    : 1;
 
   const virtualizer = useVirtualizer({
     count: props.cardIds.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 140,
     overscan: 4,
+    lanes,
+    gap: props.grid ? CARD_GAP : 0,
   });
 
   // Stable scroll handler — fires only when user scrolls near the bottom.
@@ -118,7 +178,10 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       aria-label={props.labelAr ?? props.state}
       className="relative flex-1 overflow-y-auto px-1 py-1"
     >
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
+      <div
+        ref={props.grid ? measureRef : undefined}
+        style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}
+      >
         {virtualItems.map((vItem) => {
           const cardId = props.cardIds[vItem.index];
           if (!cardId) return null;
@@ -128,6 +191,8 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
               virtualItem={vItem}
               cardId={cardId}
               measureRef={virtualizer.measureElement}
+              grid={props.grid === true}
+              lanes={lanes}
               onOrderHover={props.onOrderHover}
               onCardClick={props.onCardClick}
               onMoveKey={props.onMoveKey}
