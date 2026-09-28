@@ -33,22 +33,39 @@ describe("JobTicket Component", () => {
     cleanup();
   });
 
-  it("renders with exact accessible name '<customer> — <title> — <state>' and button role", () => {
+  it("renders with an accessible name carrying the operational facts, and button role", () => {
     render(<JobTicket card={mockCard} />);
 
+    // The name must carry what the card shows but a screen reader would
+    // otherwise miss: the order reference, quantity, rework, and pricing
+    // state. Asserted with a regex because the exact set grows with the card.
     const button = screen.getByRole("button", {
-      name: "مطبعة الأهرام — كروت شخصية فاخرة — قيد التصميم",
+      name: /مطبعة الأهرام — كروت شخصية فاخرة — قيد التصميم — .*#1001/,
     });
-    expect(button).toBeInTheDocument();
+    expect(button).toHaveAccessibleName(expect.stringContaining("500 نسخة"));
+    expect(button).toHaveAccessibleName(expect.stringContaining("تعديل 1"));
     expect(button).toHaveAttribute("tabindex", "0");
     expect(button).toHaveAttribute("data-station", "design");
+  });
+
+  it("exposes an explicit non-drag move control, so touch is not drag-only", () => {
+    render(<JobTicket card={mockCard} />);
+
+    // Drag-and-drop is the fast path, never the only one: a print floor is a
+    // touch environment and a drag is the least reliable gesture with a wet
+    // hand. The card's own click used to be a no-op in production.
+    const moveButton = screen.getByRole("button", { name: "نقل" });
+    expect(moveButton).toBeInTheDocument();
+    expect(moveButton).toHaveClass("min-h-11");
   });
 
   it("handles keyboard shortcut M to trigger onMoveKey", () => {
     const handleMoveKey = vi.fn();
     render(<JobTicket card={mockCard} onMoveKey={handleMoveKey} />);
 
-    const button = screen.getByRole("button");
+    // The ticket itself is a button, and it now contains the explicit move
+    // control, so the shortcut target is scoped by the card's test id.
+    const button = screen.getByTestId(`job-ticket-${mockCard.id}`);
     fireEvent.keyDown(button, { key: "m" });
     expect(handleMoveKey).toHaveBeenCalledTimes(1);
     expect(handleMoveKey).toHaveBeenCalledWith(mockCard);

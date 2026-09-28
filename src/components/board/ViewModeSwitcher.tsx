@@ -1,9 +1,13 @@
 "use client";
 
 /**
- * ViewModeSwitcher: toggles the board between the full horizontal board and
- * the single-station tabbed view. Both views render the same StationColumn
- * components off the same store — this only chooses which are mounted.
+ * ViewModeSwitcher: toggles the board between the station rail and the full
+ * horizontal board. Both views render the same StationColumn components off
+ * the same store — this only chooses which are mounted.
+ *
+ * The labels name what the operator gets rather than the mechanism behind it.
+ * "عرض الأقسام" with a rows icon described neither the layout nor the
+ * outcome; "محطّتي" and "كل المحطات" do.
  */
 
 import React from "react";
@@ -17,14 +21,17 @@ export interface ViewModeSwitcherProps {
 }
 
 const OPTIONS: readonly { readonly id: BoardViewMode; readonly labelAr: string }[] = [
-  { id: "tabbed", labelAr: "عرض الأقسام" },
-  { id: "full", labelAr: "عرض الأعمدة" },
+  { id: "tabbed", labelAr: "محطّتي" },
+  { id: "full", labelAr: "كل المحطات" },
 ];
 
 export function ViewModeSwitcher({ mode, onChange }: ViewModeSwitcherProps) {
   return (
+    // A layout preference is a choice between mutually exclusive options, so
+    // it is a radiogroup. role="group" with aria-pressed announced "pressed"
+    // without saying pressed into which layout.
     <div
-      role="group"
+      role="radiogroup"
       aria-label="طريقة عرض اللوحة"
       className="flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/40 p-0.5"
     >
@@ -34,18 +41,19 @@ export function ViewModeSwitcher({ mode, onChange }: ViewModeSwitcherProps) {
           <button
             key={opt.id}
             type="button"
-            aria-pressed={isActive}
+            role="radio"
+            aria-checked={isActive}
             onClick={() => onChange(opt.id)}
-            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-all ${
+            className={`flex min-h-11 items-center gap-1.5 rounded-full px-3 font-semibold transition-colors ${
               isActive
                 ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {opt.id === "tabbed" ? (
-              <Rows3 className="h-3.5 w-3.5" aria-hidden="true" />
+              <Rows3 className="h-4 w-4" aria-hidden="true" />
             ) : (
-              <Columns3 className="h-3.5 w-3.5" aria-hidden="true" />
+              <Columns3 className="h-4 w-4" aria-hidden="true" />
             )}
             <span>{opt.labelAr}</span>
           </button>

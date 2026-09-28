@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * Board container rendering the 7-station RTL press floor board grid.
- * Supports responsive phone column switching and keyboard focus tracking.
+ * Board container rendering the press floor board.
+ * Supports a station-rail presentation and the full 7-station grid, both
+ * driven from the same store, plus keyboard focus tracking.
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-020, FR-034, FR-035c)
  */
 
 import React, { useEffect, useMemo, useState } from "react";
 import { STATIONS } from "~/lib/board/stations";
+import { SLICES, type SliceId } from "~/lib/board/slices";
 import type { StationId } from "~/server/board";
 import type { BoardCard, GroupMoveResult } from "~/lib/board/types";
 import { StationColumn } from "./StationColumn";
@@ -23,7 +25,7 @@ import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { useFocusRestoration } from "./hooks/useFocusRestoration";
 import type { FeedbackCenter } from "~/lib/board/feedback/FeedbackCenter";
-import type { BoardFilters, SliceId } from "~/lib/board/types";
+import type { BoardFilters } from "~/lib/board/types";
 
 export interface BoardProps {
   readonly onOrderHover?: (orderId: string | null) => void;
@@ -31,9 +33,9 @@ export interface BoardProps {
   readonly onMoveKey?: (card: BoardCard) => void;
 }
 
-function DesktopBoardGrid(props: BoardProps) {
+function FullBoardGrid(props: BoardProps) {
   return (
-    <div className="hidden sm:flex flex-1 gap-3 overflow-x-auto p-4 select-none">
+    <div className="hidden flex-1 gap-3 overflow-x-auto p-4 select-none lg:flex">
       {STATIONS.map((station) => (
         <StationColumn
           key={station.id}
@@ -47,26 +49,34 @@ function DesktopBoardGrid(props: BoardProps) {
   );
 }
 
-function MobileBoardGrid({
-  props,
-  activeId,
-}: {
-  readonly props: BoardProps;
-  readonly activeId: StationId;
-}) {
+function PhoneBoard(props: BoardProps & { readonly stationIds: readonly StationId[] }) {
+  const [activeId, setActiveId] = useState<StationId>(props.stationIds[0] ?? "reception");
   const activeStation = useMemo(
     () => STATIONS.find((s) => s.id === activeId) ?? STATIONS[0]!,
     [activeId],
   );
+  const first = props.stationIds[0];
+  useEffect(() => {
+    if (first && !props.stationIds.includes(activeId)) setActiveId(first);
+  }, [first, props.stationIds, activeId]);
 
   return (
-    <div className="flex sm:hidden flex-1 overflow-y-auto p-2">
-      <StationColumn
-        station={activeStation}
-        onOrderHover={props.onOrderHover}
-        onCardClick={props.onCardClick}
-        onMoveKey={props.onMoveKey}
+    <div className="flex min-h-0 flex-1 flex-col lg:hidden">
+      <MobileStationTabs
+        activeStationId={activeStation.id}
+        onSelectStation={setActiveId}
+        stationIds={props.stationIds}
+        phoneOnly
       />
+      <div className="flex min-h-0 flex-1 flex-col p-2">
+        <StationColumn
+          station={activeStation}
+          onOrderHover={props.onOrderHover}
+          onCardClick={props.onCardClick}
+          onMoveKey={props.onMoveKey}
+          fillWidth
+        />
+      </div>
     </div>
   );
 }
@@ -104,14 +114,9 @@ function BoardModals({
   );
 }
 
-/**
- * Chooses between the two presentations. Both branches render the same
- * StationColumn components from the same store, so only the arrangement
- * differs — the full board keeps DesktopBoardGrid + MobileBoardGrid exactly
- * as they were.
- */
 function BoardBody({
   viewMode,
+  stationIds,
   activeStationId,
   onSelectStation,
   onOrderHover,
@@ -119,6 +124,7 @@ function BoardBody({
   onMoveKey,
 }: {
   readonly viewMode: BoardViewMode;
+  readonly stationIds: readonly StationId[];
   readonly activeStationId: StationId;
   readonly onSelectStation: (id: StationId) => void;
   readonly onOrderHover?: (orderId: string | null) => void;
@@ -130,6 +136,7 @@ function BoardBody({
       <TabbedBoardView
         activeStationId={activeStationId}
         onSelectStation={onSelectStation}
+        stationIds={stationIds}
         onOrderHover={onOrderHover}
         onCardClick={onCardClick}
         onMoveKey={onMoveKey}
@@ -138,8 +145,13 @@ function BoardBody({
   }
   return (
     <>
-      <DesktopBoardGrid onOrderHover={onOrderHover} onCardClick={onCardClick} onMoveKey={onMoveKey} />
-      <MobileBoardGrid props={{ onOrderHover, onCardClick, onMoveKey }} activeId={activeStationId} />
+      <FullBoardGrid onOrderHover={onOrderHover} onCardClick={onCardClick} onMoveKey={onMoveKey} />
+      <PhoneBoard
+        onOrderHover={onOrderHover}
+        onCardClick={onCardClick}
+        onMoveKey={onMoveKey}
+        stationIds={stationIds}
+      />
     </>
   );
 }
@@ -147,20 +159,37 @@ function BoardBody({
 export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   const controller = useBoardController();
   useFocusRestoration(controller);
-  const meta = useBoardSelector("meta", () => controller.getMeta());
+  const meta = useBoardSelector("meta", () => controller.getMeta(), controller.getMeta());
 
   const [menuCard, setMenuCard] = useState<BoardCard | null>(null);
-  const [activeMobileId, setActiveMobileId] = useState<StationId>("reception");
   const [groupResult, setGroupResult] = useGroupResultListener(controller);
   const [filters, setFilters] = useState<BoardFilters>(() => controller.currentFilters);
-  // Tabbed by default: a 7-station board asks for a wide horizontal scroll,
-  // which is the whole reason this view exists. The full board stays one
-  // click away and keeps every interaction it has today.
+  // Station rail by default: a 7-station board asks for a wide horizontal
+  // scroll, which is the whole reason this view exists. The full board stays
+  // one click away and keeps every interaction it has today.
   const [viewMode, setViewMode] = useState<BoardViewMode>("tabbed");
+
+  // The slice already declares which stations it covers. Opening on a
+  // hardcoded "reception" landed a designer on the one station they never
+  // touch, and rendered six dead tabs under a single-station slice.
+  const stationIds = useMemo(() => {
+    const slice = SLICES.find((s) => s.id === meta.slice);
+    return slice ? slice.stations : STATIONS.map((s) => s.id);
+  }, [meta.slice]);
+
+  const [activeStationId, setActiveStationId] = useState<StationId>(stationIds[0] ?? "reception");
+  useEffect(() => {
+    if (!stationIds.includes(activeStationId)) setActiveStationId(stationIds[0] ?? "reception");
+  }, [stationIds, activeStationId]);
 
   const handleSlice = (s: SliceId) => { void controller.switchSlice(s); };
   const handleFilters = (f: BoardFilters) => { setFilters(f); void controller.updateFilters(f); };
-  const handleKey = (c: BoardCard) => { onMoveKey?.(c); setMenuCard(c); };
+
+  const openMoveMenu = (card: BoardCard) => {
+    onCardClick?.(card);
+    onMoveKey?.(card);
+    setMenuCard(card);
+  };
 
   return (
     <div dir="rtl" data-testid="press-floor-board" className="relative flex h-full w-full flex-col overflow-hidden bg-background">
@@ -173,19 +202,24 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
         pagination={meta.pagination}
         viewSwitcher={<ViewModeSwitcher mode={viewMode} onChange={setViewMode} />}
       />
-      {viewMode === "full" && (
-        <MobileStationTabs activeStationId={activeMobileId} onSelectStation={setActiveMobileId} />
-      )}
-      <main tabIndex={0} aria-label="لوحة أرضية المطبعة" className="flex flex-1 overflow-hidden focus-visible:outline-hidden">
+      {/* A div, not a <main>: the shell already renders one at layout.tsx, and
+          a second nested main is invalid HTML with a duplicate landmark. */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="لوحة أرضية المطبعة"
+        className="flex min-h-0 flex-1 overflow-hidden focus-visible:outline-hidden"
+      >
         <BoardBody
           viewMode={viewMode}
-          activeStationId={activeMobileId}
-          onSelectStation={setActiveMobileId}
+          stationIds={stationIds}
+          activeStationId={activeStationId}
+          onSelectStation={setActiveStationId}
           onOrderHover={onOrderHover}
           onCardClick={onCardClick}
-          onMoveKey={handleKey}
+          onMoveKey={openMoveMenu}
         />
-      </main>
+      </div>
       <BoardModals card={menuCard} onCloseMenu={() => setMenuCard(null)} groupResult={groupResult} onCloseGroup={() => setGroupResult(null)} />
     </div>
   );
