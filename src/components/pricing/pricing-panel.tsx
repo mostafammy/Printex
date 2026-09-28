@@ -11,7 +11,7 @@ export function PricingPanel({ workItemId, status, quote }: PricingPanelProps) {
   const isPriced = status === "PRICED" || Boolean(quote);
 
   return (
-    <section aria-labelledby={`pricing-${workItemId}`} className="apple-card p-5">
+    <section aria-labelledby={`pricing-${workItemId}`} className="rounded-xl border border-border/70 bg-card shadow-xs p-5">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
         <div className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
