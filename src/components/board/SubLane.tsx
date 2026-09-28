@@ -3,12 +3,18 @@
 /**
  * SubLane virtualized card list subscribing to "lane:<state>".
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, R8, plan.md S1, S5)
+ *
+ * Infinite scroll fix: replaces the useEffect-on-lastIndex approach (which
+ * fired on every render) with a scroll event listener that only triggers when
+ * the scroll container genuinely reaches the bottom. An `isFetchingRef` ref
+ * prevents concurrent `loadMore()` calls.
  */
 
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
+import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { JobTicket } from "./JobTicket";
 
@@ -69,50 +75,41 @@ function EmptyLanePlaceholder({ labelAr, state }: { readonly labelAr?: string; r
   );
 }
 
-function VirtualCardItems({
-  virtualItems,
-  cardIds,
-  measureRef,
-  onOrderHover,
-  onCardClick,
-  onMoveKey,
-}: {
-  readonly virtualItems: readonly { readonly index: number; readonly start: number }[];
-  readonly cardIds: readonly string[];
-  readonly measureRef: (node: HTMLDivElement | null) => void;
-  readonly onOrderHover?: (id: string | null) => void;
-  readonly onCardClick?: (c: BoardCard) => void;
-  readonly onMoveKey?: (c: BoardCard) => void;
-}) {
-  return (
-    <>
-      {virtualItems.map((vItem) => {
-        const cardId = cardIds[vItem.index];
-        if (!cardId) return null;
-        return (
-          <VirtualRow
-            key={cardId}
-            virtualItem={vItem}
-            cardId={cardId}
-            measureRef={measureRef}
-            onOrderHover={onOrderHover}
-            onCardClick={onCardClick}
-            onMoveKey={onMoveKey}
-          />
-        );
-      })}
-    </>
-  );
-}
-
 function VirtualizedCardList(props: VirtualizedCardListProps) {
+  const controller = useBoardController();
   const parentRef = useRef<HTMLDivElement>(null);
+  // Prevent concurrent loadMore calls.
+  const isFetchingRef = useRef(false);
+
   const virtualizer = useVirtualizer({
     count: props.cardIds.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 140,
     overscan: 4,
   });
+
+  // Stable scroll handler — fires only when user scrolls near the bottom.
+  const handleScroll = useCallback(() => {
+    const el = parentRef.current;
+    if (!el || isFetchingRef.current) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    // Trigger when within 120px of the bottom (one card height).
+    if (distanceFromBottom < 120) {
+      isFetchingRef.current = true;
+      void controller.loadMore().finally(() => {
+        isFetchingRef.current = false;
+      });
+    }
+  }, [controller]);
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
+
+  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div
@@ -122,14 +119,21 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       className="relative flex-1 overflow-y-auto px-1 py-1"
     >
       <div style={{ height: `${virtualizer.getTotalSize()}px`, width: "100%", position: "relative" }}>
-        <VirtualCardItems
-          virtualItems={virtualizer.getVirtualItems()}
-          cardIds={props.cardIds}
-          measureRef={virtualizer.measureElement}
-          onOrderHover={props.onOrderHover}
-          onCardClick={props.onCardClick}
-          onMoveKey={props.onMoveKey}
-        />
+        {virtualItems.map((vItem) => {
+          const cardId = props.cardIds[vItem.index];
+          if (!cardId) return null;
+          return (
+            <VirtualRow
+              key={cardId}
+              virtualItem={vItem}
+              cardId={cardId}
+              measureRef={virtualizer.measureElement}
+              onOrderHover={props.onOrderHover}
+              onCardClick={props.onCardClick}
+              onMoveKey={props.onMoveKey}
+            />
+          );
+        })}
       </div>
     </div>
   );
