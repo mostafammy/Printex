@@ -89,7 +89,7 @@ export class LocalDiskStorageAdapter implements StorageAdapter {
       const source = "getReader" in body
         ? Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0])
         : body;
-      await pipeline(source as NodeJS.ReadableStream, measure, createWriteStream(tempPath));
+      await pipeline(source, measure, createWriteStream(tempPath));
 
       // Atomic rename to final path
       await rename(tempPath, target);

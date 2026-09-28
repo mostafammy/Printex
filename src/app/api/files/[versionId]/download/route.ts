@@ -33,7 +33,7 @@ export async function GET(
       include: { fileObject: true },
     });
 
-    if (!fileVersion || !fileVersion.fileObject) {
+    if (!fileVersion?.fileObject) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
@@ -49,10 +49,11 @@ export async function GET(
     );
 
     // Convert Node stream to Web stream
-    const webStream = Readable.toWeb(stream as import("stream").Readable) as ReadableStream;
+    const webStream = Readable.toWeb(stream);
 
     // Return streaming response
-    return new NextResponse(webStream, {
+    return new Response(webStream as unknown as BodyInit, {
+      status: 200,
       headers: {
         "Content-Type": fileVersion.fileObject.mimeType,
         "Content-Length": fileObject.sizeBytes.toString(),

@@ -415,7 +415,7 @@ export default async function ProductionJobCardPage({
 
           {/* 016 (FR-020): spec changes since production started */}
           {card.productionStartDiff.length > 0 && (
-            <section className="apple-card p-6 sm:p-7" data-testid="production-start-diff">
+            <section className="rounded-2xl border border-border/70 bg-card shadow-xs p-6 sm:p-7" data-testid="production-start-diff">
               <h2 className="mb-4 text-base font-bold text-foreground">
                 {ar.changes.diff.productionStartHeading}
               </h2>

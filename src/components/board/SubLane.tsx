@@ -17,7 +17,7 @@
  */
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
@@ -38,9 +38,8 @@ export interface SubLaneProps {
 // and the eye can scan across instead of down.
 //
 // Sized for the tallest card the ticket can produce: header row, a two-line
-// title, the identity row, then the 44px move control. The virtualizer
-// self-corrects via measureElement, but a fixed estimate keeps the first
-// paint from jumping.
+// title, the identity row, then the move control. A fixed estimate keeps the
+// first paint from jumping.
 const CARD_HEIGHT = 148;
 const CARD_MIN_WIDTH = 240;
 const CARD_GAP = 8;
@@ -133,8 +132,8 @@ function VirtualRow({
           against a min-content intrinsic size, which is what collapsed the
           cards. flex-basis:0 + min-w-0 makes the track purely fractional.
 
-          The row is a fixed height, and the card stretches to fill it, so
-          every ticket in a row is the same height. */}
+          The row is a fixed height and the card stretches to fill it, so every
+          ticket in a row is the same height. */}
       <div
         className="flex"
         style={{ gap: `${CARD_GAP}px`, height: `${CARD_HEIGHT}px` }}
@@ -154,20 +153,38 @@ function VirtualRow({
   );
 }
 
-function VirtualizedCardList(props: VirtualizedCardListProps) {
+function useScrollLoadMore(parentRef: React.RefObject<HTMLDivElement | null>) {
   const controller = useBoardController();
-  const parentRef = useRef<HTMLDivElement>(null);
-  // Prevent concurrent loadMore calls.
   const isFetchingRef = useRef(false);
+
+  const handleScroll = useCallback(() => {
+    const el = parentRef.current;
+    if (!el || isFetchingRef.current) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
+      isFetchingRef.current = true;
+      void controller.loadMore().finally(() => {
+        isFetchingRef.current = false;
+      });
+    }
+  }, [parentRef, controller]);
+
+  useEffect(() => {
+    const el = parentRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [parentRef, handleScroll]);
+}
+
+/**
+ * How many cards fit across the lane. Measured from the lane itself rather
+ * than a viewport breakpoint: a lane in the full board and the same lane
+ * filling a station are very different widths, and the lane is the thing that
+ * knows its own width.
+ */
+function useColumns(parentRef: React.RefObject<HTMLDivElement | null>) {
   const [columns, setColumns] = useState(1);
 
-  // Columns come from the measured width, not a viewport breakpoint: a lane
-  // in the full board and the same lane filling a station are very different
-  // widths, and the lane is the thing that knows its own width.
-  //
-  // Falls back to a single column when the measured width is 0, which is what
-  // jsdom and any pre-layout first paint report; one column is the safe
-  // answer there because it never under-reads the available space.
   useEffect(() => {
     const el = parentRef.current;
     if (!el) return;
@@ -178,41 +195,68 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       );
     };
     measure();
+    // jsdom and any pre-layout first paint report width 0; one column is the
+    // safe answer there because it never under-reads the available space.
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [parentRef]);
 
-  const rowCount = Math.ceil(props.cardIds.length / columns);
+  return columns;
+}
+
+function VirtualCardItems({
+  virtualItems,
+  cardIds,
+  columns,
+  measureRef,
+  onOrderHover,
+  onCardClick,
+  onMoveKey,
+}: {
+  readonly virtualItems: readonly VirtualItem[];
+  readonly cardIds: readonly string[];
+  readonly columns: number;
+  readonly measureRef: (node: HTMLDivElement | null) => void;
+  readonly onOrderHover?: (id: string | null) => void;
+  readonly onCardClick?: (c: BoardCard) => void;
+  readonly onMoveKey?: (c: BoardCard) => void;
+}) {
+  return (
+    <>
+      {virtualItems.map((vItem) => {
+        // The virtual index is a row index; map it back to the cards it holds.
+        const start = vItem.index * columns;
+        const rowIds = cardIds.slice(start, start + columns);
+        if (rowIds.length === 0) return null;
+        return (
+          <VirtualRow
+            key={vItem.key}
+            virtualItem={vItem}
+            cardIds={rowIds}
+            measureRef={measureRef}
+            onOrderHover={onOrderHover}
+            onCardClick={onCardClick}
+            onMoveKey={onMoveKey}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function VirtualizedCardList(props: VirtualizedCardListProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  useScrollLoadMore(parentRef);
+  const columns = useColumns(parentRef);
 
   const virtualizer = useVirtualizer({
-    count: rowCount,
+    count: Math.ceil(props.cardIds.length / columns),
     getScrollElement: () => parentRef.current,
     estimateSize: () => CARD_HEIGHT,
     overscan: 3,
   });
-
-  // Stable scroll handler — fires only when user scrolls near the bottom.
-  const handleScroll = useCallback(() => {
-    const el = parentRef.current;
-    if (!el || isFetchingRef.current) return;
-    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-    // Trigger when within one row of the bottom.
-    if (distanceFromBottom < CARD_HEIGHT) {
-      isFetchingRef.current = true;
-      void controller.loadMore().finally(() => {
-        isFetchingRef.current = false;
-      });
-    }
-  }, [controller]);
-
-  useEffect(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
 
   // A column change re-flows every row, so the previous scroll offset is no
   // longer meaningful; returning to the top beats landing mid-card.
@@ -221,8 +265,6 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
     // scrollTo is a no-op stub in jsdom, so feature-detect rather than assume.
     if (el && typeof el.scrollTo === "function") el.scrollTo({ top: 0 });
   }, [columns]);
-
-  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div
@@ -241,31 +283,20 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
         className="relative w-full"
         style={{ height: `${virtualizer.getTotalSize()}px` }}
       >
-        {virtualItems.map((vItem) => {
-          // Virtual index is a row index; map it back to the cards it holds.
-          const start = vItem.index * columns;
-          const rowIds = props.cardIds.slice(start, start + columns);
-          if (rowIds.length === 0) return null;
-          return (
-            <VirtualRow
-              key={vItem.key}
-              virtualItem={vItem}
-              cardIds={rowIds}
-              measureRef={virtualizer.measureElement}
-              onOrderHover={props.onOrderHover}
-              onCardClick={props.onCardClick}
-              onMoveKey={props.onMoveKey}
-            />
-          );
-        })}
+        <VirtualCardItems
+          virtualItems={virtualizer.getVirtualItems()}
+          cardIds={props.cardIds}
+          columns={columns}
+          measureRef={virtualizer.measureElement}
+          onOrderHover={props.onOrderHover}
+          onCardClick={props.onCardClick}
+          onMoveKey={props.onMoveKey}
+        />
       </div>
     </div>
   );
 }
 
-/** Every lane has a label in stations.ts, single-lane stations included. The
-    old `labelAr ?? ""` left the header blank for reception/pricing/delivered,
-    which is where the orphaned station count in the screenshot came from. */
 export function SubLane(props: SubLaneProps) {
   const cardIds = useBoardSelector(
     `lane:${props.state}`,
@@ -278,7 +309,7 @@ export function SubLane(props: SubLaneProps) {
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <LaneHeader labelAr={label} count={cardIds.length} showCount={props.labelAr !== undefined} />
       {cardIds.length === 0 ? (
-        <EmptyLane labelAr={props.labelAr ?? ""} />
+        <EmptyLane labelAr={label} />
       ) : (
         <VirtualizedCardList {...props} cardIds={cardIds} />
       )}

@@ -60,7 +60,7 @@ export default async function WorkItemFilesPage({
 
   if (!workItem) {
     return (
-      <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
         <h1 className="text-xl font-bold text-foreground">{S.filesTitle}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{S.designWorkspaceNotFound}</p>
         <Link
@@ -81,7 +81,7 @@ export default async function WorkItemFilesPage({
 
   if (!access.allowed) {
     return (
-      <div className="apple-card flex flex-col items-center justify-center p-12 text-center">
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs flex flex-col items-center justify-center p-12 text-center">
         <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
           <Lock className="h-8 w-8" aria-hidden="true" />
         </div>

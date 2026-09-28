@@ -2,7 +2,7 @@
 // Generic evidence attachments (rejection, discrepancy, expense, audit event, message)
 // Consumes 001 audit.record and 002 StorageAdapter
 
-import { type Prisma, AttachmentKind } from "../../../generated/prisma";
+import { AttachmentKind, type Prisma } from "../../../generated/prisma";
 import type { Actor } from "~/server/auth";
 import { audit } from "~/server/auth";
 import { db as prisma } from "~/server/db";
@@ -96,16 +96,16 @@ export class AttachmentService {
     txOrInput: Prisma.TransactionClient | AttachInput,
     possibleInput?: AttachInput
   ): Promise<string> {
-    const isTx = txOrInput && typeof txOrInput === "object" && "attachment" in txOrInput;
+    const isTx = Boolean(txOrInput && typeof txOrInput === "object" && "attachment" in txOrInput);
     const db = isTx ? (txOrInput as Prisma.TransactionClient) : prisma;
-    const input = isTx ? possibleInput! : (txOrInput as AttachInput);
+    const input = (isTx ? possibleInput : txOrInput) as AttachInput;
 
     const { entityType, entityId, stream, fileName, kind, actor } = input;
     const normalizedKind = normalizeKind(kind);
 
     // Stream to temp file and compute SHA-256 / size
     const tempPath = join(tmpdir(), `attach-${Date.now()}-${Math.random().toString(36).slice(2)}`);
-    const { size, sha256 } = await streamToTempFile(stream as ReadableStream<Uint8Array>, tempPath);
+    const { size, sha256 } = await streamToTempFile(stream, tempPath);
     const mimeType = getMimeType(fileName);
 
     // Validate
@@ -223,7 +223,7 @@ export class AttachmentService {
    * Void an attachment with required reason and audit.
    */
   async void(attachmentId: string, actor: Actor, reason: string): Promise<void> {
-    if (!reason || !reason.trim()) {
+    if (!reason?.trim()) {
       throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to void attachment");
     }
 
@@ -255,7 +255,7 @@ export class AttachmentService {
    * Archive an attachment with required reason and audit.
    */
   async archive(attachmentId: string, actor: Actor, reason: string): Promise<void> {
-    if (!reason || !reason.trim()) {
+    if (!reason?.trim()) {
       throw new FileError(FileErrorCode.VALIDATION_ERROR, "Reason is required to archive attachment");
     }
 

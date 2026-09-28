@@ -45,7 +45,7 @@ export async function GET(
 
     // Authenticate actor
     const actor = await getActor(request);
-    if (!actor || actor.id !== payload.a) {
+    if (actor?.id !== payload.a) {
       return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
     }
 
@@ -59,7 +59,7 @@ export async function GET(
       include: { fileObject: true },
     });
 
-    if (!fileVersion || !fileVersion.fileObject) {
+    if (!fileVersion?.fileObject) {
       return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
@@ -81,7 +81,7 @@ export async function GET(
       previewType: fileObject.mimeType.startsWith("image/") ? "image" :
                    fileObject.mimeType === "application/pdf" ? "pdf" : "icon",
       // For actual preview, client would call download route with grant
-      downloadUrl: `/api/files/${versionId}/download?grant=${encodeURIComponent(url.searchParams.get("grant") || "")}`,
+      downloadUrl: `/api/files/${versionId}/download?grant=${encodeURIComponent(url.searchParams.get("grant") ?? "")}`,
     });
 
   } catch (error) {
