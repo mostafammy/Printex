@@ -8,7 +8,7 @@
 import { db } from "~/server/db";
 import type { Actor } from "~/server/auth";
 import type { RejectionCategory } from "~/server/core";
-import { paginateInMemory } from "~/server/pagination";
+import { paginateQuery } from "~/server/pagination";
 import type { PageInput, PageResult } from "~/server/pagination";
 
 const MY_QUEUE_STATES = ["ASSIGNED", "IN_DESIGN", "REWORK_REQUIRED"] as const;
@@ -32,72 +32,55 @@ export interface MyQueueRow {
   hasOpenTimer: boolean;
 }
 
-async function fetchSortedMyQueue(actor: Actor): Promise<MyQueueRow[]> {
-  const workItems = await db.workItem.findMany({
-    where: { assigneeId: actor.userId, state: { in: [...MY_QUEUE_STATES] } },
-    include: {
-      order: { include: { customer: { select: { name: true } } } },
-      productType: { select: { name: true } },
-      // Ordered desc so `.find(...)` below always returns the most recent
-      // matching row (data-model.md's `MyQueueRow.rejectionDetails`/`assignedAt`).
-      transitions: { orderBy: { at: "desc" } },
-      phaseTimings: { where: { kind: "ACTIVE", endedAt: null } },
-    },
-  });
-
-  const withSortKey = workItems.map((wi) => {
-    const isRework = wi.state === "REWORK_REQUIRED";
-
-    const assignedTransition = wi.transitions.find(
-      (t) => t.to === "ASSIGNED" || t.to === "REWORK_REQUIRED",
-    );
-    const rejectionTransition = isRework
-      ? wi.transitions.find((t) => t.to === "REWORK_REQUIRED")
-      : undefined;
-
-    const row: MyQueueRow = {
-      workItemId: wi.id,
-      orderId: wi.orderId,
-      orderNumber: wi.order.number,
-      customerName: wi.order.customer.name,
-      productTypeName: wi.productType?.name ?? null,
-      description: wi.description,
-      dueDate: wi.dueDate ?? wi.order.dueDate ?? null,
-      priority: wi.order.priority,
-      state: wi.state as MyQueueRowState,
-      isRework,
-      rejectionDetails:
-        rejectionTransition?.rejectionCategory
-          ? {
-              category: rejectionTransition.rejectionCategory,
-              explanation: rejectionTransition.reason ?? null,
-            }
-          : null,
-      hasOpenTimer: wi.phaseTimings.length > 0,
-    };
-
-    return { row, assignedAt: (assignedTransition?.at ?? wi.createdAt).getTime() };
-  });
-
-  // FR-008: urgent first, then oldest assignedAt within each bucket.
-  withSortKey.sort((a, b) => {
-    if (a.row.priority === "URGENT" && b.row.priority !== "URGENT") return -1;
-    if (a.row.priority !== "URGENT" && b.row.priority === "URGENT") return 1;
-    return a.assignedAt - b.assignedAt;
-  });
-
-  return withSortKey.map(({ row }) => row);
-}
-
-export async function getMyQueue(actor: Actor): Promise<MyQueueRow[]> {
-  return fetchSortedMyQueue(actor);
-}
-
 export async function getMyQueuePage(
   actor: Actor,
   input: PageInput = {},
 ): Promise<PageResult<MyQueueRow>> {
-  return paginateInMemory(input, () => fetchSortedMyQueue(actor));
+  const where = { assigneeId: actor.userId, state: { in: [...MY_QUEUE_STATES] } };
+
+  return paginateQuery(input, async (skip, take) => {
+    const workItems = await db.workItem.findMany({
+      where,
+      orderBy: [{ order: { priority: "desc" } }, { createdAt: "asc" }],
+      skip,
+      take,
+      include: {
+        order: { include: { customer: { select: { name: true } } } },
+        productType: { select: { name: true } },
+        transitions: { orderBy: { at: "desc" } },
+        phaseTimings: { where: { kind: "ACTIVE", endedAt: null } },
+      },
+    });
+
+    return workItems.map((wi) => {
+      const isRework = wi.state === "REWORK_REQUIRED";
+      const rejection = isRework
+        ? wi.transitions.find((t) => t.to === "REWORK_REQUIRED")
+        : undefined;
+
+      return {
+        workItemId: wi.id,
+        orderId: wi.orderId,
+        orderNumber: wi.order.number,
+        customerName: wi.order.customer.name,
+        productTypeName: wi.productType?.name ?? null,
+        description: wi.description,
+        dueDate: wi.dueDate ?? wi.order.dueDate ?? null,
+        priority: wi.order.priority,
+        state: wi.state as MyQueueRowState,
+        isRework,
+        rejectionDetails: rejection?.rejectionCategory
+          ? { category: rejection.rejectionCategory, explanation: rejection.reason ?? null }
+          : null,
+        hasOpenTimer: wi.phaseTimings.length > 0,
+      };
+    });
+  });
+}
+
+export async function getMyQueue(actor: Actor): Promise<MyQueueRow[]> {
+  const page = await getMyQueuePage(actor, { page: 1, pageSize: 100 });
+  return [...page.rows];
 }
 
 export async function getMyQueueStats(actor: Actor): Promise<{
