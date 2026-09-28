@@ -17,6 +17,7 @@ export class DragSession {
   private _state: DragSessionState = "idle";
   private _activeCard: BoardCard | null = null;
   private _offeredStations = new Set<StationId>();
+  private _overStation: StationId | null = null;
   private readonly listeners = new Set<() => void>();
 
   get state(): DragSessionState {
@@ -31,6 +32,17 @@ export class DragSession {
     return this._offeredStations;
   }
 
+  get overStation(): StationId | null {
+    return this._overStation;
+  }
+
+  /** Tracks the currently hovered drop target for live highlight. */
+  setOver(station: StationId | null): void {
+    if (this._state === "idle" || this._overStation === station) return;
+    this._overStation = station;
+    this.notify();
+  }
+
   isOffered(station: StationId): boolean {
     return this._offeredStations.has(station);
   }
@@ -39,6 +51,7 @@ export class DragSession {
     if (this._state !== "idle") return;
     this._activeCard = card;
     this._state = "dragging";
+    this._overStation = null;
 
     this._offeredStations.clear();
     for (const move of card.moves) {
@@ -69,6 +82,7 @@ export class DragSession {
     this._state = "idle";
     this._activeCard = null;
     this._offeredStations.clear();
+    this._overStation = null;
     this.notify();
   }
 

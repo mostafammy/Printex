@@ -20,6 +20,7 @@ import {
 import type { Station } from "~/lib/board/stations";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardSelector } from "./hooks/useBoardSelector";
+import { useDragOffer, type DropVisual } from "./dnd/useDragOffer";
 import { SubLane } from "./SubLane";
 
 const ICONS: Readonly<Record<string, LucideIcon>> = {
@@ -102,6 +103,19 @@ function SubLaneList({
   );
 }
 
+function resolveDropStyle(dropState: DropVisual): { cls: string; over: boolean; dimmed: boolean } {
+  if (dropState === "over") {
+    return { cls: "column-drop-over ring-2 ring-primary border-transparent", over: true, dimmed: false };
+  }
+  if (dropState === "offered") {
+    return { cls: "ring-2 ring-primary/50 ring-offset-1 bg-primary/5 border-primary/30", over: false, dimmed: false };
+  }
+  if (dropState === "dimmed") {
+    return { cls: "opacity-40 grayscale-[40%] cursor-not-allowed", over: false, dimmed: true };
+  }
+  return { cls: "border-border/60", over: false, dimmed: false };
+}
+
 export function StationColumn(props: StationColumnProps) {
   const cardCount = useBoardSelector("meta", (store) => {
     let sum = 0;
@@ -110,14 +124,8 @@ export function StationColumn(props: StationColumnProps) {
     }
     return sum;
   });
-
-  const isOffered = props.dropState === "offered";
-  const isDimmed = props.dropState === "dimmed";
-  const stateCls = isOffered
-    ? "ring-2 ring-primary ring-offset-2 bg-primary/5"
-    : isDimmed
-      ? "opacity-40 grayscale-[40%]"
-      : "border-border/60";
+  const liveDrop = useDragOffer(props.station.id);
+  const drop = resolveDropStyle(props.dropState ?? liveDrop);
 
   const { setNodeRef } = useDroppable({
     id: props.station.id,
@@ -129,10 +137,17 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`flex flex-col h-full min-w-[280px] max-w-[340px] flex-1 rounded-xl border bg-muted/30 transition-all ${stateCls}`}
+      className={`relative flex flex-col h-full min-w-[280px] max-w-[340px] flex-1 rounded-xl border bg-muted/30 transition-all duration-200 ease-out ${drop.cls}`}
     >
       <ColumnHeader station={props.station} count={cardCount} />
-      {isDimmed && <BlockedBanner hint={props.blockedHint} />}
+      {drop.dimmed && <BlockedBanner hint={props.blockedHint} />}
+      {drop.over && (
+        <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
+          <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground shadow-lg">
+            أفلت البطاقة هنا
+          </span>
+        </div>
+      )}
       <SubLaneList {...props} />
     </section>
   );

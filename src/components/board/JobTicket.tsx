@@ -158,7 +158,7 @@ export const JobTicketView = React.memo(function JobTicketView({
       aria-label={accessibleName}
       onClick={() => onClick?.(card)}
       onKeyDown={onKeyDown}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""} ${isDragging ? "opacity-30" : ""}`}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-grab active:cursor-grabbing ${isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""} ${isDragging ? "opacity-30" : ""}`}
       style={{ borderInlineStartWidth: "4px", borderInlineStartColor: "var(--ticket-bar, var(--primary))" }}
     >
       <TicketHeader card={card} onOrderHover={onOrderHover} />

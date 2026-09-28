@@ -240,7 +240,9 @@
     --motion-duration-land: 0ms;
   }
   .lane-card-enter,
-  .lane-shimmer-sweep {
+  .lane-shimmer::after,
+  .drag-overlay-enter,
+  .column-drop-over {
     animation: none !important;
   }
 }
@@ -291,4 +293,46 @@
     transparent 80%
   );
   animation: lane-shimmer-sweep 1.4s ease-in-out infinite;
+}
+
+/* Drag and drop appearance */
+@keyframes drag-overlay-enter {
+  from {
+    opacity: 0.3;
+    transform: rotate(0deg) scale(0.97);
+  }
+  to {
+    opacity: 0.92;
+    transform: rotate(2deg) scale(1.04);
+  }
+}
+
+.drag-overlay-enter {
+  animation: drag-overlay-enter 200ms ease-out backwards;
+}
+
+@keyframes lane-drop-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--lane-glow, var(--primary)) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+.column-drop-over {
+  animation: lane-drop-pulse 1.5s ease-in-out infinite;
+}
+
+/* Grabbing cursor everywhere while a card is dragged … */
+[data-dragging],
+[data-dragging] * {
+  cursor: grabbing !important;
+}
+
+/* … except over ineligible columns, which refuse the drop. */
+[data-dragging] .cursor-not-allowed,
+[data-dragging] .cursor-not-allowed * {
+  cursor: not-allowed !important;
 }

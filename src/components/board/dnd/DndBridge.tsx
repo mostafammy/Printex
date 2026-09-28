@@ -8,8 +8,11 @@
 import {
   DndContext,
   DragOverlay,
+  defaultDropAnimationSideEffects,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
+  type DropAnimation,
 } from "@dnd-kit/core";
 import React, { useState } from "react";
 import type { BoardCard } from "~/lib/board/types";
@@ -23,11 +26,19 @@ export interface DndBridgeProps {
   readonly children: React.ReactNode;
 }
 
+const dropAnimation: DropAnimation = {
+  duration: 300,
+  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { active: { opacity: "0.35" } },
+  }),
+};
+
 function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
   if (!card) return null;
   return (
-    <DragOverlay dropAnimation={null}>
-      <div className="rotate-2 scale-105 shadow-2xl opacity-90 pointer-events-none cursor-grabbing">
+    <DragOverlay dropAnimation={dropAnimation}>
+      <div className="drag-overlay-enter pointer-events-none cursor-grabbing opacity-90 shadow-2xl">
         <JobTicket card={card} />
       </div>
     </DragOverlay>
@@ -44,11 +55,18 @@ export function DndBridge({ children }: DndBridgeProps) {
     if (c) { setActiveCard(c); controller.dragSession?.start(c); }
   };
 
-  const onEnd = (e: DragEndEvent) => {
+  const onOver = (e: DragOverEvent) => {
+    controller.dragSession?.setOver(e.over?.id ? (String(e.over.id) as StationId) : null);
+  };
+
+  const endDrag = (station: StationId | null) => {
     setActiveCard(null);
-    const station = e.over?.id ? (String(e.over.id) as StationId) : null;
     if (station) { void controller.handleDropOnStation(station); }
     else { controller.dragSession?.cancel(); }
+  };
+
+  const onEnd = (e: DragEndEvent) => {
+    endDrag(e.over?.id ? (String(e.over.id) as StationId) : null);
   };
 
   return (
@@ -57,10 +75,13 @@ export function DndBridge({ children }: DndBridgeProps) {
       accessibility={{ announcements: ARABIC_DND_ANNOUNCEMENTS }}
       autoScroll={{ threshold: { x: 0.1, y: 0.1 }, acceleration: 10 }}
       onDragStart={onStart}
+      onDragOver={onOver}
       onDragEnd={onEnd}
       onDragCancel={() => { setActiveCard(null); controller.dragSession?.cancel(); }}
     >
-      {children}
+      <div className="contents" data-dragging={activeCard ? true : undefined}>
+        {children}
+      </div>
       <CardDragOverlay card={activeCard} />
     </DndContext>
   );
