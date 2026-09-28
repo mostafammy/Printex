@@ -7,6 +7,7 @@ import type { Prisma } from "../../../generated/prisma";
 import type { BoardCard, MoveOption } from "~/lib/board/types";
 import { db } from "~/server/db";
 import type { WorkItemState } from "~/server/core";
+import { PageRequest, type PageInput } from "~/server/pagination";
 import type { StationTargets } from "./config";
 import { STATE_PLACEMENT } from "./stations";
 
@@ -132,9 +133,12 @@ export function mapRowToBoardCard(
 export async function fetchRawWorkItemRows(
   where: Prisma.WorkItemWhereInput,
   prismaClient = db,
+  pagination?: PageInput,
 ): Promise<RawWorkItemRow[]> {
-  const items = await prismaClient.workItem.findMany({
+  const req = pagination ? PageRequest.of(pagination) : null;
+  return prismaClient.workItem.findMany({
     where,
+    ...(req ? { skip: req.skip, take: req.pageSize } : {}),
     include: {
       order: {
         select: {
@@ -153,6 +157,4 @@ export async function fetchRawWorkItemRows(
       pricingStatus: { select: { status: true } },
     },
   });
-
-  return items;
 }
