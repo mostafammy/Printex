@@ -91,24 +91,24 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 ### Tests for User Story 2 (write FIRST)
 
-- [ ] T011 [US2] Integration test `tests/integration/shell-actor.test.ts`: (a) unauthenticated render → redirect `/auth/required`; (b) `isActive: false` user with live session → refused (`UnauthenticatedError` path); (c) `getActor` executes **once** across layout+page in one request (spy); (d) header shows `actor.name` and the Arabic fallback `"مستخدم برينتكس"` when null; this layout-path regression doubles as SR-004's streamed-fragment authz check (plus the existing 052 panel suite) — **fails until T013/T014**
-- [ ] T012 [US2] Query-shape test `tests/integration/shell-layout-queries.test.ts` using T001: one authenticated layout render captures **≤4 queries**, **≤2 sequential phases** (second batch not issued before first resolves), and **zero** queries selecting only `{name, username}` of the current user — **fails until T014/T016**
+- [x] T011 [US2] Integration test `tests/integration/shell-actor.test.ts`: (a) unauthenticated render → redirect `/auth/required`; (b) `isActive: false` user with live session → refused (`UnauthenticatedError` path); (c) `getActor` executes **once** across layout+page in one request (spy); (d) header shows `actor.name` and the Arabic fallback `"مستخدم برينتكس"` when null; this layout-path regression doubles as SR-004's streamed-fragment authz check (plus the existing 052 panel suite) — **fails until T013/T014**
+- [x] T012 [US2] Query-shape test `tests/integration/shell-layout-queries.test.ts` using T001: one authenticated layout render captures **≤4 queries**, **≤2 sequential phases** (second batch not issued before first resolves), and **zero** queries selecting only `{name, username}` of the current user — **fails until T014/T016**
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] **Consolidate actor/display-user data** — in `src/server/auth/getActor.ts`, widen `Actor` with `name: string | null` and `username: string | null`, populated from the user row the session/RBAC load already returns (session user in `getActor`, RBAC include in `getActorForSession` — drop nothing that exists today: `userId`, `roles`, `permissions`, `departmentIds` unchanged; display-only, FR-010); confirm the `CoreActor` bridge in `layout.tsx` still compiles (display fields are additive)
+- [x] T013 [US2] **Consolidate actor/display-user data** — in `src/server/auth/getActor.ts`, widen `Actor` with `name: string | null` and `username: string | null`, populated from the user row the session/RBAC load already returns (session user in `getActor`, RBAC include in `getActorForSession` — drop nothing that exists today: `userId`, `roles`, `permissions`, `departmentIds` unchanged; display-only, FR-010); confirm the `CoreActor` bridge in `layout.tsx` still compiles (display fields are additive)
   - **Acceptance**: `Actor` carries display fields; zero new queries introduced
   - **Tests**: T011 (c/d); typecheck via `pnpm check`
   - **Deps**: none
-- [ ] T014 [US2] **Remove duplicate user read from shell** — delete the `db.user.findUnique({ select: { name, username } })` block (`src/app/(shell)/layout.tsx:68-71`); header reads `actor.name ?? "مستخدم برينتكس"`; drop the now-unused `db` import if applicable (spec FR-008; investigation §6.3/§13 duplicate #1)
+- [x] T014 [US2] **Remove duplicate user read from shell** — delete the `db.user.findUnique({ select: { name, username } })` block (`src/app/(shell)/layout.tsx:68-71`); header reads `actor.name ?? "مستخدم برينتكس"`; drop the now-unused `db` import if applicable (spec FR-008; investigation §6.3/§13 duplicate #1)
   - **Acceptance**: AC-005 half (no duplicate read); AC-006 display fallback unchanged
   - **Tests**: T011, T012
   - **Deps**: T013
-- [ ] T015 [US2] **Unify session cache** — make `getActor` consume the existing `cache()`-wrapped `getSession` in `src/server/better-auth/server.ts` instead of calling `auth.api.getSession` directly, so the two request caches become one (spec FR-011/FR-012; investigation §6.3 secondary duplicate)
+- [x] T015 [US2] **Unify session cache** — make `getActor` consume the existing `cache()`-wrapped `getSession` in `src/server/better-auth/server.ts` instead of calling `auth.api.getSession` directly, so the two request caches become one (spec FR-011/FR-012; investigation §6.3 secondary duplicate)
   - **Acceptance**: one session lookup per request across `/`, `/auth/required`, shell; no behavior change on expiry/absence
   - **Tests**: T011 (a–c); existing auth suite
   - **Deps**: T013 (same file region)
-- [ ] T016 [US2] **Coalesce layout phases** — restructure `layout.tsx` so post-actor work is one phase: `await getActor()` then `Promise.all([unreadCount(actor), listNotifications(actor, …)])` (already parallel — ensure nothing re-serializes them); phases 3 → 2; keep the outbox/scheduler idempotent backstops untouched (:65-66) (spec FR-011, PR-002)
+- [x] T016 [US2] **Coalesce layout phases** — restructure `layout.tsx` so post-actor work is one phase: `await getActor()` then `Promise.all([unreadCount(actor), listNotifications(actor, …)])` (already parallel — ensure nothing re-serializes them); phases 3 → 2; keep the outbox/scheduler idempotent backstops untouched (:65-66) (spec FR-011, PR-002)
   - **Acceptance**: AC-005 (≤4 queries, ≤2 phases); notifications still render in the bell identically
   - **Tests**: T012; T044 full suite
   - **Deps**: T014 (phase-2 removal is the prerequisite for the count)

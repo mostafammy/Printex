@@ -140,6 +140,11 @@ exports.Prisma.SpecVersionScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.RelationLoadStrategy = {
+  query: 'query',
+  join: 'join'
+};
+
 exports.Prisma.ChangeRequestScalarFieldEnum = {
   id: 'id',
   workItemId: 'workItemId',
