@@ -45,32 +45,32 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 ### Tests for User Story 1 (write FIRST — must fail before T004/T006–T009)
 
-- [ ] T002 [US1] Component test `tests/components/app-boot-loader.test.tsx`: render `AppBootLoader`; `pointerdown` on an internal `<a href="/my-queue">` renders **no** `.loading-container` overlay and never sets the nav-armed state; hash-only link (`#main-content`) likewise clean; boot path (initial `isBooting`) still mounts `LoadingExperience` and clears after the double-rAF — **fails until T004**
-- [ ] T003 [US1] Structure test `tests/components/shell-loading.test.tsx`: `src/app/(shell)/loading.tsx` exists and renders skeleton markup with `aria-busy` and **no** operational data; no `aria-live` region and no focus-management code in the boundary or boot loader (spec SR-003, Clarifications 2026-09-29); navigation render case — a soft navigation to a `(shell)` route paints the skeleton instead of freezing the previous route (spec AC-003 navigation render test); Suspense boundaries present around `<OrderFinancePanel>`, `<SpecHistory>` rows, `<CustomerBalanceTab>` — **fails until T006–T009**
+- [x] T002 [US1] Component test `tests/components/app-boot-loader.test.tsx`: render `AppBootLoader`; `pointerdown` on an internal `<a href="/my-queue">` renders **no** `.loading-container` overlay and never sets the nav-armed state; hash-only link (`#main-content`) likewise clean; boot path (initial `isBooting`) still mounts `LoadingExperience` and clears after the double-rAF — **fails until T004**
+- [x] T003 [US1] Structure test `tests/components/shell-loading.test.tsx`: `src/app/(shell)/loading.tsx` exists and renders skeleton markup with `aria-busy` and **no** operational data; no `aria-live` region and no focus-management code in the boundary or boot loader (spec SR-003, Clarifications 2026-09-29); navigation render case — a soft navigation to a `(shell)` route paints the skeleton instead of freezing the previous route (spec AC-003 navigation render test); Suspense boundaries present around `<OrderFinancePanel>`, `<SpecHistory>` rows, `<CustomerBalanceTab>` — **fails until T006–T009**
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] **Remove navigation loader arming path** — in `src/components/loading/app-boot-loader.tsx` delete the `pointerdown` effect (:65-110), `isNavigating` state, `navTimeoutRef`/`NAV_FALLBACK_TIMEOUT_MS`, and the pathname-commit clear effect (:52-61); render `<LoadingExperience isLoading={isBooting} />`; update the component doc comment to state boot-only scope (spec FR-001, FR-002, FR-003; investigation §6.1)
+- [x] T004 [US1] **Remove navigation loader arming path** — in `src/components/loading/app-boot-loader.tsx` delete the `pointerdown` effect (:65-110), `isNavigating` state, `navTimeoutRef`/`NAV_FALLBACK_TIMEOUT_MS`, and the pathname-commit clear effect (:52-61); render `<LoadingExperience isLoading={isBooting} />`; update the component doc comment to state boot-only scope (spec FR-001, FR-002, FR-003; investigation §6.1)
   - **Acceptance**: AC-001 (no overlay on any navigation), AC-002 (boot unchanged); skip-link/hash clean for free (NB-002)
   - **Tests**: T002 passes; manual navigation sweep (Link, command-bar `router.push`, board drop later)
   - **Deps**: none
-- [ ] T005 [US1] Audit `src/components/loading/loading-experience.tsx` + `loading-config.ts` for navigation-only branches/dead refs; keep `SHOW_DELAY_MS`/`MIN_VISIBLE_MS`/`COMPLETE_MS` for boot; delete now-unreachable nav paths and stale comments (spec FR-002; §20 note: anti-flicker polish intentionally removed for navigation only)
+- [x] T005 [US1] Audit `src/components/loading/loading-experience.tsx` + `loading-config.ts` for navigation-only branches/dead refs; keep `SHOW_DELAY_MS`/`MIN_VISIBLE_MS`/`COMPLETE_MS` for boot; delete now-unreachable nav paths and stale comments (spec FR-002; §20 note: anti-flicker polish intentionally removed for navigation only)
   - **Acceptance**: boot phase machine behavior byte-identical; no nav-specific code remains
   - **Tests**: T002 boot case; existing loading tests green
   - **Deps**: T004
-- [ ] T006 [US1] **Add authenticated shell loading boundary** — create `src/app/(shell)/loading.tsx`: skeleton matching the shell content grid (`mx-auto max-w-7xl space-y-4`, pulsing header + content blocks, `aria-busy`, RTL-safe logical properties; no data, no stale content) (spec FR-005, SR-001; investigation Fix B)
+- [x] T006 [US1] **Add authenticated shell loading boundary** — create `src/app/(shell)/loading.tsx`: skeleton matching the shell content grid (`mx-auto max-w-7xl space-y-4`, pulsing header + content blocks, `aria-busy`, RTL-safe logical properties; no data, no stale content) (spec FR-005, SR-001; investigation Fix B)
   - **Acceptance**: AC-003 — any `(shell)` soft navigation paints the skeleton instead of freezing the old route
   - **Tests**: T003 structure test; manual: slow route shows skeleton
   - **Deps**: none (parallel with T004)
-- [ ] T007 [P] [US1] **Suspense: order finance panel** — wrap `<OrderFinancePanel>` in `src/app/(shell)/orders/[orderId]/page.tsx` with `<Suspense fallback={…skeleton…}>` (spec FR-006, SR-002)
+- [x] T007 [P] [US1] **Suspense: order finance panel** — wrap `<OrderFinancePanel>` in `src/app/(shell)/orders/[orderId]/page.tsx` with `<Suspense fallback={…skeleton…}>` (spec FR-006, SR-002)
   - **Acceptance**: panel streams; parent order header paints without waiting; fallback is pure skeleton
   - **Tests**: part of T003; order suite (T044) stays green
   - **Deps**: none
-- [ ] T008 [US1] **Suspense: spec history rows** — wrap each `<SpecHistory>` inside the `detail.workItems.map` region of `src/app/(shell)/orders/[orderId]/page.tsx` (~:1059) so per-row history queries stream independently (spec FR-006)
+- [x] T008 [US1] **Suspense: spec history rows** — wrap each `<SpecHistory>` inside the `detail.workItems.map` region of `src/app/(shell)/orders/[orderId]/page.tsx` (~:1059) so per-row history queries stream independently (spec FR-006)
   - **Acceptance**: rows render in order; one slow history does not block others' parents
   - **Tests**: part of T003; order suite green
   - **Deps**: T007 (same file: `src/app/(shell)/orders/[orderId]/page.tsx` — not parallelizable with it)
-- [ ] T009 [P] [US1] **Suspense: customer balance tab** — wrap `<CustomerBalanceTab>` at `src/app/(shell)/customers/[id]/page.tsx` / `src/components/customers/customer-balance-tab.tsx` call site with a skeleton fallback (spec FR-006)
+- [x] T009 [P] [US1] **Suspense: customer balance tab** — wrap `<CustomerBalanceTab>` at `src/app/(shell)/customers/[id]/page.tsx` / `src/components/customers/customer-balance-tab.tsx` call site with a skeleton fallback (spec FR-006)
   - **Acceptance**: profile paints; tab streams; no stale data in fallback
   - **Tests**: part of T003
   - **Deps**: none

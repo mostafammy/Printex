@@ -3,6 +3,7 @@
 // all layered onto this one page, since all three share it (plan.md).
 // Server Component: no "use client". Inline Server Actions.
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import {
@@ -1056,7 +1057,18 @@ export default async function OrderDetailPage({
                     );
                   })()}
 
-                <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
+                {/* 092 T008: per-row history streams behind its own skeleton —
+                    one slow history query never blocks its siblings' rows. */}
+                <Suspense
+                  fallback={
+                    <div
+                      aria-busy="true"
+                      className="h-16 w-full animate-pulse rounded-lg bg-muted/60"
+                    />
+                  }
+                >
+                  <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
+                </Suspense>
               </div>
             );
           })}
@@ -1180,7 +1192,18 @@ export default async function OrderDetailPage({
       </section>
 
       {/* ── Finance & Payments Panel ── */}
-      <OrderFinancePanel orderId={orderId} />
+      {/* 092 T007: the finance panel streams behind a skeleton — order header
+          paints without waiting on its four reads (SR-002, FR-006). */}
+      <Suspense
+        fallback={
+          <div aria-busy="true" className="space-y-3">
+            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
+          </div>
+        }
+      >
+        <OrderFinancePanel orderId={orderId} />
+      </Suspense>
     </div>
   );
 }

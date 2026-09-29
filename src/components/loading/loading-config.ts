@@ -1,5 +1,9 @@
 /**
  * Magic numbers and duration configuration for the Printex loading experience.
+ *
+ * These durations drive the BOOT overlay only (092-performance FR-001/FR-002,
+ * spec Clarifications 2026-09-29 Option A): navigation no longer arms any
+ * loading UI, so the anti-flicker minimum applies to cold start alone.
  */
 
 /** Delay in milliseconds before revealing anything. Loads under 180ms stay completely hidden. */

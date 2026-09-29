@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
@@ -52,7 +53,19 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         )
       }
       slots={{
-        paymentsBalance: <CustomerBalanceTab customerId={id} />,
+        paymentsBalance: (
+          // 092 T009: balance tab streams behind a skeleton (SR-002, FR-006).
+          <Suspense
+            fallback={
+              <div
+                aria-busy="true"
+                className="h-24 w-full animate-pulse rounded-lg bg-muted"
+              />
+            }
+          >
+            <CustomerBalanceTab customerId={id} />
+          </Suspense>
+        ),
         specialPricing: <SpecialPricingTab customerId={id} />,
         messages: <span className="text-xs text-muted-foreground">الرسائل والإشعارات — قريباً</span>,
       }}
