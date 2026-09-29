@@ -19,6 +19,7 @@ import { ViewModeSwitcher, type BoardViewMode } from "./ViewModeSwitcher";
 import { BoardHeader } from "./views/BoardHeader";
 import { BoardModals } from "./views/BoardModals";
 import { BoardBody } from "./views/BoardViews";
+import { DndBridge } from "./dnd/DndBridge";
 import { useGroupResultListener, useStationsForSlice } from "./views/useBoardChrome";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
@@ -86,6 +87,10 @@ function BoardFrame(props: BoardFrameProps) {
       />
       {/* A div, not a <main>: the shell already renders one at layout.tsx, and
           a second nested main is invalid HTML with a duplicate landmark. */}
+      {/* The drag context lives around the body only: the header holds
+          filters and pagination, which are not drop targets, and keeping
+          them outside keeps hover tracking scoped to the lanes. */}
+      <DndBridge>
       <div
         tabIndex={0}
         role="region"
@@ -102,6 +107,7 @@ function BoardFrame(props: BoardFrameProps) {
           onMoveKey={props.onOpenMoveMenu}
         />
       </div>
+      </DndBridge>
       <BoardModals
         card={props.chrome.menuCard}
         onCloseMenu={props.onCloseMenu}
