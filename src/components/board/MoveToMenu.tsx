@@ -118,8 +118,8 @@ function OptionItem({
             <span className="text-2xs text-muted-foreground">
               {option.kind === "SHEET"
                 ? "يتطلب اختيار وتفاصيل"
-                : option.kind === "PAGE"
-                  ? "فتح صفحة المحطة"
+                : option.kind === "SCREEN"
+                  ? "فتح شاشة المحطة"
                   : "انتقال مباشر فوري"}
             </span>
           </div>
