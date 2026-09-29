@@ -15,10 +15,12 @@
  */
 
 import React from "react";
+import { useDroppable } from "@dnd-kit/core";
 import { STATIONS } from "~/lib/board/stations";
 import type { StationId, WorkItemState } from "~/server/board";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { StationSummary } from "./StationSummary";
+import { useDragOffer, type DropVisual } from "./dnd/useDragOffer";
 
 export interface MobileStationTabsProps {
   readonly activeStationId: StationId;
@@ -66,23 +68,76 @@ function tabInk(id: StationId, active: boolean): React.CSSProperties {
  * rail showing the same "4 د" on all seven rows is noise; a stalled station
  * is the one worth surfacing, so it shows there and the empty ones stay quiet.
  */
-function StationTab({
-  id,
-  labelAr,
-  lanes,
-  active,
+/**
+ * Rail drop highlight for one tab. Kept outside the component: the tab
+ * already juggles count, ink, and active state, and the drop visuals would
+ * push it past the size budget.
+ */
+function tabDropState(offer: DropVisual): { readonly cls: string; readonly hint: string | null } {
+  if (offer === "over") return { cls: "bg-primary/15 ring-2 ring-primary", hint: "أفلت هنا" };
+  if (offer === "offered") return { cls: "bg-primary/5 ring-1 ring-primary/50", hint: null };
+  return { cls: "", hint: null };
+}
+
+/**
+ * A rail tab is also a drop target: the tabbed view shows one station at a
+ * time, so dropping a dragged card onto another station's tab is the only
+ * pointer path to a different column there. The drop flows through the same
+ * DragSession + DropPolicyResolver as a column drop, so sheet-gated moves
+ * still pop their detail modal and refusals still fly back.
+ *
+ * The rail never dims: unlike columns, tabs stay the operator's map of the
+ * floor mid-drag, so non-offered tabs keep full ink and only valid targets
+ * light up.
+ */
+function tabCls(active: boolean, dropCls: string): string {
+  return `mb-2 flex w-full items-center gap-2.5 rounded-[var(--board-radius)] border-s-4 px-3 py-2.5 text-start transition-colors ${
+    active ? "bg-[var(--station-wash)]" : "hover:bg-muted/50"
+  } ${dropCls}`;
+}
+
+function TabStatus({
+  dropHint,
+  count,
+  laneStates,
   now,
-  onSelect,
 }: {
+  readonly dropHint: string | null;
+  readonly count: number;
+  readonly laneStates: readonly WorkItemState[];
+  readonly now: number;
+}) {
+  return (
+    <>
+      {dropHint ? (
+        <span className="shrink-0 text-[11px] font-bold text-primary">{dropHint}</span>
+      ) : (
+        <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
+          {count}
+        </span>
+      )}
+      {count > 0 && <StationSummary stationStates={laneStates} now={now} />}
+    </>
+  );
+}
+function useStationTabDrop(id: StationId, lanes: readonly { readonly state: WorkItemState }[]) {
+  const count = useStationCardCount(id, lanes);
+  const { setNodeRef } = useDroppable({ id });
+  const offer = useDragOffer(id);
+  return { count, setNodeRef, offer, drop: tabDropState(offer) };
+}
+
+interface StationTabProps {
   readonly id: StationId;
   readonly labelAr: string;
   readonly lanes: readonly { readonly state: WorkItemState }[];
   readonly active: boolean;
   readonly now: number;
   readonly onSelect: (id: StationId) => void;
-}) {
-  const count = useStationCardCount(id, lanes);
-  const laneStates = lanes.map((l) => l.state);
+}
+
+function StationTab({ id, labelAr, lanes, active, now, onSelect }: StationTabProps) {
+  const tab = useStationTabDrop(id, lanes);
 
   return (
     <button
@@ -91,19 +146,22 @@ function StationTab({
       aria-selected={active}
       tabIndex={active ? 0 : -1}
       onClick={() => onSelect(id)}
+      ref={tab.setNodeRef}
       data-station={id}
-      className={`mb-2 flex w-full items-center gap-2.5 rounded-[var(--board-radius)] border-s-4 px-3 py-2.5 text-start transition-colors ${
-        active ? "bg-[var(--station-wash)]" : "hover:bg-muted/50"
-      }`}
+      data-drop={tab.offer}
+      aria-dropeffect={tab.drop.hint ? "move" : undefined}
+      className={tabCls(active, tab.drop.cls)}
       style={tabInk(id, active)}
     >
       <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground">
         {labelAr}
       </span>
-      <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
-        {count}
-      </span>
-      {count > 0 && <StationSummary stationStates={laneStates} now={now} />}
+      <TabStatus
+        dropHint={tab.drop.hint}
+        count={tab.count}
+        laneStates={lanes.map((l) => l.state)}
+        now={now}
+      />
     </button>
   );
 }
