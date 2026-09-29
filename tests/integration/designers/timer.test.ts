@@ -24,6 +24,13 @@ const designer: Actor = {
   departmentIds: [],
 };
 
+const admin: Actor = {
+  userId: unique("test-timer-admin"),
+  roles: ["ADMIN_OWNER"],
+  permissions: new Set<Permission>(["design.work"]),
+  departmentIds: [],
+};
+
 let customerId: string;
 
 beforeAll(async () => {
@@ -33,6 +40,16 @@ beforeAll(async () => {
       name: "Test Designer",
       email: `${designer.userId}@local.invalid`,
       username: designer.userId,
+      isActive: true,
+      failedLoginAttempts: 0,
+    },
+  });
+  await testDb.user.create({
+    data: {
+      id: admin.userId,
+      name: "Test Admin",
+      email: `${admin.userId}@local.invalid`,
+      username: admin.userId,
       isActive: true,
       failedLoginAttempts: 0,
     },
@@ -135,5 +152,46 @@ describe("startTimer/pauseTimer/phaseDurations (integration)", () => {
     expect(first.activeTimeMs).toBeGreaterThanOrEqual(0);
     expect(first.queueTimeMs).toBeGreaterThanOrEqual(0);
     expect(first.totalPhaseDurationMs).toBeNull(); // not yet DESIGN_COMPLETED
+  });
+
+  it("admin override starts anyone's timer when a design file exists", async () => {
+    const workItemId = await seedAssignedWorkItem();
+    await testDb.designVersion.create({
+      data: {
+        workItemId,
+        version: 1,
+        storageKey: unique("storage-key"),
+        fileName: "source.png",
+        sizeBytes: 1,
+        sha256: unique("sha"),
+        uploadedById: designer.userId,
+      },
+    });
+
+    await startTimer(admin, workItemId);
+
+    const workItem = await testDb.workItem.findUniqueOrThrow({ where: { id: workItemId } });
+    expect(workItem.state).toBe("IN_DESIGN");
+  });
+
+  it("admin override refuses to start when no design file exists yet (NO_DESIGN_FILE)", async () => {
+    const workItemId = await seedAssignedWorkItem();
+
+    await expect(startTimer(admin, workItemId)).rejects.toMatchObject({ code: "NO_DESIGN_FILE" });
+
+    const workItem = await testDb.workItem.findUniqueOrThrow({ where: { id: workItemId } });
+    expect(workItem.state).toBe("ASSIGNED");
+  });
+
+  it("admin override pauses anyone's open timer", async () => {
+    const workItemId = await seedAssignedWorkItem();
+    await startTimer(designer, workItemId);
+
+    await pauseTimer(admin, workItemId);
+
+    const openActive = await testDb.phaseTiming.findFirst({
+      where: { workItemId, kind: "ACTIVE", endedAt: null },
+    });
+    expect(openActive).toBeNull();
   });
 });
