@@ -1,8 +1,20 @@
 "use client";
 
 /**
- * StationColumn rendering column header, station ink theme, count, and sub-lanes.
- * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-002, FR-006)
+ * StationColumn rendering the station header, ink-tinted frame, count, oldest
+ * job age, sub-lanes, and live drop-target feedback.
+ * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-002, FR-006;
+ *  visual treatment from 817f251 "live drop-target feedback and polished drag motion")
+ *
+ * The station is the primary visual object on this board, so it owns the
+ * colour: `ink.css` exposes `--station-<id>-{wash,edge,fill,text}` through the
+ * `[data-station]` remap, and this component is where those tokens reach the
+ * screen.
+ *
+ * The drop states are three, not two. "over" is distinct from "offered": a
+ * column the card is currently hovering is pulsing under the pointer, while
+ * a merely-valid column is merely ringed. Collapsing them loses the one
+ * signal a floor operator reads mid-drag.
  */
 
 import React from "react";
@@ -19,9 +31,11 @@ import {
 } from "lucide-react";
 import type { Station } from "~/lib/board/stations";
 import type { BoardCard } from "~/lib/board/types";
-import { useBoardSelector } from "./hooks/useBoardSelector";
-import { useDragOffer, type DropVisual } from "./dnd/useDragOffer";
 import { SubLane } from "./SubLane";
+import { StationSummary } from "./StationSummary";
+import { useStationCardCount } from "./MobileStationTabs";
+
+import { useDragOffer } from "./dnd/useDragOffer";
 
 const ICONS: Readonly<Record<string, LucideIcon>> = {
   Inbox,
@@ -33,34 +47,48 @@ const ICONS: Readonly<Record<string, LucideIcon>> = {
   Truck,
 };
 
+/** Three visual states, not two: `over` is the column under the pointer. */
+export type DropVisual = "idle" | "offered" | "dimmed" | "over";
+
 export interface StationColumnProps {
   readonly station: Station;
-  readonly dropState?: "idle" | "offered" | "dimmed";
+  readonly dropState?: DropVisual;
   readonly blockedHint?: string;
   readonly onOrderHover?: (orderId: string | null) => void;
   readonly onCardClick?: (card: BoardCard) => void;
   readonly onMoveKey?: (card: BoardCard) => void;
+  /**
+   * Drop the fixed column width and fill the container. The 280–340px width
+   * only makes sense when seven columns share the board; the tabbed view
+   * shows one station at a time, and there capping it leaves the rest of the
+   * viewport empty.
+   */
+  readonly fillWidth?: boolean;
 }
 
 function ColumnHeader({
   station,
   count,
+  now,
 }: {
   readonly station: Station;
   readonly count: number;
+  readonly now: number;
 }) {
   const IconComponent = ICONS[station.icon] ?? Inbox;
   return (
-    <header className="flex items-center justify-between border-b px-3 py-2.5 bg-background/60 rounded-t-xl">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-foreground">
+    <header className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-2.5 py-2">
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground">
           <IconComponent className="h-4 w-4" aria-hidden="true" />
         </span>
-        <h2 className="text-sm font-bold tracking-tight text-foreground">{station.labelAr}</h2>
+        {/* Arabic is cursive: no tracking, and no negative letter-spacing. */}
+        <h2 className="truncate text-sm font-bold text-foreground">{station.labelAr}</h2>
+        <StationSummary stationStates={station.lanes.map((l) => l.state)} now={now} />
       </div>
       <span
         data-testid={`station-count-${station.id}`}
-        className="flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold text-muted-foreground"
+        className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold text-muted-foreground"
       >
         {count}
       </span>
@@ -82,50 +110,83 @@ function BlockedBanner({ hint }: { readonly hint?: string }) {
 
 function SubLaneList({
   station,
+  fillWidth,
   onOrderHover,
   onCardClick,
   onMoveKey,
 }: StationColumnProps) {
   const isMultiLane = station.lanes.length > 1;
+  // A station that fills the screen (fillWidth) has the width to put its
+  // lanes side by side, and comparing lane depths at a glance is the point —
+  // a 280-340px column in the full board cannot, since four lanes across
+  // 300px is a 75px card, which is where the design station degraded into
+  // unreadable chips. There the lanes stack as rows instead.
+  const lanesAsColumns = isMultiLane && fillWidth === true;
   return (
-    <div className="flex flex-1 flex-col gap-2 overflow-hidden p-1.5">
+    <div
+      className={`flex min-h-0 flex-1 gap-2 overflow-hidden p-1.5 ${
+        lanesAsColumns ? "flex-row" : "flex-col"
+      }`}
+    >
       {station.lanes.map((lane) => (
-        <SubLane
-          key={lane.state}
-          state={lane.state}
-          labelAr={isMultiLane ? lane.labelAr : undefined}
-          onOrderHover={onOrderHover}
-          onCardClick={onCardClick}
-          onMoveKey={onMoveKey}
-        />
+        // min-h-0 is load-bearing: a flex child defaults to min-height:auto,
+        // so it refuses to shrink below its content and flex-1 never bounds
+        // it. Without it the lane's overflow-y-auto has nothing to scroll
+        // against and the page stops scrolling vertically.
+        <div key={lane.state} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <SubLane
+            state={lane.state}
+            labelAr={isMultiLane ? lane.labelAr : undefined}
+            onOrderHover={onOrderHover}
+            onCardClick={onCardClick}
+            onMoveKey={onMoveKey}
+          />
+        </div>
       ))}
     </div>
   );
 }
 
-function resolveDropStyle(dropState: DropVisual): { cls: string; over: boolean; dimmed: boolean } {
+function resolveDropStyle(dropState: DropVisual): {
+  readonly cls: string;
+  readonly over: boolean;
+  readonly dimmed: boolean;
+} {
+  // .column-drop-over carries the lane-drop-pulse keyframes in ink.css.
   if (dropState === "over") {
     return { cls: "column-drop-over ring-2 ring-primary border-transparent", over: true, dimmed: false };
   }
   if (dropState === "offered") {
-    return { cls: "ring-2 ring-primary/50 ring-offset-1 bg-primary/5 border-primary/30", over: false, dimmed: false };
+    return {
+      cls: "ring-2 ring-primary/50 ring-offset-1 bg-primary/5 border-primary/30",
+      over: false,
+      dimmed: false,
+    };
   }
   if (dropState === "dimmed") {
+    // grayscale as well as opacity: a colour-only dim still reads as "coloured
+    // but faded" on a board whose stations are identified by hue.
     return { cls: "opacity-40 grayscale-[40%] cursor-not-allowed", over: false, dimmed: true };
   }
   return { cls: "border-border/60", over: false, dimmed: false };
 }
 
 export function StationColumn(props: StationColumnProps) {
-  const cardCount = useBoardSelector("meta", (store) => {
-    let sum = 0;
-    for (const lane of props.station.lanes) {
-      sum += store.getLane(lane.state).length;
-    }
-    return sum;
-  });
-  const liveDrop = useDragOffer(props.station.id);
-  const drop = resolveDropStyle(props.dropState ?? liveDrop);
+  // The age summary is relative to when this column last re-rendered for a
+  // store change, not a ticking clock. A `Date.now()` selector would return a
+  // fresh value on every snapshot read and re-render forever; the board's
+  // idle-animation invariant (SC-007) exists precisely to catch that.
+  const now = Date.now();
+
+  const cardCount = useStationCardCount(props.station.id, props.station.lanes);
+
+  // When no dropState is passed in, read it live from the drag session, so
+  // every column reacts to a drag without the parent re-rendering them.
+  // An explicit prop still wins, which is what the tests use.
+  const liveDropState = useDragOffer(props.station.id);
+  const { cls: stateCls, over: isOver, dimmed: isDimmed } = resolveDropStyle(
+    props.dropState ?? liveDropState,
+  );
 
   const { setNodeRef } = useDroppable({
     id: props.station.id,
@@ -137,11 +198,19 @@ export function StationColumn(props: StationColumnProps) {
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
       aria-label={`${props.station.labelAr} (${cardCount})`}
-      className={`relative flex flex-col h-full min-w-[280px] max-w-[340px] flex-1 rounded-xl border bg-muted/30 transition-all duration-200 ease-out ${drop.cls}`}
+      // Flexible width, not a fixed clamp: seven columns share the width
+      // available, so each takes an equal share between a readable floor and
+      // a ceiling. A fixed width left the board with dead space on a wide
+      // monitor and pushed the last column off-screen on a narrow one.
+      className={`relative flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-muted/30 transition-all duration-200 ease-out ${stateCls} ${
+        props.fillWidth ? "w-full min-w-0" : "min-w-[280px] max-w-[340px]"
+      }`}
     >
-      <ColumnHeader station={props.station} count={cardCount} />
-      {drop.dimmed && <BlockedBanner hint={props.blockedHint} />}
-      {drop.over && (
+      <ColumnHeader station={props.station} count={cardCount} now={now} />
+      {isDimmed && <BlockedBanner hint={props.blockedHint} />}
+      {isOver && (
+        // The one piece of copy on the whole board that tells the operator
+        // what will happen if they let go right now.
         <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
           <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground shadow-lg">
             أفلت البطاقة هنا

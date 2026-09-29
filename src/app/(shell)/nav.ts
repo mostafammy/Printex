@@ -33,11 +33,11 @@ export interface NavItem {
 // for compile-time literal-string safety here, not to change the field type.
 const ADMIN: RoleKey = "ADMIN_OWNER";
 
-// Sidebar sections. Only `my-queue` (T033) is a real, reachable
-// page this phase; the rest are realistic print-shop department sections
-// (loosely matching PRD role names: Reception, Design, Production, Delivery,
-// Admin) reserved for future features' nav entries — not yet backed by a
-// page, so they intentionally have no route behind them beyond the label.
+// Sidebar sections. Ordered to match the print pipeline the shop already
+// runs — reception → design → review → pricing → production → delivery —
+// which is the same order the work-item state machine moves in. The previous
+// order was grouped by implementation phase, so the two destinations staff
+// touch most (notifications, delayed) sat dead last in a 14-row list.
 export const navItems: readonly NavItem[] = [
   {
     id: "my-queue",
@@ -46,14 +46,6 @@ export const navItems: readonly NavItem[] = [
     roles: [],
     section: "workspace",
     iconName: "Clock",
-  },
-  {
-    id: "review",
-    href: "/review",
-    label: ar.nav.review,
-    roles: ["HEAD_DESIGNER", ADMIN],
-    section: "workspace",
-    iconName: "CheckCircle2",
   },
   {
     id: "reception",
@@ -72,12 +64,12 @@ export const navItems: readonly NavItem[] = [
     iconName: "Palette",
   },
   {
-    id: "production",
-    href: "/production",
-    label: ar.nav.production,
-    roles: ["PRODUCTION_OPERATOR", ADMIN],
+    id: "review",
+    href: "/review",
+    label: ar.nav.review,
+    roles: ["HEAD_DESIGNER", ADMIN],
     section: "operations",
-    iconName: "Printer",
+    iconName: "CheckCircle2",
   },
   {
     id: "pricing",
@@ -88,12 +80,30 @@ export const navItems: readonly NavItem[] = [
     iconName: "Tag",
   },
   {
+    id: "production",
+    href: "/production",
+    label: ar.nav.production,
+    roles: ["PRODUCTION_OPERATOR", ADMIN],
+    section: "operations",
+    iconName: "Printer",
+  },
+  {
     id: "delivery",
     href: "/delivery",
     label: ar.nav.delivery,
     roles: ["PRINT_RECEPTION_DELIVERY", ADMIN],
     section: "operations",
     iconName: "Truck",
+  },
+  // 016 US3 (T052): approver queue. Cosmetic gating only — the page itself
+  // authorizes by the `change.approve` permission.
+  {
+    id: "changes",
+    href: "/changes",
+    label: ar.nav.changes,
+    roles: ["HEAD_DESIGNER", ADMIN],
+    section: "operations",
+    iconName: "GitPullRequest",
   },
   {
     id: "finance-expenses",
@@ -111,16 +121,6 @@ export const navItems: readonly NavItem[] = [
     section: "finance",
     iconName: "Coins",
   },
-  // 016 US3 (T052): approver queue. Cosmetic gating only — the page itself
-  // authorizes by the `change.approve` permission.
-  {
-    id: "changes",
-    href: "/changes",
-    label: ar.nav.changes,
-    roles: ["HEAD_DESIGNER", ADMIN],
-    section: "operations",
-    iconName: "GitPullRequest",
-  },
   {
     id: "admin",
     // No `/admin` index page exists yet — points straight at the one admin
@@ -136,29 +136,37 @@ export const navItems: readonly NavItem[] = [
   // delayed list is unrole-gated too, because its SCOPE is derived from the
   // actor inside the query (FR-057) — a role filter here would be a second,
   // coarser, and possibly contradictory access model.
+  //
+  // Both alert surfaces sit in "workspace", next to the queue they interrupt,
+  // rather than trailing the operations list where nobody scrolls to find
+  // them.
   {
     id: "notifications",
     href: "/notifications",
     label: ar.nav.notifications,
     roles: [],
-    section: "operations",
+    section: "workspace",
     iconName: "Bell",
   },
   {
     id: "delayed",
     href: "/delayed",
     label: ar.nav.delayed,
-    section: "operations",
     roles: [],
+    section: "workspace",
     iconName: "Clock",
   },
+  // Distinct label: this configures per-phase delay thresholds and escalation
+  // rules, it is not another notification feed. It previously reused
+  // `ar.nav.notifications`, so an admin saw two identical "الإشعارات" rows
+  // pointing at different pages.
   {
     id: "admin-notifications",
     href: "/admin/notifications",
-    label: ar.nav.notifications,
+    label: ar.nav.adminNotificationRules,
     roles: [ADMIN],
     section: "management",
-    iconName: "Bell",
+    iconName: "ShieldAlert",
   },
 ];
 

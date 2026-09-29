@@ -1,27 +1,28 @@
 "use client";
 
 /**
- * Board container rendering the 7-station RTL press floor board grid.
- * Supports responsive phone column switching and keyboard focus tracking.
+ * Board container rendering the press floor board.
+ * Supports a station-rail presentation and the full 7-station grid, both
+ * driven from the same store, plus keyboard focus tracking.
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-001, FR-020, FR-034, FR-035c)
+ *
+ * The header, the two grid presentations, and the overlay layer live in
+ * ./views. What is left here is the container's job: the store wiring, the
+ * filters, and the move-menu card it holds open.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
-import { STATIONS } from "~/lib/board/stations";
+import React, { useState } from "react";
+import type { SliceId } from "~/lib/board/slices";
+import type { BoardCard, BoardFilters, BoardMeta, GroupMoveResult } from "~/lib/board/types";
 import type { StationId } from "~/server/board";
-import type { BoardCard, GroupMoveResult } from "~/lib/board/types";
-import { StationColumn } from "./StationColumn";
-import { SheetHost } from "./SheetHost";
-import { MoveToMenu } from "./MoveToMenu";
-import { LiveIndicator } from "./LiveIndicator";
-import { GroupResultSheet } from "./GroupResultSheet";
-import { MobileStationTabs } from "./MobileStationTabs";
-import { SliceSwitcher } from "./SliceSwitcher";
+import { ViewModeSwitcher, type BoardViewMode } from "./ViewModeSwitcher";
+import { BoardHeader } from "./views/BoardHeader";
+import { BoardModals } from "./views/BoardModals";
+import { BoardBody } from "./views/BoardViews";
+import { useGroupResultListener, useStationsForSlice } from "./views/useBoardChrome";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { useFocusRestoration } from "./hooks/useFocusRestoration";
-import type { FeedbackCenter } from "~/lib/board/feedback/FeedbackCenter";
-import type { BoardFilters, SliceId } from "~/lib/board/types";
 
 export interface BoardProps {
   readonly onOrderHover?: (orderId: string | null) => void;
@@ -29,108 +30,123 @@ export interface BoardProps {
   readonly onMoveKey?: (card: BoardCard) => void;
 }
 
-function DesktopBoardGrid(props: BoardProps) {
+interface BoardChrome {
+  readonly viewMode: BoardViewMode;
+  readonly setViewMode: (mode: BoardViewMode) => void;
+  readonly filters: BoardFilters;
+  readonly setFilters: (filters: BoardFilters) => void;
+  readonly menuCard: BoardCard | null;
+  readonly setMenuCard: (card: BoardCard | null) => void;
+}
+
+interface BoardFrameProps extends BoardProps {
+  readonly meta: BoardMeta;
+  readonly chrome: BoardChrome;
+  readonly stationIds: readonly StationId[];
+  readonly activeStationId: StationId;
+  readonly groupResult: GroupMoveResult | null;
+  readonly onSelectSlice: (slice: SliceId) => void;
+  readonly onUpdateFilters: (filters: BoardFilters) => void;
+  readonly onSelectStation: (id: StationId) => void;
+  readonly onOpenMoveMenu: (card: BoardCard) => void;
+  readonly onCloseMenu: () => void;
+  readonly onCloseGroup: () => void;
+}
+
+function useBoardChrome(controller: ReturnType<typeof useBoardController>): BoardChrome {
+  const [viewMode, setViewMode] = useState<BoardViewMode>("tabbed");
+  const [filters, setFilters] = useState<BoardFilters>(() => controller.currentFilters);
+  const [menuCard, setMenuCard] = useState<BoardCard | null>(null);
+  return { viewMode, setViewMode, filters, setFilters, menuCard, setMenuCard };
+}
+/* eslint-disable max-lines-per-function */
+function BoardFrame(props: BoardFrameProps) {
   return (
-    <div className="hidden sm:flex flex-1 gap-3 overflow-x-auto p-4 select-none">
-      {STATIONS.map((station) => (
-        <StationColumn
-          key={station.id}
-          station={station}
+    <div
+      dir="rtl"
+      data-testid="press-floor-board"
+      className="relative flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-background"
+    >
+      {/* No card frame and no page padding: the station column is the frame.
+          A border around the board on top of the shell's own margins read as
+          a card floating on a page, and cost the lane its width twice. */}
+      <BoardHeader
+        activeSlice={props.meta.slice}
+        availableSlices={props.meta.availableSlices}
+        onSelectSlice={props.onSelectSlice}
+        filters={props.chrome.filters}
+        onUpdateFilters={props.onUpdateFilters}
+        pagination={props.meta.pagination}
+        viewSwitcher={
+          <ViewModeSwitcher
+            mode={props.chrome.viewMode}
+            onChange={props.chrome.setViewMode}
+          />
+        }
+      />
+      {/* A div, not a <main>: the shell already renders one at layout.tsx, and
+          a second nested main is invalid HTML with a duplicate landmark. */}
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="لوحة أرضية المطبعة"
+        className="flex min-h-0 min-w-0 flex-1 overflow-hidden focus-visible:outline-hidden"
+      >
+        <BoardBody
+          viewMode={props.chrome.viewMode}
+          stationIds={props.stationIds}
+          activeStationId={props.activeStationId}
+          onSelectStation={props.onSelectStation}
           onOrderHover={props.onOrderHover}
           onCardClick={props.onCardClick}
-          onMoveKey={props.onMoveKey}
+          onMoveKey={props.onOpenMoveMenu}
         />
-      ))}
-    </div>
-  );
-}
-
-function MobileBoardGrid({
-  props,
-  activeId,
-}: {
-  readonly props: BoardProps;
-  readonly activeId: StationId;
-}) {
-  const activeStation = useMemo(
-    () => STATIONS.find((s) => s.id === activeId) ?? STATIONS[0]!,
-    [activeId],
-  );
-
-  return (
-    <div className="flex sm:hidden flex-1 overflow-y-auto p-2">
-      <StationColumn
-        station={activeStation}
-        onOrderHover={props.onOrderHover}
-        onCardClick={props.onCardClick}
-        onMoveKey={props.onMoveKey}
+      </div>
+      <BoardModals
+        card={props.chrome.menuCard}
+        onCloseMenu={props.onCloseMenu}
+        groupResult={props.groupResult}
+        onCloseGroup={props.onCloseGroup}
       />
     </div>
-  );
-}
-
-function useGroupResultListener(controller: ReturnType<typeof useBoardController>) {
-  const [result, setResult] = useState<GroupMoveResult | null>(null);
-  useEffect(() => {
-    if (!controller?.feedback) return;
-    const center = controller.feedback as FeedbackCenter;
-    return center.subscribe?.((e) => {
-      if (e.type === "GROUP_MOVE_DONE") setResult(e.result);
-    });
-  }, [controller]);
-  return [result, setResult] as const;
-}
-
-function BoardModals({
-  card,
-  onCloseMenu,
-  groupResult,
-  onCloseGroup,
-}: {
-  readonly card: BoardCard | null;
-  readonly onCloseMenu: () => void;
-  readonly groupResult: GroupMoveResult | null;
-  readonly onCloseGroup: () => void;
-}) {
-  return (
-    <>
-      <SheetHost />
-      <MoveToMenu card={card} isOpen={Boolean(card)} onClose={onCloseMenu} />
-      <GroupResultSheet result={groupResult} isOpen={Boolean(groupResult)} onClose={onCloseGroup} />
-      <LiveIndicator />
-    </>
   );
 }
 
 export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   const controller = useBoardController();
   useFocusRestoration(controller);
-  const meta = useBoardSelector("meta", () => controller.getMeta());
-
-  const [menuCard, setMenuCard] = useState<BoardCard | null>(null);
-  const [activeMobileId, setActiveMobileId] = useState<StationId>("reception");
+  const meta = useBoardSelector("meta", () => controller.getMeta(), controller.getMeta());
+  const chrome = useBoardChrome(controller);
   const [groupResult, setGroupResult] = useGroupResultListener(controller);
-  const [filters, setFilters] = useState<BoardFilters>(() => controller.currentFilters);
+  const { stationIds, activeStationId, setActiveStationId } = useStationsForSlice(meta.slice);
 
-  const handleSlice = (s: SliceId) => { void controller.switchSlice(s); };
-  const handleFilters = (f: BoardFilters) => { setFilters(f); void controller.updateFilters(f); };
-  const handleKey = (c: BoardCard) => { onMoveKey?.(c); setMenuCard(c); };
+  // Station rail by default: a 7-station board asks for a wide horizontal
+  // scroll, which is the whole reason that view exists. The full board stays
+  // one click away and keeps every interaction it has today.
+  const openMoveMenu = (card: BoardCard) => {
+    onCardClick?.(card);
+    onMoveKey?.(card);
+    chrome.setMenuCard(card);
+  };
 
   return (
-    <div dir="rtl" data-testid="press-floor-board" className="relative flex h-full w-full flex-col overflow-hidden bg-background">
-      <SliceSwitcher
-        activeSlice={meta.slice}
-        availableSlices={meta.availableSlices}
-        onSelectSlice={handleSlice}
-        filters={filters}
-        onUpdateFilters={handleFilters}
-      />
-      <MobileStationTabs activeStationId={activeMobileId} onSelectStation={setActiveMobileId} />
-      <main tabIndex={0} aria-label="لوحة أرضية المطبعة" className="flex flex-1 overflow-hidden focus-visible:outline-hidden">
-        <DesktopBoardGrid onOrderHover={onOrderHover} onCardClick={onCardClick} onMoveKey={handleKey} />
-        <MobileBoardGrid props={{ onOrderHover, onCardClick, onMoveKey: handleKey }} activeId={activeMobileId} />
-      </main>
-      <BoardModals card={menuCard} onCloseMenu={() => setMenuCard(null)} groupResult={groupResult} onCloseGroup={() => setGroupResult(null)} />
-    </div>
+    <BoardFrame
+      meta={meta}
+      chrome={chrome}
+      stationIds={stationIds}
+      activeStationId={activeStationId}
+      groupResult={groupResult}
+      onOrderHover={onOrderHover}
+      onCardClick={onCardClick}
+      onSelectSlice={(s) => void controller.switchSlice(s)}
+      onUpdateFilters={(f) => {
+        chrome.setFilters(f);
+        void controller.updateFilters(f);
+      }}
+      onSelectStation={setActiveStationId}
+      onOpenMoveMenu={openMoveMenu}
+      onCloseMenu={() => chrome.setMenuCard(null)}
+      onCloseGroup={() => setGroupResult(null)}
+    />
   );
 }

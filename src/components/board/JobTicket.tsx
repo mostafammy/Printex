@@ -2,7 +2,17 @@
 
 /**
  * JobTicket physical print shop ticket component.
- * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-003, FR-007, FR-008)
+ * (specs/017-press-floor-board/contracts/board-engine.md §React surface, FR-003, FR-007, FR-008;
+ *  card treatment from 817f251 / main)
+ *
+ * The card is both a drag handle and a button. Tapping it used to be a no-op
+ * because the page mounted `<Board />` without an `onCardClick`, which left
+ * drag-and-drop and a physical keyboard's `m` as the only ways to move a job
+ * on a touch screen. The `نقل` control in the footer is the non-drag path, so a
+ * wet hand never has to attempt a drag.
+ *
+ * This file is the card's shell — drag wiring, click and key handling, store
+ * subscription. The card's three rows live in ./tickets/TicketParts.
  */
 
 import React from "react";
@@ -11,7 +21,7 @@ import type { WorkItemState } from "~/server/board";
 import { STATE_PLACEMENT } from "~/lib/board/stations";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardSelector } from "./hooks/useBoardSelector";
-import { OrderTag } from "./OrderTag";
+import { TicketBody, getAccessibleName } from "./tickets/TicketParts";
 
 export interface JobTicketProps {
   readonly cardId?: string;
@@ -22,108 +32,38 @@ export interface JobTicketProps {
   readonly onMoveKey?: (card: BoardCard) => void;
 }
 
-const STATE_AR_LABELS: Readonly<Record<WorkItemState, string>> = {
-  NEW: "جديد",
-  ASSIGNED: "معين",
-  IN_DESIGN: "قيد التصميم",
-  REWORK_REQUIRED: "تعديل مطلوب",
-  DESIGN_COMPLETED: "مكتمل التصميم",
-  WAITING_REVIEW: "بانتظار المراجعة",
-  APPROVED: "معتمد",
-  WAITING_PRICING: "بانتظار التسعير",
-  READY_FOR_PRODUCTION: "جاهز للإنتاج",
-  IN_PRODUCTION: "قيد الإنتاج",
-  PRODUCTION_COMPLETED: "مكتمل الإنتاج",
-  READY_FOR_COLLECTION: "جاهز للتسليم",
-  DELIVERED: "تم التسليم",
-  COMPLETED: "مكتمل",
-  CANCELLED: "ملغي",
-};
-
-function TicketHeader({
-  card,
-  onOrderHover,
-}: {
-  readonly card: BoardCard;
-  readonly onOrderHover?: (id: string | null) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <OrderTag
-        orderId={card.orderId}
-        orderNumber={card.orderNumber}
-        orderTagHue={card.orderTagHue}
-        onHover={onOrderHover}
-      />
-      <div className="flex items-center gap-1.5">
-        {card.priority === "URGENT" && (
-          <span className="rounded-sm bg-destructive/15 px-1.5 py-0.5 text-[10px] font-bold text-destructive">
-            عاجل
-          </span>
-        )}
-        {card.reworkCount > 0 && (
-          <span className="rounded-sm bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
-            تعديل #{card.reworkCount}
-          </span>
-        )}
-        <span
-          className="text-[10px] text-muted-foreground opacity-40 select-none"
-          title="علامة تسجيل الطباعة"
-          aria-hidden="true"
-        >
-          ⌖
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
-  if (!pricing || pricing === "NOT_REQUIRED") return null;
-  const isPriced = pricing === "PRICED";
-  const isPending = pricing === "PENDING";
-  return (
-    <span
-      className={`rounded px-1 text-[10px] font-medium ${
-        isPriced
-          ? "bg-emerald-500/10 text-emerald-600"
-          : isPending
-            ? "bg-amber-500/10 text-amber-600"
-            : "bg-destructive/10 text-destructive"
-      }`}
-    >
-      {isPriced ? "مسعّر" : isPending ? "قيد التسعير" : "نزاع"}
-    </span>
-  );
-}
-
-function TicketFooter({ card }: { readonly card: BoardCard }) {
-  return (
-    <div className="flex items-center justify-between border-t border-dashed pt-2 text-[11px] text-muted-foreground">
-      <div className="flex items-center gap-1">
-        {card.quantity && <span>{card.quantity} نسخة</span>}
-        {card.assignee && (
-          <span className="truncate max-w-[90px]">· {card.assignee.name}</span>
-        )}
-      </div>
-      <PricingBadge pricing={card.pricing} />
-    </div>
-  );
-}
-
-function TicketCustomerTitle({ customerName, title }: { readonly customerName: string; readonly title: string }) {
-  return (
-    <div className="my-2 flex flex-col">
-      <span className="truncate text-xs font-semibold text-foreground/80">{customerName}</span>
-      <span className="truncate text-sm font-bold text-foreground">{title}</span>
-    </div>
-  );
-}
-
 function getCardStation(state: WorkItemState): string {
   const p = STATE_PLACEMENT[state];
   return p === "OFF_BOARD" ? "reception" : p.station;
 }
+
+/** One `m` key, the shortcut the card advertises. */
+function useMoveShortcut(card: BoardCard, onMoveKey?: (c: BoardCard) => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === "m" || e.key === "M") {
+      e.preventDefault();
+      onMoveKey?.(card);
+    }
+  };
+}
+
+function ticketCls(isSiblingHighlighted: boolean, isDragging: boolean): string {
+  // h-full against the lane's fixed row height is what makes a row of
+  // tickets align. overflow-hidden is a guard as much as a style: any inner
+  // row that outgrows the card is clipped rather than painting outside the
+  // box.
+  return `group relative flex h-full w-full cursor-grab flex-col justify-between overflow-hidden rounded-lg bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing ${
+    isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
+  } ${isDragging ? "opacity-30" : ""}`;
+}
+
+// One style prop: a second one silently replaces the first. The station's
+// fill enters as a 4px rule on the reading edge, which in RTL is the right,
+// so a job announces its station by position before it announces it by hue.
+const TICKET_STATION_RULE: React.CSSProperties = {
+  borderInlineStartWidth: "4px",
+  borderInlineStartColor: "var(--ticket-bar, var(--primary))",
+};
 
 export const JobTicketView = React.memo(function JobTicketView({
   card,
@@ -131,17 +71,12 @@ export const JobTicketView = React.memo(function JobTicketView({
   onOrderHover,
   onClick,
   onMoveKey,
-}: Omit<JobTicketProps, "cardId"> & { readonly card: BoardCard }) {
-  const stateLabel = STATE_AR_LABELS[card.state] ?? card.state;
-  const accessibleName = `${card.customerName} — ${card.title} — ${stateLabel}`;
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "m" || e.key === "M") {
-      e.preventDefault();
-      onMoveKey?.(card);
-    }
-  };
-
+  onGroupClick,
+}: Omit<JobTicketProps, "cardId"> & {
+  readonly card: BoardCard;
+  readonly onGroupClick?: (orderId: string) => void;
+}) {
+  const onKeyDown = useMoveShortcut(card, onMoveKey);
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: card.id,
   });
@@ -155,33 +90,40 @@ export const JobTicketView = React.memo(function JobTicketView({
       tabIndex={0}
       data-testid={`job-ticket-${card.id}`}
       data-station={getCardStation(card.state)}
-      aria-label={accessibleName}
+      aria-label={getAccessibleName(card)}
       onClick={() => onClick?.(card)}
       onKeyDown={onKeyDown}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-grab active:cursor-grabbing ${isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""} ${isDragging ? "opacity-30" : ""}`}
-      style={{ borderInlineStartWidth: "4px", borderInlineStartColor: "var(--ticket-bar, var(--primary))" }}
+      className={ticketCls(isSiblingHighlighted, isDragging)}
+      style={TICKET_STATION_RULE}
     >
-      <TicketHeader card={card} onOrderHover={onOrderHover} />
-      <TicketCustomerTitle customerName={card.customerName} title={card.title} />
-      <TicketFooter card={card} />
+      <TicketBody
+        card={card}
+        onOrderHover={onOrderHover}
+        onGroupClick={onGroupClick}
+        onMoveKey={onMoveKey}
+      />
     </div>
   );
 });
 
 function JobTicketStoreSubscriber(props: JobTicketProps & { readonly cardId: string }) {
-  const card = useBoardSelector(`card:${props.cardId}`, (s) =>
-    s.getCard(props.cardId),
+  const card = useBoardSelector(
+    `card:${props.cardId}`,
+    (s) => s.getCard(props.cardId),
+    undefined,
   );
+  // Null when the card moved to another lane between the row's render and
+  // this read. The row that asked for it is unmounting anyway; rendering an
+  // empty shell here left a card-sized hole in the lane.
   if (!card) return null;
   return <JobTicketView {...props} card={card} />;
 }
 
 export const JobTicket = React.memo(function JobTicket(props: JobTicketProps) {
-  if (props.card) {
-    return <JobTicketView {...props} card={props.card} />;
-  }
-  if (props.cardId) {
-    return <JobTicketStoreSubscriber {...props} cardId={props.cardId} />;
-  }
+  // A ticket renders only when it can resolve a card. A lane row mounts one
+  // JobTicket per card id, and returning an empty fragment for an id the
+  // store no longer holds left a 148px row of blank space behind.
+  if (props.card) return <JobTicketView {...props} card={props.card} />;
+  if (props.cardId) return <JobTicketStoreSubscriber {...props} cardId={props.cardId} />;
   return null;
 });

@@ -9,6 +9,13 @@
   --font-sans:
     var(--font-arabic), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Meta-label size. Used 95× across the app for secondary labels
+     (timestamps, IDs, captions) that must recede behind body copy. Without
+     this declaration Tailwind drops `text-2xs` and every one of those
+     elements renders at its inherited size. */
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 1.45;
 }
 
 @theme inline {
@@ -75,6 +82,12 @@
   --accent-foreground: oklch(0.45 0.22 255);
   --destructive: oklch(0.62 0.24 28); /* Apple Crimson Red #FF3B30 */
   --destructive-foreground: oklch(0.985 0 0);
+  /* Status hues. These are the ONLY colours allowed to carry meaning in the
+     shell — everything decorative was moved to the neutral palette, so a
+     worker who learns these three can trust them. */
+  --status-running: oklch(0.72 0.19 145); /* Apple Emerald #34C759 */
+  --status-urgent: oklch(0.62 0.24 28); /* Apple Crimson Red #FF3B30 */
+  --status-rework: oklch(0.72 0.16 75); /* Apple Orange */
   --mono: oklch(0.22 0 0);
   --mono-foreground: oklch(0.985 0 0);
   --border: oklch(0.91 0.006 250); /* Apple subtle separator */
@@ -114,6 +127,9 @@
   --accent: oklch(0.24 0.03 255);
   --accent-foreground: oklch(0.96 0.005 250);
   --destructive: oklch(0.65 0.22 25);
+  --status-running: oklch(0.75 0.18 145);
+  --status-urgent: oklch(0.68 0.21 26);
+  --status-rework: oklch(0.78 0.15 75);
   --destructive-foreground: oklch(0.985 0 0);
   --mono: oklch(0.27 0 0);
   --mono-foreground: oklch(0.985 0 0);
@@ -165,6 +181,271 @@
   ::-webkit-scrollbar-thumb:hover {
     background: color-mix(in oklch, var(--muted-foreground) 45%, transparent);
   }
+}
+
+/* Scrollbar-free scroll region. The sidebar's 14 rows are a fixed, known set —
+   there is nothing to discover by scrolling it, only to traverse — so a
+   visible track there is chrome competing with the labels. The region still
+   scrolls; only the indicator is hidden. Scoped rather than global so table
+   scroll areas keep their cue that there is more content sideways. */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+  width: none;
+  height: none;
+}
+
+/* Apple Liquid Glass & Material Utilities */
+.apple-glass {
+  background: color-mix(in oklch, var(--card) 75%, transparent);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+}
+
+.apple-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  box-shadow:
+    0 1px 2px 0 rgba(0, 0, 0, 0.02),
+    0 6px 20px -3px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-card:hover {
+  box-shadow:
+    0 8px 24px -2px rgba(0, 0, 0, 0.05),
+    0 20px 48px -6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+  border-color: color-mix(in oklch, var(--primary) 25%, var(--border));
+}
+
+/* Apple VisionOS Luminous Bento Card */
+.apple-bento-card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid color-mix(in oklch, var(--border) 80%, transparent);
+  border-radius: 1.35rem;
+  overflow: hidden;
+  box-shadow:
+    0 2px 8px -1px rgba(0, 0, 0, 0.03),
+    0 10px 32px -4px rgba(0, 0, 0, 0.04);
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-bento-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .apple-bento-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+}
+
+.apple-bento-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 8px 30px -4px rgba(0, 0, 0, 0.06),
+    0 24px 60px -8px rgba(0, 0, 0, 0.1);
+}
+
+.apple-bento-card:hover::before {
+  opacity: 1;
+}
+
+.apple-bento-card:active {
+  transform: translateY(-1px) scale(0.995);
+  transition-duration: 0.08s;
+}
+
+/* Luminous Accent Glows */
+.apple-glow-blue {
+  box-shadow: 0 8px 32px -4px rgba(0, 113, 227, 0.22);
+}
+
+.apple-glow-emerald {
+  box-shadow: 0 8px 32px -4px rgba(52, 199, 89, 0.22);
+}
+
+.apple-glow-purple {
+  box-shadow: 0 8px 32px -4px rgba(175, 82, 222, 0.22);
+}
+
+.apple-glow-amber {
+  box-shadow: 0 8px 32px -4px rgba(255, 149, 0, 0.22);
+}
+
+.apple-glow-rose {
+  box-shadow: 0 8px 32px -4px rgba(255, 59, 48, 0.22);
+}
+
+.apple-glow {
+  box-shadow: 0 0 28px -4px color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+/* Apple Spring Timing Helper */
+.apple-spring {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Micro Shimmer Light Sweep */
+@keyframes apple-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.apple-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.apple-shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg) translateX(-150%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+
+.apple-shimmer-sweep:hover::after {
+  animation: apple-shimmer 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shell entrance. Used by `src/app/(shell)/layout.tsx` on the content
+   wrapper. Declared here because Tailwind drops an undeclared
+   `animate-*` utility — the class was previously a no-op. Kept short
+   and single-property: a page of dense data tables should settle
+   immediately rather than ask the reader to wait for decoration. */
+@keyframes shell-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-shell-fade-in {
+  animation: shell-fade-in 0.18s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shell-fade-in {
+    animation: none;
+  }
+
+  /* Honour the preference app-wide. The shell previously ran five
+     always-on loops (three `animate-ping` dots, an `animate-pulse` nav bar,
+     an `animate-ping` status pill) and only the aurora orbs — since removed —
+     respected this. An attention user gets a page that never settles, and a
+     vestibular user gets motion they did not ask for. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Status edge ────────────────────────────────────────────────────────────
+   The queue's most valuable comprehension device: a 3px coloured edge on a
+   row that means "timer running" or "urgent", so 30 rows can be triaged
+   without reading a word.
+
+   The old version was `shadow-[inset_3px_0_0_#34c759]` — a PHYSICAL left
+   inset. In RTL the reading edge is the right, so the marker rendered on the
+   trailing side, away from where the eye starts. The two rules below flip the
+   inset sign under `dir="rtl"`, which is the app-wide direction.
+
+   Token-coloured rather than raw hex, so the edge adapts to the theme. */
+.status-edge-running {
+  background-color: color-mix(in oklch, var(--status-running) 8%, transparent);
+  box-shadow: inset 3px 0 0 0 var(--status-running);
+}
+
+.status-edge-urgent {
+  box-shadow: inset 3px 0 0 0 var(--status-urgent);
+}
+
+[dir="rtl"] .status-edge-running {
+  box-shadow: inset -3px 0 0 0 var(--status-running);
+}
+
+[dir="rtl"] .status-edge-urgent {
+  box-shadow: inset -3px 0 0 0 var(--status-urgent);
+}
+
+.apple-glow-cyan {
+  box-shadow: 0 8px 32px -4px rgba(14, 165, 233, 0.25);
+}
+
+/* Apple Interactive List Row with Micro-Lift */
+.apple-interactive-row {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-interactive-row:hover {
+  background-color: color-mix(in oklch, var(--muted) 45%, transparent);
+  transform: translateX(-2px);
+}
+
+[dir="rtl"] .apple-interactive-row:hover {
+  transform: translateX(2px);
+}
+
+/* Apple Hardware Dropzone */
+.apple-dropzone {
+  position: relative;
+  border: 2px dashed color-mix(in oklch, var(--border) 90%, transparent);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-dropzone:hover {
+  border-color: var(--primary);
+  background-color: color-mix(in oklch, var(--primary) 4%, transparent);
+  transform: scale(1.005);
 }
 
 /* ==== Loading Experience — UI Progress Master Motion System ==== */

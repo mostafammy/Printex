@@ -336,3 +336,25 @@
 [data-dragging] .cursor-not-allowed * {
   cursor: not-allowed !important;
 }
+
+/* ── Board form ──────────────────────────────────────────────────────────────
+   The board's shape language, kept separate from the colour language above so
+   it can be restyled without touching the ink contract in
+   tests/unit/board/ink-contrast.test.ts. The station, lane, and ticket
+   surfaces follow the treatment in 817f251 (rounded cards, hairline rules,
+   no heavy elevation); these tokens remain for the toolbar and dialogs.
+
+   Nothing here renames or overrides a token above. The board components are
+   the only consumers, so every other page in the app is unaffected. */
+:root {
+  --board-radius: 0.5rem;
+  --board-line: 1px;
+  --board-line-strong: var(--border);
+  --board-surface: var(--card);
+  --board-elevate: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --board-elevate-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.dark {
+  --board-line-strong: rgb(255 255 255 / 12%);
+}

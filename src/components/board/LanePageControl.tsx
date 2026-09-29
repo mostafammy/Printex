@@ -37,7 +37,13 @@ function LaneEnd({ loaded }: { readonly loaded: number }) {
 
 export function LanePageControl({ state, loaded, loading, onLoadMore }: LanePageControlProps) {
   const controller = useBoardController();
-  const cursor = useBoardSelector(`lane:${state}`, () => controller.getLaneCursor(state));
+  // No controller (lane rendered outside a board) is not an error: the lane
+  // just has no cursor to page, and the control stays hidden.
+  const cursor = useBoardSelector(
+    `lane:${state}`,
+    () => controller?.getLaneCursor(state),
+    undefined,
+  );
 
   if (!cursor) return null;
   if (!cursor.hasMore) return <LaneEnd loaded={loaded} />;

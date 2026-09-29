@@ -5,16 +5,26 @@
  * (specs/017-press-floor-board/contracts/board-engine.md §React surface, R1, R8, plan.md S1)
  */
 
-import { useCallback, useRef, useSyncExternalStore } from "react";
+import { useCallback, useContext, useRef, useSyncExternalStore } from "react";
 import type { BoardStore } from "~/lib/board/store/BoardStore";
-import { useBoardController } from "./useBoardController";
+import { BoardContext } from "./useBoardController";
 
+/**
+ * Reads a derived value off the store.
+ *
+ * Falls back to `fallback` when no BoardProvider is mounted, so a component
+ * that can render standalone (a ticket in a test asserting its anatomy) does
+ * not need the whole provider wrapped around it just to read one number. The
+ * early return before the store hooks is safe because a mounted provider never
+ * unmounts for a component's lifetime, so hook order is stable either way.
+ */
 export function useBoardSelector<T>(
   topic: string,
   selector: (store: BoardStore) => T,
+  fallback: T,
 ): T {
-  const controller = useBoardController();
-  const store = controller.store;
+  const controller = useContext(BoardContext);
+  const store = controller?.store;
 
   const selectorRef = useRef(selector);
   selectorRef.current = selector;
@@ -24,7 +34,11 @@ export function useBoardSelector<T>(
     initialized: false,
   });
 
+  const fallbackRef = useRef(fallback);
+  fallbackRef.current = fallback;
+
   const getSnapshot = useCallback(() => {
+    if (!store) return fallbackRef.current;
     const nextVal = selectorRef.current(store);
     if (!cacheRef.current.initialized || !Object.is(nextVal, cacheRef.current.value)) {
       cacheRef.current = { value: nextVal, initialized: true };
@@ -32,8 +46,16 @@ export function useBoardSelector<T>(
     return cacheRef.current.value;
   }, [store]);
 
+  // No store mounted: a no-op subscribe that never fires. Written as a named
+  // function rather than `() => {}` so the intent survives, and so nothing
+  // here is mistaken for a missing unsubscribe.
   const subscribe = useCallback(
-    (onStoreChange: () => void) => store.subscribe(topic, onStoreChange),
+    (onStoreChange: () => void) =>
+      store
+        ? store.subscribe(topic, onStoreChange)
+        : function noopSubscribe(): () => void {
+            return () => undefined;
+          },
     [store, topic],
   );
 

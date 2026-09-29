@@ -27,7 +27,11 @@ export default async function BoardPage({
 
   return (
     <BoardProvider initialSnapshot={snapshot}>
-      <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden">
+      {/* Full-bleed: the board is the page, not a card on a page. The shell
+          wraps this in p-6 sm:p-8 md:p-10 + max-w-7xl, and the board was
+          additionally drawing its own border — two frames around one surface,
+          which cost workspace twice before a single ticket was drawn. */}
+      <div className="-m-6 flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden sm:-m-8 md:-m-10">
         <DndBridge>
           <Board />
         </DndBridge>

@@ -24,7 +24,7 @@ function OrderCountBadge({ eligible, total }: { readonly eligible?: number; read
   if (eligible === undefined || total === undefined || total <= 1) return null;
   return (
     <span
-      className="ms-1 rounded bg-black/10 px-1 py-0.2 font-mono text-[10px] font-bold"
+      className="ms-1 bg-black/10 px-1 font-mono text-[10px] font-bold leading-4"
       title={`${eligible} من أصل ${total} بطاقات قابلة للنقل`}
     >
       {eligible} من {total}
@@ -49,7 +49,7 @@ function OrderGroupButton({
         e.stopPropagation();
         onGroupClick(orderId);
       }}
-      className="cursor-grab active:cursor-grabbing p-0.5 -ms-1 hover:bg-black/10 rounded transition-colors"
+      className="-ms-1 cursor-grab p-0.5 transition-colors hover:bg-black/10 active:cursor-grabbing"
       aria-label={`نقل طلب #${orderNumber} جماعياً`}
     >
       <GripVertical className="h-3 w-3 opacity-60" />
@@ -77,7 +77,14 @@ export const OrderTag = React.memo(function OrderTag({
   return (
     <div
       data-testid={`order-tag-${orderId}`}
-      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold transition-all ${
+      // A reference plate, not a pill: flat tint, hairline border, soft
+      // corner. The hue groups an order's cards together.
+      //
+      // min-w-0 + shrink: the tag is intrinsically wide (group handle, number,
+      // sibling count) and in a narrow card it forced the header row past the
+      // card's edge, which painted a horizontal scrollbar that stayed put
+      // while the lane scrolled vertically.
+      className={`inline-flex min-w-0 shrink items-center gap-1.5 overflow-hidden rounded-md border px-1.5 py-0.5 text-[11px] font-semibold transition-colors ${
         isHighlighted ? "ring-2 ring-offset-1 ring-primary" : ""
       }`}
       style={chipStyle}
@@ -85,10 +92,10 @@ export const OrderTag = React.memo(function OrderTag({
       onMouseLeave={() => onHover?.(null)}
     >
       <OrderGroupButton orderId={orderId} orderNumber={orderNumber} onGroupClick={onGroupClick} />
-      <span className="font-mono">#{orderNumber}</span>
+      <span className="shrink-0 font-mono">#{orderNumber}</span>
       <OrderCountBadge eligible={eligibleCount} total={totalCount} />
       {hiddenSiblingCount && hiddenSiblingCount > 0 ? (
-        <span className="text-[10px] opacity-80" title={`${hiddenSiblingCount} بطاقات أخرى في محطات خارج نطاق هذا العرض`}>
+        <span className="shrink-0 text-[10px] opacity-80" title={`${hiddenSiblingCount} بطاقات أخرى في محطات خارج نطاق هذا العرض`}>
           +{hiddenSiblingCount}
         </span>
       ) : null}

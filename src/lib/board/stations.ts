@@ -130,3 +130,29 @@ export const OFF_BOARD_STATES: readonly WorkItemState[] = [
   "COMPLETED",
   "CANCELLED",
 ] as const;
+
+/**
+ * Arabic label for every state, including the off-board ones.
+ *
+ * Lives here rather than in a component because two components need it: the
+ * lane header (so a single-lane station still shows its name) and the
+ * ticket's accessible name. Deriving a label from STATE_PLACEMENT is not
+ * enough — it maps states to stations, not to the words an operator uses.
+ */
+export const STATE_AR_LABELS: Readonly<Record<WorkItemState, string>> = {
+  NEW: "جديد",
+  ASSIGNED: "معين",
+  IN_DESIGN: "قيد التصميم",
+  REWORK_REQUIRED: "تعديل مطلوب",
+  DESIGN_COMPLETED: "مكتمل التصميم",
+  WAITING_REVIEW: "بانتظار المراجعة",
+  APPROVED: "معتمد",
+  WAITING_PRICING: "بانتظار التسعير",
+  READY_FOR_PRODUCTION: "جاهز للإنتاج",
+  IN_PRODUCTION: "قيد الإنتاج",
+  PRODUCTION_COMPLETED: "مكتمل الإنتاج",
+  READY_FOR_COLLECTION: "جاهز للتسليم",
+  DELIVERED: "تم التسليم",
+  COMPLETED: "مكتمل",
+  CANCELLED: "ملغي",
+};

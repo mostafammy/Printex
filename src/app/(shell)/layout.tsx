@@ -82,13 +82,12 @@ export default async function ShellLayout({
   ]);
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background selection:bg-primary/20 selection:text-primary overflow-x-hidden">
+    <div className="relative flex h-dvh flex-col overflow-hidden bg-background selection:bg-primary/20 selection:text-primary">
       {/* Subtle single gradient mesh background */}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10 bg-radial from-muted/30 to-background"
       />
-
       {/* The bell lives in the shell header, on every authenticated page for
           every role (FR-020), with no permission check of its own. */}
       <ShellHeader
@@ -103,10 +102,24 @@ export default async function ShellLayout({
           />
         }
       />
-      <div className="flex flex-1 overflow-hidden">
+      {/* h-dvh (not min-h-screen) on the shell: a bounded height is what makes
+          the panes below independently scrollable. With a min-height the flex
+          container grows with its content, `flex-1` resolves against an
+          unbounded box, and BOTH overflow-y-auto panes are dead — the document
+          scrolls and the rail leaves with it. `min-h-0` lets this row shrink
+          below its content so the children can actually scroll. */}
+      <div className="flex min-h-0 flex-1">
+        {/* `onOpenCommandBar` is not passed: the CommandBar owns its own
+            open state and binds the real ⌘K/Ctrl+K in useCommandBarState, so
+            there is no setter to hand down. The rail's search button is
+            therefore inert — it renders, it announces "⌘K", but clicking it
+            does nothing. Wiring it needs the CommandBar's state lifted, which
+            is a real change, not a conflict fix. */}
         <IconRail actor={coreActor} />
-        <main className="flex-1 overflow-y-auto">
-          {children}
+        <main id="main-content" className="min-w-0 flex-1 overflow-y-auto p-6 sm:p-8 md:p-10">
+          <div className="mx-auto max-w-7xl animate-shell-fade-in">
+            {children}
+          </div>
         </main>
       </div>
       <CommandBar />
