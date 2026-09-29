@@ -6,6 +6,9 @@ import { authorizePricingOperation } from "./authorization";
 import { DomainPricingError } from "./errors";
 import type { QuoteResult } from "./quote";
 import { persistPricingStatus } from "./status";
+import { transitionWorkItem, asUserId, asWorkItemId } from "~/server/core";
+import type { Actor as CoreActor, Result } from "~/server/core";
+import { quote } from "./quote";
 
 export type SetPriceInput =
   | { readonly workItemId: string; readonly kind: "APPLY_QUOTE"; readonly quote: QuoteResult }
@@ -93,6 +96,56 @@ export async function setPrice(actor: Actor, input: SetPriceInput): Promise<Pric
       setAt: created.setAt,
     };
   });
+}
+
+/**
+ * Fresh server-side quote for a release: the sheet shows a preview, but the
+ * applied quote is always recomputed here so a stale or tampered client
+ * payload can never set the price.
+ */
+export async function quoteForRelease(
+  workItemId: string,
+): Promise<Result<QuoteResult, DomainPricingError>> {
+  const item = await db.workItem.findUniqueOrThrow({
+    where: { id: workItemId },
+    select: { order: { select: { customerId: true } } },
+  });
+  return quote({ workItemId, customerId: item.order.customerId, asOf: new Date() });
+}
+
+/**
+ * Quick-price release: sets the price (reusing setPrice's policy checks
+ * and PRICED persistence) then releases the item to READY_FOR_PRODUCTION.
+ * Powers the board's quick-price sheet so pricing and the production move
+ * complete in one operator gesture instead of a page navigation.
+ */
+export async function priceAndReleaseToProduction(
+  actor: Actor,
+  input: SetPriceInput,
+): Promise<PriceSnapshot> {
+  const { workItemId } = input;
+  const snapshot = await setPrice(actor, input);
+
+  const coreActor: CoreActor = { userId: asUserId(actor.userId), roles: actor.roles, departmentIds: actor.departmentIds };
+  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+    const result = await transitionWorkItem(tx, {
+      workItemId: asWorkItemId(workItemId),
+      to: "READY_FOR_PRODUCTION",
+      actor: coreActor,
+      reason: "تسعير سريع من اللوحة",
+    });
+    if (!result.ok) {
+      throw new DomainPricingError("RELEASE_FAILED", result.error.message);
+    }
+    await audit.record(tx, {
+      action: "pricing.released_to_production",
+      entityType: "WorkItem",
+      entityId: workItemId,
+      actorId: actor.userId,
+    });
+  });
+
+  return snapshot;
 }
 
 function parseManualAmount(value: string): Prisma.Decimal {
