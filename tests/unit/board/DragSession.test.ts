@@ -93,3 +93,61 @@ describe("DragSession (T061, contracts/board-engine.md §DragSession)", () => {
     expect(session.offeredStations.size).toBe(0);
   });
 });
+
+describe("DragSession section-level drops (sub-lane targeting)", () => {
+  const reworkOption: MoveOption = {
+    edgeId: "IN_DESIGN->REWORK_REQUIRED",
+    to: "REWORK_REQUIRED",
+    kind: "DIRECT",
+    sheet: null,
+    screenHref: null,
+    backward: false,
+    destructive: false,
+    groupable: false,
+    labelAr: "طلب تعديل",
+  };
+  const designDoneOption: MoveOption = {
+    edgeId: "IN_DESIGN->DESIGN_COMPLETED",
+    to: "DESIGN_COMPLETED",
+    kind: "DIRECT",
+    sheet: null,
+    screenHref: null,
+    backward: false,
+    destructive: false,
+    groupable: false,
+    labelAr: "إتمام التصميم",
+  };
+
+  it("resolves a drop on a section to that section's state, not the first station match", () => {
+    const session = new DragSession();
+    // REWORK_REQUIRED sorts before DESIGN_COMPLETED in moves: a
+    // station-level resolve would always pick rework. The section drop
+    // must pick the hovered section's own state.
+    session.start(createCardWithMoves([reworkOption, designDoneOption]));
+
+    expect(session.resolveDropToState("DESIGN_COMPLETED")).toEqual(designDoneOption);
+    expect(session.state).toBe("idle");
+  });
+
+  it("returns null when the hovered section is not an offered move", () => {
+    const session = new DragSession();
+    session.start(createCardWithMoves([designDoneOption]));
+
+    expect(session.resolveDropToState("ASSIGNED")).toBeNull();
+    expect(session.state).toBe("idle");
+  });
+
+  it("tracks the hovered section and reports state-level offers", () => {
+    const session = new DragSession();
+    session.start(createCardWithMoves([reworkOption, designDoneOption]));
+
+    expect(session.isStateOffered("DESIGN_COMPLETED")).toBe(true);
+    expect(session.isStateOffered("ASSIGNED")).toBe(false);
+
+    session.setOverState("DESIGN_COMPLETED");
+    expect(session.overState).toBe("DESIGN_COMPLETED");
+
+    session.cancel();
+    expect(session.overState).toBeNull();
+  });
+});
