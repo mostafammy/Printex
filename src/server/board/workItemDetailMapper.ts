@@ -6,12 +6,15 @@
 import type {
   WorkItemFullDetail,
   DetailCustomer,
-  DetailReturn,
-  DetailDesignVersion,
-  DetailFileAsset,
-  DetailTransition,
 } from "~/lib/board/detailTypes";
 import type { WorkItemDetailQueryRow } from "./workItemDetailQueryTypes";
+import {
+  mapReturns,
+  mapDesignVersions,
+  mapFileAssets,
+  mapTransitions,
+  mapLateCancel,
+} from "./workItemDetailHistoryMapper";
 
 export type { WorkItemDetailQueryRow };
 
@@ -27,118 +30,26 @@ function mapCustomer(c: WorkItemDetailQueryRow["order"]["customer"]): DetailCust
 
 function mapPricing(row: WorkItemDetailQueryRow) {
   const p = row.prices[0];
-  const currentPrice = p
-    ? {
-        amount: p.amount.toString(),
-        currency: p.currency,
-        source: p.source,
-        setAt: p.setAt.toISOString(),
-        setByName: p.setBy.name,
-      }
-    : null;
+  const currentPrice = p ? {
+    amount: p.amount.toString(),
+    currency: p.currency,
+    source: p.source,
+    setAt: p.setAt.toISOString(),
+    setByName: p.setBy.name,
+  } : null;
 
-  const pricingStatus = row.pricingStatus
-    ? {
-        status: row.pricingStatus.status,
-        disputeReason: row.pricingStatus.disputeReason,
-        waitingSince: row.pricingStatus.waitingSince?.toISOString() ?? null,
-      }
-    : null;
+  const ps = row.pricingStatus;
+  const pricingStatus = ps ? {
+    status: ps.status,
+    disputeReason: ps.disputeReason,
+    waitingSince: ps.waitingSince?.toISOString() ?? null,
+  } : null;
 
   return { currentPrice, pricingStatus };
 }
 
-function mapReturns(returns: WorkItemDetailQueryRow["returns"]): readonly DetailReturn[] {
-  return returns.map((r) => ({
-    id: r.id,
-    originDepartmentName: r.originDepartment.name,
-    category: r.category,
-    explanation: r.explanation,
-    note: r.note,
-    createdAt: r.createdAt.toISOString(),
-    raisedByName: r.raisedBy.name,
-    assignedToName: r.assignedTo.name,
-  }));
-}
-
-function mapDesignVersions(versions: WorkItemDetailQueryRow["designVersions"]): readonly DetailDesignVersion[] {
-  return versions.map((dv) => ({
-    id: dv.id,
-    version: dv.version,
-    fileName: dv.fileName,
-    sizeBytes: dv.sizeBytes,
-    mimeType: dv.mimeType,
-    note: dv.note,
-    createdAt: dv.createdAt.toISOString(),
-    approvedAt: dv.approvedAt?.toISOString() ?? null,
-    uploadedByName: dv.uploadedBy.name,
-  }));
-}
-
-function mapFileAssets(assets: WorkItemDetailQueryRow["fileAssets"]): readonly DetailFileAsset[] {
-  return assets.map((fa) => ({
-    id: fa.id,
-    category: fa.category,
-    logicalName: fa.logicalName,
-    versions: fa.fileVersions.map((fv) => ({
-      id: fv.id,
-      versionNumber: fv.versionNumber,
-      originalName: fv.originalName,
-      mimeType: fv.fileObject.mimeType,
-      sizeBytes: Number(fv.fileObject.sizeBytes),
-      note: fv.note,
-      approved: fv.approved,
-      createdAt: fv.createdAt.toISOString(),
-      uploadedByName: fv.uploadedBy.name,
-    })),
-  }));
-}
-
-function mapTransitions(transitions: WorkItemDetailQueryRow["transitions"]): readonly DetailTransition[] {
-  return transitions.map((t) => ({
-    id: t.id,
-    from: t.from,
-    to: t.to,
-    at: t.at.toISOString(),
-    reason: t.reason,
-    rejectionCategory: t.rejectionCategory,
-    actorName: t.actor.name,
-  }));
-}
-
-function mapLateCancel(lc: WorkItemDetailQueryRow["lateCancellation"]) {
-  if (!lc) return null;
+function mapSpecs(row: WorkItemDetailQueryRow) {
   return {
-    id: lc.id,
-    reason: lc.reason,
-    costIncurred: lc.costIncurred.toString(),
-    costNote: lc.costNote,
-    createdAt: lc.createdAt.toISOString(),
-  };
-}
-
-export function mapWorkItemToDetail(row: WorkItemDetailQueryRow): WorkItemFullDetail {
-  const { currentPrice, pricingStatus } = mapPricing(row);
-  const due = row.dueDate?.toISOString() ?? row.order.dueDate?.toISOString() ?? null;
-  const title = row.description ?? row.productType?.name ?? "أمر عمل";
-
-  return {
-    id: row.id,
-    orderId: row.orderId,
-    orderNumber: row.order.number,
-    orderChannel: row.order.channel,
-    orderPriority: row.order.priority,
-    orderCreatedAt: row.order.createdAt.toISOString(),
-    orderDueDate: row.order.dueDate?.toISOString() ?? null,
-    customer: mapCustomer(row.order.customer),
-    createdBy: { id: row.order.createdBy.id, name: row.order.createdBy.name },
-    title,
-    description: row.description,
-    productType: row.productType ? { id: row.productType.id, name: row.productType.name } : null,
-    department: row.department ? { id: row.department.id, name: row.department.name, isExternalProduction: row.department.isExternalProduction } : null,
-    state: row.state,
-    quantity: row.quantity,
-    producedQuantity: row.producedQuantity,
     widthValue: row.widthValue ? row.widthValue.toString() : null,
     heightValue: row.heightValue ? row.heightValue.toString() : null,
     dimensionUnit: row.dimensionUnit,
@@ -147,12 +58,47 @@ export function mapWorkItemToDetail(row: WorkItemDetailQueryRow): WorkItemFullDe
     productionNotes: row.productionNotes,
     requiresDesign: row.requiresDesign,
     requiresReview: row.requiresReview,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-    dueDate: due,
-    assignee: row.assignee ? { id: row.assignee.id, name: row.assignee.name, email: row.assignee.email } : null,
-    pricingStatus,
-    currentPrice,
+  };
+}
+
+function mapProductAndDept(row: WorkItemDetailQueryRow) {
+  const productType = row.productType ? { id: row.productType.id, name: row.productType.name } : null;
+  const department = row.department ? { id: row.department.id, name: row.department.name, isExternalProduction: row.department.isExternalProduction } : null;
+  return { productType, department };
+}
+
+function getDueDate(row: WorkItemDetailQueryRow): string | null {
+  if (row.dueDate) return row.dueDate.toISOString();
+  if (row.order.dueDate) return row.order.dueDate.toISOString();
+  return null;
+}
+
+function getTitle(row: WorkItemDetailQueryRow): string {
+  if (row.description) return row.description;
+  if (row.productType?.name) return row.productType.name;
+  return "أمر عمل";
+}
+
+function mapOrderInfo(row: WorkItemDetailQueryRow) {
+  const o = row.order;
+  return {
+    orderId: row.orderId,
+    orderNumber: o.number,
+    orderChannel: o.channel,
+    orderPriority: o.priority,
+    orderCreatedAt: o.createdAt.toISOString(),
+    orderDueDate: o.dueDate ? o.dueDate.toISOString() : null,
+    customer: mapCustomer(o.customer),
+    createdBy: { id: o.createdBy.id, name: o.createdBy.name },
+    title: getTitle(row),
+    description: row.description,
+    dueDate: getDueDate(row),
+    ...mapProductAndDept(row),
+  };
+}
+
+function mapHistoryInfo(row: WorkItemDetailQueryRow) {
+  return {
     reworkCount: row.returns.length,
     returns: mapReturns(row.returns),
     designVersions: mapDesignVersions(row.designVersions),
@@ -165,5 +111,23 @@ export function mapWorkItemToDetail(row: WorkItemDetailQueryRow): WorkItemFullDe
       sentAt: vr.sentAt.toISOString(),
       receivedAt: vr.receivedAt?.toISOString() ?? null,
     })),
+  };
+}
+
+export function mapWorkItemToDetail(row: WorkItemDetailQueryRow): WorkItemFullDetail {
+  const { currentPrice, pricingStatus } = mapPricing(row);
+  return {
+    id: row.id,
+    state: row.state,
+    quantity: row.quantity,
+    producedQuantity: row.producedQuantity,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+    assignee: row.assignee ? { id: row.assignee.id, name: row.assignee.name, email: row.assignee.email } : null,
+    pricingStatus,
+    currentPrice,
+    ...mapOrderInfo(row),
+    ...mapSpecs(row),
+    ...mapHistoryInfo(row),
   };
 }

@@ -9,6 +9,7 @@ import React from "react";
 import { Package, Ruler, User as UserIcon, Building2, Calendar, Clock } from "lucide-react";
 import type { BoardCard, MoveOption, WorkItemFullDetail } from "~/lib/board/types";
 import { useBoardController } from "../hooks/useBoardController";
+import { SpecsPricingCard, SpecsMaterialCard } from "./SpecsCards";
 
 export interface DetailsSpecsTabProps {
   readonly card: BoardCard;
@@ -28,21 +29,6 @@ function formatDate(iso: string | null | undefined): string {
   } catch {
     return iso;
   }
-}
-
-function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
-  const isPriced = pricing === "PRICED";
-  const isPending = pricing === "PENDING";
-  const isDisputed = pricing === "DISPUTED";
-  const cls = isPriced
-    ? "bg-emerald-500/10 text-emerald-600"
-    : isPending
-      ? "bg-amber-500/10 text-amber-600"
-      : isDisputed
-        ? "bg-destructive/10 text-destructive"
-        : "bg-muted text-muted-foreground";
-  const label = isPriced ? "تم التسعير" : isPending ? "قيد التسعير" : isDisputed ? "نزاع تسعير" : "غير مطلوب";
-  return <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${cls}`}>{label}</span>;
 }
 
 function MoveButton({ move, onClick }: { readonly move: MoveOption; readonly onClick: () => void }) {
@@ -65,6 +51,52 @@ function MoveButton({ move, onClick }: { readonly move: MoveOption; readonly onC
   );
 }
 
+function SpecsTile({
+  icon: Icon,
+  label,
+  value,
+  subtext,
+  mono,
+}: {
+  readonly icon: React.ComponentType<{ readonly className?: string }>;
+  readonly label: string;
+  readonly value: string;
+  readonly subtext?: string | null;
+  readonly mono?: boolean;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        <span>{label}</span>
+      </div>
+      <div className={`mt-1 truncate font-bold text-foreground ${mono ? "font-mono text-sm" : "text-sm"}`}>
+        {value}
+      </div>
+      {subtext && <div className="mt-0.5 text-2xs text-emerald-600">{subtext}</div>}
+    </div>
+  );
+}
+
+function getAssigneeName(card: BoardCard, detail: WorkItemFullDetail | null): string {
+  if (card.assignee?.name) return card.assignee.name;
+  if (detail?.assignee?.name) return detail.assignee.name;
+  return "غير معيّن";
+}
+
+function getDeptName(detail: WorkItemFullDetail | null): string {
+  if (detail?.department?.name) return detail.department.name;
+  if (detail?.productType?.name) return detail.productType.name;
+  return "عام";
+}
+
+function getProducedSubtext(detail: WorkItemFullDetail | null): string | null {
+  if (typeof detail?.producedQuantity === "number") {
+    return `تم إنتاج: ${detail.producedQuantity} نسخة`;
+  }
+  return null;
+}
+
 function SpecsInfoGrid({
   card,
   detail,
@@ -74,85 +106,21 @@ function SpecsInfoGrid({
   readonly detail: WorkItemFullDetail | null;
   readonly dimensions: string;
 }) {
+  const qtySub = getProducedSubtext(detail);
+  const qty = card.quantity ? `${card.quantity} نسخة` : "—";
+  const assignee = getAssigneeName(card, detail);
+  const dept = getDeptName(detail);
+  const due = formatDate(card.dueAt ?? detail?.dueDate);
+  const entered = formatDate(card.enteredStationAt);
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Package className="h-3.5 w-3.5" /><span>الكمية المطلوبة</span></div>
-        <div className="mt-1 text-base font-bold text-foreground">{card.quantity ? `${card.quantity} نسخة` : "—"}</div>
-        {detail?.producedQuantity !== null && detail?.producedQuantity !== undefined && (
-          <div className="mt-0.5 text-2xs text-emerald-600">تم إنتاج: {detail.producedQuantity} نسخة</div>
-        )}
-      </div>
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Ruler className="h-3.5 w-3.5" /><span>المقاس والأبعاد</span></div>
-        <div className="mt-1 font-mono text-sm font-bold text-foreground">{dimensions}</div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><UserIcon className="h-3.5 w-3.5" /><span>المسؤول المعين</span></div>
-        <div className="mt-1 truncate text-sm font-bold text-foreground">{card.assignee?.name ?? detail?.assignee?.name ?? "غير معيّن"}</div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Building2 className="h-3.5 w-3.5" /><span>القسم والنوع</span></div>
-        <div className="mt-1 truncate text-sm font-bold text-foreground">{detail?.department?.name ?? detail?.productType?.name ?? "عام"}</div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Calendar className="h-3.5 w-3.5" /><span>تاريخ التسليم المتوقع</span></div>
-        <div className="mt-1 text-xs font-bold text-foreground">{formatDate(card.dueAt ?? detail?.dueDate)}</div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" /><span>الوقت بالمحطة</span></div>
-        <div className="mt-1 text-xs font-bold text-foreground">{formatDate(card.enteredStationAt)}</div>
-      </div>
-    </div>
-  );
-}
-
-function SpecsPricingCard({
-  card,
-  detail,
-}: {
-  readonly card: BoardCard;
-  readonly detail: WorkItemFullDetail | null;
-}) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-      <div className="flex items-center justify-between">
-        <h3 className="text-xs font-bold text-foreground">حالة التسعير والقيمة</h3>
-        <PricingBadge pricing={card.pricing} />
-      </div>
-      {detail?.currentPrice ? (
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className="font-mono text-xl font-bold text-foreground">{detail.currentPrice.amount}</span>
-          <span className="text-xs text-muted-foreground">{detail.currentPrice.currency}</span>
-          <span className="text-2xs text-muted-foreground">· حدده: {detail.currentPrice.setByName} في {formatDate(detail.currentPrice.setAt)}</span>
-        </div>
-      ) : (
-        <p className="mt-2 text-xs text-muted-foreground">لا يوجد سعر نهائي مسجل حتى الآن.</p>
-      )}
-    </div>
-  );
-}
-
-function SpecsMaterialCard({ detail }: { readonly detail: WorkItemFullDetail | null }) {
-  return (
-    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-      <h3 className="mb-2 text-xs font-bold text-foreground">مواصفات الخامة والتشطيب</h3>
-      <div className="flex flex-col gap-2 text-xs">
-        <div className="flex items-start justify-between border-b border-border/40 pb-2">
-          <span className="text-muted-foreground">الخامة / الورق:</span>
-          <span className="font-semibold text-foreground">{detail?.material ?? "غير محدد"}</span>
-        </div>
-        <div className="flex items-start justify-between border-b border-border/40 pb-2">
-          <span className="text-muted-foreground">ملاحظات التشطيب:</span>
-          <span className="font-semibold text-foreground">{detail?.finishNotes ?? "لا توجد ملاحظات خاصة"}</span>
-        </div>
-        {detail?.productionNotes && (
-          <div className="flex items-start justify-between pt-1">
-            <span className="text-muted-foreground">ملاحظات الإنتاج:</span>
-            <span className="font-semibold text-foreground">{detail.productionNotes}</span>
-          </div>
-        )}
-      </div>
+      <SpecsTile icon={Package} label="الكمية المطلوبة" value={qty} subtext={qtySub} />
+      <SpecsTile icon={Ruler} label="المقاس والأبعاد" value={dimensions} mono />
+      <SpecsTile icon={UserIcon} label="المسؤول المعين" value={assignee} />
+      <SpecsTile icon={Building2} label="القسم والنوع" value={dept} />
+      <SpecsTile icon={Calendar} label="تاريخ التسليم المتوقع" value={due} />
+      <SpecsTile icon={Clock} label="الوقت بالمحطة" value={entered} />
     </div>
   );
 }

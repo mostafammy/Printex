@@ -59,6 +59,71 @@ function BadgesRow({ card, stateLabel }: { readonly card: BoardCard; readonly st
   );
 }
 
+function HeaderTitleBlock({
+  title,
+  customerName,
+  phone,
+}: {
+  readonly title: string;
+  readonly customerName: string;
+  readonly phone?: string;
+}) {
+  return (
+    <>
+      <h2 className="line-clamp-2 text-lg font-bold text-foreground sm:text-xl">
+        {title}
+      </h2>
+      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span className="font-semibold text-foreground/80">{customerName}</span>
+        {phone && (
+          <span className="inline-flex items-center gap-1 font-mono">
+            <Phone className="h-3 w-3" />
+            {phone}
+          </span>
+        )}
+      </div>
+    </>
+  );
+}
+
+function QuickLinksLeft({
+  orderId,
+  cardId,
+  stationPageHref,
+}: {
+  readonly orderId: string;
+  readonly cardId: string;
+  readonly stationPageHref: string | null;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Link
+        href={`/orders/${orderId}`}
+        className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs transition-colors hover:border-primary/40 hover:bg-muted"
+      >
+        <ExternalLink className="h-3 w-3 text-primary" />
+        <span>صفحة الطلب بالكامل</span>
+      </Link>
+      <Link
+        href={`/work-items/${cardId}/files`}
+        className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-2xs transition-colors hover:border-primary/40 hover:text-foreground"
+      >
+        <Paperclip className="h-3 w-3" />
+        <span>الملفات والمرفقات</span>
+      </Link>
+      {stationPageHref && (
+        <Link
+          href={stationPageHref}
+          className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+        >
+          <span>شاشة المحطة</span>
+          <ArrowRight className="h-3 w-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
 function QuickLinksRow({
   card,
   stationPageHref,
@@ -72,31 +137,11 @@ function QuickLinksRow({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 bg-background/50 px-4 py-2.5 sm:px-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <Link
-          href={`/orders/${card.orderId}`}
-          className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs transition-colors hover:border-primary/40 hover:bg-muted"
-        >
-          <ExternalLink className="h-3 w-3 text-primary" />
-          <span>صفحة الطلب بالكامل</span>
-        </Link>
-        <Link
-          href={`/work-items/${card.id}/files`}
-          className="inline-flex items-center gap-1 rounded-md border border-border/80 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground shadow-2xs transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <Paperclip className="h-3 w-3" />
-          <span>الملفات والمرفقات</span>
-        </Link>
-        {stationPageHref && (
-          <Link
-            href={stationPageHref}
-            className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-          >
-            <span>شاشة المحطة</span>
-            <ArrowRight className="h-3 w-3" />
-          </Link>
-        )}
-      </div>
+      <QuickLinksLeft
+        orderId={card.orderId}
+        cardId={card.id}
+        stationPageHref={stationPageHref}
+      />
       {onOpenMoveMenu && (
         <button
           type="button"
@@ -126,18 +171,11 @@ export function DetailsHeader({
       <div className="flex shrink-0 items-start justify-between border-b border-border/70 bg-muted/40 p-4 sm:p-5">
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 pe-4">
           <BadgesRow card={card} stateLabel={stateLabel} />
-          <h2 className="line-clamp-2 text-lg font-bold text-foreground sm:text-xl">
-            {detail?.title ?? card.title}
-          </h2>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground/80">{card.customerName}</span>
-            {detail?.customer.phones[0] && (
-              <span className="inline-flex items-center gap-1 font-mono">
-                <Phone className="h-3 w-3" />
-                {detail.customer.phones[0]}
-              </span>
-            )}
-          </div>
+          <HeaderTitleBlock
+            title={detail?.title ?? card.title}
+            customerName={card.customerName}
+            phone={detail?.customer.phones[0]}
+          />
         </div>
         <button
           type="button"
