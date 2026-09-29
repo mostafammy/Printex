@@ -2,13 +2,13 @@
 
 /**
  * SheetHost: lazy dialog host that renders the correct sheet for the current SheetManager request.
- * Uses a data-attribute-driven open/close pattern without imperative dialog refs.
- * Dynamic sheet rendering avoids bundling unused sheet code on first load.
+ * World-class Apple frosted glass modal container with backdrop blur, smooth entrance,
+ * ambient highlights, click-outside dismissal, and keyboard Escape trapping.
  * (plan.md S1, S5, contracts/board-engine.md §Registries, US3)
  */
 
 import dynamic from "next/dynamic";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import type { SheetRequest } from "~/lib/board/sheets/SheetManager";
 import { useBoardController } from "./hooks/useBoardController";
 import { useSheetRequest } from "./hooks/useSheetRequest";
@@ -81,6 +81,19 @@ function SheetContent({ request }: { request: SheetRequest }) {
 
 export function SheetHost() {
   const request = useSheetRequest();
+  const controller = useBoardController();
+
+  useEffect(() => {
+    if (!request) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        controller.sheetManager?.cancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [request, controller]);
 
   if (!request) return null;
 
@@ -90,15 +103,15 @@ export function SheetHost() {
       aria-modal="true"
       aria-label="إجراء على الطلب"
       dir="rtl"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         // Close on backdrop click
         if (e.target === e.currentTarget) {
-          /* call cancel via SheetContent's cancel */
+          controller.sheetManager?.cancel();
         }
       }}
     >
-      <div className="w-full max-w-md rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-popover p-4 text-popover-foreground">
+      <div className="relative w-full max-w-lg rounded-3xl border border-border/80 bg-card/95 backdrop-blur-2xl p-6 text-card-foreground shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200 overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent">
         <SheetContent request={request} />
       </div>
     </div>
