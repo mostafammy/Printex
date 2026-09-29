@@ -95,14 +95,18 @@ export class BoardController {
     await this.#dropPolicies.resolve(option, card).onDrop({ card, option, input });
   }
 
-  async handleDropOnStation(station: StationId): Promise<void> {
-    // resolveDrop() cancels the session (clearing activeCard) as a
-    // side effect, so the card must be captured first — otherwise the
-    // move executes with a null card and crashes reading card.id.
+  /**
+   * Drop entry for both granularities: a lane section id resolves the
+   * move landing exactly on that state, a station id the station's first
+   * matching edge (header/gap/tab fallback). The card is captured before
+   * resolve*() cancels the session — otherwise the move executes with a
+   * null card and crashes reading card.id.
+   */
+  async handleDrop(target: StationId | WorkItemState): Promise<void> {
     const session = this.#dragSession;
     const card = session?.activeCard;
     if (!session || !card) return;
-    const option = session.resolveDrop(station);
+    const option = session.resolveDropTarget(target);
     if (option) await this.executeMove(card, option);
   }
 
