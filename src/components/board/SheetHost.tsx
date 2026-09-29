@@ -23,6 +23,11 @@ async function fetchDepartments() {
   return getDepartmentsAction();
 }
 
+async function fetchQuickPriceContext(workItemId: string) {
+  const { getQuickPriceContextAction } = await import("~/app/(shell)/board/actions");
+  return getQuickPriceContextAction(workItemId);
+}
+
 // Lazy-load sheet components to keep initial bundle small
 const RejectDesignSheet = dynamic(
   () => import("./sheets/RejectDesignSheet").then((m) => ({ default: m.RejectDesignSheet })),
@@ -46,6 +51,10 @@ const SendBackSheet = dynamic(
 );
 const CancelSheet = dynamic(
   () => import("./sheets/CancelSheet").then((m) => ({ default: m.CancelSheet })),
+  { ssr: false },
+);
+const QuickPriceSheet = dynamic(
+  () => import("./sheets/QuickPriceSheet").then((m) => ({ default: m.QuickPriceSheet })),
   { ssr: false },
 );
 
@@ -74,6 +83,8 @@ function SheetContent({ request }: { request: SheetRequest }) {
       return <SendBackSheet {...props} />;
     case "cancel":
       return <CancelSheet {...props} />;
+    case "quick-price":
+      return <QuickPriceSheet {...props} fetchContext={fetchQuickPriceContext} />;
     default:
       return null;
   }
