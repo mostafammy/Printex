@@ -15,7 +15,7 @@ export type { SliceId, MotionTokens };
 
 export type SheetId =
   | "assign-designer" | "reject-design" | "send-back" | "complete-production"
-  | "route-department" | "cancel" | "receive" | "handover";
+  | "route-department" | "cancel" | "receive" | "handover" | "quick-price";
 
 export type SheetInput = Record<string, unknown>;
 
