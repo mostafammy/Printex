@@ -21,11 +21,13 @@
  */
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useDroppable } from "@dnd-kit/core";
 import type { WorkItemState } from "~/server/board";
 import type { BoardCard } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { STATE_AR_LABELS } from "~/lib/board/stations";
+import { useLaneDropOffer } from "./dnd/useLaneDropOffer";
 import { useFreshIds } from "./hooks/useFreshIds";
 import { useSentinelLoadMore } from "./hooks/useSentinelLoadMore";
 import { LanePageControl } from "./LanePageControl";
@@ -209,8 +211,26 @@ export function SubLane(props: SubLaneProps) {
 
   const label = props.labelAr ?? STATE_AR_LABELS[props.state] ?? props.state;
 
+  // Every section is its own drop target: without this a drop anywhere in
+  // the station resolves to the station's first matching edge, so a card
+  // dragged onto "مكتمل التصميم" lands in "تعديل مطلوب". The station
+  // column stays registered too, as the fallback for header and gaps.
+  const { setNodeRef } = useDroppable({ id: props.state });
+  const laneOffer = useLaneDropOffer(props.state);
+  const laneRing =
+    laneOffer === "over"
+      ? "ring-2 ring-primary rounded-lg"
+      : laneOffer === "offered"
+        ? "ring-1 ring-primary/40 rounded-lg"
+        : "";
+
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+    <div
+      ref={setNodeRef}
+      data-testid={`lane-section-${props.state}`}
+      data-lane-drop={laneOffer}
+      className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${laneRing}`}
+    >
       <LaneHeader labelAr={label} count={cardIds.length} showCount={props.labelAr !== undefined} />
       {cardIds.length === 0 ? <EmptyLane labelAr={label} /> : <VirtualizedCardList {...props} cardIds={cardIds} />}
     </div>
