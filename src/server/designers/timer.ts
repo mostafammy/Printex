@@ -45,13 +45,27 @@ const TIMEABLE_STATES: readonly string[] = ["ASSIGNED", "REWORK_REQUIRED", "IN_D
 export async function startTimer(actor: Actor, workItemId: string): Promise<void> {
   authorize(actor, "design.work");
 
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
-    const workItem = await tx.workItem.findUnique({ where: { id: workItemId } });
+  await db.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const workItem = await tx.workItem.findUnique({ where: { id: workItemId } });
     if (!workItem) {
       throw new DomainDesignerError("WORK_ITEM_NOT_FOUND", `Work Item ${workItemId} does not exist.`);
     }
-    if (workItem.assigneeId !== actor.userId) {
+    if (workItem.assigneeId !== actor.userId && !actor.roles.includes("ADMIN_OWNER")) {
       throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may start this timer.");
+    }
+    if (workItem.assigneeId !== actor.userId) {
+      // Admin override path (reached only by ADMIN_OWNER, everyone else
+      // threw above): an admin may start anyone's timer, but only when
+      // design source files already exist — otherwise there is nothing
+      // to work on, and starting would strand the item in IN_DESIGN.
+      const versionCount = await tx.designVersion.count({ where: { workItemId } });
+      if (versionCount === 0) {
+        throw new DomainDesignerError(
+          "NO_DESIGN_FILE",
+          "Cannot start work: no design file has been attached to this item yet.",
+        );
+      }
     }
     if (!TIMEABLE_STATES.includes(workItem.state)) {
       throw new DomainDesignerError(
@@ -109,7 +123,7 @@ export async function startTimer(actor: Actor, workItemId: string): Promise<void
       entityId: workItemId,
       actorId: actor.userId,
     });
-  });
+  }, { timeout: 15000, maxWait: 15000 });
 }
 
 // ── pauseTimer ───────────────────────────────────────────────────────────
@@ -128,7 +142,7 @@ export async function pauseTimer(actor: Actor, workItemId: string): Promise<void
     if (!workItem) {
       throw new DomainDesignerError("WORK_ITEM_NOT_FOUND", `Work Item ${workItemId} does not exist.`);
     }
-    if (workItem.assigneeId !== actor.userId) {
+    if (workItem.assigneeId !== actor.userId && !actor.roles.includes("ADMIN_OWNER")) {
       throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may pause this timer.");
     }
 
@@ -141,7 +155,7 @@ export async function pauseTimer(actor: Actor, workItemId: string): Promise<void
       entityId: workItemId,
       actorId: actor.userId,
     });
-  });
+  }, { timeout: 15000, maxWait: 15000 });
 }
 
 // ── phaseDurations ───────────────────────────────────────────────────────
