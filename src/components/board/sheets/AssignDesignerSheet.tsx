@@ -8,16 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  Palette,
-  ArrowLeft,
-  Sparkles,
-  Layers,
-  RotateCcw,
-  CheckCircle2,
-  X,
-  UserCheck,
-} from "lucide-react";
+import { Palette, ArrowLeft, X, UserCheck } from "lucide-react";
 import type { SheetRequest } from "~/lib/board/sheets/SheetManager";
 import {
   type EligibleDesigner,
@@ -34,10 +25,7 @@ export interface AssignDesignerSheetProps {
   readonly onCancel: () => void;
 }
 
-function useDesignerList(
-  workItemId: string,
-  fetcher: (id: string) => Promise<EligibleDesigner[]>,
-) {
+function useDesignerList(workItemId: string, fetcher: (id: string) => Promise<EligibleDesigner[]>) {
   const [designers, setDesigners] = useState<EligibleDesigner[]>([]);
   const [designerId, setDesignerId] = useState("");
   const [loading, setLoading] = useState(true);
@@ -64,15 +52,7 @@ function useDesignerList(
   return { designers, designerId, setDesignerId, loading };
 }
 
-function SheetHeader({
-  card,
-  isReassignment,
-  onCancel,
-}: {
-  readonly card: SheetRequest["card"];
-  readonly isReassignment: boolean;
-  readonly onCancel: () => void;
-}) {
+function SheetHeader({ card, isReassignment, onCancel }: { readonly card: SheetRequest["card"]; readonly isReassignment: boolean; readonly onCancel: () => void }) {
   return (
     <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-4">
       <div className="flex items-start gap-3">
@@ -80,17 +60,13 @@ function SheetHeader({
           <Palette className="h-5 w-5" />
         </div>
         <div className="flex flex-col gap-1">
-          {/* Breadcrumb Transition Badge */}
           <div className="flex items-center gap-1.5 text-2xs font-bold">
-            <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">
-              الاستقبال
-            </span>
+            <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground">الاستقبال</span>
             <ArrowLeft className="h-3 w-3 text-muted-foreground" />
             <span className="rounded-md bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-purple-700 dark:text-purple-300">
               {isReassignment ? "إعادة تعيين للتصميم" : "التصميم"}
             </span>
           </div>
-
           <h2 className="text-base font-bold text-foreground line-clamp-1">
             {isReassignment ? "إعادة توجيه المصمم" : "تعيين مصمم وبدء العمل"}
           </h2>
@@ -99,7 +75,6 @@ function SheetHeader({
           </p>
         </div>
       </div>
-
       <button
         type="button"
         onClick={onCancel}
@@ -132,7 +107,6 @@ function AssignActions({
       >
         إلغاء (Esc)
       </button>
-
       <button
         type="submit"
         disabled={disabled}
@@ -151,69 +125,68 @@ function AssignActions({
   );
 }
 
+function DesignerPickerSection({
+  designers,
+  selectedId,
+  loading,
+  onChange,
+  onDoubleClick,
+}: {
+  readonly designers: readonly EligibleDesigner[];
+  readonly selectedId: string;
+  readonly loading: boolean;
+  readonly onChange: (id: string) => void;
+  readonly onDoubleClick: (id?: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-bold text-foreground flex items-center justify-between">
+        <span className="flex items-center gap-1.5">
+          <UserCheck className="h-3.5 w-3.5 text-primary" />
+          <span>اختر المصمم المسؤول</span>
+          <span className="text-rose-500">*</span>
+        </span>
+        <span className="text-2xs text-muted-foreground font-normal">انقر مرتين على أي مصمم للتأكيد المباشر</span>
+      </label>
+      <DesignerSelect
+        designers={designers}
+        selectedId={selectedId}
+        loading={loading}
+        onChange={onChange}
+        onDoubleClickConfirm={onDoubleClick}
+      />
+    </div>
+  );
+}
+
 export function AssignDesignerSheet({
   request,
   fetchDesigners,
   onConfirm,
   onCancel,
 }: AssignDesignerSheetProps) {
-  const { designers, designerId, setDesignerId, loading } = useDesignerList(
-    request.card.id,
-    fetchDesigners,
-  );
+  const { designers, designerId, setDesignerId, loading } = useDesignerList(request.card.id, fetchDesigners);
   const [reason, setReason] = useState("");
   const isReassignment = Boolean(request.card.assignee?.id);
-
   const selectedDesigner = designers.find((d) => d.id === designerId);
 
-  const handleConfirmSubmit = useCallback(
-    (targetDesignerId?: string) => {
-      const finalId = targetDesignerId || designerId;
-      if (!finalId) return;
-      if (isReassignment && !reason.trim()) return;
-      onConfirm({ designerId: finalId, ...(reason.trim() ? { reason: reason.trim() } : {}) });
-    },
-    [designerId, isReassignment, reason, onConfirm],
-  );
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleConfirmSubmit();
-  };
+  const handleConfirmSubmit = useCallback((targetDesignerId?: string) => {
+    const finalId = targetDesignerId ?? designerId;
+    if (!finalId || (isReassignment && !reason.trim())) return;
+    onConfirm({ designerId: finalId, ...(reason.trim() ? { reason: reason.trim() } : {}) });
+  }, [designerId, isReassignment, reason, onConfirm]);
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4" dir="rtl">
-      <SheetHeader
-        card={request.card}
-        isReassignment={isReassignment}
-        onCancel={onCancel}
+    <form onSubmit={(e) => { e.preventDefault(); handleConfirmSubmit(); }} className="flex flex-col gap-4" dir="rtl">
+      <SheetHeader card={request.card} isReassignment={isReassignment} onCancel={onCancel} />
+      <DesignerPickerSection
+        designers={designers}
+        selectedId={designerId}
+        loading={loading}
+        onChange={setDesignerId}
+        onDoubleClick={handleConfirmSubmit}
       />
-
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-bold text-foreground flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
-            <UserCheck className="h-3.5 w-3.5 text-primary" />
-            <span>اختر المصمم المسؤول</span>
-            <span className="text-rose-500">*</span>
-          </span>
-          <span className="text-2xs text-muted-foreground font-normal">
-            انقر مرتين على أي مصمم للتأكيد المباشر
-          </span>
-        </label>
-
-        <DesignerSelect
-          designers={designers}
-          selectedId={designerId}
-          loading={loading}
-          onChange={setDesignerId}
-          onDoubleClickConfirm={handleConfirmSubmit}
-        />
-      </div>
-
-      {isReassignment && (
-        <ReassignReasonField value={reason} onChange={setReason} />
-      )}
-
+      {isReassignment && <ReassignReasonField value={reason} onChange={setReason} />}
       <AssignActions
         isReassignment={isReassignment}
         disabled={!designerId || loading || (isReassignment && !reason.trim())}
