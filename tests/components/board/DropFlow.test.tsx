@@ -137,7 +137,7 @@ describe("Board drop flow (repro)", () => {
       session.start(directCard);
     });
     await act(async () => {
-      await controller.handleDropOnStation("design");
+      await controller.handleDrop("design");
     });
     expect(gateway.moveInvocations).toHaveLength(1);
     expect(document.getElementById("__board-live-announcer")?.textContent).toContain("تم نقل");
@@ -151,7 +151,7 @@ describe("Board drop flow (repro)", () => {
     });
     let dropPromise: Promise<void> | null = null;
     act(() => {
-      dropPromise = controller.handleDropOnStation("design");
+      dropPromise = controller.handleDrop("design");
     });
     // The detail modal pops while the drop awaits input (the sheet is
     // dynamically imported, so it resolves a tick after the dialog opens).
@@ -163,5 +163,42 @@ describe("Board drop flow (repro)", () => {
     // Cancelled: no move sent, fly-back played, no crash.
     expect(gateway.moveInvocations).toHaveLength(0);
     expect(screen.queryByText(/تعيين مصمم/)).not.toBeInTheDocument();
+  });
+
+  it("section drop executes the hovered section's move, not the station's first match", async () => {
+    const reworkFirst = makeCard("c-sections", [
+      {
+        edgeId: "IN_DESIGN->REWORK_REQUIRED",
+        to: "REWORK_REQUIRED",
+        kind: "DIRECT",
+        sheet: null,
+        screenHref: null,
+        backward: false,
+        destructive: false,
+        groupable: false,
+        labelAr: "طلب تعديل",
+      },
+      {
+        edgeId: "IN_DESIGN->DESIGN_COMPLETED",
+        to: "DESIGN_COMPLETED",
+        kind: "DIRECT",
+        sheet: null,
+        screenHref: null,
+        backward: false,
+        destructive: false,
+        groupable: false,
+        labelAr: "إتمام التصميم",
+      },
+    ]);
+    const inDesignCard = { ...reworkFirst, state: "IN_DESIGN" as const };
+    const { controller, session, gateway } = setup([inDesignCard]);
+    act(() => {
+      session.start(inDesignCard);
+    });
+    await act(async () => {
+      await controller.handleDrop("DESIGN_COMPLETED");
+    });
+    expect(gateway.moveInvocations).toHaveLength(1);
+    expect(gateway.moveInvocations[0]?.edgeId).toBe("IN_DESIGN->DESIGN_COMPLETED");
   });
 });
