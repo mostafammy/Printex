@@ -20,7 +20,8 @@ import {
 } from "@dnd-kit/core";
 import React, { useState } from "react";
 import type { BoardCard } from "~/lib/board/types";
-import type { StationId } from "~/server/board";
+import { STATE_PLACEMENT } from "~/lib/board/stations";
+import type { StationId, WorkItemState } from "~/server/board";
 import { useBoardController } from "../hooks/useBoardController";
 import { JobTicket } from "../JobTicket";
 import { ARABIC_DND_ANNOUNCEMENTS } from "./dndAnnouncements.ar";
@@ -52,42 +53,74 @@ function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
   );
 }
 
-export function DndBridge({ children }: DndBridgeProps) {
-  const controller = useBoardController();
-  const sensors = useBoardSensors();
-  const [activeCard, setActiveCard] = useState<BoardCard | null>(null);
+function dropTargetFor(rawId: string | number | null | undefined): StationId | WorkItemState | null {
+  if (rawId == null) return null;
+  return String(rawId) as StationId | WorkItemState;
+}
 
+function isBoardState(target: StationId | WorkItemState): target is WorkItemState {
+  return target in STATE_PLACEMENT;
+}
+
+function useDropEvents(
+  controller: ReturnType<typeof useBoardController>,
+  setActiveCard: (card: BoardCard | null) => void,
+) {
   const onStart = (e: DragStartEvent) => {
     const c = controller.getCard(String(e.active.id));
     if (c) { setActiveCard(c); controller.dragSession?.start(c); }
   };
 
-  // The hovered station is what separates a pulsing "over" column from a
-  // merely-ringed "offered" one; without this the operator cannot tell which
-  // of the valid columns the card would actually land in.
+  // Drop targets come in two granularities: lane sections register
+  // their state id, columns and rail tabs their station id. A state id
+  // is always a STATE_PLACEMENT key; station ids never are.
   const onOver = (e: DragOverEvent) => {
-    controller.dragSession?.setOver(e.over?.id ? (String(e.over.id) as StationId) : null);
-  };
-
-  const endDrag = (station: StationId | null) => {
-    setActiveCard(null);
-    if (station) { void controller.handleDropOnStation(station); }
-    else { controller.dragSession?.cancel(); }
+    const session = controller.dragSession;
+    if (!session) return;
+    const target = dropTargetFor(e.over?.id ?? null);
+    if (target !== null && isBoardState(target)) {
+      const placement = STATE_PLACEMENT[target];
+      session.setOverState(target);
+      session.setOver(placement === "OFF_BOARD" ? null : placement.station);
+    } else {
+      session.setOverState(null);
+      session.setOver(target);
+    }
   };
 
   const onEnd = (e: DragEndEvent) => {
-    endDrag(e.over?.id ? (String(e.over.id) as StationId) : null);
+    const target = dropTargetFor(e.over?.id ?? null);
+    setActiveCard(null);
+    if (target === null) {
+      controller.dragSession?.cancel();
+    } else {
+      void controller.handleDrop(target);
+    }
   };
+
+  const onCancel = () => {
+    setActiveCard(null);
+    controller.dragSession?.cancel();
+  };
+
+  return { onStart, onOver, onEnd, onCancel };
+}
+
+export function DndBridge({ children }: DndBridgeProps) {
+  const controller = useBoardController();
+  const sensors = useBoardSensors();
+  const [activeCard, setActiveCard] = useState<BoardCard | null>(null);
+  const events = useDropEvents(controller, setActiveCard);
 
   return (
     <DndContext
       sensors={sensors}
       accessibility={{ announcements: ARABIC_DND_ANNOUNCEMENTS }}
       autoScroll={{ threshold: { x: 0.1, y: 0.1 }, acceleration: 10 }}
-      onDragStart={onStart}
-      onDragOver={onOver}
-      onDragEnd={onEnd}
-      onDragCancel={() => { setActiveCard(null); controller.dragSession?.cancel(); }}
+      onDragStart={events.onStart}
+      onDragOver={events.onOver}
+      onDragEnd={events.onEnd}
+      onDragCancel={events.onCancel}
     >
       {/* .contents keeps the wrapper out of the flex chain while still
           carrying data-dragging, which the grabbing / not-allowed cursor
