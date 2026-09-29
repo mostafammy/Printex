@@ -102,7 +102,17 @@ export async function searchCustomersAction(query: string) {
 
 export async function getEligibleDesignersAction(
   workItemId: string,
-): Promise<Array<{ id: string; name: string; activeCount: number; isSuggested: boolean }>> {
+): Promise<
+  Array<{
+    id: string;
+    name: string;
+    activeCount: number;
+    queueSize?: number;
+    estimatedWaitMinutes?: number;
+    pastJobsForCustomer?: number;
+    isSuggested: boolean;
+  }>
+> {
   const actor = await getActor();
   try {
     const list = await getEligibleDesigners(actor, workItemId);
@@ -110,6 +120,9 @@ export async function getEligibleDesignersAction(
       id: d.userId,
       name: d.name,
       activeCount: d.activeWorkItemCount,
+      queueSize: d.queueSize,
+      estimatedWaitMinutes: d.estimatedWaitMinutes,
+      pastJobsForCustomer: d.pastJobsForCustomer,
       isSuggested: d.isSuggested,
     }));
   } catch (error) {
@@ -129,6 +142,9 @@ export async function getEligibleDesignersAction(
       id: u.id,
       name: u.name,
       activeCount: 0,
+      queueSize: 0,
+      estimatedWaitMinutes: 0,
+      pastJobsForCustomer: 0,
       isSuggested: idx === 0,
     }));
   }
