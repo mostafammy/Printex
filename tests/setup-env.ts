@@ -11,3 +11,21 @@ try {
 } catch {
   // CI provides environment variables directly.
 }
+
+// jsdom has no ResizeObserver, but SubLane measures its scroll container
+// with one on mount — without this every component test rendering a lane
+// dies with `ReferenceError: ResizeObserver is not defined`.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  class ResizeObserverStub {
+    observe(): void {
+      return undefined;
+    }
+    unobserve(): void {
+      return undefined;
+    }
+    disconnect(): void {
+      return undefined;
+    }
+  }
+  globalThis.ResizeObserver = ResizeObserverStub;
+}
