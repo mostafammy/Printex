@@ -7,6 +7,7 @@ import { EdgeCatalog, type EdgeHandler } from "../edgeCatalog";
 import { cancelEdges } from "./cancel";
 import { collectionEdges } from "./collection";
 import { designEdges } from "./design";
+import { designHandoffEdges } from "./designHandoff";
 import { pricingEdges } from "./pricing";
 import { productionEdges } from "./production";
 import { receptionEdges } from "./reception";
@@ -16,6 +17,7 @@ import { systemEdges } from "./system";
 export const ALL_EDGE_HANDLERS: readonly EdgeHandler[] = [
   ...receptionEdges,
   ...designEdges,
+  ...designHandoffEdges,
   ...reviewEdges,
   ...productionEdges,
   ...systemEdges,
@@ -42,6 +44,7 @@ export {
   cancelEdges,
   collectionEdges,
   designEdges,
+  designHandoffEdges,
   pricingEdges,
   productionEdges,
   receptionEdges,
