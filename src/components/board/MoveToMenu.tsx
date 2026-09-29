@@ -2,15 +2,25 @@
 
 /**
  * MoveToMenu: keyboard & mobile target selection for card moves (shortcut 'M').
+ * Apple-grade quick action popover with category badges, keyboard number shortcuts (1-9),
+ * contextual icons, and smooth interactive hover effects.
  * (specs/017-press-floor-board/contracts/board-engine.md §Accessibility, FR-020, FR-035c, plan.md S1)
- *
- * Declares itself modal, so it now behaves modally: focus moves into the
- * dialog on open, Tab is trapped inside it, and focus returns to the ticket
- * that opened it. It previously bound only Escape, which meant a keyboard
- * user could Tab straight out of a dialog claiming to be modal.
  */
 
 import React, { useEffect, useRef } from "react";
+import {
+  Palette,
+  Printer,
+  RotateCcw,
+  CheckCheck,
+  XCircle,
+  Building,
+  ArrowRight,
+  Sparkles,
+  Layers,
+  CornerDownLeft,
+  X,
+} from "lucide-react";
 import type { BoardCard, MoveOption } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
 
@@ -22,33 +32,107 @@ export interface MoveToMenuProps {
 
 const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
-function optionColorClass(option: MoveOption): string {
-  if (option.destructive) return "text-destructive hover:bg-destructive/10";
-  if (option.backward) return "text-amber-700 hover:bg-amber-500/10 dark:text-amber-400";
-  return "hover:bg-accent";
+function getOptionIcon(option: MoveOption) {
+  if (option.edgeId.includes("ASSIGNED") || option.edgeId.includes("DESIGN")) {
+    return Palette;
+  }
+  if (option.edgeId.includes("PRODUCTION")) {
+    return Printer;
+  }
+  if (option.edgeId.includes("REWORK") || option.backward) {
+    return RotateCcw;
+  }
+  if (option.edgeId.includes("COMPLETE") || option.edgeId.includes("APPROVED")) {
+    return CheckCheck;
+  }
+  if (option.destructive || option.edgeId.includes("CANCEL")) {
+    return XCircle;
+  }
+  return ArrowRight;
+}
+
+function optionColorClass(option: MoveOption): {
+  btnCls: string;
+  iconBg: string;
+  badgeCls: string;
+} {
+  if (option.destructive) {
+    return {
+      btnCls: "border-destructive/30 bg-destructive/5 hover:bg-destructive/15 text-destructive hover:border-destructive/60",
+      iconBg: "bg-destructive/15 text-destructive",
+      badgeCls: "bg-destructive/10 text-destructive border-destructive/20",
+    };
+  }
+  if (option.edgeId.includes("ASSIGNED") || option.edgeId.includes("DESIGN")) {
+    return {
+      btnCls: "border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 hover:border-purple-500/60",
+      iconBg: "bg-purple-500/20 text-purple-700 dark:text-purple-300",
+      badgeCls: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20",
+    };
+  }
+  if (option.backward) {
+    return {
+      btnCls: "border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:border-amber-500/60",
+      iconBg: "bg-amber-500/20 text-amber-700 dark:text-amber-400",
+      badgeCls: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+    };
+  }
+  return {
+    btnCls: "border-border/70 bg-card/70 hover:bg-primary/8 text-foreground hover:border-primary/40 hover:text-primary",
+    iconBg: "bg-primary/10 text-primary",
+    badgeCls: "bg-muted text-muted-foreground border-border/60",
+  };
 }
 
 function OptionItem({
   option,
+  index,
   onSelect,
 }: {
   readonly option: MoveOption;
+  readonly index: number;
   readonly onSelect: (o: MoveOption) => void;
 }) {
+  const IconComponent = getOptionIcon(option);
+  const { btnCls, iconBg, badgeCls } = optionColorClass(option);
+  const shortcutNum = index < 9 ? index + 1 : null;
+
   return (
     <li role="none">
       <button
         type="button"
         role="menuitem"
         onClick={() => onSelect(option)}
-        className={`flex min-h-11 w-full items-center justify-between rounded-[var(--board-radius)] px-2.5 text-start text-[13px] font-semibold transition-colors ${optionColorClass(option)}`}
+        className={`group flex min-h-12 w-full items-center justify-between rounded-2xl border p-3 text-start transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xs hover:shadow-xs active:scale-[0.99] ${btnCls}`}
       >
-        <span>{option.labelAr}</span>
-        {option.kind !== "DIRECT" && (
-          <span className="text-xs text-muted-foreground">
-            {option.kind === "SHEET" ? "(يتطلب تفاصيل)" : "(فتح شاشة)"}
-          </span>
-        )}
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-110 ${iconBg}`}
+          >
+            <IconComponent className="h-4 w-4" />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold leading-tight truncate">
+              {option.labelAr}
+            </span>
+            <span className="text-2xs text-muted-foreground">
+              {option.kind === "SHEET"
+                ? "يتطلب اختيار وتفاصيل"
+                : option.kind === "PAGE"
+                  ? "فتح صفحة المحطة"
+                  : "انتقال مباشر فوري"}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {shortcutNum && (
+            <kbd className="hidden sm:inline-flex h-5 w-5 items-center justify-center rounded-md border border-border/80 bg-muted/60 font-mono text-2xs font-semibold text-muted-foreground shadow-2xs group-hover:border-primary/40 group-hover:text-primary">
+              {shortcutNum}
+            </kbd>
+          )}
+          <CornerDownLeft className="h-3.5 w-3.5 text-muted-foreground/60 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary" />
+        </div>
       </button>
     </li>
   );
@@ -63,15 +147,17 @@ function OptionsList({
 }) {
   if (moves.length === 0) {
     return (
-      <p className="py-4 text-center text-sm text-muted-foreground">
-        لا توجد وجهات متاحة لهذا الطلب حالياً
-      </p>
+      <div className="py-8 text-center">
+        <p className="text-xs font-semibold text-muted-foreground">
+          لا توجد وجهات متاحة لهذا الطلب في حالته الحالية
+        </p>
+      </div>
     );
   }
   return (
-    <ul className="flex flex-col gap-1.5" role="menu">
-      {moves.map((o) => (
-        <OptionItem key={o.edgeId} option={o} onSelect={onSelect} />
+    <ul className="flex flex-col gap-2" role="menu">
+      {moves.map((o, idx) => (
+        <OptionItem key={o.edgeId} option={o} index={idx} onSelect={onSelect} />
       ))}
     </ul>
   );
@@ -93,14 +179,16 @@ function trapTab(e: KeyboardEvent, root: HTMLElement) {
     lastEl.focus();
   } else if (!e.shiftKey && active === lastEl) {
     e.preventDefault();
-    firstEl.focus();
+    lastEl.focus();
   }
   return true;
 }
 
 function useDialogBehavior(
   isOpen: boolean,
+  card: BoardCard | null,
   onClose: () => void,
+  onSelect: (o: MoveOption) => void,
 ): React.RefObject<HTMLDivElement | null> {
   const menuRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -110,8 +198,7 @@ function useDialogBehavior(
 
     previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
 
-    // Focus the first option so the dialog opens somewhere actionable rather
-    // than at the top of the document behind the overlay.
+    // Focus the first option
     menuRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
 
     const onKey = (e: KeyboardEvent) => {
@@ -120,15 +207,22 @@ function useDialogBehavior(
         onClose();
         return;
       }
+
+      // Check number shortcuts 1-9
+      const num = parseInt(e.key, 10);
+      if (!isNaN(num) && num >= 1 && card && card.moves[num - 1]) {
+        e.preventDefault();
+        onSelect(card.moves[num - 1]!);
+        return;
+      }
+
       if (menuRef.current) trapTab(e, menuRef.current);
     };
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, card, onClose, onSelect]);
 
-  // Restore focus to the ticket that opened the menu, so the keyboard user's
-  // position in the lane survives opening and cancelling the move dialog.
   useEffect(() => {
     if (isOpen) return;
     const el = previouslyFocusedRef.current;
@@ -157,25 +251,41 @@ function MoveDialog({
       role="dialog"
       aria-modal="true"
       aria-label={`نقل الطلب: ${card.title}`}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      dir="rtl"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-md p-4 sm:items-center animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         ref={menuRef}
-        className="w-full max-w-sm rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-popover p-3 text-popover-foreground"
+        className="relative w-full max-w-md rounded-3xl border border-border/80 bg-card/95 backdrop-blur-2xl p-5 text-card-foreground shadow-2xl shadow-black/30 animate-in zoom-in-95 duration-200 overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/20 before:to-transparent"
       >
-        <div className="mb-2 flex items-center justify-between border-b border-[var(--board-line-strong)] pb-1.5">
-          <h3 className="text-sm font-bold">نقل إلى...</h3>
+        {/* Header */}
+        <div className="mb-4 flex items-center justify-between border-b border-border/70 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Layers className="h-4.5 w-4.5" />
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-sm font-bold text-foreground">توجيه ونقل الطلب</h3>
+              <p className="text-2xs text-muted-foreground font-mono">
+                #{card.orderNumber} — {card.customerName}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="min-h-11 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/70 text-muted-foreground hover:bg-muted hover:text-foreground active:scale-95 transition-all"
+            aria-label="إغلاق (Esc)"
           >
-            إغلاق (Esc)
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
+
+        {/* Options List */}
         <OptionsList moves={card.moves} onSelect={onSelect} />
       </div>
     </div>
@@ -184,7 +294,14 @@ function MoveDialog({
 
 export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
   const controller = useBoardController();
-  const menuRef = useDialogBehavior(isOpen, onClose);
+  const handleSelect = (o: MoveOption) => {
+    onClose();
+    if (card) {
+      void controller.executeMove(card, o);
+    }
+  };
+
+  const menuRef = useDialogBehavior(isOpen, card, onClose, handleSelect);
 
   if (!isOpen || !card) return null;
 
@@ -193,10 +310,7 @@ export function MoveToMenu({ card, isOpen, onClose }: MoveToMenuProps) {
       card={card}
       onClose={onClose}
       menuRef={menuRef}
-      onSelect={(o) => {
-        onClose();
-        void controller.executeMove(card, o);
-      }}
+      onSelect={handleSelect}
     />
   );
 }
