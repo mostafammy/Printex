@@ -29,8 +29,8 @@ function TicketFlags({ card }: { readonly card: BoardCard }) {
           carries no information a screen reader needs. */}
       <span
         aria-hidden="true"
-        title="بطاقة عمل"
-        className="select-none font-mono text-xs text-muted-foreground/40"
+        title="اسحب للنقل أو انقر لفتح التفاصيل"
+        className="select-none font-mono text-xs text-muted-foreground/40 transition-colors group-hover:text-primary"
       >
         ⌖
       </span>

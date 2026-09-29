@@ -9,7 +9,6 @@ import type { SliceId } from "~/lib/board/types";
 import { BOARD_LANE_PAGE_SIZE } from "~/lib/board/types";
 import { Board } from "~/components/board/Board";
 import { BoardProvider } from "~/components/board/BoardProvider";
-import { DndBridge } from "~/components/board/dnd/DndBridge";
 
 export default async function BoardPage({
   searchParams,
@@ -32,9 +31,7 @@ export default async function BoardPage({
           additionally drawing its own border — two frames around one surface,
           which cost workspace twice before a single ticket was drawn. */}
       <div className="-m-6 flex h-[calc(100dvh-4rem)] min-h-0 flex-col overflow-hidden sm:-m-8 md:-m-10">
-        <DndBridge>
-          <Board />
-        </DndBridge>
+        <Board />
       </div>
     </BoardProvider>
   );

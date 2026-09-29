@@ -100,4 +100,14 @@ describe("JobTicket Component", () => {
     expect(screen.getByText("مسعّر")).toBeInTheDocument();
     expect(screen.getByText("⌖")).toBeInTheDocument();
   });
+
+  it("triggers onClick when the card is clicked", () => {
+    const handleClick = vi.fn();
+    render(<JobTicket card={mockCard} onClick={handleClick} />);
+
+    const card = screen.getByTestId(`job-ticket-${mockCard.id}`);
+    fireEvent.click(card);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+    expect(handleClick).toHaveBeenCalledWith(mockCard);
+  });
 });

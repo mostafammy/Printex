@@ -42,3 +42,4 @@ export { moveWorkItem } from "./move";
 export { groupMoveWorkItems } from "./groupMove";
 export { getBoardLiveHub, BoardLiveHub } from "./live/hub";
 export type { BoardTransitionPayload } from "./live/payload";
+export { getWorkItemDetail, type WorkItemFullDetail } from "./workItemDetail";

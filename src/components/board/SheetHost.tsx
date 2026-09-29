@@ -13,6 +13,16 @@ import type { SheetRequest } from "~/lib/board/sheets/SheetManager";
 import { useBoardController } from "./hooks/useBoardController";
 import { useSheetRequest } from "./hooks/useSheetRequest";
 
+async function fetchDesigners(workItemId: string) {
+  const { getEligibleDesignersAction } = await import("~/app/(shell)/board/actions");
+  return getEligibleDesignersAction(workItemId);
+}
+
+async function fetchDepartments() {
+  const { getDepartmentsAction } = await import("~/app/(shell)/board/actions");
+  return getDepartmentsAction();
+}
+
 // Lazy-load sheet components to keep initial bundle small
 const RejectDesignSheet = dynamic(
   () => import("./sheets/RejectDesignSheet").then((m) => ({ default: m.RejectDesignSheet })),
@@ -55,11 +65,11 @@ function SheetContent({ request }: { request: SheetRequest }) {
     case "reject-design":
       return <RejectDesignSheet {...props} />;
     case "assign-designer":
-      return <AssignDesignerSheet {...props} fetchDesigners={async () => []} />;
+      return <AssignDesignerSheet {...props} fetchDesigners={fetchDesigners} />;
     case "complete-production":
       return <CompleteProductionSheet {...props} />;
     case "route-department":
-      return <RouteDepartmentSheet {...props} fetchDepartments={async () => []} />;
+      return <RouteDepartmentSheet {...props} fetchDepartments={fetchDepartments} />;
     case "send-back":
       return <SendBackSheet {...props} />;
     case "cancel":

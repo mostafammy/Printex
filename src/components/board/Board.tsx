@@ -38,6 +38,8 @@ interface BoardChrome {
   readonly setFilters: (filters: BoardFilters) => void;
   readonly menuCard: BoardCard | null;
   readonly setMenuCard: (card: BoardCard | null) => void;
+  readonly detailsCard: BoardCard | null;
+  readonly setDetailsCard: (card: BoardCard | null) => void;
 }
 
 interface BoardFrameProps extends BoardProps {
@@ -52,13 +54,25 @@ interface BoardFrameProps extends BoardProps {
   readonly onOpenMoveMenu: (card: BoardCard) => void;
   readonly onCloseMenu: () => void;
   readonly onCloseGroup: () => void;
+  readonly onCloseDetails: () => void;
+  readonly onCardClick: (card: BoardCard) => void;
 }
 
 function useBoardChrome(controller: ReturnType<typeof useBoardController>): BoardChrome {
   const [viewMode, setViewMode] = useState<BoardViewMode>("tabbed");
   const [filters, setFilters] = useState<BoardFilters>(() => controller.currentFilters);
   const [menuCard, setMenuCard] = useState<BoardCard | null>(null);
-  return { viewMode, setViewMode, filters, setFilters, menuCard, setMenuCard };
+  const [detailsCard, setDetailsCard] = useState<BoardCard | null>(null);
+  return {
+    viewMode,
+    setViewMode,
+    filters,
+    setFilters,
+    menuCard,
+    setMenuCard,
+    detailsCard,
+    setDetailsCard,
+  };
 }
 /* eslint-disable max-lines-per-function */
 function BoardFrame(props: BoardFrameProps) {
@@ -111,6 +125,9 @@ function BoardFrame(props: BoardFrameProps) {
       <BoardModals
         card={props.chrome.menuCard}
         onCloseMenu={props.onCloseMenu}
+        detailsCard={props.chrome.detailsCard}
+        onCloseDetails={props.onCloseDetails}
+        onOpenMoveMenu={props.onOpenMoveMenu}
         groupResult={props.groupResult}
         onCloseGroup={props.onCloseGroup}
       />
@@ -130,9 +147,13 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
   // scroll, which is the whole reason that view exists. The full board stays
   // one click away and keeps every interaction it has today.
   const openMoveMenu = (card: BoardCard) => {
-    onCardClick?.(card);
     onMoveKey?.(card);
     chrome.setMenuCard(card);
+  };
+
+  const handleCardClick = (card: BoardCard) => {
+    onCardClick?.(card);
+    chrome.setDetailsCard(card);
   };
 
   return (
@@ -143,7 +164,7 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
       activeStationId={activeStationId}
       groupResult={groupResult}
       onOrderHover={onOrderHover}
-      onCardClick={onCardClick}
+      onCardClick={handleCardClick}
       onSelectSlice={(s) => void controller.switchSlice(s)}
       onUpdateFilters={(f) => {
         chrome.setFilters(f);
@@ -153,6 +174,7 @@ export function Board({ onOrderHover, onCardClick, onMoveKey }: BoardProps) {
       onOpenMoveMenu={openMoveMenu}
       onCloseMenu={() => chrome.setMenuCard(null)}
       onCloseGroup={() => setGroupResult(null)}
+      onCloseDetails={() => chrome.setDetailsCard(null)}
     />
   );
 }

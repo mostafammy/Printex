@@ -52,9 +52,9 @@ function ticketCls(isSiblingHighlighted: boolean, isDragging: boolean): string {
   // tickets align. overflow-hidden is a guard as much as a style: any inner
   // row that outgrows the card is clipped rather than painting outside the
   // box.
-  return `group relative flex h-full w-full cursor-grab flex-col justify-between overflow-hidden rounded-lg bg-card p-3 text-start shadow-xs transition-all hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:cursor-grabbing ${
+  return `group relative flex h-full w-full cursor-pointer flex-col justify-between overflow-hidden rounded-lg bg-card p-3 text-start shadow-xs transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.99] ${
     isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
-  } ${isDragging ? "opacity-30" : ""}`;
+  } ${isDragging ? "opacity-30 cursor-grabbing" : ""}`;
 }
 
 // One style prop: a second one silently replaces the first. The station's

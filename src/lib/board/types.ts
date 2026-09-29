@@ -43,6 +43,15 @@ export interface BoardCard {
   readonly lastTransitionId: string | null; readonly lastTransitionAt: string;
 }
 
+export type {
+  WorkItemFullDetail,
+  DetailReturn,
+  DetailTransition,
+  DetailCustomer,
+  DetailDesignVersion,
+  DetailFileAsset,
+} from "./detailTypes";
+
 export interface BlockedHint {
   readonly station: StationId; readonly reasonAr: string;
 }

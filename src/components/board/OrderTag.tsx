@@ -49,7 +49,8 @@ function OrderGroupButton({
         e.stopPropagation();
         onGroupClick(orderId);
       }}
-      className="-ms-1 cursor-grab p-0.5 transition-colors hover:bg-black/10 active:cursor-grabbing"
+      onPointerDown={(e) => e.stopPropagation()}
+      className="-ms-1 cursor-pointer p-0.5 transition-colors hover:bg-black/10 active:scale-95"
       aria-label={`نقل طلب #${orderNumber} جماعياً`}
     >
       <GripVertical className="h-3 w-3 opacity-60" />

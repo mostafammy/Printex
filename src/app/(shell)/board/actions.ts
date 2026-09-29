@@ -22,11 +22,22 @@ import {
   getBoardCards,
   getBoardLanePage,
   getBoardSnapshot,
+  getWorkItemDetail,
   groupMoveWorkItems,
   moveWorkItem,
+  type WorkItemFullDetail,
 } from "~/server/board";
 import { searchOrders } from "~/server/orders/search";
 import { findCustomers } from "~/server/customers";
+import { getEligibleDesigners } from "~/server/designers";
+import { db } from "~/server/db";
+
+export async function getWorkItemDetailAction(
+  workItemId: string,
+): Promise<WorkItemFullDetail | null> {
+  const actor = await getActor();
+  return getWorkItemDetail(actor, workItemId);
+}
 
 export async function getBoardSnapshotAction(
   request?: SnapshotRequest,
@@ -88,3 +99,47 @@ export async function searchCustomersAction(query: string) {
     return [];
   }
 }
+
+export async function getEligibleDesignersAction(
+  workItemId: string,
+): Promise<Array<{ id: string; name: string; activeCount: number; isSuggested: boolean }>> {
+  const actor = await getActor();
+  try {
+    const list = await getEligibleDesigners(actor, workItemId);
+    return list.map((d) => ({
+      id: d.userId,
+      name: d.name,
+      activeCount: d.activeWorkItemCount,
+      isSuggested: d.isSuggested,
+    }));
+  } catch (error) {
+    console.warn("getEligibleDesigners fallback for", workItemId, error);
+    const fallbackUsers = await db.user.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { roles: { some: { role: { permissions: { some: { permission: "design.work" } } } } } },
+          { extraPermissions: { some: { permission: "design.work" } } },
+        ],
+      },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    return fallbackUsers.map((u, idx) => ({
+      id: u.id,
+      name: u.name,
+      activeCount: 0,
+      isSuggested: idx === 0,
+    }));
+  }
+}
+
+export async function getDepartmentsAction(): Promise<Array<{ id: string; name: string }>> {
+  const departments = await db.department.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  return departments;
+}
+
