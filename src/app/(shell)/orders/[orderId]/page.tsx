@@ -919,87 +919,132 @@ export default async function OrderDetailPage({
 
                 {/* Designer Assignment Section */}
                 {canAssignDesigner && DESIGNER_ASSIGNABLE_STATES.has(wi.state) && (
-                  <details className="group mt-4 rounded-2xl border border-border/80 bg-muted/15 p-4 transition-all">
-                    <summary className="cursor-pointer text-xs font-bold text-primary flex items-center justify-between">
+                  <details className="group mt-4 rounded-2xl border border-border/80 bg-muted/15 p-4.5 transition-all">
+                    <summary className="cursor-pointer text-xs font-bold text-foreground hover:text-primary flex items-center justify-between transition-colors">
                       <span className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{hasAssignee ? S.reassignDesignerButton : S.assignDesignerButton}</span>
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <User className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-bold">
+                          {hasAssignee ? S.reassignDesignerButton : S.assignDesignerButton}
+                        </span>
                       </span>
-                      <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
                     </summary>
 
-                    <form action={assignDesignerAction} className="mt-4 flex flex-col gap-3">
+                    <form action={assignDesignerAction} className="mt-4 flex flex-col gap-3.5">
                       <input type="hidden" name="workItemId" value={wi.id} />
                       <input type="hidden" name="orderId" value={orderId} />
 
-                      <div className="overflow-x-auto rounded-xl border border-border/70 bg-card">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b border-border/70 bg-muted/40 font-semibold text-muted-foreground">
-                              <th className="p-2.5 text-center">اختيار</th>
-                              <th className="p-2.5 text-start">{S.designerNameHeader}</th>
-                              <th className="p-2.5 text-start">{S.designerActiveItemsHeader}</th>
-                              <th className="p-2.5 text-start">{S.designerEstWaitHeader}</th>
-                              <th className="p-2.5 text-start">{S.designerPastJobsHeader}</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/60">
-                            {(eligibleDesignersByWorkItem.get(wi.id) ?? []).map((d) => (
-                              <tr
-                                key={d.userId}
-                                className={
-                                  "transition-colors hover:bg-muted/30 " +
-                                  (d.isSuggested ? "bg-emerald-500/5 dark:bg-emerald-950/20" : "")
-                                }
-                              >
-                                <td className="p-2.5 text-center">
-                                  <input
-                                    type="radio"
-                                    name="designerId"
-                                    value={d.userId}
-                                    defaultChecked={d.isSuggested}
-                                    required
-                                    className="accent-primary"
-                                  />
-                                </td>
-                                <td className="p-2.5 font-bold text-foreground">
-                                  <div className="flex items-center gap-2">
-                                    <span>{d.name}</span>
-                                    {d.isSuggested && (
-                                      <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-2xs font-semibold text-white">
-                                        {S.suggestedDesignerBadge}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="p-2.5">{d.activeWorkItemCount}</td>
-                                <td className="p-2.5">
-                                  {d.estimatedWaitMinutes} {S.minutesShortLabel}
-                                </td>
-                                <td className="p-2.5">{d.pastJobsForCustomer}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {(eligibleDesignersByWorkItem.get(wi.id) ?? []).length === 0 && (
-                          <p className="p-3 text-center text-xs text-muted-foreground">
+                      {/* Designers Selection Grid */}
+                      {(eligibleDesignersByWorkItem.get(wi.id) ?? []).length === 0 ? (
+                        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
+                          <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
                             {S.noEligibleDesignersNote}
                           </p>
-                        )}
-                      </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                          {(eligibleDesignersByWorkItem.get(wi.id) ?? []).map((d) => {
+                            const workload =
+                              d.activeWorkItemCount === 0
+                                ? { label: "متاح فوراً", cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20" }
+                                : d.activeWorkItemCount <= 2
+                                  ? { label: "عبء خفيف", cls: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20" }
+                                  : d.activeWorkItemCount <= 5
+                                    ? { label: "عبء معتدل", cls: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20" }
+                                    : { label: "مزدحم", cls: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20" };
+
+                            return (
+                              <label
+                                key={d.userId}
+                                className="group relative flex cursor-pointer items-center justify-between rounded-2xl border border-border/70 bg-card/80 p-3 shadow-2xs transition-all duration-200 hover:bg-muted/40 hover:border-border hover:shadow-xs has-[:checked]:border-primary has-[:checked]:bg-primary/8 has-[:checked]:ring-2 has-[:checked]:ring-primary/25 dark:has-[:checked]:bg-primary/15"
+                              >
+                                <input
+                                  type="radio"
+                                  name="designerId"
+                                  value={d.userId}
+                                  defaultChecked={d.isSuggested}
+                                  required
+                                  className="peer sr-only"
+                                />
+
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {/* Avatar Monogram */}
+                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-tr from-purple-500/20 to-indigo-500/20 border border-purple-500/30 text-xs font-bold text-purple-700 dark:text-purple-300">
+                                    {d.name.slice(0, 2)}
+                                  </div>
+
+                                  <div className="flex flex-col min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-bold text-foreground truncate peer-checked:text-primary">
+                                        {d.name}
+                                      </span>
+                                      {d.isSuggested && (
+                                        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 text-2xs font-bold text-emerald-700 dark:text-emerald-400">
+                                          <Sparkles className="h-2.5 w-2.5" />
+                                          <span>مقترح</span>
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 text-2xs text-muted-foreground mt-0.5">
+                                      <span>{d.activeWorkItemCount} نشط</span>
+                                      {d.estimatedWaitMinutes > 0 && (
+                                        <>
+                                          <span>•</span>
+                                          <span>~{d.estimatedWaitMinutes} د</span>
+                                        </>
+                                      )}
+                                      {d.pastJobsForCustomer > 0 && (
+                                        <>
+                                          <span>•</span>
+                                          <span className="text-primary font-semibold">{d.pastJobsForCustomer} سابقة</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-2xs font-bold ${workload.cls}`}>
+                                    {workload.label}
+                                  </span>
+
+                                  <div className="flex h-4.5 w-4.5 items-center justify-center rounded-full border border-border/80 bg-background transition-all peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground">
+                                    <CheckCircle2 className="h-3.5 w-3.5 opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                  </div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {hasAssignee && (
-                        <div className="flex flex-col gap-1">
-                          <label className="text-xs font-semibold text-muted-foreground">
-                            {S.reassignReasonLabel}
+                        <div className="flex flex-col gap-1 rounded-xl border border-amber-500/25 bg-amber-500/5 p-3">
+                          <label className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                            {S.reassignReasonLabel} <span className="text-rose-500">*</span>
                           </label>
-                          <input name="reason" type="text" placeholder="سبب إعادة التعيين..." required className={inputCls} />
+                          <input
+                            name="reason"
+                            type="text"
+                            placeholder="سبب إعادة التعيين..."
+                            required
+                            className={inputCls}
+                          />
                         </div>
                       )}
 
                       <div className="pt-1">
-                        <Button type="submit" variant="default" size="sm">
-                          {hasAssignee ? S.confirmReassignButton : S.confirmAssignButton}
+                        <Button
+                          type="submit"
+                          variant="default"
+                          size="sm"
+                          className="rounded-xl px-5 font-bold shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5 transition-all"
+                        >
+                          <Palette className="h-4 w-4" />
+                          <span>{hasAssignee ? S.confirmReassignButton : S.confirmAssignButton}</span>
                         </Button>
                       </div>
                     </form>
