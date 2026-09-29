@@ -33,16 +33,54 @@ export interface MobileStationTabsProps {
  * How many jobs a station holds right now, summed over its lanes. Exported
  * because the station column's header counts the same thing, and two copies
  * of a per-lane sum are two chances for the rail and the column to disagree.
+ *
+ * Subscribed to "meta": the store emits lane topics and meta on every
+ * mutation, but nothing ever emits a per-station topic, so a station-scoped
+ * subscription would freeze the count at its mount value and miss moves,
+ * commits, and live updates.
  */
 export function useStationCardCount(
-  id: StationId,
   lanes: readonly { readonly state: WorkItemState }[],
-) {
+): number {
   return useBoardSelector(
-    `station-count:${id}`,
+    "meta",
     (store) => lanes.reduce((sum, lane) => sum + store.getLane(lane.state).length, 0),
     0,
   );
+}
+
+/**
+ * The station's true total from the server's per-lane pagination, or null
+ * when the snapshot carries no lane totals yet. Added beside the loaded
+ * count because infinite scroll means "shown" and "existing" differ: a
+ * header reading only loaded cards tells the operator the floor is empty
+ * when it is merely unloaded.
+ */
+export function useStationCardTotal(
+  lanes: readonly { readonly state: WorkItemState }[],
+): number | null {
+  return useBoardSelector(
+    "meta",
+    (store) => {
+      const pages = store.getMeta().lanePagination;
+      if (!pages) return null;
+      let total = 0;
+      for (const lane of lanes) {
+        const laneTotal = pages[lane.state]?.totalCount;
+        if (laneTotal == null) return null;
+        total += laneTotal;
+      }
+      return total;
+    },
+    null,
+  );
+}
+
+/** "20" when everything is loaded, "20 من 150" while a lane still holds more. */
+export function formatLaneCount(loaded: number, total: number | null): string {
+  const fmt = (n: number): string => n.toLocaleString("ar-EG");
+  if (total == null || total <= loaded) return fmt(loaded);
+  return `${fmt(loaded)} من ${fmt(total)}`;
 }
 
 function tabInk(id: StationId, active: boolean): React.CSSProperties {
@@ -99,11 +137,13 @@ function tabCls(active: boolean, dropCls: string): string {
 function TabStatus({
   dropHint,
   count,
+  total,
   laneStates,
   now,
 }: {
   readonly dropHint: string | null;
   readonly count: number;
+  readonly total: number | null;
   readonly laneStates: readonly WorkItemState[];
   readonly now: number;
 }) {
@@ -113,7 +153,7 @@ function TabStatus({
         <span className="shrink-0 text-[11px] font-bold text-primary">{dropHint}</span>
       ) : (
         <span className="shrink-0 font-mono text-[11px] font-bold tabular-nums text-muted-foreground">
-          {count}
+          {formatLaneCount(count, total)}
         </span>
       )}
       {count > 0 && <StationSummary stationStates={laneStates} now={now} />}
@@ -121,10 +161,11 @@ function TabStatus({
   );
 }
 function useStationTabDrop(id: StationId, lanes: readonly { readonly state: WorkItemState }[]) {
-  const count = useStationCardCount(id, lanes);
+  const count = useStationCardCount(lanes);
+  const total = useStationCardTotal(lanes);
   const { setNodeRef } = useDroppable({ id });
   const offer = useDragOffer(id);
-  return { count, setNodeRef, offer, drop: tabDropState(offer) };
+  return { count, total, setNodeRef, offer, drop: tabDropState(offer) };
 }
 
 interface StationTabProps {
@@ -159,6 +200,7 @@ function StationTab({ id, labelAr, lanes, active, now, onSelect }: StationTabPro
       <TabStatus
         dropHint={tab.drop.hint}
         count={tab.count}
+        total={tab.total}
         laneStates={lanes.map((l) => l.state)}
         now={now}
       />
