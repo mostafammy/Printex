@@ -96,9 +96,14 @@ export class BoardController {
   }
 
   async handleDropOnStation(station: StationId): Promise<void> {
-    if (!this.#dragSession?.activeCard) return;
-    const option = this.#dragSession.resolveDrop(station);
-    if (option) await this.executeMove(this.#dragSession.activeCard, option);
+    // resolveDrop() cancels the session (clearing activeCard) as a
+    // side effect, so the card must be captured first — otherwise the
+    // move executes with a null card and crashes reading card.id.
+    const session = this.#dragSession;
+    const card = session?.activeCard;
+    if (!session || !card) return;
+    const option = session.resolveDrop(station);
+    if (option) await this.executeMove(card, option);
   }
 
   #scope(): ChunkScope {
