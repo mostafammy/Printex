@@ -50,13 +50,13 @@ export function useWorkItemDetail(
   return { detail, loading };
 }
 
-export function useEscapeKey(isOpen: boolean, onClose: () => void) {
+export function useEscapeKey(isOpen: boolean, onClose: () => void | Promise<void>) {
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        void onClose();
       }
     };
     window.addEventListener("keydown", onKey);
