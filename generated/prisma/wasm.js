@@ -1007,7 +1007,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/mac/Documents/Printex/generated/prisma",
+      "value": "C:\\Users\\HiTech\\Desktop\\Printex\\Printex\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -1016,7 +1016,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "windows",
         "native": true
       },
       {
@@ -1051,7 +1051,7 @@ const config = {
     "previewFeatures": [
       "prismaSchemaFolder"
     ],
-    "sourceFilePath": "/Users/mac/Documents/Printex/prisma/schema/schema.prisma",
+    "sourceFilePath": "C:\\Users\\HiTech\\Desktop\\Printex\\Printex\\prisma\\schema\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
