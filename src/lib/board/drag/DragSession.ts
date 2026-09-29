@@ -55,7 +55,6 @@ export class DragSession {
     if (this._state !== "idle") return;
     this._activeCard = card;
     this._state = "dragging";
-
     this._overStation = null;
     this._offeredStations.clear();
     for (const move of card.moves) {

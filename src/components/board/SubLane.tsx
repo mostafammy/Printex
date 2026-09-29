@@ -14,6 +14,10 @@
  * ceil(cards / columns), and columns come from the measured width. Within a
  * row, cards flow in reading order (first right in RTL) so a lane is still
  * scanned oldest-first. The windowing itself lives in ./lanes.
+ *
+ * Chunked per-lane pagination rides along: an IntersectionObserver sentinel
+ * at the end of the list triggers exactly one loadMore(state) — one page for
+ * this lane only — each time the operator reaches the bottom.
  */
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -22,6 +26,10 @@ import type { BoardCard } from "~/lib/board/types";
 import { useBoardController } from "./hooks/useBoardController";
 import { useBoardSelector } from "./hooks/useBoardSelector";
 import { STATE_AR_LABELS } from "~/lib/board/stations";
+import { useFreshIds } from "./hooks/useFreshIds";
+import { useSentinelLoadMore } from "./hooks/useSentinelLoadMore";
+import { LanePageControl } from "./LanePageControl";
+import { LaneSkeleton } from "./LaneSkeleton";
 import { useLaneVirtualizer, VirtualCardItems } from "./lanes/LaneVirtualizer";
 
 export interface SubLaneProps {
@@ -60,9 +68,7 @@ function LaneHeader({
       {showCount && (
         <span
           className={`rounded-full px-1.5 py-0.2 text-[10px] font-semibold tabular-nums ${
-            count === 0
-              ? "bg-emerald-500/10 text-emerald-600"
-              : "bg-muted text-muted-foreground"
+            count === 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground"
           }`}
         >
           {count}
@@ -73,7 +79,7 @@ function LaneHeader({
 }
 
 /**
- * An empty lane is a good fact, not an absence of one. An operator reading
+ * An empty lane is a good fact, not the absence of one. An operator reading
  * "0" against a green mark learns the station is genuinely clear; the same
  * "0" in grey next to a busy station is ambiguous.
  */
@@ -88,51 +94,50 @@ function EmptyLane({ labelAr }: { readonly labelAr: string }) {
   );
 }
 
-function useScrollLoadMore(parentRef: React.RefObject<HTMLDivElement | null>) {
+/**
+ * One page per lane, and one lane per call: `loadMore(state)` is scoped to the
+ * station the operator is looking at, so loading a long lane never starves a
+ * short one beside it. The ref guard collapses a burst of scroll events into
+ * a single in-flight request.
+ */
+function useLaneLoadNext(state: WorkItemState) {
   const controller = useBoardController();
-  const isFetchingRef = useRef(false);
+  const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
-  const handleScroll = useCallback(() => {
-    const el = parentRef.current;
-    if (!el || isFetchingRef.current) return;
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
-      isFetchingRef.current = true;
-      void controller.loadMore().finally(() => {
-        isFetchingRef.current = false;
+  const loadNext = useCallback(() => {
+    if (loadingRef.current) return Promise.resolve();
+    loadingRef.current = true;
+    setLoading(true);
+    return controller
+      .loadMore(state)
+      .finally(() => {
+        loadingRef.current = false;
+        setLoading(false);
       });
-    }
-  }, [parentRef, controller]);
+  }, [controller, state]);
 
-  useEffect(() => {
-    const el = parentRef.current;
-    if (!el) return;
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [parentRef, handleScroll]);
+  return { loading, loadNext };
 }
 
-/**
- * How many cards fit across the lane. Measured from the lane itself rather
- * than a viewport breakpoint: a lane in the full board and the same lane
- * filling a station are very different widths, and the lane is the thing that
- * knows its own width.
- */
+/** How many cards fit across the lane. Measured, not assumed: a station is
+    full width on wide screens and one column on a phone. */
 function useColumns(parentRef: React.RefObject<HTMLDivElement | null>) {
   const [columns, setColumns] = useState(1);
 
   useEffect(() => {
     const el = parentRef.current;
     if (!el) return;
+
     const measure = () => {
       const w = el.clientWidth;
-      setColumns(
-        Math.max(1, Math.floor((w + CARD_GAP) / (CARD_MIN_WIDTH + CARD_GAP))),
-      );
+      // +1 so a lane exactly CARD_MIN_WIDTH wide still gets one column; the
+      // pre-layout 0 would otherwise make `Math.max(1, 0)` read as a
+      // single-column lane for a frame and re-render.
+      setColumns(Math.max(1, Math.floor((w + CARD_GAP) / (CARD_MIN_WIDTH + CARD_GAP))));
     };
+
     measure();
-    // jsdom and any pre-layout first paint report width 0; one column is the
-    // safe answer there because it never under-reads the available space.
-    if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
@@ -141,13 +146,17 @@ function useColumns(parentRef: React.RefObject<HTMLDivElement | null>) {
   return columns;
 }
 
-interface VirtualizedCardListProps extends SubLaneProps {
-  readonly cardIds: readonly string[];
-}
-
-function VirtualizedCardList(props: VirtualizedCardListProps) {
+function VirtualizedCardList(props: SubLaneProps & { readonly cardIds: readonly string[] }) {
   const parentRef = useRef<HTMLDivElement>(null);
-  useScrollLoadMore(parentRef);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  const { loading, loadNext } = useLaneLoadNext(props.state);
+  useSentinelLoadMore(parentRef, sentinelRef, loadNext);
+
+  // Ids that arrived after the first paint, so a newly loaded chunk plays one
+  // entrance animation instead of popping in mid-row.
+  const fresh = useFreshIds(props.cardIds);
+
   const columns = useColumns(parentRef);
   const { virtualizer } = useLaneVirtualizer(parentRef, props.cardIds.length, columns);
 
@@ -156,13 +165,13 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
       ref={parentRef}
       role="list"
       // Always the Arabic label. The previous `labelAr ?? state` fallback
-      // announced raw enums ("NEW", "WAITING_PRICING") for single-lane
-      // stations; every lane has a label in stations.ts.
+      // announced the raw enum ("NEW", "WAITING_PRICING") for single-lane
+      // stations; every lane label is in stations.ts.
       aria-label={props.labelAr ?? STATE_AR_LABELS[props.state] ?? props.state}
-      // min-h-0 for the same reason as the lane wrapper: without it this
-      // flex child grows to the full list height and the container itself
-      // never becomes scrollable.
-      className="relative min-h-0 flex-1 overflow-y-auto px-1 pb-2"
+      // min-h-0 for the same reason as the lane wrapper: without it a flex
+      // child grows to the full list height, the container itself never
+      // becomes scrollable, and the virtualizer windows nothing.
+      className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 pb-2"
     >
       <div className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
         <VirtualCardItems
@@ -170,11 +179,23 @@ function VirtualizedCardList(props: VirtualizedCardListProps) {
           cardIds={props.cardIds}
           columns={columns}
           measureRef={virtualizer.measureElement}
+          freshIds={fresh}
           onOrderHover={props.onOrderHover}
           onCardClick={props.onCardClick}
           onMoveKey={props.onMoveKey}
         />
       </div>
+
+      {loading && <LaneSkeleton label={`جاري تحميل ${props.labelAr ?? props.state}`} />}
+      {/* 1px sentinel: it sits at the very end of the scroll box, so its
+          intersection is exactly "the operator reached the bottom". */}
+      <div ref={sentinelRef} aria-hidden="true" style={{ height: 1 }} />
+      <LanePageControl
+        state={props.state}
+        loaded={props.cardIds.length}
+        loading={loading}
+        onLoadMore={loadNext}
+      />
     </div>
   );
 }
@@ -185,16 +206,13 @@ export function SubLane(props: SubLaneProps) {
     (s) => s.getLane(props.state),
     EMPTY_IDS,
   );
+
   const label = props.labelAr ?? STATE_AR_LABELS[props.state] ?? props.state;
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
       <LaneHeader labelAr={label} count={cardIds.length} showCount={props.labelAr !== undefined} />
-      {cardIds.length === 0 ? (
-        <EmptyLane labelAr={label} />
-      ) : (
-        <VirtualizedCardList {...props} cardIds={cardIds} />
-      )}
+      {cardIds.length === 0 ? <EmptyLane labelAr={label} /> : <VirtualizedCardList {...props} cardIds={cardIds} />}
     </div>
   );
 }

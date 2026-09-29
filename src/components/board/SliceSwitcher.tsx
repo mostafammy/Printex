@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * SliceSwitcher: the slice dropdown, filter toggles, and pagination.
+ * SliceSwitcher: the slice dropdown and filter toggles.
  * (specs/017-press-floor-board/spec.md FR-021, FR-022, plan.md S1)
  *
  * The slice row used to be a second row of chips directly above the station
@@ -12,9 +12,8 @@
  */
 
 import React from "react";
-import Link from "next/link";
 import { SLICES, type SliceId } from "~/lib/board/slices";
-import type { BoardFilters, BoardPagination } from "~/lib/board/types";
+import type { BoardFilters } from "~/lib/board/types";
 import { AlertCircle, Archive, ChevronDown, Flame } from "lucide-react";
 
 export interface SliceSwitcherProps {
@@ -23,7 +22,6 @@ export interface SliceSwitcherProps {
   readonly onSelectSlice: (slice: SliceId) => void;
   readonly filters: BoardFilters;
   readonly onUpdateFilters: (filters: BoardFilters) => void;
-  readonly pagination?: BoardPagination;
   readonly viewSwitcher?: React.ReactNode;
 }
 /* eslint-disable max-lines-per-function */
@@ -136,44 +134,12 @@ function FilterChips({
   );
 }
 
-function BoardPaginationControls({ pagination }: { readonly pagination: BoardPagination }) {
-  const totalPages = pagination.totalCount
-    ? Math.ceil(pagination.totalCount / pagination.pageSize)
-    : 1;
-  if (totalPages <= 1 && !pagination.hasMore) return null;
-
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      {pagination.page > 1 && (
-        <Link
-          href={`/board?page=${pagination.page - 1}`}
-          className="rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-2 py-1 font-medium hover:bg-muted"
-        >
-          السابق
-        </Link>
-      )}
-      <span className="px-1 font-mono text-[11px] tabular-nums">
-        {pagination.page} / {totalPages}
-      </span>
-      {pagination.hasMore && (
-        <Link
-          href={`/board?page=${pagination.page + 1}`}
-          className="rounded-[var(--board-radius)] border border-[var(--board-line-strong)] bg-card px-2 py-1 font-medium hover:bg-muted"
-        >
-          التالي
-        </Link>
-      )}
-    </div>
-  );
-}
-
 export function SliceSwitcher({
   activeSlice,
   availableSlices,
   onSelectSlice,
   filters,
   onUpdateFilters,
-  pagination,
   viewSwitcher,
 }: SliceSwitcherProps) {
   const activeFilterCount = [filters.urgentOnly, filters.overdueOnly, filters.archive].filter(
@@ -191,7 +157,6 @@ export function SliceSwitcher({
         />
       </div>
       <div className="flex items-center gap-3">
-        {pagination && <BoardPaginationControls pagination={pagination} />}
         <FilterChips filters={filters} onUpdateFilters={onUpdateFilters} />
         {activeFilterCount > 0 && (
           <button

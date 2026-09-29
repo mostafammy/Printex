@@ -12,9 +12,11 @@
 import {
   DndContext,
   DragOverlay,
+  defaultDropAnimationSideEffects,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
+  type DropAnimation,
 } from "@dnd-kit/core";
 import React, { useState } from "react";
 import type { BoardCard } from "~/lib/board/types";
@@ -28,14 +30,22 @@ export interface DndBridgeProps {
   readonly children: React.ReactNode;
 }
 
+const dropAnimation: DropAnimation = {
+  duration: 300,
+  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { active: { opacity: "0.35" } },
+  }),
+};
+
 function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
   if (!card) return null;
   return (
-    <DragOverlay dropAnimation={null}>
+    <DragOverlay dropAnimation={dropAnimation}>
       {/* .drag-overlay-enter lifts and rotates the card as it leaves the
           stack; the keyframes and their reduced-motion kill-switch live in
-          ink.css. */}
-      <div className="drag-overlay-enter cursor-grabbing">
+          ink.css. The drop animation then flies it back into the lane. */}
+      <div className="drag-overlay-enter pointer-events-none cursor-grabbing opacity-90 shadow-2xl">
         <JobTicket card={card} />
       </div>
     </DragOverlay>

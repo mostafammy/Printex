@@ -55,10 +55,14 @@ export function useLaneVirtualizer(
   return { virtualizer };
 }
 
+/* eslint-disable max-lines-per-function -- one row's markup plus the
+   rationale for each class; splitting the JSX from its comments would hide
+   why the row is flex, absolutely positioned, and fixed-height. */
 export function VirtualRow({
   virtualItem,
   cardIds,
   measureRef,
+  freshIds,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -66,6 +70,9 @@ export function VirtualRow({
   readonly virtualItem: { readonly index: number; readonly start: number };
   readonly cardIds: readonly string[];
   readonly measureRef: (node: HTMLDivElement | null) => void;
+  /** Ids that arrived after the first paint, from useFreshIds. A card in this
+      list plays the one-time .lane-card-enter animation. */
+  readonly freshIds: readonly string[];
   readonly onOrderHover?: (id: string | null) => void;
   readonly onCardClick?: (c: BoardCard) => void;
   readonly onMoveKey?: (c: BoardCard) => void;
@@ -94,16 +101,29 @@ export function VirtualRow({
           The row is a fixed height and the card stretches to fill it, so
           every ticket in a row is the same height. */}
       <div className="flex" style={{ height: `${CARD_HEIGHT}px` }}>
-        {cardIds.map((cardId) => (
-          <div key={cardId} className="m-2 flex min-w-0 flex-1" style={{ flexBasis: 0 }}>
-            <JobTicket
-              cardId={cardId}
-              onOrderHover={onOrderHover}
-              onClick={onCardClick}
-              onMoveKey={onMoveKey}
-            />
-          </div>
-        ))}
+        {cardIds.map((cardId) => {
+          const freshIndex = freshIds.indexOf(cardId);
+          return (
+            <div
+              key={cardId}
+              className={`m-2 flex min-w-0 flex-1${freshIndex >= 0 ? " lane-card-enter" : ""}`}
+              style={{
+                flexBasis: 0,
+                // Stagger by 45ms so a chunk of ten cards wipes in rather
+                // than appearing as one block; capped at 5 so a 24-card
+                // chunk does not take over a second to finish appearing.
+                animationDelay: freshIndex >= 0 ? `${Math.min(freshIndex, 5) * 45}ms` : undefined,
+              }}
+            >
+              <JobTicket
+                cardId={cardId}
+                onOrderHover={onOrderHover}
+                onClick={onCardClick}
+                onMoveKey={onMoveKey}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -114,6 +134,7 @@ export function VirtualCardItems({
   cardIds,
   columns,
   measureRef,
+  freshIds,
   onOrderHover,
   onCardClick,
   onMoveKey,
@@ -122,6 +143,7 @@ export function VirtualCardItems({
   readonly cardIds: readonly string[];
   readonly columns: number;
   readonly measureRef: (node: HTMLDivElement | null) => void;
+  readonly freshIds: readonly string[];
   readonly onOrderHover?: (id: string | null) => void;
   readonly onCardClick?: (c: BoardCard) => void;
   readonly onMoveKey?: (c: BoardCard) => void;
@@ -139,6 +161,7 @@ export function VirtualCardItems({
             virtualItem={vItem}
             cardIds={rowIds}
             measureRef={measureRef}
+            freshIds={freshIds}
             onOrderHover={onOrderHover}
             onCardClick={onCardClick}
             onMoveKey={onMoveKey}
@@ -148,3 +171,4 @@ export function VirtualCardItems({
     </>
   );
 }
+/* eslint-enable max-lines-per-function */

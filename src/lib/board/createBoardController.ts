@@ -10,6 +10,7 @@ import {
 } from "./adapters/ServerActionMoveGateway";
 import {
   ServerActionSnapshotGateway,
+  type LanePageFetcher,
   type SnapshotFetcher,
 } from "./adapters/ServerActionSnapshotGateway";
 import { SystemClock } from "./adapters/SystemClock";
@@ -36,6 +37,7 @@ export interface CreateBoardControllerOptions {
   readonly clock?: Clock;
   readonly snapshotGateway?: SnapshotGateway;
   readonly fetchSnapshot?: SnapshotFetcher;
+  readonly fetchLanePage?: LanePageFetcher;
   readonly moveGateway?: MoveGateway;
   readonly liveSource?: LiveSource;
   readonly moveSender?: MoveSender;
@@ -53,11 +55,13 @@ export interface CreateBoardControllerOptions {
 
 function resolveSnapshotGateway(
   initialSnapshot: BoardSnapshot,
-  gateway?: SnapshotGateway,
-  fetcher?: SnapshotFetcher,
+  options: CreateBoardControllerOptions,
 ): SnapshotGateway {
-  if (gateway) return gateway;
-  return new ServerActionSnapshotGateway(fetcher ?? (async () => initialSnapshot));
+  if (options.snapshotGateway) return options.snapshotGateway;
+  return new ServerActionSnapshotGateway(
+    options.fetchSnapshot ?? (async () => initialSnapshot),
+    options.fetchLanePage,
+  );
 }
 
 function resolveMoveGateway(options: CreateBoardControllerOptions): MoveGateway {
@@ -111,7 +115,7 @@ export function createBoardController(
   options: CreateBoardControllerOptions = {},
 ): BoardController {
   const store = new BoardStore(initialSnapshot, options.clock ?? new SystemClock(), options.scheduler);
-  const snapshotGateway = resolveSnapshotGateway(initialSnapshot, options.snapshotGateway, options.fetchSnapshot);
+  const snapshotGateway = resolveSnapshotGateway(initialSnapshot, options);
   const moveGateway = resolveMoveGateway(options);
   const liveSource = resolveLiveSource(options.liveSource);
   const motion = options.motion ?? new WaapiMotionDirector();

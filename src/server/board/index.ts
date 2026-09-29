@@ -35,6 +35,7 @@ export {
 export type { StationTargets } from "./config";
 
 export { getBoardSnapshot, getBoardCards } from "./snapshot";
+export { getBoardLanePage, sliceLaneStates } from "./lanePage";
 export { EdgeCatalog, type EdgeHandler } from "./edgeCatalog";
 export { edgeCatalog } from "./edges";
 export { moveWorkItem } from "./move";

@@ -24,7 +24,14 @@ function createIdleTestController() {
   const store = new BoardStore(emptySnapshot, clock);
   return new BoardController({
     store,
-    snapshotGateway: { snapshot: async () => emptySnapshot },
+    snapshotGateway: {
+      snapshot: async () => emptySnapshot,
+      lanePage: async (req) => ({
+        state: req.state,
+        cards: [],
+        pagination: { page: 1, pageSize: 20, totalCount: 0, hasMore: false, nextCursor: null },
+      }),
+    },
   });
 }
 

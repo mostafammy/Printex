@@ -19,6 +19,7 @@ import type {
   SheetInput,
   SliceId,
 } from "./types";
+import { BoardLaneChunkLoader, type ChunkScope, type LaneCursor } from "./boardChunkPagination";
 import { GroupMoveCommand } from "./commands/GroupMoveCommand";
 import type { CommandOutcome } from "./commands/BoardCommand";
 import type { SheetManager } from "./sheets/SheetManager";
@@ -37,20 +38,20 @@ export interface BoardControllerDeps {
 }
 
 export class BoardController {
-  readonly #store: BoardStore; readonly #snapshotGateway: SnapshotGateway;
+  readonly #store: BoardStore;
   readonly #moveGateway?: MoveGateway; readonly #motion?: MotionPort;
   readonly #feedback?: FeedbackPort; readonly #dropPolicies?: DropPolicyResolver;
   readonly #dragSession?: DragSession; readonly #sheetManager?: SheetManager;
   readonly #liveUnsub?: () => void;
-  #currentSlice: SliceId;
-  #currentFilters: BoardFilters = {};
+  #currentSlice: SliceId; #currentFilters: BoardFilters = {};
   #disposed = false;
-  // Guard: prevents concurrent loadMore() calls from rapid scroll events.
-  #isLoadingMore = false;
+  readonly #chunks: BoardLaneChunkLoader;
 
   constructor(deps: BoardControllerDeps) {
-    this.#store = deps.store; this.#snapshotGateway = deps.snapshotGateway;
-    this.#currentSlice = deps.store.getMeta().slice;
+    this.#store = deps.store;
+    const meta = deps.store.getMeta();
+    this.#currentSlice = meta.slice;
+    this.#chunks = new BoardLaneChunkLoader(deps.snapshotGateway, meta.lanePagination);
     this.#moveGateway = deps.moveGateway; this.#motion = deps.motion;
     this.#feedback = deps.feedback; this.#dropPolicies = deps.dropPolicies;
     this.#dragSession = deps.dragSession; this.#sheetManager = deps.sheetManager;
@@ -59,7 +60,7 @@ export class BoardController {
       this.#liveUnsub = deps.liveSource.subscribe(
         (u) => { void this.#handleLiveUpdate(u); },
         (s) => { this.#handleLiveStatus(s); },
-        () => { void this.resync(); },
+        () => { void this.#resyncLoadedWindows(); },
       );
     }
   }
@@ -86,6 +87,7 @@ export class BoardController {
   getCard(id: string): BoardCard | undefined { return this.#store.getCard(id); }
   getLane(state: WorkItemState): readonly string[] { return this.#store.getLane(state); }
   getMeta(): BoardMeta { return this.#store.getMeta(); }
+  getLaneCursor(state: WorkItemState): LaneCursor | undefined { return this.#chunks.cursorFor(state); }
   subscribe(topic: string, listener: () => void): () => void { return this.#store.subscribe(topic, listener); }
 
   async executeMove(card: BoardCard, option: MoveOption, input?: SheetInput): Promise<void> {
@@ -99,26 +101,40 @@ export class BoardController {
     if (option) await this.executeMove(this.#dragSession.activeCard, option);
   }
 
+  #scope(): ChunkScope {
+    return { slice: this.#currentSlice, filters: this.#currentFilters };
+  }
+
   async resync(slice?: SliceId, filters?: BoardFilters): Promise<void> {
     if (this.#disposed) return;
-    const snapshot = await this.#snapshotGateway.snapshot({ slice, filters });
+    if (slice !== undefined) this.#currentSlice = slice;
+    if (filters !== undefined) this.#currentFilters = filters;
+    const snapshot = await this.#chunks.first(this.#scope());
     if (!this.#disposed) this.#store.replace(snapshot);
   }
 
-  async loadMore(): Promise<void> {
-    if (this.#disposed || this.#isLoadingMore) return;
-    const meta = this.#store.getMeta();
-    if (!meta.pagination?.hasMore || !meta.pagination.nextCursor) return;
-    this.#isLoadingMore = true;
-    try {
-      const next = await this.#snapshotGateway.snapshot({
-        slice: this.#currentSlice, filters: this.#currentFilters,
-        pagination: { page: meta.pagination.nextCursor, pageSize: meta.pagination.pageSize },
-      });
-      if (!this.#disposed) this.#store.append(next);
-    } finally {
-      this.#isLoadingMore = false;
+  async #resyncLoadedWindows(): Promise<void> {
+    if (this.#disposed) return;
+    const states = this.#chunks.loadedStates();
+    if (states.length === 0) {
+      await this.resync();
+      return;
     }
+    for (const state of states) {
+      const page = await this.#chunks.window(this.#scope(), state);
+      if (this.#disposed) return;
+      if (page) this.#store.replaceLane(state, page.cards);
+    }
+  }
+
+  /**
+   * Appends exactly one more chunk for one lane when its end is reached.
+   * One call = one page for that lane; other lanes never fetch.
+   */
+  async loadMore(state: WorkItemState): Promise<void> {
+    if (this.#disposed) return;
+    const page = await this.#chunks.next(this.#scope(), state);
+    if (page && !this.#disposed) this.#store.appendLane(state, page.cards);
   }
 
   async switchSlice(slice: SliceId): Promise<void> {

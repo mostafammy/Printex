@@ -8,6 +8,7 @@
 import React, { useEffect, useState } from "react";
 import {
   getBoardCardsAction,
+  getBoardLanePageAction,
   getBoardSnapshotAction,
   groupMoveWorkItemsAction,
   moveWorkItemAction,
@@ -28,6 +29,7 @@ export function BoardProvider({
   const [controller] = useState(() =>
     createBoardController(initialSnapshot, {
       fetchSnapshot: (req) => getBoardSnapshotAction(req),
+      fetchLanePage: (req) => getBoardLanePageAction(req),
       moveSender: (req) => moveWorkItemAction(req),
       cardsFetcher: (ids) => getBoardCardsAction(ids),
       groupMoveSender: (req) => groupMoveWorkItemsAction(req),

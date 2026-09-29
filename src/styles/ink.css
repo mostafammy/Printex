@@ -239,6 +239,102 @@
     --motion-duration-rollout: 0ms;
     --motion-duration-land: 0ms;
   }
+  .lane-card-enter,
+  .lane-shimmer::after,
+  .drag-overlay-enter,
+  .column-drop-over {
+    animation: none !important;
+  }
+}
+
+/* Per-lane pagination appearance */
+@keyframes lane-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.lane-card-enter {
+  animation: lane-card-in 360ms var(--motion-spring, cubic-bezier(0.22, 1, 0.36, 1)) backwards;
+}
+
+@keyframes lane-shimmer-sweep {
+  from {
+    inset-inline-start: -60%;
+  }
+  to {
+    inset-inline-start: 110%;
+  }
+}
+
+.lane-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-lane);
+}
+
+.lane-shimmer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: -60%;
+  width: 55%;
+  border-radius: inherit;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--ticket-edge, var(--primary)) 18%, transparent) 50%,
+    transparent 80%
+  );
+  animation: lane-shimmer-sweep 1.4s ease-in-out infinite;
+}
+
+/* Drag and drop appearance */
+@keyframes drag-overlay-enter {
+  from {
+    opacity: 0.3;
+    transform: rotate(0deg) scale(0.97);
+  }
+  to {
+    opacity: 0.92;
+    transform: rotate(2deg) scale(1.04);
+  }
+}
+
+.drag-overlay-enter {
+  animation: drag-overlay-enter 200ms ease-out backwards;
+}
+
+@keyframes lane-drop-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--lane-glow, var(--primary)) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+.column-drop-over {
+  animation: lane-drop-pulse 1.5s ease-in-out infinite;
+}
+
+/* Grabbing cursor everywhere while a card is dragged … */
+[data-dragging],
+[data-dragging] * {
+  cursor: grabbing !important;
+}
+
+/* … except over ineligible columns, which refuse the drop. */
+[data-dragging] .cursor-not-allowed,
+[data-dragging] .cursor-not-allowed * {
+  cursor: not-allowed !important;
 }
 
 /* ── Board form ──────────────────────────────────────────────────────────────

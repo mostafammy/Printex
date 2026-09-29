@@ -43,6 +43,7 @@ export class BoardStore {
       hiddenSiblingCounts: this.#snapshot.hiddenSiblingCounts,
       blockedHints: this.#snapshot.blockedHints,
       pagination: this.#snapshot.pagination,
+      lanePagination: this.#snapshot.lanePagination,
     });
   }
 
@@ -101,18 +102,32 @@ export class BoardStore {
     this.#flushDirty();
   }
 
-  remove(ids: readonly string[]): void {
-    for (const id of ids) {
-      const card = this.#cards.get(id);
-      if (card) {
-        this.#laneIndex.remove(card.state, id);
-        this.#cards.delete(id);
-        this.#dirtyTopics.add(`card:${id}`);
-        this.#dirtyTopics.add(`lane:${card.state}`);
-      }
+  /** Appends one lane chunk; only that lane (and meta) re-render. */
+  appendLane(state: WorkItemState, cards: readonly BoardCard[]): void {
+    const existing = new Set(this.#cards.keys());
+    const fresh = cards.filter((c) => !existing.has(c.id));
+    const dirty = new Set<string>(["meta", `lane:${state}`]);
+    this.#insertCards(fresh, dirty);
+    this.#snapshot = { ...this.#snapshot, cards: [...this.#snapshot.cards, ...fresh] };
+    this.#cachedMeta = null;
+    this.#emitter.emitMany(dirty);
+  }
+
+  /** Swaps one lane's cards (reconnect window); other lanes untouched. */
+  replaceLane(state: WorkItemState, cards: readonly BoardCard[]): void {
+    const dirty = new Set<string>(["meta", `lane:${state}`]);
+    for (const id of [...this.#laneIndex.getLane(state)]) {
+      this.#laneIndex.remove(state, id);
+      this.#cards.delete(id);
+      dirty.add(`card:${id}`);
     }
-    this.#dirtyTopics.add("meta");
-    this.#flushDirty();
+    this.#insertCards(cards, dirty);
+    this.#snapshot = {
+      ...this.#snapshot,
+      cards: [...this.#snapshot.cards.filter((c) => c.state !== state), ...cards],
+    };
+    this.#cachedMeta = null;
+    this.#emitter.emitMany(dirty);
   }
 
   #insertCards(cards: readonly BoardCard[], dirty: Set<string>): void {
@@ -130,20 +145,6 @@ export class BoardStore {
     this.#snapshot = snapshot;
     const dirty = new Set<string>(["meta"]);
     this.#insertCards(snapshot.cards, dirty);
-    this.#cachedMeta = null;
-    this.#emitter.emitMany(dirty);
-  }
-
-  append(snapshot: BoardSnapshot): void {
-    const dirty = new Set<string>(["meta"]);
-    const existing = new Set(this.#cards.keys());
-    const newCards = snapshot.cards.filter((c) => !existing.has(c.id));
-    this.#insertCards(newCards, dirty);
-    this.#snapshot = {
-      ...this.#snapshot,
-      cards: [...this.#snapshot.cards, ...newCards],
-      pagination: snapshot.pagination,
-    };
     this.#cachedMeta = null;
     this.#emitter.emitMany(dirty);
   }

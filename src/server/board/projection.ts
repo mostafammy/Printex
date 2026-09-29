@@ -129,6 +129,11 @@ export async function fetchRawWorkItemRows(
   return prismaClient.workItem.findMany({
     where,
     ...(req ? { skip: req.skip, take: req.pageSize } : {}),
+    // Deterministic order is load-bearing for offset pagination: without it
+    // consecutive chunks (skip/take pages) can overlap or skip rows as the
+    // underlying table changes. createdAt+id is stable and matches the
+    // board's oldest-first lane ordering.
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     include: {
       order: {
         select: {
