@@ -89,6 +89,7 @@ export const JobTicketView = React.memo(function JobTicketView({
       role="button"
       tabIndex={0}
       data-testid={`job-ticket-${card.id}`}
+      data-card-id={card.id}
       data-station={getCardStation(card.state)}
       aria-label={getAccessibleName(card)}
       onClick={() => onClick?.(card)}
