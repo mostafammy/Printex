@@ -113,7 +113,11 @@ function tabInk(id: StationId, active: boolean): React.CSSProperties {
  */
 function tabDropState(offer: DropVisual): { readonly cls: string; readonly hint: string | null } {
   if (offer === "over") return { cls: "bg-primary/15 ring-2 ring-primary", hint: "أفلت هنا" };
-  if (offer === "offered") return { cls: "bg-primary/5 ring-1 ring-primary/50", hint: null };
+  // .rail-tab-offered breathes gently in the tab's own station ink (ink.css),
+  // so the next phase reads as an invitation mid-drag rather than a static
+  // ring — the one cue a tabbed-view operator gets, since the target column
+  // itself is off-screen.
+  if (offer === "offered") return { cls: "bg-primary/5 ring-1 ring-primary/50 rail-tab-offered", hint: null };
   return { cls: "", hint: null };
 }
 

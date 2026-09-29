@@ -40,13 +40,28 @@ const dropAnimation: DropAnimation = {
 };
 
 function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
+  const controller = useBoardController();
+  const session = controller.dragSession;
+  const [, setTick] = React.useState(0);
+  React.useEffect(() => session?.subscribe(() => setTick((t) => t + 1)), [session]);
   if (!card) return null;
+  // Cross-phase delight: while the card hovers a different station than the
+  // one it came from, the overlay grows slightly — the physical metaphor of
+  // lifting higher for a longer flight. `scale` (not `transform`) so it never
+  // fights the enter keyframes' rotate in ink.css.
+  const origin = STATE_PLACEMENT[card.state];
+  const traveling =
+    session?.overStation != null &&
+    origin !== "OFF_BOARD" &&
+    session.overStation !== origin.station;
   return (
     <DragOverlay dropAnimation={dropAnimation}>
       {/* .drag-overlay-enter lifts and rotates the card as it leaves the
           stack; the keyframes and their reduced-motion kill-switch live in
           ink.css. The drop animation then flies it back into the lane. */}
-      <div className="drag-overlay-enter pointer-events-none cursor-grabbing opacity-90 shadow-2xl">
+      <div
+        className={`drag-overlay-enter pointer-events-none cursor-grabbing opacity-90 shadow-2xl${traveling ? " drag-overlay-travel" : ""}`}
+      >
         <JobTicket card={card} />
       </div>
     </DragOverlay>

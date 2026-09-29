@@ -242,8 +242,14 @@
   .lane-card-enter,
   .lane-shimmer::after,
   .drag-overlay-enter,
+  .drag-overlay-travel,
+  .rail-tab-offered,
   .column-drop-over {
     animation: none !important;
+  }
+  .drag-overlay-travel {
+    scale: none !important;
+    filter: none !important;
   }
 }
 
@@ -323,6 +329,31 @@
 
 .column-drop-over {
   animation: lane-drop-pulse 1.5s ease-in-out infinite;
+}
+
+/* Cross-phase delight: the next-phase rail tab breathes in its own station
+   ink while a draggable hovers elsewhere, and the dragged card rides
+   slightly larger while traveling between stations. Both are pure CSS so
+   they run on the compositor at 60fps with no JS per frame; `scale` (not
+   `transform`) on the overlay keeps it clear of the enter keyframes above. */
+@keyframes rail-offer-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--station-wash) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.rail-tab-offered {
+  animation: rail-offer-pulse 1.6s ease-in-out infinite;
+}
+
+.drag-overlay-travel {
+  scale: 1.05;
+  transition: scale 180ms ease-out;
+  filter: saturate(1.15);
 }
 
 /* Grabbing cursor everywhere while a card is dragged … */
