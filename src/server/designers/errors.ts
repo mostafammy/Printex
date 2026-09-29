@@ -13,6 +13,7 @@ type DomainDesignerErrorCode =
   | "NOT_TIMEABLE"
   | "NOT_IN_DESIGN"
   | "NO_DESIGN_VERSION"
+  | "NO_DESIGN_FILE"
   | "WORK_ITEM_NOT_FOUND";
 
 /**
