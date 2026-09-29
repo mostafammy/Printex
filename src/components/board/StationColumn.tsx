@@ -33,7 +33,7 @@ import type { Station } from "~/lib/board/stations";
 import type { BoardCard } from "~/lib/board/types";
 import { SubLane } from "./SubLane";
 import { StationSummary } from "./StationSummary";
-import { useStationCardCount } from "./MobileStationTabs";
+import { useStationCardCount, useStationCardTotal, formatLaneCount } from "./MobileStationTabs";
 
 import { useDragOffer } from "./dnd/useDragOffer";
 
@@ -68,11 +68,11 @@ export interface StationColumnProps {
 
 function ColumnHeader({
   station,
-  count,
+  countLabel,
   now,
 }: {
   readonly station: Station;
-  readonly count: number;
+  readonly countLabel: string;
   readonly now: number;
 }) {
   const IconComponent = ICONS[station.icon] ?? Inbox;
@@ -90,7 +90,7 @@ function ColumnHeader({
         data-testid={`station-count-${station.id}`}
         className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-semibold text-muted-foreground"
       >
-        {count}
+        {countLabel}
       </span>
     </header>
   );
@@ -178,7 +178,12 @@ export function StationColumn(props: StationColumnProps) {
   // idle-animation invariant (SC-007) exists precisely to catch that.
   const now = Date.now();
 
-  const cardCount = useStationCardCount(props.station.id, props.station.lanes);
+  // Loaded vs total: infinite scroll means the lane usually holds less
+  // than exists, so the header reads "20 من 150" while more is unloaded
+  // and collapses to "20" once everything is on screen.
+  const loadedCount = useStationCardCount(props.station.lanes);
+  const totalCount = useStationCardTotal(props.station.lanes);
+  const countLabel = formatLaneCount(loadedCount, totalCount);
 
   // When no dropState is passed in, read it live from the drag session, so
   // every column reacts to a drag without the parent re-rendering them.
@@ -197,7 +202,7 @@ export function StationColumn(props: StationColumnProps) {
       ref={setNodeRef}
       data-testid={`station-column-${props.station.id}`}
       data-station={props.station.id}
-      aria-label={`${props.station.labelAr} (${cardCount})`}
+      aria-label={`${props.station.labelAr} (${countLabel})`}
       // Flexible width, not a fixed clamp: seven columns share the width
       // available, so each takes an equal share between a readable floor and
       // a ceiling. A fixed width left the board with dead space on a wide
@@ -206,7 +211,7 @@ export function StationColumn(props: StationColumnProps) {
         props.fillWidth ? "w-full min-w-0" : "min-w-[280px] max-w-[340px]"
       }`}
     >
-      <ColumnHeader station={props.station} count={cardCount} now={now} />
+      <ColumnHeader station={props.station} countLabel={countLabel} now={now} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}
       {isOver && (
         // The one piece of copy on the whole board that tells the operator
