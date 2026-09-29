@@ -9,7 +9,8 @@ export type PricingErrorCode =
   | "INVALID_QUANTITY"
   | "TIER_NOT_FOUND"
   | "TIER_OVERLAP"
-  | "EFFECTIVE_DATE_CONFLICT";
+  | "EFFECTIVE_DATE_CONFLICT"
+  | "RELEASE_FAILED";
 
 export class DomainPricingError extends Error {
   readonly code: PricingErrorCode;
