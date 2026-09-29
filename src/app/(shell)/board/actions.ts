@@ -17,7 +17,11 @@ import type {
   MoveResult,
   SnapshotRequest,
 } from "~/lib/board/types";
-import { getActor } from "~/server/auth";
+import type { QuoteResult } from "~/server/pricing/quote";
+import { getActor, authorize } from "~/server/auth";
+import { db } from "~/server/db";
+import { quoteForRelease } from "~/server/pricing/prices";
+import { getCurrentPrice } from "~/server/pricing/history";
 import {
   getBoardCards,
   getBoardLanePage,
@@ -30,7 +34,6 @@ import {
 import { searchOrders } from "~/server/orders/search";
 import { findCustomers } from "~/server/customers";
 import { getEligibleDesigners } from "~/server/designers";
-import { db } from "~/server/db";
 
 export async function getWorkItemDetailAction(
   workItemId: string,
@@ -72,6 +75,57 @@ export async function groupMoveWorkItemsAction(
 ): Promise<GroupMoveResult> {
   const actor = await getActor();
   return groupMoveWorkItems(actor, req);
+}
+
+export interface QuickPriceContext {
+  readonly pricing: BoardCard["pricing"];
+  readonly policyMode: "FIXED" | "VARIABLE" | null;
+  readonly quoteAmount: string | null;
+  readonly quoteUnitAr: string | null;
+  readonly currentAmount: string | null;
+}
+
+/**
+ * Everything the quick-price sheet needs in one round trip: the live
+ * auto-quote (or null when the item cannot be quoted yet), the current
+ * price if any, and the product's pricing policy mode driving which
+ * manual kinds are legal. Never throws — a missing product type or price
+ * list degrades to the manual form, never a dead modal.
+ */
+export async function getQuickPriceContextAction(workItemId: string): Promise<QuickPriceContext> {
+  const actor = await getActor();
+  authorize(actor, "pricing.use_fixed");
+
+  const item = await db.workItem.findUniqueOrThrow({
+    where: { id: workItemId },
+    select: {
+      productType: { select: { pricingPolicy: { select: { mode: true } } } },
+      pricingStatus: { select: { status: true } },
+    },
+  });
+
+  const quoted = await quoteForRelease(workItemId);
+  const current = await getCurrentPrice(workItemId).catch(() => null);
+
+  return {
+    pricing: item.pricingStatus?.status ?? "NOT_REQUIRED",
+    policyMode: item.productType?.pricingPolicy?.mode ?? null,
+    quoteAmount: quoted.ok ? quoted.value.amount : null,
+    quoteUnitAr: quoted.ok ? describeQuoteUnit(quoted.value) : null,
+    currentAmount: current?.amount ?? null,
+  };
+}
+
+function describeQuoteUnit(quote: QuoteResult): string {
+  const unit = quote.breakdown.unit;
+  const qty = quote.breakdown.quantity;
+  const unitAr =
+    unit === "PIECE" ? "قطعة" :
+    unit === "SQUARE_METER" ? "م²" :
+    unit === "LINEAR_METER" ? "متر طولي" :
+    unit === "SHEET" ? "فرخ" :
+    unit === "PACK" ? "رزمة" : unit;
+  return `${qty} ${unitAr}`;
 }
 
 export async function searchOrdersAction(query: string) {
