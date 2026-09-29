@@ -214,11 +214,13 @@ export function StationColumn(props: StationColumnProps) {
       <ColumnHeader station={props.station} countLabel={countLabel} now={now} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}
       {isOver && (
-        // The one piece of copy on the whole board that tells the operator
-        // what will happen if they let go right now.
         <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
-          <span className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground shadow-lg">
-            أفلت البطاقة هنا
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/40">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+            </span>
+            <span>نقل إلى {props.station.labelAr}</span>
           </span>
         </div>
       )}
