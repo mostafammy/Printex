@@ -1,73 +1,78 @@
 // NavProgressBar — 092-performance T010 (spec FR-004, NB-003).
 //
-// A thin, top-edge progress indicator for authenticated navigation: when a
-// navigation starts, a glint sweeps the top edge; when the route commits it
-// stops. It answers the one question the removed overlay answered ("is my
-// click going somewhere?") without ever covering content or blocking input.
+// A thin, top-edge progress indicator for authenticated navigation. It
+// appears once a navigation starts and stays until the streamed CONTENT has
+// replaced the loading skeletons — not merely until the route commits.
+// Committing only swaps in `loading.tsx`; the page keeps streaming behind it,
+// so a bar that stops at commit reports progress while the user still stares
+// at a skeleton.
 //
-// Design constraints (spec FR-004, NB-003):
-//   - `position: fixed`, top edge, ~2px tall — never full-screen.
-//   - `pointer-events: none` — input always passes through; the bar can never
-//     gate a click, keyboard, or scroll (this is the hard safety rule; the
-//     start signal below is decoration only).
-//   - Reveal delay (400 ms): a navigation that commits faster than that
-//     never draws anything, so instant hops do not flicker. Any navigation
-//     slow enough to be noticed by a user shows the bar.
-//   - Cleared on ACTUAL route commitment (`usePathname`), never left hanging
-//     if a navigation is aborted or redirects back.
-//   - `aria-hidden` — decorative feedback, not state (SR-003: no live
-//     region, no focus moves).
-//   - Sweep animation disabled under `prefers-reduced-motion` (globals.css).
+// One armed → committed → released cycle per navigation (single state
+// machine, deliberately): an earlier version hid the bar as soon as it saw
+// a content-free DOM during the pre-commit window, then brought it back when
+// the loading boundary mounted — a visible "launch" twice per click.
 //
-// Start signal: a capture-phase click listener on same-origin left-clicks.
-// The App Router exposes no global navigation-start signal in Next 15, and
-// `useLinkStatus` is per-Link. A click capture is used instead of the
-// pointerdown *arming* T004 removed for one reason: nothing is armed that can
-// block or delay anything — the overlay, the min-visible hold, and the exit
-// animation are all gone. This only starts a 2 s timer.
+//   armed      same-origin left click on a link to a different path
+//              (the App Router exposes no nav-start signal in Next 15; the
+//              click only arms timers — nothing is shown, nothing is
+//              interactive)
+//   committed  usePathname changed after the click
+//   released   content has been skeleton-free for the quiet window
+//
+// Never blocks: `pointer-events: none`, `aria-hidden`, top edge only, 4px.
+// It is feedback, never an input gate — the hard rule the old overlay broke.
+// The sweep is disabled under `prefers-reduced-motion`.
 
 "use client";
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
-/**
- * A navigation that commits faster than this never draws the bar. Short
- * enough that any noticeably slow navigation shows it (LAN round-trips are
- * ~1 ms; the remote dev pooler and cold compiles are hundreds of ms), long
- * enough that an instant hop does not flicker.
- */
-export const NAV_PROGRESS_REVEAL_MS = 400;
-/** How long the sweep lingers after the route commits. */
-export const NAV_PROGRESS_SETTLE_MS = 400;
+/** Content must still be missing this long after a nav starts to draw. */
+export const NAV_PROGRESS_REVEAL_MS = 300;
+/** Content must stay skeleton-free this long before the bar releases. */
+export const CONTENT_QUIET_MS = 250;
+/** Safety net: release a bar whose navigation never committed or aborted. */
+export const NAV_PROGRESS_MAX_MS = 12000;
+
+/** The `(shell)` loading boundary, plus every shimmer panel fallback. */
+const LOADING_SELECTOR = '[data-testid="shell-loading"], [data-slot="skeleton"]';
+
+function contentSettled(): boolean {
+  return document.querySelector(LOADING_SELECTOR) === null;
+}
 
 export function NavProgressBar() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(false);
 
+  const armed = useRef(false);
+  const committed = useRef(false);
   const mounted = useRef(false);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const safetyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearReveal = () => {
+  const clearTimers = () => {
     if (revealTimer.current) {
       clearTimeout(revealTimer.current);
       revealTimer.current = null;
     }
+    if (safetyTimer.current) {
+      clearTimeout(safetyTimer.current);
+      safetyTimer.current = null;
+    }
   };
 
-  // The route committed (or the first render happened): stop showing.
-  useEffect(() => {
-    if (!mounted.current) {
-      mounted.current = true;
-      return;
-    }
-    clearReveal();
-    setVisible(false);
-  }, [pathname]);
+  const show = () => setVisible(true);
 
-  // Navigation start: same-origin left click on a link that leaves the
-  // current path. Starts the reveal timer only — nothing is shown yet, and
-  // nothing can be interacted with.
+  const release = () => {
+    armed.current = false;
+    committed.current = false;
+    clearTimers();
+    setVisible(false);
+  };
+
+  // ── Navigation start ────────────────────────────────────────────────────
   useEffect(() => {
     const onActivate = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0) return;
@@ -91,33 +96,80 @@ export function NavProgressBar() {
       if (url.origin !== window.location.origin) return;
       if (url.pathname === pathname) return;
 
-      clearReveal();
+      clearTimers();
+      armed.current = true;
+      committed.current = false;
+
       revealTimer.current = setTimeout(() => {
         revealTimer.current = null;
-        setVisible(true);
+        if (armed.current) show();
       }, NAV_PROGRESS_REVEAL_MS);
+
+      // A navigation that never commits (aborted link, download handled by
+      // the browser) must not leave the bar stuck on screen.
+      safetyTimer.current = setTimeout(() => {
+        safetyTimer.current = null;
+        if (armed.current) release();
+      }, NAV_PROGRESS_MAX_MS);
     };
 
     document.addEventListener("click", onActivate, true);
     return () => {
       document.removeEventListener("click", onActivate, true);
-      clearReveal();
+      clearTimers();
     };
   }, [pathname]);
 
-  // The sweep fades out shortly after the new route paints.
+  // ── Route committed: the page is still streaming behind its skeletons ───
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (!armed.current) return; // not a navigation this bar started
+
+    committed.current = true;
+    if (revealTimer.current) {
+      clearTimeout(revealTimer.current);
+      revealTimer.current = null;
+    }
+    // Content is still missing (or already showing): hold the bar up. If the
+    // content already landed within the reveal window, stay hidden.
+    if (!contentSettled()) show();
+  }, [pathname]);
+
+  // ── Hold while anything is still loading, release once it is not ───────
   useEffect(() => {
     if (!visible) return;
-    const settle = setTimeout(() => setVisible(false), NAV_PROGRESS_SETTLE_MS);
-    return () => clearTimeout(settle);
-  }, [visible]);
+
+    let quietTimer: ReturnType<typeof setTimeout> | null = null;
+    const check = () => {
+      if (quietTimer) clearTimeout(quietTimer);
+      quietTimer = setTimeout(() => {
+        quietTimer = null;
+        // Still navigating: the loading boundary has not mounted yet, so the
+        // DOM legitimately looks content-free. Keep the bar up.
+        if (!committed.current) return;
+        if (contentSettled()) release();
+      }, CONTENT_QUIET_MS);
+    };
+
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { childList: true, subtree: true });
+    check();
+
+    return () => {
+      observer.disconnect();
+      if (quietTimer) clearTimeout(quietTimer);
+    };
+  }, [visible, pathname]);
 
   return (
     <div
       aria-hidden="true"
       data-testid="nav-progress"
       data-visible={visible ? "true" : "false"}
-      className="nav-progress pointer-events-none fixed inset-x-0 top-0 z-[9999] h-2 overflow-hidden"
+      className="nav-progress pointer-events-none fixed inset-x-0 top-0 z-[9999] h-1 overflow-hidden"
     >
       {visible && <div className="nav-progress__fill h-full w-full" />}
     </div>
