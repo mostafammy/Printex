@@ -54,7 +54,7 @@ function ticketCls(isSiblingHighlighted: boolean, isDragging: boolean): string {
   // box.
   return `group relative flex h-full w-full cursor-pointer flex-col justify-between overflow-hidden rounded-lg bg-card p-3 text-start shadow-xs transition-all hover:border-primary/40 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:scale-[0.99] ${
     isSiblingHighlighted ? "ring-2 ring-primary ring-offset-1" : ""
-  } ${isDragging ? "opacity-30 cursor-grabbing" : ""}`;
+  } ${isDragging ? "opacity-30 cursor-grabbing border-2 border-dashed border-primary/60 bg-primary/[0.04] scale-[0.99]" : ""}`;
 }
 
 // One style prop: a second one silently replaces the first. The station's
@@ -64,6 +64,22 @@ const TICKET_STATION_RULE: React.CSSProperties = {
   borderInlineStartWidth: "4px",
   borderInlineStartColor: "var(--ticket-bar, var(--primary))",
 };
+
+function useTicketDrag(card: BoardCard, onMoveKey?: (c: BoardCard) => void) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id });
+  return { onKeyDown: useMoveShortcut(card, onMoveKey), attributes, listeners, setNodeRef, isDragging };
+}
+
+function DraggingVeil() {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-card/75 backdrop-blur-[1px]">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary animate-pulse">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+        <span>قيد النقل...</span>
+      </span>
+    </div>
+  );
+}
 
 export const JobTicketView = React.memo(function JobTicketView({
   card,
@@ -76,16 +92,13 @@ export const JobTicketView = React.memo(function JobTicketView({
   readonly card: BoardCard;
   readonly onGroupClick?: (orderId: string) => void;
 }) {
-  const onKeyDown = useMoveShortcut(card, onMoveKey);
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: card.id,
-  });
+  const drag = useTicketDrag(card, onMoveKey);
 
   return (
     <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
+      ref={drag.setNodeRef}
+      {...drag.attributes}
+      {...drag.listeners}
       role="button"
       tabIndex={0}
       data-testid={`job-ticket-${card.id}`}
@@ -93,8 +106,8 @@ export const JobTicketView = React.memo(function JobTicketView({
       data-station={getCardStation(card.state)}
       aria-label={getAccessibleName(card)}
       onClick={() => onClick?.(card)}
-      onKeyDown={onKeyDown}
-      className={ticketCls(isSiblingHighlighted, isDragging)}
+      onKeyDown={drag.onKeyDown}
+      className={ticketCls(isSiblingHighlighted, drag.isDragging)}
       style={TICKET_STATION_RULE}
     >
       <TicketBody
@@ -103,6 +116,7 @@ export const JobTicketView = React.memo(function JobTicketView({
         onGroupClick={onGroupClick}
         onMoveKey={onMoveKey}
       />
+      {drag.isDragging && <DraggingVeil />}
     </div>
   );
 });
