@@ -11,10 +11,8 @@ import { usePathname } from "next/navigation";
 import {
   CheckCircle2,
   Clock,
-  FileText,
   Kanban,
   Search,
-  Settings,
   Users,
 } from "lucide-react";
 import type { Actor } from "~/server/core";
@@ -46,13 +44,6 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "قائمتي",
     icon: <Clock className="h-5 w-5" />,
     inkToken: "var(--ink-key)",
-  },
-  {
-    id: "orders",
-    href: "/orders",
-    labelAr: "الطلبات",
-    icon: <FileText className="h-5 w-5" />,
-    inkToken: "var(--ink-orange)",
   },
   {
     id: "customers",
@@ -123,17 +114,8 @@ export function IconRail({ actor: _actor, onOpenCommandBar }: IconRailProps) {
           <RailLink key={item.id} item={item} pathname={pathname} />
         ))}
       </div>
-
-      <div className="flex flex-col items-center gap-2">
-        <Link
-          href="/settings"
-          title="الإعدادات"
-          aria-label="الإعدادات"
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-        >
-          <Settings className="h-4 w-4" />
-        </Link>
-      </div>
+      {/* 092 T042 / FR-031: the dead /settings rail link (no such route)
+          was removed with its now-empty wrapper — never a silent 404. */}
     </nav>
   );
 }

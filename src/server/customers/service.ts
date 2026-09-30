@@ -34,7 +34,15 @@ export async function getCustomer(id: string) {
   authorize(actor, "customer.manage");
   return db.customer.findUnique({
     where: { id },
-    include: { phones: true, addresses: true, classification: true, orders: true },
+    include: {
+      phones: true,
+      addresses: true,
+      classification: true,
+      // 092 T040 / FR-030: only the order fields customers/[id]/page.tsx
+      // renders (id → key/href, number, createdAt, priority), bounded to 20
+      // rows — everything else on the order stays unselected.
+      orders: { select: { id: true, number: true, createdAt: true, priority: true }, take: 20 },
+    },
   });
 }
 

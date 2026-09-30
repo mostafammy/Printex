@@ -36,7 +36,7 @@ export {
   registerPricingResetListener,
 } from "./change-listener";
 export type { SpecChangedEvent, SpecChangeListener } from "./change-listener";
-export { getCurrentPrice, getPriceHistory } from "./history";
+export { getCurrentPrice, getCurrentPrices, getPriceHistory } from "./history";
 export { pricingGateProvider } from "./delivery-port";
 export { formatQueueAge, getPricingQueue } from "./queue";
 export type { PricingQueueInput, PricingQueueResult, PricingQueueRow } from "./queue";

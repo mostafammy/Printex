@@ -315,6 +315,23 @@ async function recordBreach(params: {
 }
 
 /**
+ * In-process single-flight for the delay tick — the delay-side twin of
+ * processor.ts's `batchInFlight` (092 T057, investigation §7.3).
+ *
+ * The DB lease only excludes OTHER instances: `acquireLease`'s
+ * `OR { ownerId }` deliberately lets THIS process re-acquire its own row
+ * (an admin "run now" within `leaseSeconds` of an interval tick must not be
+ * silently skipped), so it cannot stop two same-process ticks overlapping —
+ * an interval tick outliving `intervalMinutes` (default 5 min) against the
+ * remote pooler, or a manual run landing on a slow one. Stacked ticks would
+ * double exactly the pool contention §7.3 flags. Module-local like
+ * `batchInFlight`: the interval and the admin action both call through this
+ * module instance, and the `globalThis` start-guard in timers.ts is what
+ * stops a second INTERVAL from ever existing (T087).
+ */
+let tickInFlight = false;
+
+/**
  * One delay-detection tick.
  *
  * Never throws (FR-052): every failure is recorded on the `SchedulerRun` row
@@ -323,6 +340,22 @@ async function recordBreach(params: {
  * is only a report.
  */
 export async function runDelayTick(): Promise<DelayTickResult> {
+  // A tick already running in this process owns the work; returning the
+  // same EMPTY the cross-instance lease skip returns keeps every caller's
+  // "did not run" handling identical (the interval ignores it, the Admin
+  // action shows skipped). ALWAYS released — early return, throw, or
+  // normal finish — so a failure can never wedge the scheduler.
+  if (tickInFlight) return EMPTY;
+  tickInFlight = true;
+  try {
+    return await performDelayTick();
+  } finally {
+    tickInFlight = false;
+  }
+}
+
+/** The tick body — only ever entered while `tickInFlight` is held. */
+async function performDelayTick(): Promise<DelayTickResult> {
   const { scheduler } = getNotificationConfig();
   const ownerId = processOwnerId();
 

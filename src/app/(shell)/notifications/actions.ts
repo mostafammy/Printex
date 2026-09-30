@@ -11,19 +11,53 @@
 
 import { revalidatePath } from "next/cache";
 import { getActor } from "~/server/auth";
-import { markAllRead, markRead, markUnread } from "~/server/notifications";
+import {
+  listNotifications,
+  markAllRead,
+  markRead,
+  markUnread,
+  unreadCount,
+} from "~/server/notifications";
+import type { NotificationView } from "~/server/notifications";
 
-/** Re-reads every surface whose content depends on a notification change. */
-function revalidateAll(): void {
+/**
+ * Invalidates only what a mark action changed — the notifications route
+ * itself (092 FR-023, AC-017; 053 contracts/ui.md §Server Actions). The
+ * blanket whole-tree invalidation of the root layout is gone: it
+ * re-executed every route's RSC cache for a one-row mutation. The bell does
+ * not need invalidation here — its re-read (`revalidateBellAction`) is
+ * computed fresh on every call and never cached (092 FC-004).
+ */
+function revalidateNotifications(): void {
   revalidatePath("/notifications");
-  revalidatePath("/", "layout");
+}
+
+/**
+ * The bell's targeted re-read — 092 contract notification-refresh §1.
+ *
+ * No input: the scope IS the caller. `getActor()` authenticates exactly as
+ * the mark actions do, and both reads inherit `unreadCount`/`list`'s
+ * `userId = actor.userId` scoping verbatim (SEC-003). A server action is a
+ * POST executed per call, so no HTTP cache can ever serve it (FC-004,
+ * TR-006) — no `revalidate`, no `cache()`, fresh on every invocation.
+ */
+export async function revalidateBellAction(): Promise<{
+  count: number;
+  rows: NotificationView[];
+}> {
+  const actor = await getActor();
+  const [count, firstPage] = await Promise.all([
+    unreadCount(actor),
+    listNotifications(actor, { page: 1, pageSize: 10 }),
+  ]);
+  return { count, rows: firstPage.rows };
 }
 
 export async function markReadAction(notificationId: string): Promise<void> {
   try {
     const actor = await getActor();
     await markRead(actor, notificationId);
-    revalidateAll();
+    revalidateNotifications();
   } catch (error) {
     // A refused or missing-row action must not surface as an unhandled
     // rejection from a click handler. The service's error code is what the
@@ -36,7 +70,7 @@ export async function markUnreadAction(notificationId: string): Promise<void> {
   try {
     const actor = await getActor();
     await markUnread(actor, notificationId);
-    revalidateAll();
+    revalidateNotifications();
   } catch (error) {
     console.error("[notifications] markUnread failed", error);
   }
@@ -46,7 +80,7 @@ export async function markAllReadAction(): Promise<void> {
   try {
     const actor = await getActor();
     await markAllRead(actor);
-    revalidateAll();
+    revalidateNotifications();
   } catch (error) {
     console.error("[notifications] markAllRead failed", error);
   }

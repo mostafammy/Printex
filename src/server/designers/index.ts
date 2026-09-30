@@ -7,14 +7,19 @@ export { suggestDesigner } from "./suggestion";
 export type { DesignerLoadCandidate } from "./suggestion";
 
 // US1 / US2 — src/server/designers/assignment.ts
-export { getEligibleDesigners, assignDesigner, WorkItemTransitionError } from "./assignment";
+export {
+  getEligibleDesigners,
+  getEligibleDesignersBatch,
+  assignDesigner,
+  WorkItemTransitionError,
+} from "./assignment";
 export type { EligibleDesigner } from "./assignment";
 
 // US3 — src/server/designers/queue.ts, src/server/designers/timer.ts
 // (contracts/designer-assignment.md).
 export { getMyQueue, getMyQueuePage, getMyQueueStats } from "./queue";
 export type { MyQueueRow, MyQueueRowState } from "./queue";
-export { startTimer, pauseTimer, phaseDurations } from "./timer";
+export { startTimer, pauseTimer, phaseDurations, phaseDurationsByIds } from "./timer";
 export type { PhaseDurations } from "./timer";
 
 // US4

@@ -3,8 +3,11 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import { History, Filter, X, ChevronDown, User } from "lucide-react";
+import Link from "next/link";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
+import { paginateQuery, DEFAULT_PAGE_SIZE } from "~/server/pagination";
+import { PaginationBar } from "~/components/pagination-bar";
 import { Button } from "~/components/ui/button";
 import ar from "~/messages/ar.json";
 
@@ -24,6 +27,13 @@ export default async function AdminAuditPage({
   authorize(actor, "audit.view");
 
   const params = await searchParams;
+
+  // 092 T056 (investigation §7.8): server-side offset pagination via
+  // `?page=N`. parseInt + `|| undefined` keeps junk (`page=abc`, `page=0`)
+  // on the helper's clamped default instead of feeding NaN into Prisma's
+  // `skip` — the raw-Number pattern in admin/users would.
+  const requestedPage =
+    typeof params.page === "string" ? Number.parseInt(params.page, 10) || undefined : undefined;
 
   const entityType =
     typeof params.entityType === "string" && params.entityType !== ""
@@ -84,12 +94,21 @@ export default async function AdminAuditPage({
     where.createdAt = createdAtFilter;
   }
 
-  const events = await db.auditEvent.findMany({
-    where,
-    include: { actor: true },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-  });
+  // 092 T056: ONE page of rows (helper fetches pageSize+1 for hasMore) plus
+  // a filtered total — never the old unbounded 200-row joined load.
+  const [{ rows: events, nextCursor }, totalCount] = await Promise.all([
+    paginateQuery({ page: requestedPage }, (skip, take) =>
+      db.auditEvent.findMany({
+        where,
+        include: { actor: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      }),
+    ),
+    db.auditEvent.count({ where }),
+  ]);
+  const page = Math.max(Math.trunc(requestedPage ?? 1), 1);
 
   return (
     <div className="flex flex-col gap-6">
@@ -203,13 +222,13 @@ export default async function AdminAuditPage({
               <Filter className="h-3.5 w-3.5" />
               <span>{S.auditFilterSubmitButton}</span>
             </Button>
-            <a
+            <Link
               href="/admin/audit"
               className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
             >
               <X className="h-3.5 w-3.5" />
               <span>{S.auditFilterClearButton}</span>
-            </a>
+            </Link>
           </div>
         </form>
       </section>
@@ -303,6 +322,28 @@ export default async function AdminAuditPage({
           </table>
         </div>
       </div>
+
+      {/* 092 T056: `?page=N` bar; active filters ride along on every page
+          link, and the form above (plain GET, no hidden page input) resets
+          to page 1 whenever filters change. */}
+      {totalCount > DEFAULT_PAGE_SIZE && (
+        <div className="pt-2">
+          <PaginationBar
+            basePath="/admin/audit"
+            page={page}
+            hasNextPage={nextCursor !== null}
+            totalPages={Math.ceil(totalCount / DEFAULT_PAGE_SIZE)}
+            query={{
+              entityType,
+              entityId,
+              actor: actorFilter,
+              action,
+              dateFrom,
+              dateTo,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

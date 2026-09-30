@@ -22,4 +22,8 @@ const globalForPrisma = globalThis as unknown as {
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 
-if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+// Cache the singleton unconditionally — gating this on NODE_ENV meant
+// production module re-evaluations never hit the cache and constructed a
+// second PrismaClient (investigation §7.10 latent double-client: doubled
+// connection pools). No query-behavior change; keep console quiet.
+globalForPrisma.prisma = db;

@@ -175,10 +175,39 @@ export interface PhaseDurations {
  */
 const QUEUE_COUNTED_PHASES: readonly string[] = ["ASSIGNED", "REWORK_REQUIRED"];
 
-/** No `authorize()` beyond authenticated actor — read-only display helper. */
-export async function phaseDurations(_actor: Actor, workItemId: string): Promise<PhaseDurations> {
-  const segments = await db.phaseTiming.findMany({ where: { workItemId } });
+/** Transition `to` values that participate in `totalPhaseDurationMs` (§3.2). */
+const TOTAL_PHASE_TRANSITIONS = [
+  "DESIGN_COMPLETED",
+  "ASSIGNED",
+  "REWORK_REQUIRED",
+] as WorkItemState[];
 
+/** Minimal row shapes the math reads — both paths pass real Prisma rows. */
+interface SegmentInput {
+  readonly phase: string;
+  readonly kind: string;
+  readonly startedAt: Date;
+  readonly endedAt: Date | null;
+}
+
+interface TransitionInput {
+  readonly to: string;
+  readonly at: Date;
+}
+
+/**
+ * The ONE pure duration implementation, shared by `phaseDurations` (per-row)
+ * and `phaseDurationsByIds` (batched) so batched semantics cannot drift from
+ * the per-row path (FR-017, contract §3.2). Operates only on its arguments —
+ * durations stay a re-derivation from persisted timestamps (BC-002); no
+ * clock state, no client-side timing, no cache. The optional `now` inside
+ * `calculatePhaseDurationMs` only ever bounds an OPEN segment, exactly as
+ * before the extraction.
+ */
+function computePhaseDurations(
+  segments: readonly SegmentInput[],
+  transitions: readonly TransitionInput[],
+): PhaseDurations {
   const queueSegments = segments.filter(
     (s) => s.kind === "QUEUE" && QUEUE_COUNTED_PHASES.includes(s.phase),
   );
@@ -186,14 +215,6 @@ export async function phaseDurations(_actor: Actor, workItemId: string): Promise
 
   const queueTimeMs = calculatePhaseDurationMs(queueSegments);
   const activeTimeMs = calculatePhaseDurationMs(activeSegments);
-
-  const transitions = await db.workItemTransition.findMany({
-    where: {
-      workItemId,
-      to: { in: ["DESIGN_COMPLETED", "ASSIGNED", "REWORK_REQUIRED"] as WorkItemState[] },
-    },
-    orderBy: { at: "asc" },
-  });
 
   let totalPhaseDurationMs: number | null = null;
   const completedTransition = [...transitions].reverse().find((t) => t.to === "DESIGN_COMPLETED");
@@ -211,4 +232,82 @@ export async function phaseDurations(_actor: Actor, workItemId: string): Promise
   }
 
   return { queueTimeMs, activeTimeMs, totalPhaseDurationMs };
+}
+
+/** Groups rows by `workItemId`, preserving input order within each group. */
+function groupByWorkItem<T extends { workItemId: string }>(rows: readonly T[]): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const bucket = grouped.get(row.workItemId);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      grouped.set(row.workItemId, [row]);
+    }
+  }
+  return grouped;
+}
+
+/** No `authorize()` beyond authenticated actor — read-only display helper. */
+export async function phaseDurations(_actor: Actor, workItemId: string): Promise<PhaseDurations> {
+  const segments = await db.phaseTiming.findMany({ where: { workItemId } });
+  const transitions = await db.workItemTransition.findMany({
+    where: {
+      workItemId,
+      to: { in: TOTAL_PHASE_TRANSITIONS },
+    },
+    orderBy: { at: "asc" },
+  });
+
+  return computePhaseDurations(segments, transitions);
+}
+
+/**
+ * Batched whole-page durations (US4): exactly TWO queries regardless of
+ * `ids.length` (FR-016, AC-011, contract §3.3), then the same
+ * `computePhaseDurations` math per row as `phaseDurations` (FR-017, AC-012).
+ *
+ * Scoping (FR-018, AC-013): `ids` ARE the inputs — both where clauses below
+ * are exactly `{ workItemId: { in: ids } }` and are never widened (no
+ * assignee/state filter, no unfiltered scan); the caller passes only its own
+ * already-authorized queue-row ids. Every requested id gets an entry — a row
+ * with no segments/transitions is `{ 0, 0, null }`, exactly what the
+ * per-row path returns for it.
+ *
+ * No `authorize()` beyond authenticated actor — read-only display helper,
+ * mirroring `phaseDurations`; durations come from persisted timestamps only
+ * (BC-002). No persistent caching.
+ */
+export async function phaseDurationsByIds(
+  _actor: Actor,
+  ids: string[],
+): Promise<Map<string, PhaseDurations>> {
+  const durationsById = new Map<string, PhaseDurations>();
+  if (ids.length === 0) {
+    return durationsById;
+  }
+
+  const [segments, transitions] = await Promise.all([
+    db.phaseTiming.findMany({ where: { workItemId: { in: ids } } }),
+    db.workItemTransition.findMany({
+      where: {
+        workItemId: { in: ids },
+        to: { in: TOTAL_PHASE_TRANSITIONS },
+      },
+      orderBy: { at: "asc" },
+    }),
+  ]);
+
+  // Both lists are `at`/unfiltered-row order; filtering by id preserves each
+  // row's `orderBy: { at: "asc" }` ordering, matching the per-row query.
+  const segmentsById = groupByWorkItem(segments);
+  const transitionsById = groupByWorkItem(transitions);
+
+  for (const id of ids) {
+    durationsById.set(
+      id,
+      computePhaseDurations(segmentsById.get(id) ?? [], transitionsById.get(id) ?? []),
+    );
+  }
+  return durationsById;
 }

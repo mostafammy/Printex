@@ -2,17 +2,19 @@
 
 > Status: investigation complete — **no production code was modified**. All findings below were produced by reading the codebase, tracing call chains, and running one production build. Findings marked CONFIRMED were personally traced through executing code paths with quoted evidence; nothing is labeled CONFIRMED on the basis of a function name.
 
+> **Resolution (092-performance, `fix-nav-slow`)** — implemented via `specs/092-performance/`; `resolved-by 092` pointers: §6.1 loader → **resolved** (navigation arming path deleted, boot-only; property test green); §6.2 no streaming → **resolved** (`(shell)/loading.tsx` + 3 Suspense sites); §6.3 layout waterfall + duplicate → **resolved** (duplicate read deleted, actor carries display fields, session cache unified, RBAC graph `relationLoadStrategy:"join"` = 1 query; layout ≤4 queries / ≤2 phases asserted); §6.4 order waterfall + await-in-loop → **resolved** (3 overlapping phases, 5-read batched eligibility, exactly 5 queries, ≤10 ceiling); §6.5 my-queue N+1 → **resolved** (2 batched queries, equivalence-tested); §6.6 poll `router.refresh()` → **resolved** (payload-bearing `revalidate` prop, latest-wins; 0 route re-executions asserted); §6.7 blanket `revalidatePath` → **resolved** (scoped to `/notifications`); §6.8 board full reload → **resolved** (`router.push`, navigation spy green); §6.10 migration split → **verified** (deploy tree = `prisma/schema/migrations`, probe-confirmed; R1–R3 were missing and **shipped** as `20260930090000_nav_perf_indexes`; duplicate `FileObject_sha256_idx` dropped + schema declaration removed; drift filed to 091); §6.11 review over-fetch → **resolved** (key-pass pagination, comparator equivalence tested); §6.12 finance price loops → **resolved** (batched pointer-resolution, `pnpm test:pricing` 87/87 before and after). **Still pending (deployment env):** browser DevTools overlay-floor timings and LAN-vs-remote RTT numbers per §21 — property-level proofs are green; empirical timings are not claimed here. Pre-existing shared-test-DB failures (`42501` Expense grants, polluted dailyCash/paymentVoid fixtures) reproduce **without** these changes and are env issues, not regressions.
+
 ---
 
 ## 1. Executive Summary
 
 Slow navigation in Printex is **not primarily a database-slow-query problem**. It is the product of three compounding causes, in order of impact:
 
-1. **A client-side loading overlay imposes a hard ~1.3–1.6 second perceived floor on every navigation.** `AppBootLoader` arms itself on `pointerdown` — *before routing even starts* — and the `LoadingExperience` phase machine enforces `SHOW_DELAY_MS (180) + MIN_VISIBLE_MS (500) + COMPLETE_MS (620)` even when the page has already rendered. A navigation that completes in 300 ms still looks like 1.3 s. This is self-inflicted, exists in production builds, and is invisible to any server-side profiling.
+1. **A client-side loading overlay imposes a hard ~1.3–1.6 second perceived floor on every navigation.** `AppBootLoader` arms itself on `pointerdown` — _before routing even starts_ — and the `LoadingExperience` phase machine enforces `SHOW_DELAY_MS (180) + MIN_VISIBLE_MS (500) + COMPLETE_MS (620)` even when the page has already rendered. A navigation that completes in 300 ms still looks like 1.3 s. This is self-inflicted, exists in production builds, and is invisible to any server-side profiling.
 
 2. **Every authenticated navigation re-executes a sequential server-side query waterfall over a remote database.** The shell layout alone issues **5 queries in 3 sequential phases** (`getActor` → duplicate `db.user.findUnique` → notifications), and the actual `DATABASE_URL` points at **`aws-1-eu-west-1.pooler.supabase.com`** (a remote Supabase pooler) — not a localhost LAN Postgres. Every sequential round-trip pays network RTT; the layout's phases cannot overlap.
 
-3. **There is no streaming boundary anywhere.** Zero `loading.tsx` files, zero `Suspense` in `(shell)`, zero `error.tsx`. Every route is `ƒ (Dynamic)` in the production build. The old page stays frozen until the *entire* RSC payload of the new page — including the layout's full query waterfall — has resolved.
+3. **There is no streaming boundary anywhere.** Zero `loading.tsx` files, zero `Suspense` in `(shell)`, zero `error.tsx`. Every route is `ƒ (Dynamic)` in the production build. The old page stays frozen until the _entire_ RSC payload of the new page — including the layout's full query waterfall — has resolved.
 
 On top of this, two routes amplify real server latency badly: **`/orders/[orderId]` is a 10-phase serial waterfall with an `await`-in-a-loop N+1** (~95 DB round-trips for a 5-item order), and **`/my-queue` issues ~50 queries** for phase durations. A **15-second notification poll calls `router.refresh()`**, re-running layout + page queries in the background while the user is trying to navigate. The **board's SCREEN drop does a full browser reload** via `window.location.href`.
 
@@ -58,7 +60,7 @@ On top of this, two routes amplify real server latency badly: **`/orders/[orderI
    - `Promise.all([unreadCount(actor), listNotifications(actor, …)])` → **DB round-trips #4 and #5** (parallel with each other, but sequential after #3).
 4. The target `page.tsx` executes its own awaited data functions (each typically several queries; see §5), starting only after the layout's data phase resolves enough to render children.
 5. The full RSC payload returns; React renders. Because there is **no `loading.tsx` and no `Suspense` anywhere in `(shell)`**, nothing paints until this completes.
-6. Meanwhile, back on the client: `pointerdown` at step 1 already armed `AppBootLoader`; the loader's phase machine holds the overlay for `MIN_VISIBLE_MS` and `COMPLETE_MS` *after* the pathname commits.
+6. Meanwhile, back on the client: `pointerdown` at step 1 already armed `AppBootLoader`; the loader's phase machine holds the overlay for `MIN_VISIBLE_MS` and `COMPLETE_MS` _after_ the pathname commits.
 
 **Data access:** hexagonal — Server Components/Server Actions → service modules under `src/server/*` → Prisma (`db`) repositories. RBAC is resolved once in `getActorForSession` into an in-memory `Set<Permission>` carried on the `Actor`; `authorize()` (`src/server/auth/authorize.ts:39-44`) is **pure set membership, 0 DB queries per check** — this part of the stack is healthy.
 
@@ -108,33 +110,33 @@ user finally sees the page interactively             ≈ nav time + ~620–1120m
 
 ## 5. Route/Data Fetch Map
 
-All routes are `ƒ (Dynamic)` per the production build. **No route in `(shell)` has a `loading.tsx` or `Suspense` boundary.** "Layout queries" column = the same 5 queries (3 phases) for *every* row.
+All routes are `ƒ (Dynamic)` per the production build. **No route in `(shell)` has a `loading.tsx` or `Suspense` boundary.** "Layout queries" column = the same 5 queries (3 phases) for _every_ row.
 
-| Route | Layout Queries | Page Queries | Auth Checks | Sequential Queries | Suspense | Cache | Main Concern |
-| ----- | -------------- | ------------ | ----------- | ------------------ | -------- | ----- | ------------ |
-| `/` | — | `getSession` → `redirect(/board)` | 1 | serial | ✗ | none | extra redirect RTT after login |
-| `/board` | 5 (3 phases) | `getActor` → `getBoardSnapshot` | 1 (memoized) | 2 serial phases | ✗ | none | waits full snapshot; queries themselves parallelized well |
-| `/my-queue` | 5 (3 phases) | `getActor` → `Promise.all[page,stats]` → `map(phaseDurations)` | 1 (memoized) | 3 serial phases + **50-query N+1** | ✗ | none | `page.tsx:38-43` per-row 2-query loop |
-| `/production` | 5 (3 phases) | `getActor` → `Promise.all[page,stats]` | 1 | serial + parallel | ✗ | none | fine |
-| `/production/[workItemId]` | 5 (3 phases) | params → searchParams → `getActor` → `getJobCard` | 1 | 4 serial phases | ✗ | none | params/searchParams serialized with data |
-| `/review` | 5 (3 phases) | `getActor` → `Promise.all[page,stats]` | 1 | serial + parallel | ✗ | none | **`fetchSortedReviewQueue` unbounded + full `transitions` include** |
-| `/design/[workItemId]` | 5 (3 phases) | params → `workItem.findUnique` → `designVersion.findMany` | 1 | 3 serial phases | ✗ | none | 2nd query gated on 1st |
-| `/reception` | 5 (3 phases) | `getActor` → `Promise.all[queue, stats]` | 1 | serial + parallel | ✗ | none | nested delayed-ids query |
-| `/reception/new` | 5 (3 phases) | `getActor` → `Promise.all[customer, depts, productTypes]` | 1 | serial + parallel | ✗ | none | OK |
-| `/orders/[orderId]` | 5 (3 phases) | **10+ serial phases** (see §6.4) | 1 (memoized) | **worst in app** | ✗ | none | **CRITICAL waterfall + await-in-loop N+1** |
-| `/customers` | 5 (3 phases) | `findCustomers(limit 50)` — **no getActor** | 0 page-level | 1 | ✗ | none | 50 cards eager; no pagination |
-| `/customers/[id]` | 5 (3 phases) | `getCustomer` → child `CustomerBalanceTab` (3 parallel, own `getActor`) | 1+1 | serial parent→child | ✗ | none | `orders: true` unbounded include |
-| `/changes/[changeRequestId]` | 5 (3 phases) | params → `getActor` → `getChangeRequestDetail` → productTypeNames | 1 | 4 serial phases | ✗ | none | parent→child serialization |
-| `/delayed` | 5 (3 phases) | `getActor` → `department.findMany` → `getDelayedWorkItems` | 1 | 3 serial | ✗ | none | dept list gates main query |
-| `/finance/daily-cash` | 5 (3 phases) | `getActor` → timezone → `Promise.all[summary,payments]` | 1 | 3 serial | ✗ | none | **3 raw `<a href>` internal links** |
-| `/finance/expenses` | 5 (3 phases) | `getActor` + `authorize` → `Promise.all[listExpenses]` | 1 | serial + parallel | ✗ | none | OK |
-| `/notifications` | 5 (3 phases) | `getActor` → `listNotifications` | 1 | serial | ✗ | none | duplicates layout's own fetch |
-| `/pricing` | 5 (3 phases) | `getActor` → `getPricingQueue` | 1 | serial | ✗ | none | OK |
-| `/admin/audit` | 5 (3 phases) | `getActor` → `auditEvent.findMany(take 200, include actor)` | 1 | serial | ✗ | none | 200 joined rows, unpaginated; **raw `<a>`** |
-| `/admin/users` | 5 (3 phases) | `getActor` → `Promise.all[4]` | 1 | serial + parallel | ✗ | none | OK |
-| `/admin/health` | 5 (3 phases) | `getActor` → `getDatabaseHealth` (only `unstable_cache` in app) | 1 | serial | ✗ | `unstable_cache` | OK |
-| `/login`, `/sign-up` | — | form-only | — | — | ✓ (`fallback={null}`) | none | only Suspense in the app |
-| `/settings`, `/orders` | **route does not exist** | — | — | — | — | — | dead `IconRail` links → 404 |
+| Route                        | Layout Queries           | Page Queries                                                            | Auth Checks  | Sequential Queries                 | Suspense              | Cache            | Main Concern                                                        |
+| ---------------------------- | ------------------------ | ----------------------------------------------------------------------- | ------------ | ---------------------------------- | --------------------- | ---------------- | ------------------------------------------------------------------- |
+| `/`                          | —                        | `getSession` → `redirect(/board)`                                       | 1            | serial                             | ✗                     | none             | extra redirect RTT after login                                      |
+| `/board`                     | 5 (3 phases)             | `getActor` → `getBoardSnapshot`                                         | 1 (memoized) | 2 serial phases                    | ✗                     | none             | waits full snapshot; queries themselves parallelized well           |
+| `/my-queue`                  | 5 (3 phases)             | `getActor` → `Promise.all[page,stats]` → `map(phaseDurations)`          | 1 (memoized) | 3 serial phases + **50-query N+1** | ✗                     | none             | `page.tsx:38-43` per-row 2-query loop                               |
+| `/production`                | 5 (3 phases)             | `getActor` → `Promise.all[page,stats]`                                  | 1            | serial + parallel                  | ✗                     | none             | fine                                                                |
+| `/production/[workItemId]`   | 5 (3 phases)             | params → searchParams → `getActor` → `getJobCard`                       | 1            | 4 serial phases                    | ✗                     | none             | params/searchParams serialized with data                            |
+| `/review`                    | 5 (3 phases)             | `getActor` → `Promise.all[page,stats]`                                  | 1            | serial + parallel                  | ✗                     | none             | **`fetchSortedReviewQueue` unbounded + full `transitions` include** |
+| `/design/[workItemId]`       | 5 (3 phases)             | params → `workItem.findUnique` → `designVersion.findMany`               | 1            | 3 serial phases                    | ✗                     | none             | 2nd query gated on 1st                                              |
+| `/reception`                 | 5 (3 phases)             | `getActor` → `Promise.all[queue, stats]`                                | 1            | serial + parallel                  | ✗                     | none             | nested delayed-ids query                                            |
+| `/reception/new`             | 5 (3 phases)             | `getActor` → `Promise.all[customer, depts, productTypes]`               | 1            | serial + parallel                  | ✗                     | none             | OK                                                                  |
+| `/orders/[orderId]`          | 5 (3 phases)             | **10+ serial phases** (see §6.4)                                        | 1 (memoized) | **worst in app**                   | ✗                     | none             | **CRITICAL waterfall + await-in-loop N+1**                          |
+| `/customers`                 | 5 (3 phases)             | `findCustomers(limit 50)` — **no getActor**                             | 0 page-level | 1                                  | ✗                     | none             | 50 cards eager; no pagination                                       |
+| `/customers/[id]`            | 5 (3 phases)             | `getCustomer` → child `CustomerBalanceTab` (3 parallel, own `getActor`) | 1+1          | serial parent→child                | ✗                     | none             | `orders: true` unbounded include                                    |
+| `/changes/[changeRequestId]` | 5 (3 phases)             | params → `getActor` → `getChangeRequestDetail` → productTypeNames       | 1            | 4 serial phases                    | ✗                     | none             | parent→child serialization                                          |
+| `/delayed`                   | 5 (3 phases)             | `getActor` → `department.findMany` → `getDelayedWorkItems`              | 1            | 3 serial                           | ✗                     | none             | dept list gates main query                                          |
+| `/finance/daily-cash`        | 5 (3 phases)             | `getActor` → timezone → `Promise.all[summary,payments]`                 | 1            | 3 serial                           | ✗                     | none             | **3 raw `<a href>` internal links**                                 |
+| `/finance/expenses`          | 5 (3 phases)             | `getActor` + `authorize` → `Promise.all[listExpenses]`                  | 1            | serial + parallel                  | ✗                     | none             | OK                                                                  |
+| `/notifications`             | 5 (3 phases)             | `getActor` → `listNotifications`                                        | 1            | serial                             | ✗                     | none             | duplicates layout's own fetch                                       |
+| `/pricing`                   | 5 (3 phases)             | `getActor` → `getPricingQueue`                                          | 1            | serial                             | ✗                     | none             | OK                                                                  |
+| `/admin/audit`               | 5 (3 phases)             | `getActor` → `auditEvent.findMany(take 200, include actor)`             | 1            | serial                             | ✗                     | none             | 200 joined rows, unpaginated; **raw `<a>`**                         |
+| `/admin/users`               | 5 (3 phases)             | `getActor` → `Promise.all[4]`                                           | 1            | serial + parallel                  | ✗                     | none             | OK                                                                  |
+| `/admin/health`              | 5 (3 phases)             | `getActor` → `getDatabaseHealth` (only `unstable_cache` in app)         | 1            | serial                             | ✗                     | `unstable_cache` | OK                                                                  |
+| `/login`, `/sign-up`         | —                        | form-only                                                               | —            | —                                  | ✓ (`fallback={null}`) | none             | only Suspense in the app                                            |
+| `/settings`, `/orders`       | **route does not exist** | —                                                                       | —            | —                                  | —                     | —                | dead `IconRail` links → 404                                         |
 
 Shell chrome (`ShellHeader`, `IconRail`, `CommandBar`) is pure `"use client"` receiving `actor` as a prop — **no server queries of their own** (good). The layout itself is the repeated cost.
 
@@ -148,7 +150,7 @@ Shell chrome (`ShellHeader`, `IconRail`, `CommandBar`) is pure `"use client"` re
 
 **Evidence:**
 
-`src/components/loading/app-boot-loader.tsx:65-99` — a `document` `pointerdown` listener arms the loader the instant any internal anchor is pressed, *before the click handler or router run*:
+`src/components/loading/app-boot-loader.tsx:65-99` — a `document` `pointerdown` listener arms the loader the instant any internal anchor is pressed, _before the click handler or router run_:
 
 ```ts
 const anchor = target.closest("a[href]");
@@ -160,10 +162,10 @@ navTimeoutRef.current = setTimeout(() => { ... setIsNavigating(false); }, NAV_FA
 `src/components/loading/loading-config.ts:6-15` — non-negotiable constants:
 
 ```ts
-export const SHOW_DELAY_MS = 180;    // reveal delay
-export const AWAKENING_MS = 260;     // enter animation
-export const MIN_VISIBLE_MS = 500;   // "eliminate visual flicker"
-export const COMPLETE_MS = 620;      // exit animation
+export const SHOW_DELAY_MS = 180; // reveal delay
+export const AWAKENING_MS = 260; // enter animation
+export const MIN_VISIBLE_MS = 500; // "eliminate visual flicker"
+export const COMPLETE_MS = 620; // exit animation
 ```
 
 `src/components/loading/loading-experience.tsx:120-149` — when the route commits (`isLoading` → false), the machine **still waits out the minimum visible window**, then runs the full exit:
@@ -172,20 +174,28 @@ export const COMPLETE_MS = 620;      // exit animation
 const remainingVisible = Math.max(0, MIN_VISIBLE_MS - elapsed);
 minVisibleTimerRef.current = setTimeout(() => {
   transitionTo("completing");
-  completeTimerRef.current = setTimeout(() => { transitionTo("hidden"); }, COMPLETE_MS);
+  completeTimerRef.current = setTimeout(() => {
+    transitionTo("hidden");
+  }, COMPLETE_MS);
 }, remainingVisible);
 ```
 
 `src/styles/globals.css:801-814` — the overlay is a **full-viewport, opaque, input-blocking layer**:
 
 ```css
-.loading-container { position: fixed; inset: 0; z-index: 9999;
-  background: var(--background); pointer-events: auto; user-select: none; }
+.loading-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--background);
+  pointer-events: auto;
+  user-select: none;
+}
 ```
 
-**Blocking chain:** click → overlay armed at `pointerdown` → reveal at +180 ms → RSC returns (say 300 ms) → pathname commits → engine waits out `MIN_VISIBLE_MS` from reveal → 620 ms exit animation. **Worst floor = 180 + 500 + 620 = 1300 ms of enforced UI after routing starts;** navigations over ~680 ms still pay the 620 ms exit on top of actual latency. The new page renders *underneath* the opaque overlay the whole time. This is why navigation "feels" slow even where the server is fast — and it would not appear in any server log.
+**Blocking chain:** click → overlay armed at `pointerdown` → reveal at +180 ms → RSC returns (say 300 ms) → pathname commits → engine waits out `MIN_VISIBLE_MS` from reveal → 620 ms exit animation. **Worst floor = 180 + 500 + 620 = 1300 ms of enforced UI after routing starts;** navigations over ~680 ms still pay the 620 ms exit on top of actual latency. The new page renders _underneath_ the opaque overlay the whole time. This is why navigation "feels" slow even where the server is fast — and it would not appear in any server log.
 
-**Also confirmed (same mechanism):** the skip-link `<a href="#main-content">` (`shell-header.tsx:33`) passes the anchor filter and trips the full overlay for a zero-latency hash jump; `router.push` navigations (command bar) are *not* detected — inconsistent in both directions.
+**Also confirmed (same mechanism):** the skip-link `<a href="#main-content">` (`shell-header.tsx:33`) passes the anchor filter and trips the full overlay for a zero-latency hash jump; `router.push` navigations (command bar) are _not_ detected — inconsistent in both directions.
 
 ### 6.2 CRITICAL — Zero streaming boundaries: no `loading.tsx`, no `Suspense` in `(shell)`
 
@@ -193,7 +203,7 @@ minVisibleTimerRef.current = setTimeout(() => {
 
 **Evidence:** glob `src/app/**/loading.tsx` → 0 results; `error.tsx` → 0; `not-found.tsx` → 0. Suspense appears exactly twice, both in `(auth)` with `fallback={null}` (`login/page.tsx:184`, `sign-up/page.tsx:70`) — **zero in `(shell)`**. Build output: every authenticated route is `ƒ (Dynamic)`.
 
-**Blocking chain:** Next.js can only render a route's fallback shell if a `loading.tsx`/`Suspense` boundary exists. With none, a soft navigation keeps the previous page fully frozen until the layout waterfall (§4, 5 queries) **plus** the page's queries **plus** the full RSC serialize completes. Combined with §6.1, the user experiences: *old page → frozen → opaque spinner → whole new page pops in → spinner holds 620 ms more*. The pop-in is what reads as "slow" — actual latency and perceived latency are separate problems, and both are broken.
+**Blocking chain:** Next.js can only render a route's fallback shell if a `loading.tsx`/`Suspense` boundary exists. With none, a soft navigation keeps the previous page fully frozen until the layout waterfall (§4, 5 queries) **plus** the page's queries **plus** the full RSC serialize completes. Combined with §6.1, the user experiences: _old page → frozen → opaque spinner → whole new page pops in → spinner holds 620 ms more_. The pop-in is what reads as "slow" — actual latency and perceived latency are separate problems, and both are broken.
 
 ### 6.3 CRITICAL — Shell layout runs a 3-phase sequential query waterfall on every navigation, including a provable duplicate
 
@@ -202,12 +212,16 @@ minVisibleTimerRef.current = setTimeout(() => {
 **Evidence:** `src/app/(shell)/layout.tsx:37-82`:
 
 ```ts
-actor = await getActor();                                       // phase 1: DB ×2 sequential
-const user = await db.user.findUnique({                         // phase 2: DB #3
-  where: { id: actor.userId }, select: { name: true, username: true },
+actor = await getActor(); // phase 1: DB ×2 sequential
+const user = await db.user.findUnique({
+  // phase 2: DB #3
+  where: { id: actor.userId },
+  select: { name: true, username: true },
 });
-const [unread, firstPage] = await Promise.all([                 // phase 3: DB #4 + #5 parallel
-  unreadCount(actor), listNotifications(actor, { page: 1, pageSize: 10 }),
+const [unread, firstPage] = await Promise.all([
+  // phase 3: DB #4 + #5 parallel
+  unreadCount(actor),
+  listNotifications(actor, { page: 1, pageSize: 10 }),
 ]);
 ```
 
@@ -216,7 +230,10 @@ The duplicate is provable: `getActor` (`src/server/auth/getActor.ts:94-99`) call
 ```ts
 const result = await auth.api.getSession({ headers: await headers() });
 if (!result) throw new UnauthenticatedError();
-return getActorForSession({ userId: result.session.userId, expiresAt: result.session.expiresAt });
+return getActorForSession({
+  userId: result.session.userId,
+  expiresAt: result.session.expiresAt,
+});
 ```
 
 `getActorForSession` (`:46-57`) then re-queries the same user with `include: { roles: …, extraPermissions: true, departments: true }` — and `include` without `select` **already returns `name` and `username`**, which `:77` drops:
@@ -225,7 +242,7 @@ return getActorForSession({ userId: result.session.userId, expiresAt: result.ses
 return { id: user.id, userId: user.id, roles, permissions, departmentIds };
 ```
 
-**Blocking chain:** this runs on *every* authenticated navigation (dynamic segment, no cache). Three phases where one would do. Against the remote Supabase pooler (§8), each phase is a full RTT — the layout alone costs ~3 × RTT of serialized latency before the page's first query starts. `unreadCount` is a single indexed `count` (`center.ts:99`), `listNotifications` is one page query — those two are correctly parallel and constant-cost; the waste is the phasing and the duplicate.
+**Blocking chain:** this runs on _every_ authenticated navigation (dynamic segment, no cache). Three phases where one would do. Against the remote Supabase pooler (§8), each phase is a full RTT — the layout alone costs ~3 × RTT of serialized latency before the page's first query starts. `unreadCount` is a single indexed `count` (`center.ts:99`), `listNotifications` is one page query — those two are correctly parallel and constant-cost; the waste is the phasing and the duplicate.
 
 **Secondary duplicate:** `getSession` is `cache()`-wrapped at `src/server/better-auth/server.ts:5-7`, but `getActor` bypasses it and calls `auth.api.getSession` directly — two independent request caches that can never share.
 
@@ -252,7 +269,7 @@ const departments = needsDepartments ? await db.department.findMany(...) : undef
 const pendingChangeRequestByWorkItem = await findPendingChangeRequestIds(...);         // :530
 ```
 
-`getEligibleDesigners` (`src/server/designers/assignment.ts:82-127`) issues 1 + 1 + **3 queries per candidate designer**. A 5-work-item order with 4 eligible designers each ≈ **68+ queries, only ~8 concurrent**. After all of that, two more async component layers render: `<OrderFinancePanel>` (`order-finance-panel.tsx:34`, 4 parallel queries) and N × `<SpecHistory>` (`spec-history.tsx:66,85` — 2 serial queries *each*, rendered sequentially inside `detail.workItems.map` at `:1059`).
+`getEligibleDesigners` (`src/server/designers/assignment.ts:82-127`) issues 1 + 1 + **3 queries per candidate designer**. A 5-work-item order with 4 eligible designers each ≈ **68+ queries, only ~8 concurrent**. After all of that, two more async component layers render: `<OrderFinancePanel>` (`order-finance-panel.tsx:34`, 4 parallel queries) and N × `<SpecHistory>` (`spec-history.tsx:66,85` — 2 serial queries _each_, rendered sequentially inside `detail.workItems.map` at `:1059`).
 
 **Blocking chain:** phases 454 → 456 → 471 → 495 → loop → 522 → 530 are serialized; several are independent (`:456` needs only `orderId`; `:471`/`:495` need only IDs from `:454`). With remote RTT each wasted serial phase is pure added latency, then SpecHistory multiplies it again.
 
@@ -281,14 +298,19 @@ const rowsWithDurations = await Promise.all(
 
 ```ts
 const refresh = useCallback(async () => {
-  try { await revalidate?.(); router.refresh(); setError(false); }
-  catch { setError(true); }
+  try {
+    await revalidate?.();
+    router.refresh();
+    setError(false);
+  } catch {
+    setError(true);
+  }
 }, [revalidate, router]);
 ```
 
 `router.refresh()` re-executes the RSC tree for the current route: the shell layout's full 5-query waterfall **plus the page's queries** (on `/my-queue`, that re-triggers the 50-query N+1). The bell's `revalidate` prop is **never supplied** by the shell layout (`layout.tsx:97-102` passes only `initialCount/initialRows/markReadAction/markAllReadAction`), so the cheap targeted path is plumbed but unused.
 
-**Blocking chain:** every 15 s (and on every tab refocus — `:137-143`), a full page re-render competes for the remote DB pool with whatever navigation the user just started. Navigation latency becomes *stochastic* — slow exactly when something else is refreshing.
+**Blocking chain:** every 15 s (and on every tab refocus — `:137-143`), a full page re-render competes for the remote DB pool with whatever navigation the user just started. Navigation latency becomes _stochastic_ — slow exactly when something else is refreshing.
 
 ### 6.7 HIGH — Marking one notification read invalidates the entire app's route cache
 
@@ -325,7 +347,7 @@ navigate: options.navigate ?? ((href) => { window.location.href = href; }),
 
 **Evidence:** live `DATABASE_URL` host = `aws-1-eu-west-1.pooler.supabase.com:5432` (+ pooler `:6543`, test DB `localhost:5432`). `.env.example` says `localhost:5432`.
 
-**Why it matters:** the brief assumes LAN (~0.5–2 ms RTT); the reality is internet RTT (typically 10–100 ms depending on client location vs `eu-west-1`). Every *sequential* phase multiplies. The layout's 3 phases = ~3 RTT; `/orders/[orderId]`'s 10 serial phases = ~10 RTT *before* the N+1s. **This is the multiplier that turns "several queries" into "navigation feels slow."** It also amplifies the background outbox/scheduler ticks and the 15 s poll. (Per §21, actual RTT must be measured before quantifying.)
+**Why it matters:** the brief assumes LAN (~0.5–2 ms RTT); the reality is internet RTT (typically 10–100 ms depending on client location vs `eu-west-1`). Every _sequential_ phase multiplies. The layout's 3 phases = ~3 RTT; `/orders/[orderId]`'s 10 serial phases = ~10 RTT _before_ the N+1s. **This is the multiplier that turns "several queries" into "navigation feels slow."** It also amplifies the background outbox/scheduler ticks and the 15 s poll. (Per §21, actual RTT must be measured before quantifying.)
 
 ### 6.10 HIGH — Migration directory split: production may be missing the key performance indexes
 
@@ -333,8 +355,8 @@ navigate: options.navigate ?? ((href) => { window.location.href = href; }),
 
 **Evidence:** two divergent migration trees exist:
 
-| `prisma/migrations/` (6) | `prisma/schema/migrations/` (4) |
-|---|---|
+| `prisma/migrations/` (6)                                                                                          | `prisma/schema/migrations/` (4)                           |
+| ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | `0_init`, `customers`, `orders_reception`, `016_change_control`, `board_live…`, **`workitem_order_perf_indexes`** | `add_files_schema`, `pricing`, `finance`, `notifications` |
 
 `package.json` sets `"prisma": { "schema": "prisma/schema" }` and `schema.prisma:9` enables `prismaSchemaFolder` → **`migrate deploy` resolves migrations relative to the schema dir → `prisma/schema/migrations`**, which does **not** contain `WorkItem_state_idx`, `WorkItem_assigneeId_state_idx`, `Order_customerId_idx`, or the change-control tables. `WorkItem_state_idx` exists only in `prisma/migrations/20260926140000_workitem_order_perf_indexes/migration.sql`. CI uses `prisma db push` (materializes the `.prisma` declarations), so **CI/`db push` environments are fully indexed while `migrate deploy` production may silently be missing three navigation-path indexes plus change-control tables**. Deployment docs (`specs/091-deploy-backup/contracts/compose.md:39`) specify `migrate deploy`.
@@ -346,7 +368,9 @@ navigate: options.navigate ?? ((href) => { window.location.href = href; }),
 **Evidence:** `src/server/review/queue.ts:37-49` — `findMany({ where: { state: "WAITING_REVIEW" }, include: { order: {…}, productType: {…}, transitions: { orderBy: { at: "desc" } } } })` — **no `take` on the queue or on `transitions`**. The consumer (`:63`) reads exactly one transition:
 
 ```ts
-const enteredQueueTransition = wi.transitions.find((t) => t.to === "WAITING_REVIEW");
+const enteredQueueTransition = wi.transitions.find(
+  (t) => t.to === "WAITING_REVIEW",
+);
 ```
 
 Whole per-row transition history fetched to `.find()` one element. Then paginated in memory (`paginateInMemory`, `:111`) — pagination is cosmetic. Grows monotonically with backlog.
@@ -367,18 +391,18 @@ Whole per-row transition history fetched to `.find()` one element. Then paginate
 
 ## 7. Possible Secondary Bottlenecks
 
-| # | Item | Why "possible" | Confidence |
-|---|------|----------------|------------|
-| 1 | `customers/[id]`: `include: { orders: true }` unbounded (`src/server/customers/service.ts:35-38`) — every column of every order ever placed; page reads 3 fields (`customers/[id]/page.tsx:25,30,33,39`) | Verified query shape; row count unknown without DB access | LIKELY |
-| 2 | `Customer.normalizedName` btree useless for `LIKE '%x%'` search (`customers/service.ts:23`); would need `pg_trgm` GIN | Real gap, but search is a secondary path and it's an extension decision | LIKELY |
-| 3 | Background outbox processor + delay scheduler (`src/instrumentation.ts`, `layout.tsx:65-66`) contending for the remote pooler | Intervals and tick query counts not fully quantified | POSSIBLE |
-| 4 | Dev-mode penalty (`pnpm dev` = `next dev --turbo`, compile-on-demand per route, React dev overhead, StrictMode defaults) exaggerating the symptom | Real but secondary — §6.1 and §6.9 reproduce in production builds | CONFIRMED as present, POSSIBLE as magnitude |
-| 5 | `staleTimes` unset → dynamic client route cache entries used once (`next.config.js` has no `experimental.staleTimes`) | Confirmed absence; actual hit-rate effect unmeasured | LIKELY |
-| 6 | Login bounce: `router.push(callbackUrl="/")` → `/` runs `getSession` + `redirect("/board")` → second RSC request for the heaviest page (`login/page.tsx:56`, `app/page.tsx:5-19`) | Confirmed code path; only affects post-login | CONFIRMED (scope: post-login only) |
-| 7 | Raw `<a href>` internal links bypassing the client router: `finance/daily-cash/page.tsx:89,128,134` (never imports `Link`), `admin/audit/page.tsx:206` | Confirmed; each is a full document request | CONFIRMED |
-| 8 | `/admin/audit` renders 200 joined rows unvirtualized (`admin/audit/page.tsx:87-92`) | Admin-only, low traffic | CONFIRMED |
-| 9 | Dead `IconRail` links `/orders` and `/settings` (`IconRail.tsx:56,129`) → client-router 404 with built-in error boundary (no custom `not-found.tsx`) | Confirmed routes don't exist; frequency unknown | CONFIRMED |
-| 10 | `prisma` client not `globalThis`-cached in production (`db.ts:25` gated on `NODE_ENV !== "production"`) | Latent — requires a module re-instantiation to bite; not observed | POSSIBLE |
+| #   | Item                                                                                                                                                                                                     | Why "possible"                                                          | Confidence                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | `customers/[id]`: `include: { orders: true }` unbounded (`src/server/customers/service.ts:35-38`) — every column of every order ever placed; page reads 3 fields (`customers/[id]/page.tsx:25,30,33,39`) | Verified query shape; row count unknown without DB access               | LIKELY                                      |
+| 2   | `Customer.normalizedName` btree useless for `LIKE '%x%'` search (`customers/service.ts:23`); would need `pg_trgm` GIN                                                                                    | Real gap, but search is a secondary path and it's an extension decision | LIKELY                                      |
+| 3   | Background outbox processor + delay scheduler (`src/instrumentation.ts`, `layout.tsx:65-66`) contending for the remote pooler                                                                            | Intervals and tick query counts not fully quantified                    | POSSIBLE                                    |
+| 4   | Dev-mode penalty (`pnpm dev` = `next dev --turbo`, compile-on-demand per route, React dev overhead, StrictMode defaults) exaggerating the symptom                                                        | Real but secondary — §6.1 and §6.9 reproduce in production builds       | CONFIRMED as present, POSSIBLE as magnitude |
+| 5   | `staleTimes` unset → dynamic client route cache entries used once (`next.config.js` has no `experimental.staleTimes`)                                                                                    | Confirmed absence; actual hit-rate effect unmeasured                    | LIKELY                                      |
+| 6   | Login bounce: `router.push(callbackUrl="/")` → `/` runs `getSession` + `redirect("/board")` → second RSC request for the heaviest page (`login/page.tsx:56`, `app/page.tsx:5-19`)                        | Confirmed code path; only affects post-login                            | CONFIRMED (scope: post-login only)          |
+| 7   | Raw `<a href>` internal links bypassing the client router: `finance/daily-cash/page.tsx:89,128,134` (never imports `Link`), `admin/audit/page.tsx:206`                                                   | Confirmed; each is a full document request                              | CONFIRMED                                   |
+| 8   | `/admin/audit` renders 200 joined rows unvirtualized (`admin/audit/page.tsx:87-92`)                                                                                                                      | Admin-only, low traffic                                                 | CONFIRMED                                   |
+| 9   | Dead `IconRail` links `/orders` and `/settings` (`IconRail.tsx:56,129`) → client-router 404 with built-in error boundary (no custom `not-found.tsx`)                                                     | Confirmed routes don't exist; frequency unknown                         | CONFIRMED                                   |
+| 10  | `prisma` client not `globalThis`-cached in production (`db.ts:25` gated on `NODE_ENV !== "production"`)                                                                                                  | Latent — requires a module re-instantiation to bite; not observed       | POSSIBLE                                    |
 
 ---
 
@@ -388,13 +412,13 @@ Whole per-row transition history fetched to `.find()` one element. Then paginate
 
 **N+1 / serial loops (all CONFIRMED):**
 
-| Site | Pattern | Round-trips |
-|---|---|---|
-| `orders/[orderId]/page.tsx:506` | `await getEligibleDesigners()` in `for` loop; each call = 1+1+3×designers queries | ≈ 95 for a 5×4 order |
-| `my-queue/page.tsx:41` | `phaseDurations` per row (2 queries each) | 50 per page |
-| `finance/summaries.ts:81`, `profitability.ts:73`, `payments.ts:202` | `await getCurrentPrice(item.id)` in `for` loops | W per order, serial |
-| `orders/[orderId]/page.tsx:1059` → `spec-history.tsx:66,85` | async `<SpecHistory>` per work item, 2 serial queries each, rendered sequentially in `.map` | 2W after everything else |
-| `finance/summaries.ts:152` (`customerBalance` loop) | 1+2 queries per order | unbounded (customer page) |
+| Site                                                                | Pattern                                                                                     | Round-trips               |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------- |
+| `orders/[orderId]/page.tsx:506`                                     | `await getEligibleDesigners()` in `for` loop; each call = 1+1+3×designers queries           | ≈ 95 for a 5×4 order      |
+| `my-queue/page.tsx:41`                                              | `phaseDurations` per row (2 queries each)                                                   | 50 per page               |
+| `finance/summaries.ts:81`, `profitability.ts:73`, `payments.ts:202` | `await getCurrentPrice(item.id)` in `for` loops                                             | W per order, serial       |
+| `orders/[orderId]/page.tsx:1059` → `spec-history.tsx:66,85`         | async `<SpecHistory>` per work item, 2 serial queries each, rendered sequentially in `.map` | 2W after everything else  |
+| `finance/summaries.ts:152` (`customerBalance` loop)                 | 1+2 queries per order                                                                       | unbounded (customer page) |
 
 **Over-fetch (CONFIRMED):**
 
@@ -432,7 +456,7 @@ CREATE INDEX "WorkItem_state_createdAt_id_idx" ON "WorkItem" ("state", "createdA
 
 - **Serves:** `lanePage.ts:103` + `projection.ts:136` — filter `state` equality, order `createdAt asc, id asc`, with `skip/take`; fired in parallel across up to 14 lanes (`lanePage.ts:137`).
 - **Why compound:** existing `WorkItem_state_idx` (if deployed) narrows the lane but forces Postgres to **sort the whole lane** before `skip/take` on every board paint ×14 lanes. The compound supplies the ordering directly and enables early skip termination. Trailing `id` guarantees total order for offset pagination.
-- **Selectivity:** low on `state` (1/15) — acceptable: the win is *sort elimination*, not filtering. **Write cost:** moderate (state changes on every transition — hot path, but narrow columns and user-paced writes).
+- **Selectivity:** low on `state` (1/15) — acceptable: the win is _sort elimination_, not filtering. **Write cost:** moderate (state changes on every transition — hot path, but narrow columns and user-paced writes).
 
 ### R2 — `notification (userId, archivedAt, createdAt DESC)` · **CONFIRMED missing**
 
@@ -478,11 +502,11 @@ Serves reception's whole-table sort (`orders/search.ts:194-210`). Sort-eliminati
 - Server actions containing `getActor` calls (10 of the 11 in `orders/[orderId]`) do not execute during navigation.
 - Better Auth hooks (`config.ts:73-161`) fire only on sign-in/sign-out paths, **not** on `getSession`.
 
-**What is wasteful:** the duplicate user read (#3, HIGH, §6.3) and the bypassed shared session cache: `getSession` is `cache()`-wrapped (`better-auth/server.ts:5`) but `getActor` calls `auth.api.getSession` directly — two request caches that never share. Serialized execution: #1 → #2 → #3 are strictly sequential where #2 needs only `userId` (available before #1 fully resolves? No — `userId` comes *from* #1's result, so #1→#2 is genuinely dependent; **#3 is fully independent given #1 and should be removed entirely, not parallelized**).
+**What is wasteful:** the duplicate user read (#3, HIGH, §6.3) and the bypassed shared session cache: `getSession` is `cache()`-wrapped (`better-auth/server.ts:5`) but `getActor` calls `auth.api.getSession` directly — two request caches that never share. Serialized execution: #1 → #2 → #3 are strictly sequential where #2 needs only `userId` (available before #1 fully resolves? No — `userId` comes _from_ #1's result, so #1→#2 is genuinely dependent; **#3 is fully independent given #1 and should be removed entirely, not parallelized**).
 
-**No middleware exists** — session resolution begins only inside the RSC render (there is no earlier short-circuit; note: adding DB work in middleware would *add* latency on this stack, so "no middleware" is not itself a defect here).
+**No middleware exists** — session resolution begins only inside the RSC render (there is no earlier short-circuit; note: adding DB work in middleware would _add_ latency on this stack, so "no middleware" is not itself a defect here).
 
-**Verdict:** auth contributes **~2 necessary + 1 redundant** sequential round-trips per navigation — meaningful against remote RTT (§6.9), but it is *not* the dominant cost. The dominant costs are the overlay (§6.1) and the page-level waterfalls/N+1s (§6.4, §6.5).
+**Verdict:** auth contributes **~2 necessary + 1 redundant** sequential round-trips per navigation — meaningful against remote RTT (§6.9), but it is _not_ the dominant cost. The dominant costs are the overlay (§6.1) and the page-level waterfalls/N+1s (§6.4, §6.5).
 
 ---
 
@@ -500,11 +524,11 @@ Serves reception's whole-table sort (`orders/search.ts:194-210`). Sort-eliminati
 
 **Prefetch:** all navigation uses `next/link` except the confirmed raw `<a>`s (§7.7) and the board reload (§6.8). No `prefetch={false}` anywhere. **But prefetch cannot help meaningfully**: prefetching a dynamic route with no `loading.tsx` does not let the router show anything early on click — it only warms the RSC payload. Without `loading.tsx`, even a prefetched payload still presents as old-page-frozen → pop-in.
 
-**Streaming/Suspense:** absent across `(shell)` (§6.2). Nested `async` server components (`OrderFinancePanel`, `CustomerBalanceTab`, `SpecHistory`, `CustomerBalanceTab`'s internal `getActor`) serialize *behind* their parents with no boundary — classic §12 waterfalls.
+**Streaming/Suspense:** absent across `(shell)` (§6.2). Nested `async` server components (`OrderFinancePanel`, `CustomerBalanceTab`, `SpecHistory`, `CustomerBalanceTab`'s internal `getActor`) serialize _behind_ their parents with no boundary — classic §12 waterfalls.
 
 **Client navigation:** primary nav is proper soft navigation (Link + router). Full reloads only via board SCREEN drop (§6.8) and raw `<a>`s (§7.7). `router.refresh()` frequency: 15 s poll + tab refocus + per mark-read (§6.6).
 
-**Boot-time overhead:** `AppBootLoader` also gates *initial* boot with `isBooting` until double-`requestAnimationFrame` (`app-boot-loader.tsx:36-49`) — appropriate for first paint, but the same component conflates boot with navigation (§6.1).
+**Boot-time overhead:** `AppBootLoader` also gates _initial_ boot with `isBooting` until double-`requestAnimationFrame` (`app-boot-loader.tsx:36-49`) — appropriate for first paint, but the same component conflates boot with navigation (§6.1).
 
 ---
 
@@ -512,7 +536,7 @@ Serves reception's whole-table sort (`orders/search.ts:194-210`). Sort-eliminati
 
 **(a) Layout waterfall (every navigation)** — §6.3: `getActor` (×2 sequential DB) → duplicate user read → parallel notifications. One `Promise.all` over all five would collapse 3 phases → 1 (minus the genuinely-dependent session→RBAC pair).
 
-**(b) `/orders/[orderId]`** — §6.4: the flagship case. Serial phases at `:453 → :454 → :456 → :471 → :495 → :506(loop) → :522 → :530`. Independent pairs: `:456` ‖ `:454`; `:471` ‖ `:456` (both need `:454`'s output only for IDs — `:471` uses `workItemIds` from `:454`, so `:471` depends on `:454`; `:456` depends on neither). Then `<OrderFinancePanel>` (4 queries) renders *after* the page fully resolves, then N × `<SpecHistory>` (2 serial each) render sequentially inside `.map`.
+**(b) `/orders/[orderId]`** — §6.4: the flagship case. Serial phases at `:453 → :454 → :456 → :471 → :495 → :506(loop) → :522 → :530`. Independent pairs: `:456` ‖ `:454`; `:471` ‖ `:456` (both need `:454`'s output only for IDs — `:471` uses `workItemIds` from `:454`, so `:471` depends on `:454`; `:456` depends on neither). Then `<OrderFinancePanel>` (4 queries) renders _after_ the page fully resolves, then N × `<SpecHistory>` (2 serial each) render sequentially inside `.map`.
 
 **(c) Parent→child serialization** (CONFIRMED, no boundary):
 
@@ -523,20 +547,20 @@ Serves reception's whole-table sort (`orders/search.ts:194-210`). Sort-eliminati
 - `design/[workItemId]/page.tsx:95,119` — 3 serial phases
 - `delayed/page.tsx:73,91` — dept list gates main query
 
-**(d) Perceived vs actual:** wrapping (b)/(c) in `<Suspense>` converts *perceived* latency to ~0 for below-the-fold panels without changing raw DB time; the layout waterfall and N+1s are *actual* latency and need query-shape fixes.
+**(d) Perceived vs actual:** wrapping (b)/(c) in `<Suspense>` converts _perceived_ latency to ~0 for below-the-fold panels without changing raw DB time; the layout waterfall and N+1s are _actual_ latency and need query-shape fixes.
 
 ---
 
 ## 13. Duplicate Work
 
-| # | Duplicate | Evidence | Per-navigation cost |
-|---|---|---|---|
-| 1 | Layout re-reads user `name`/`username` already returned by `getSession` and discarded | `layout.tsx:68` vs `getActor.ts:94-99` (fields dropped at `:77`) | **+1 round-trip on EVERY authenticated navigation**, in the critical path |
-| 2 | Two session caches that never share | `getSession` `cache()` at `better-auth/server.ts:5`; `getActor` bypasses it at `getActor.ts:94` | latent (1 shared lookup possible between `/`, `/auth/required`, shell) |
-| 3 | `getActor` runs in layout AND most pages | collapsed correctly by `cache()` at `getActor.ts:93` | **0 — already fixed**, listed for completeness |
-| 4 | `/notifications` page fetches the same first page as the layout bell | `notifications/page.tsx:22` + `layout.tsx:81` | +2 queries on that route only |
-| 5 | `CustomerBalanceTab` calls `getActor()` although parent already did | `customer-balance-tab.tsx:26` | 0 (request-cached) but signals the pattern |
-| 6 | `assigneeRows` re-fetches work-item fields likely already in `getOrderDetail` | `orders/[orderId]/page.tsx:471-490` | +1 query + payload overlap per order view |
+| #   | Duplicate                                                                             | Evidence                                                                                        | Per-navigation cost                                                       |
+| --- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1   | Layout re-reads user `name`/`username` already returned by `getSession` and discarded | `layout.tsx:68` vs `getActor.ts:94-99` (fields dropped at `:77`)                                | **+1 round-trip on EVERY authenticated navigation**, in the critical path |
+| 2   | Two session caches that never share                                                   | `getSession` `cache()` at `better-auth/server.ts:5`; `getActor` bypasses it at `getActor.ts:94` | latent (1 shared lookup possible between `/`, `/auth/required`, shell)    |
+| 3   | `getActor` runs in layout AND most pages                                              | collapsed correctly by `cache()` at `getActor.ts:93`                                            | **0 — already fixed**, listed for completeness                            |
+| 4   | `/notifications` page fetches the same first page as the layout bell                  | `notifications/page.tsx:22` + `layout.tsx:81`                                                   | +2 queries on that route only                                             |
+| 5   | `CustomerBalanceTab` calls `getActor()` although parent already did                   | `customer-balance-tab.tsx:26`                                                                   | 0 (request-cached) but signals the pattern                                |
+| 6   | `assigneeRows` re-fetches work-item fields likely already in `getOrderDetail`         | `orders/[orderId]/page.tsx:471-490`                                                             | +1 query + payload overlap per order view                                 |
 
 **No root-layout duplication exists** — `src/app/layout.tsx` is a pure shell with Google font loading; all auth work lives in `(shell)/layout.tsx`.
 
@@ -552,7 +576,7 @@ Serves reception's whole-table sort (`orders/search.ts:194-210`). Sort-eliminati
 
 **Prisma query logging:** off by default in both modes (`db.ts:11-16`) — not a dev tax.
 
-**Conclusion:** dev mode *adds* first-hit compile and React overhead and will exaggerate the first navigation to each route, but **the primary causes are production causes**. Do not attribute the symptom to `pnpm dev`.
+**Conclusion:** dev mode _adds_ first-hit compile and React overhead and will exaggerate the first navigation to each route, but **the primary causes are production causes**. Do not attribute the symptom to `pnpm dev`.
 
 ---
 
@@ -587,28 +611,28 @@ Blocking/duplicated/avoidable phases: duplicate user read, loader hold, N+1s, ph
 
 ## 16. Root Cause Ranking
 
-| Rank | Issue | Severity | Confidence | Impact | Evidence |
-| ---- | ----- | -------- | ---------- | ------ | -------- |
-| 1 | AppBootLoader imposes ~1.3–1.6 s perceived floor on every nav | **CRITICAL** | CONFIRMED | Very High (perceived; every click) | `app-boot-loader.tsx:94`, `loading-config.ts:6-15`, `loading-experience.tsx:120-149`, `globals.css:801-814` |
-| 2 | No `loading.tsx`/`Suspense` in `(shell)` → zero streaming, frozen page | **CRITICAL** | CONFIRMED | Very High (perceived; every route) | glob=0 files; build `ƒ (Dynamic)`; only Suspense in `(auth)` |
-| 3 | Shell layout 3-phase serial waterfall incl. duplicate user read, every nav | **CRITICAL** | CONFIRMED | High (actual; every nav, ×remote RTT) | `layout.tsx:37,68,79`, `getActor.ts:77,94-99` |
-| 4 | Remote Supabase DB (not LAN) multiplies every sequential phase | **CRITICAL** | CONFIRMED | High (actual; global multiplier) | `.env` host `aws-1-eu-west-1.pooler.supabase.com` |
-| 5 | `/orders/[orderId]` 10-phase serial waterfall + await-in-loop N+1 (~95 q) | HIGH | CONFIRMED | High (that route) | `orders/[orderId]/page.tsx:453-537`, `assignment.ts:82-127` |
-| 6 | `/my-queue` 50-query `phaseDurations` N+1 | HIGH | CONFIRMED | High (that route) | `my-queue/page.tsx:38-43`, `timer.ts:165-199` |
-| 7 | 15 s bell poll → `router.refresh()` re-runs layout+page under the user | HIGH | CONFIRMED | High (stochastic nav latency) | `use-notification-stream.ts:38,71`, `NotificationBell.tsx:61` |
-| 8 | Migration dir split → prod may lack `WorkItem_state_idx` etc. | HIGH | LIKELY | High if true (board/queue sorts) | `prisma/migrations/` vs `prisma/schema/migrations/`; `package.json` schema path |
-| 9 | Review queue unbounded fetch + full `transitions` include | HIGH | CONFIRMED | Medium-High (grows with backlog) | `review/queue.ts:37-49,63,111` |
-| 10 | `revalidatePath("/", "layout")` per notification click | HIGH | CONFIRMED | Medium (kills all cache reuse) | `notifications/actions.ts:16-20` |
-| 11 | Board SCREEN drop full reload (`window.location.href`) | HIGH | CONFIRMED | Medium (one edge, seconds-long) | `createBoardController.ts:130`, `BoardProvider.tsx:29-37` |
-| 12 | `getCurrentPrice` serial loops in finance (`summaries/profitability/payments`) | HIGH | CONFIRMED | Medium-High (order/finance pages) | `summaries.ts:81`, `profitability.ts:73`, `payments.ts:202` |
-| 13 | Missing indexes R1–R3 (state+createdAt, notification list, audit probe) | MEDIUM | CONFIRMED (static) / needs live verify | Medium | §9 DDL vs query sites |
-| 14 | Auth: duplicate user read + bypassed session cache (folded into #3) | MEDIUM | CONFIRMED | Medium | `getActor.ts:94` vs `better-auth/server.ts:5` |
-| 15 | Un-suspended async children (finance panel, SpecHistory, balance tab) | MEDIUM | CONFIRMED | Medium (perceived) | `order-finance-panel.tsx:34`, `spec-history.tsx:66` |
-| 16 | `customers/[id]` `orders: true` unbounded include | MEDIUM | CONFIRMED | Medium (that route) | `customers/service.ts:35-38` |
-| 17 | Raw `<a>` internal links (daily-cash ×3, audit ×1) | MEDIUM | CONFIRMED | Low-Medium (4 links) | `daily-cash/page.tsx:89,128,134`, `audit/page.tsx:206` |
-| 18 | No `staleTimes`; client dynamic route cache single-use | MEDIUM | LIKELY | Low-Medium | `next.config.js` absent keys |
-| 19 | Dead `/orders`,`/settings` rail links → 404 + full error boundary | LOW | CONFIRMED | Low | `IconRail.tsx:56,129` |
-| 20 | Dev-mode compile/render overhead exaggerating first hits | LOW | CONFIRMED present | Low-Medium (dev only) | `package.json` `dev` script |
+| Rank | Issue                                                                          | Severity     | Confidence                             | Impact                                | Evidence                                                                                                    |
+| ---- | ------------------------------------------------------------------------------ | ------------ | -------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 1    | AppBootLoader imposes ~1.3–1.6 s perceived floor on every nav                  | **CRITICAL** | CONFIRMED                              | Very High (perceived; every click)    | `app-boot-loader.tsx:94`, `loading-config.ts:6-15`, `loading-experience.tsx:120-149`, `globals.css:801-814` |
+| 2    | No `loading.tsx`/`Suspense` in `(shell)` → zero streaming, frozen page         | **CRITICAL** | CONFIRMED                              | Very High (perceived; every route)    | glob=0 files; build `ƒ (Dynamic)`; only Suspense in `(auth)`                                                |
+| 3    | Shell layout 3-phase serial waterfall incl. duplicate user read, every nav     | **CRITICAL** | CONFIRMED                              | High (actual; every nav, ×remote RTT) | `layout.tsx:37,68,79`, `getActor.ts:77,94-99`                                                               |
+| 4    | Remote Supabase DB (not LAN) multiplies every sequential phase                 | **CRITICAL** | CONFIRMED                              | High (actual; global multiplier)      | `.env` host `aws-1-eu-west-1.pooler.supabase.com`                                                           |
+| 5    | `/orders/[orderId]` 10-phase serial waterfall + await-in-loop N+1 (~95 q)      | HIGH         | CONFIRMED                              | High (that route)                     | `orders/[orderId]/page.tsx:453-537`, `assignment.ts:82-127`                                                 |
+| 6    | `/my-queue` 50-query `phaseDurations` N+1                                      | HIGH         | CONFIRMED                              | High (that route)                     | `my-queue/page.tsx:38-43`, `timer.ts:165-199`                                                               |
+| 7    | 15 s bell poll → `router.refresh()` re-runs layout+page under the user         | HIGH         | CONFIRMED                              | High (stochastic nav latency)         | `use-notification-stream.ts:38,71`, `NotificationBell.tsx:61`                                               |
+| 8    | Migration dir split → prod may lack `WorkItem_state_idx` etc.                  | HIGH         | LIKELY                                 | High if true (board/queue sorts)      | `prisma/migrations/` vs `prisma/schema/migrations/`; `package.json` schema path                             |
+| 9    | Review queue unbounded fetch + full `transitions` include                      | HIGH         | CONFIRMED                              | Medium-High (grows with backlog)      | `review/queue.ts:37-49,63,111`                                                                              |
+| 10   | `revalidatePath("/", "layout")` per notification click                         | HIGH         | CONFIRMED                              | Medium (kills all cache reuse)        | `notifications/actions.ts:16-20`                                                                            |
+| 11   | Board SCREEN drop full reload (`window.location.href`)                         | HIGH         | CONFIRMED                              | Medium (one edge, seconds-long)       | `createBoardController.ts:130`, `BoardProvider.tsx:29-37`                                                   |
+| 12   | `getCurrentPrice` serial loops in finance (`summaries/profitability/payments`) | HIGH         | CONFIRMED                              | Medium-High (order/finance pages)     | `summaries.ts:81`, `profitability.ts:73`, `payments.ts:202`                                                 |
+| 13   | Missing indexes R1–R3 (state+createdAt, notification list, audit probe)        | MEDIUM       | CONFIRMED (static) / needs live verify | Medium                                | §9 DDL vs query sites                                                                                       |
+| 14   | Auth: duplicate user read + bypassed session cache (folded into #3)            | MEDIUM       | CONFIRMED                              | Medium                                | `getActor.ts:94` vs `better-auth/server.ts:5`                                                               |
+| 15   | Un-suspended async children (finance panel, SpecHistory, balance tab)          | MEDIUM       | CONFIRMED                              | Medium (perceived)                    | `order-finance-panel.tsx:34`, `spec-history.tsx:66`                                                         |
+| 16   | `customers/[id]` `orders: true` unbounded include                              | MEDIUM       | CONFIRMED                              | Medium (that route)                   | `customers/service.ts:35-38`                                                                                |
+| 17   | Raw `<a>` internal links (daily-cash ×3, audit ×1)                             | MEDIUM       | CONFIRMED                              | Low-Medium (4 links)                  | `daily-cash/page.tsx:89,128,134`, `audit/page.tsx:206`                                                      |
+| 18   | No `staleTimes`; client dynamic route cache single-use                         | MEDIUM       | LIKELY                                 | Low-Medium                            | `next.config.js` absent keys                                                                                |
+| 19   | Dead `/orders`,`/settings` rail links → 404 + full error boundary              | LOW          | CONFIRMED                              | Low                                   | `IconRail.tsx:56,129`                                                                                       |
+| 20   | Dev-mode compile/render overhead exaggerating first hits                       | LOW          | CONFIRMED present                      | Low-Medium (dev only)                 | `package.json` `dev` script                                                                                 |
 
 **Counts: 4 CRITICAL, 8 HIGH, 6 MEDIUM, 2 LOW.**
 
@@ -616,7 +640,7 @@ Blocking/duplicated/avoidable phases: duplicate user read, loader hold, N+1s, ph
 
 ## 17. Recommended Fixes
 
-> **Caching policy for this report:** *request-level memoization* (React `cache()`, Promise coalescing within one render) is recommended freely — it cannot serve stale data across requests. *Persistent caching* (`unstable_cache`, `revalidateTag`, `staleTimes`) is recommended only where staleness is acceptable, and never for RBAC, workflow state, pricing, or queue contents.
+> **Caching policy for this report:** _request-level memoization_ (React `cache()`, Promise coalescing within one render) is recommended freely — it cannot serve stale data across requests. _Persistent caching_ (`unstable_cache`, `revalidateTag`, `staleTimes`) is recommended only where staleness is acceptable, and never for RBAC, workflow state, pricing, or queue contents.
 
 ### Fix A — Remove navigation-triggered overlay (Rank 1)
 
@@ -628,7 +652,12 @@ Blocking/duplicated/avoidable phases: duplicate user read, loader hold, N+1s, ph
 
 ```tsx
 // app-boot-loader.tsx — remove pointerdown effect; render:
-return <>{children}<LoadingExperience isLoading={isBooting} /></>;
+return (
+  <>
+    {children}
+    <LoadingExperience isLoading={isBooting} />
+  </>
+);
 ```
 
 **Expected impact.** Very High (perceived, every navigation). **Risk.** None to correctness; loses anti-flicker polish on slow loads — that polish is the bug here. Design/product sign-off advisable since it's a deliberate UX feature; a safer variant is `MIN_VISIBLE_MS = 0` when `isNavigating` (keep 500 ms for boot).
@@ -644,10 +673,12 @@ return <>{children}<LoadingExperience isLoading={isBooting} /></>;
 ```tsx
 // src/app/(shell)/loading.tsx
 export default function Loading() {
-  return <div className="mx-auto max-w-7xl space-y-4" aria-busy>
-    <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-    <div className="h-64 animate-pulse rounded-lg bg-muted" />
-  </div>;
+  return (
+    <div className="mx-auto max-w-7xl space-y-4" aria-busy>
+      <div className="bg-muted h-8 w-48 animate-pulse rounded" />
+      <div className="bg-muted h-64 animate-pulse rounded-lg" />
+    </div>
+  );
 }
 ```
 
@@ -682,21 +713,29 @@ Also make `getActor` delegate to the existing cached `getSession` (`better-auth/
 **Evidence.** `orders/[orderId]/page.tsx:453-537`, `assignment.ts:82-127`.
 **Why slow.** ~10 serial phases; `await` in `for`; each wasted phase = 1×RTT.
 **Recommended fix.**
+
 1. Coalesce: `const [detail, creationEvent] = await Promise.all([getOrderDetail(actor, orderId), db.auditEvent.findFirst(...)])`; then `const [assigneeRows, reworkCounts] = await Promise.all([...])`.
 2. Batch designers: `await Promise.all(assignable.map(wi => getEligibleDesigners(actor, wi.id)))`, or better — add a `getEligibleDesignersBatch(workItemIds)` service that groups by department with `IN` queries (fewer round-trips than even parallel per-item calls).
 3. `departments` and `findPendingChangeRequestIds` are independent of each other → join the same `Promise.all`.
 4. Wrap `<SpecHistory>` per row in `<Suspense>` (Fix B).
-**Example.**
+   **Example.**
 
 ```ts
 const [detail, creationEvent] = await Promise.all([
   getOrderDetail(actor, orderId),
-  db.auditEvent.findFirst({ where: { entityId: orderId, action: "order.created" }, orderBy: { createdAt: "asc" } }),
+  db.auditEvent.findFirst({
+    where: { entityId: orderId, action: "order.created" },
+    orderBy: { createdAt: "asc" },
+  }),
 ]);
 // …
-const assignable = detail.workItems.filter(wi => DESIGNER_ASSIGNABLE_STATES.has(wi.state));
+const assignable = detail.workItems.filter((wi) =>
+  DESIGNER_ASSIGNABLE_STATES.has(wi.state),
+);
 const designerPairs = await Promise.all(
-  assignable.map(async wi => [wi.id, await getEligibleDesigners(actor, wi.id)] as const),
+  assignable.map(
+    async (wi) => [wi.id, await getEligibleDesigners(actor, wi.id)] as const,
+  ),
 );
 ```
 
@@ -731,9 +770,11 @@ const [timings, transitions] = await Promise.all([
 
 ```tsx
 const router = useRouter();
-const [controller] = useState(() => createBoardController(initialSnapshot, {
-  /* …existing… */ navigate: (href) => router.push(href),
-}));
+const [controller] = useState(() =>
+  createBoardController(initialSnapshot, {
+    /* …existing… */ navigate: (href) => router.push(href),
+  }),
+);
 ```
 
 **Expected impact.** Medium (one edge, but converts multi-second reload → ~300 ms). **Risk.** None — soft nav preserves state; verify SCREEN edges still land with `?workItem=`.
@@ -746,7 +787,7 @@ const [controller] = useState(() => createBoardController(initialSnapshot, {
 
 1. Reconcile `prisma/migrations/` with `prisma/schema/migrations/` (specs/091 already intends a `1_baseline` fold). Verify live state per §9 first.
 2. Apply R1–R3 only after the §9 verification query; drop `FileObject_sha256_idx`.
-**Risk:** schema migration on a mission-critical DB — run `migrate diff` against production, stage as a normal migration, never `db push` over prod.
+   **Risk:** schema migration on a mission-critical DB — run `migrate diff` against production, stage as a normal migration, never `db push` over prod.
 
 ### Fix J — Small mechanical set (Ranks 15–19)
 
@@ -762,9 +803,9 @@ const [controller] = useState(() => createBoardController(initialSnapshot, {
 
 ### Fix First (do these before anything else)
 
-1. **Fix A — neutralize the navigation overlay** (`isNavigating` path in `AppBootLoader`/`LoadingExperience`). One component; removes ~1.3 s from *every* click; zero server risk. Get product sign-off on the UX intent.
+1. **Fix A — neutralize the navigation overlay** (`isNavigating` path in `AppBootLoader`/`LoadingExperience`). One component; removes ~1.3 s from _every_ click; zero server risk. Get product sign-off on the UX intent.
 2. **Fix B — add `(shell)/loading.tsx` + Suspense around async children.** One file + wraps; converts frozen waits into instant shell paint on all 25+ routes.
-3. **Fix C — shell layout: delete the duplicate `db.user.findUnique`, coalesce phases, unify session cache.** Removes 1–2 sequential RTTs from *every* authenticated navigation against the remote DB.
+3. **Fix C — shell layout: delete the duplicate `db.user.findUnique`, coalesce phases, unify session cache.** Removes 1–2 sequential RTTs from _every_ authenticated navigation against the remote DB.
 
 ### Fix Second (server-side latency)
 
@@ -819,7 +860,7 @@ next.config.js                                       (only if staleTimes pursued
 
 ## 20. Risks and Correctness Considerations
 
-- **Auth/RBAC:** Fix C only moves *display fields* (`name`, `username`) the session query already returns into the `Actor`. Do **not** cache the actor persistently, do not move authorization client-side, do not skip `getActorForSession`'s `isActive` check (`getActor.ts:59-61`).
+- **Auth/RBAC:** Fix C only moves _display fields_ (`name`, `username`) the session query already returns into the `Actor`. Do **not** cache the actor persistently, do not move authorization client-side, do not skip `getActorForSession`'s `isActive` check (`getActor.ts:59-61`).
 - **Workflow FSM / audit:** no fix here touches transitions, audit recording, or state derivation. Finance `getCurrentPrice` batching (§18.11) is the single change adjacent to money math — gate it behind `pnpm test:pricing`.
 - **Persistent caching:** this report recommends **request-level memoization only** for auth/data. `staleTimes`/`revalidateTag` appear only where the data is display-only (bell count) after the targeted-fetch fix; queue state, prices, and RBAC must always read fresh per request.
 - **Indexes:** write amplification on `WorkItem.state` (R1) and `audit_event` (R3) — acceptable but should ship with the migration reconciliation, not before the live-index verification (§9), or you may re-create an index that already exists under the other tree.
@@ -844,9 +885,9 @@ Static analysis cannot produce these; run with `PRISMA_LOG_QUERIES=1` in dev and
 
 ## 22. Final Diagnosis
 
-- **Is database latency the primary cause?** **No — not as "slow queries."** Individually, the queries are ordinary (`count` on an indexed predicate, keyed `findMany`s), and Prisma/query-logging config is clean. But **the *way* queries are issued** — serialized phases, N+1 loops, duplicates — over a **remote Supabase pooler rather than the assumed LAN** makes *round-trip count* the dominant server-side cost. DB contributes through **query shape and topology**, not through any single slow statement (pending §21.3 confirmation).
+- **Is database latency the primary cause?** **No — not as "slow queries."** Individually, the queries are ordinary (`count` on an indexed predicate, keyed `findMany`s), and Prisma/query-logging config is clean. But **the _way_ queries are issued** — serialized phases, N+1 loops, duplicates — over a **remote Supabase pooler rather than the assumed LAN** makes _round-trip count_ the dominant server-side cost. DB contributes through **query shape and topology**, not through any single slow statement (pending §21.3 confirmation).
 
-- **Does the frontend/navigation architecture contribute?** **Yes — most of all.** The `AppBootLoader` alone holds an opaque full-screen overlay for ~1.3–1.6 s per navigation regardless of server speed, and the total absence of `loading.tsx`/`Suspense` means zero streaming anywhere. Together these dominate the *perceived* symptom the user reported. They are client/build properties that survive into production.
+- **Does the frontend/navigation architecture contribute?** **Yes — most of all.** The `AppBootLoader` alone holds an opaque full-screen overlay for ~1.3–1.6 s per navigation regardless of server speed, and the total absence of `loading.tsx`/`Suspense` means zero streaming anywhere. Together these dominate the _perceived_ symptom the user reported. They are client/build properties that survive into production.
 
 - **Do repeated queries contribute?** **Yes.** The layout's duplicate `db.user.findUnique` fires on every authenticated navigation; the 15 s poll re-runs the entire layout+page tree via `router.refresh()`; `revalidatePath("/", "layout")` prevents any cache reuse. Ranks 3, 7, 10.
 

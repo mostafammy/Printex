@@ -127,7 +127,13 @@ export function createBoardController(
     moveDeps,
     sheetManager,
     motion,
-    navigate: options.navigate ?? ((href) => { window.location.href = href; }),
+    // 092 T034 / FR-024: no document-reload fallback. BoardProvider always
+    // injects a soft-navigation implementation; test harnesses inject a spy.
+    // Falling back to `window.location.href` here was the app's only full
+    // reload path (NB-004), so a missing wiring is a hard error instead.
+    navigate: options.navigate ?? ((href) => {
+      throw new Error(`navigate not wired (attempted href: ${href})`);
+    }),
   });
 
   return new BoardController({

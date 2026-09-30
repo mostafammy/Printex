@@ -9,7 +9,7 @@ import type { Actor } from "~/server/auth";
 import { db } from "~/server/db";
 import { paginateQuery } from "~/server/pagination";
 import { notify } from "~/server/core/notifications/notify";
-import { getCurrentPrice } from "~/server/pricing";
+import { getCurrentPrices } from "~/server/pricing";
 import { FINANCE_AUDIT_ACTIONS, requireReason } from "./audit";
 import { isActiveMethod, isActiveSource } from "./config";
 import { DomainFinanceError } from "./errors";
@@ -197,9 +197,13 @@ export async function voidPayment(actor: Actor, input: VoidPaymentInput): Promis
     if (wasClosed) {
       // Post-void remaining, computed inside this tx (the new FinanceVoid row
       // is visible here; prices are unchanged by this transaction).
+      // 092 T043: batched price read — the helper uses the same module-level
+      // `db` client the former per-item getCurrentPrice calls used, so tx-time
+      // read behavior is preserved exactly (FR-032).
       let total = new Prisma.Decimal(0);
+      const priceById = await getCurrentPrices(items.map((item) => item.id));
       for (const item of items) {
-        const price = await getCurrentPrice(item.id);
+        const price = priceById.get(item.id) ?? null;
         if (price) total = total.plus(new Prisma.Decimal(price.amount));
       }
       const rows = await tx.payment.findMany({

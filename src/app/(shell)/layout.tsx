@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getActor } from "~/server/auth";
 import type { Actor as CoreActor } from "~/server/core";
 import { asUserId } from "~/server/core";
-import { db } from "~/server/db";
 import {
   listNotifications,
   startDelayScheduler,
@@ -14,7 +13,7 @@ import { ShellHeader } from "./_components/shell-header";
 import { IconRail } from "~/components/shell/IconRail";
 import { CommandBar } from "~/components/shell/CommandBar";
 import { NotificationBell } from "~/components/notifications/NotificationBell";
-import { markAllReadAction, markReadAction } from "./notifications/actions";
+import { markAllReadAction, markReadAction, revalidateBellAction } from "./notifications/actions";
 
 function getRoleLabel(roles: readonly string[]): string {
   if (roles.includes("ADMIN_OWNER")) return "مدير النظام";
@@ -65,17 +64,19 @@ export default async function ShellLayout({
   startOutboxProcessor();
   startDelayScheduler();
 
-  const user = await db.user.findUnique({
-    where: { id: actor.userId },
-    select: { name: true, username: true },
-  });
-
+  // 092 T014 (FR-008): the duplicate display-user read (the second lookup
+  // that selected only name/username) is DELETED — `getActor()` already
+  // carries display fields from the session/RBAC load it performed
+  // (FR-010). The header reads them from `actor` with the same Arabic
+  // fallback as before.
   const roleLabel = getRoleLabel(actor.roles);
 
-  // The bell's two reads, in parallel: the exact unread count (a single
-  // indexed count, no join) and the dropdown's first page. This layout
-  // renders on EVERY authenticated page, so it is the most-executed query
-  // path in the app and has to stay constant-cost (research.md §2).
+  // 092 T016 (FR-011, PR-002): this layout's reads are now TWO phases total —
+  // (1) getActor (session + RBAC, request-cached), (2) the bell pair below in
+  // one Promise.all. Nothing re-serializes them: the old phase-2 display-user
+  // await is gone, and the notification pair stays parallel. This layout
+  // renders on EVERY authenticated page, so it must stay constant-cost
+  // (<= 4 queries, <= 2 phases — spec AC-005).
   const [unread, firstPage] = await Promise.all([
     unreadCount(actor),
     listNotifications(actor, { page: 1, pageSize: 10 }),
@@ -91,7 +92,7 @@ export default async function ShellLayout({
       {/* The bell lives in the shell header, on every authenticated page for
           every role (FR-020), with no permission check of its own. */}
       <ShellHeader
-        userName={user?.name ?? "مستخدم برينتكس"}
+        userName={actor.name ?? "مستخدم برينتكس"}
         roleLabel={roleLabel}
         bell={
           <NotificationBell
@@ -99,6 +100,10 @@ export default async function ShellLayout({
             initialRows={firstPage.rows}
             markReadAction={markReadAction}
             markAllReadAction={markAllReadAction}
+            // 092 T030 (FR-019, FR-020): the bell's re-read seam. The action
+            // returns { count, rows } for the caller, so every refresh applies
+            // server state locally — no route-tree re-execution on any path.
+            revalidate={revalidateBellAction}
           />
         }
       />

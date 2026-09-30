@@ -5,6 +5,7 @@ import { IBM_Plex_Sans_Arabic } from "next/font/google";
 
 import ar from "~/messages/ar.json";
 import { AppBootLoader } from "~/components/loading";
+import { NavProgressBar } from "~/components/loading/nav-progress-bar";
 
 export const metadata: Metadata = {
   title: ar.ui.appName,
@@ -31,6 +32,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <AppBootLoader>{children}</AppBootLoader>
+        {/* 092 T010: non-blocking route progress (never on login — it only
+            reacts to pathname changes, and this mount is app-wide anyway). */}
+        <NavProgressBar />
       </body>
     </html>
   );

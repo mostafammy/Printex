@@ -1,6 +1,8 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { CustomerProfile } from "~/components/customers/customer-profile";
 import { SpecialPricingTab } from "~/components/customers/special-pricing-tab";
 import { CustomerBalanceTab } from "~/components/finance/customer-balance-tab";
@@ -52,7 +54,13 @@ export default async function CustomerPage({ params }: { params: Promise<{ id: s
         )
       }
       slots={{
-        paymentsBalance: <CustomerBalanceTab customerId={id} />,
+        paymentsBalance: (
+          // 092 T009: balance tab streams behind a skeleton (SR-002, FR-006).
+          // T050: shared shimmer Skeleton — aria-busy + .skeleton glint.
+          <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
+            <CustomerBalanceTab customerId={id} />
+          </Suspense>
+        ),
         specialPricing: <SpecialPricingTab customerId={id} />,
         messages: <span className="text-xs text-muted-foreground">الرسائل والإشعارات — قريباً</span>,
       }}

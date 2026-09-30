@@ -13,6 +13,7 @@
 // resets pagination.
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { getActor } from "~/server/auth";
 import { db } from "~/server/db";
 import {
@@ -22,6 +23,7 @@ import {
   isDelayPhase,
   type DelayPhase,
 } from "~/server/notifications";
+import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
 
 const N = ar.notifications;
@@ -40,6 +42,106 @@ const PHASE_LABEL: Record<DelayPhase, string> = {
   PRODUCTION: N.phaseProduction,
   COLLECTION: N.phaseCollection,
 };
+
+type DelayedFilters = Parameters<typeof getDelayedWorkItems>[1];
+
+/**
+ * 092 T051 (investigation §12c): the dept-gated main list. The department
+ * list read gates this child (its ids validate `departmentId` in the page),
+ * and this read now runs behind a shimmer skeleton while the title, phase
+ * pills and filter form above have painted. Query order unchanged:
+ * departments still resolve before this runs.
+ */
+async function DelayedResults({
+  actor,
+  filters,
+  page,
+  hasFilter,
+  hrefWith,
+}: {
+  actor: Parameters<typeof getDelayedWorkItems>[0];
+  filters: DelayedFilters;
+  page: number;
+  hasFilter: boolean;
+  hrefWith: (patch: Record<string, string | undefined>) => string;
+}) {
+  const result = await getDelayedWorkItems(actor, filters);
+
+  return (
+    <>
+      {result.rows.length === 0 ? (
+        // Two distinct empty states (contracts/ui.md): WITH any filter the
+        // generic "nothing is late"; with NO filters at all, the no-threshold
+        // explanation — so "thresholds are off" is never reported as "nothing
+        // is late" and vice versa.
+        <p className="py-8 text-center text-sm text-muted-foreground">
+          {hasFilter ? N.delayedEmpty : N.delayedEmptyNoThresholds}
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead className="bg-muted text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderOrderNumber}</th>
+                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderCustomer}</th>
+                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderProductType}</th>
+                <th className="px-4 py-3 text-start font-medium">{N.delayedPhaseHeader}</th>
+                <th className="px-4 py-3 text-start font-medium">{N.delayedAgeHeader}</th>
+                <th className="px-4 py-3 text-start font-medium">{N.delayedDepartmentHeader}</th>
+                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderPriority}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {result.rows.map((row) => (
+                <tr key={row.workItemId} className="bg-card hover:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/orders/${row.orderId}`} className="hover:underline">
+                      #{row.orderNumber}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">{row.customerName}</td>
+                  <td className="px-4 py-3">{row.productTypeName ?? "—"}</td>
+                  <td className="px-4 py-3">{PHASE_LABEL[row.phase]}</td>
+                  <td className="px-4 py-3">{formatAge(row.waitingAgeMinutes)}</td>
+                  <td className="px-4 py-3">{row.responsibleDepartmentName ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {row.priority === "URGENT" && (
+                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                        {S.badgeUrgent}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {result.total > 50 && (
+        <div className="flex items-center justify-between text-sm">
+          {page > 1 ? (
+            <Link href={hrefWith({ page: String(page - 1) })} className="underline-offset-4 hover:underline">
+              {N.prev}
+            </Link>
+          ) : (
+            <span className="opacity-50">{N.prev}</span>
+          )}
+          <span className="text-muted-foreground">
+            {N.page} {page}
+          </span>
+          {result.nextPage ? (
+            <Link href={hrefWith({ page: String(result.nextPage) })} className="underline-offset-4 hover:underline">
+              {N.next}
+            </Link>
+          ) : (
+            <span className="opacity-50">{N.next}</span>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
 
 export default async function DelayedPage({
   searchParams,
@@ -88,7 +190,7 @@ export default async function DelayedPage({
     from !== undefined ||
     to !== undefined;
 
-  const result = await getDelayedWorkItems(actor, {
+  const filters: DelayedFilters = {
     phase,
     priority,
     departmentId,
@@ -96,7 +198,7 @@ export default async function DelayedPage({
     to,
     page,
     pageSize: 50,
-  });
+  };
 
   // Every control rebuilds the WHOLE query: a phase pill keeps the priority
   // and date filters, a form submit keeps the phase (via its hidden input),
@@ -233,76 +335,18 @@ export default async function DelayedPage({
         )}
       </form>
 
-      {result.rows.length === 0 ? (
-        // Two distinct empty states (contracts/ui.md): WITH any filter the
-        // generic "nothing is late"; with NO filters at all, the no-threshold
-        // explanation — so "thresholds are off" is never reported as "nothing
-        // is late" and vice versa.
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          {hasFilter ? N.delayedEmpty : N.delayedEmptyNoThresholds}
-        </p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderOrderNumber}</th>
-                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderCustomer}</th>
-                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderProductType}</th>
-                <th className="px-4 py-3 text-start font-medium">{N.delayedPhaseHeader}</th>
-                <th className="px-4 py-3 text-start font-medium">{N.delayedAgeHeader}</th>
-                <th className="px-4 py-3 text-start font-medium">{N.delayedDepartmentHeader}</th>
-                <th className="px-4 py-3 text-start font-medium">{S.tableHeaderPriority}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {result.rows.map((row) => (
-                <tr key={row.workItemId} className="bg-card hover:bg-muted/30">
-                  <td className="px-4 py-3 font-medium">
-                    <Link href={`/orders/${row.orderId}`} className="hover:underline">
-                      #{row.orderNumber}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3">{row.customerName}</td>
-                  <td className="px-4 py-3">{row.productTypeName ?? "—"}</td>
-                  <td className="px-4 py-3">{PHASE_LABEL[row.phase]}</td>
-                  <td className="px-4 py-3">{formatAge(row.waitingAgeMinutes)}</td>
-                  <td className="px-4 py-3">{row.responsibleDepartmentName ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {row.priority === "URGENT" && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                        {S.badgeUrgent}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {result.total > 50 && (
-        <div className="flex items-center justify-between text-sm">
-          {page > 1 ? (
-            <Link href={hrefWith({ page: String(page - 1) })} className="underline-offset-4 hover:underline">
-              {N.prev}
-            </Link>
-          ) : (
-            <span className="opacity-50">{N.prev}</span>
-          )}
-          <span className="text-muted-foreground">
-            {N.page} {page}
-          </span>
-          {result.nextPage ? (
-            <Link href={hrefWith({ page: String(result.nextPage) })} className="underline-offset-4 hover:underline">
-              {N.next}
-            </Link>
-          ) : (
-            <span className="opacity-50">{N.next}</span>
-          )}
-        </div>
-      )}
+      {/* 092 T051 (investigation §12c): the dept-gated list streams behind a
+          shimmer skeleton — title, phase pills and the filter form above have
+          already painted. Query order unchanged. */}
+      <Suspense fallback={<Skeleton className="h-72 w-full rounded-lg" />}>
+        <DelayedResults
+          actor={actor}
+          filters={filters}
+          page={page}
+          hasFilter={hasFilter}
+          hrefWith={hrefWith}
+        />
+      </Suspense>
     </div>
   );
 }

@@ -5,7 +5,7 @@
 
 import { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
-import { getCurrentPrice } from "~/server/pricing";
+import { getCurrentPrices } from "~/server/pricing";
 import { toDecimalString } from "./money";
 
 export type ProfitabilityTerm<T> = {
@@ -68,9 +68,14 @@ export async function orderProfitability(orderId: string): Promise<OrderProfitab
   let pricingIncomplete = false;
   const priceIds: string[] = [];
   const revenueEntries: Array<{ workItemId: string; amount: string; priceId: string }> = [];
+  // 092 T043: batched pointer-resolution (FR-032) — identical per-item
+  // semantics to the former per-item loop.
+  const priceById = await getCurrentPrices(
+    order.workItems.filter((item) => item.state !== "CANCELLED").map((item) => item.id),
+  );
   for (const item of order.workItems) {
     if (item.state === "CANCELLED") continue;
-    const price = await getCurrentPrice(item.id);
+    const price = priceById.get(item.id) ?? null;
     if (!price) {
       pricingIncomplete = true;
       continue;

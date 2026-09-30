@@ -192,7 +192,9 @@ describe("AppBootLoader route navigation", () => {
     cleanup();
   });
 
-  it("shows the loader for a same-tab internal navigation and hides it once the route commits", async () => {
+  it("never shows a navigation overlay — pointerdown arms nothing, route commit shows nothing (092 AC-001)", async () => {
+    // 092-performance T004: the pointerdown-arming path was removed
+    // (spec Clarifications 2026-09-29 Option A). The overlay is boot-only.
     const { rerender } = render(
       <AppBootLoader>
         <a href="/orders">Orders</a>
@@ -213,9 +215,10 @@ describe("AppBootLoader route navigation", () => {
     });
 
     await wait(SHOW_DELAY_MS + 20);
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
 
-    // The route commits: usePathname now reports the destination.
+    // The route commits: usePathname now reports the destination — still
+    // no loading UI, ever.
     pathnameMock.mockReturnValue("/orders");
     rerender(
       <AppBootLoader>

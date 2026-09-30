@@ -3,6 +3,7 @@
 // all layered onto this one page, since all three share it (plan.md).
 // Server Component: no "use client". Inline Server Actions.
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import {
@@ -38,15 +39,22 @@ import {
   DomainOrderError,
   WorkItemTransitionError,
 } from "~/server/orders";
-import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
+// US3 / FR-014 (T021): batched eligibility loader (092-performance).
+import {
+  assignDesigner,
+  DomainDesignerError,
+  getEligibleDesignersBatch,
+} from "~/server/designers";
 import type { EligibleDesigner } from "~/server/designers";
 import { OrderFinancePanel } from "~/components/finance/order-finance-panel";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   editSpec,
   specEditPolicy,
   redesignChoice,
   toSpecSnapshot,
+  type SpecColumns,
   type SpecPatchInput,
   type WorkItemDimensionUnit,
 } from "~/server/changes";
@@ -451,12 +459,16 @@ export default async function OrderDetailPage({
 }) {
   const [{ orderId }, specDiffParams] = await Promise.all([params, searchParams]);
   const actor = await getActor();
-  const detail = await getOrderDetail(actor, orderId);
 
-  const creationEvent = await db.auditEvent.findFirst({
-    where: { entityId: orderId, action: "order.created" },
-    orderBy: { createdAt: "asc" },
-  });
+  // US3 / FR-013 (T020): the creation-event read shares no data dependency
+  // with getOrderDetail — run both concurrently instead of chaining.
+  const [detail, creationEvent] = await Promise.all([
+    getOrderDetail(actor, orderId),
+    db.auditEvent.findFirst({
+      where: { entityId: orderId, action: "order.created" },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
   const isQuickCreate =
     typeof creationEvent?.after === "object" &&
     creationEvent.after !== null &&
@@ -468,45 +480,67 @@ export default async function OrderDetailPage({
   const canAssignDesigner = actor.permissions.has("workitem.assign_designer");
 
   const workItemIds = detail.workItems.map((wi) => wi.id);
-  const assigneeRows = await db.workItem.findMany({
-    where: { id: { in: workItemIds } },
-    select: {
-      id: true,
-      assigneeId: true,
-      assignee: { select: { name: true } },
-      requiresDesign: true,
-      departmentId: true,
-      productTypeId: true,
-      description: true,
-      quantity: true,
-      widthValue: true,
-      heightValue: true,
-      dimensionUnit: true,
-      material: true,
-      finishNotes: true,
-      productType: { select: { defaultDepartmentId: true } },
-      currentSpecVersion: { select: { version: true } },
-    },
-  });
+  // US3 / FR-014 (T021): one batched set-based read over every assignable
+  // item — replaces the per-item `for … await getEligibleDesigners` loop.
+  const assignableWorkItemIds = detail.workItems
+    .filter((wi) => DESIGNER_ASSIGNABLE_STATES.has(wi.state))
+    .map((wi) => wi.id);
+
+  // US3 / FR-013 (T020): both row reads need only IDs from `detail`; the
+  // eligibility batch depends on `detail` + actor alone, so it joins them.
+  const [assigneeRows, reworkCounts, eligibleDesignersByWorkItem] = await Promise.all([
+    // T052 audit (investigation §8 over-fetch #3): this re-reads rows
+    // `getOrderDetail` already loaded. Field-for-field vs `getOrderDetail`'s
+    // workItems mapping (src/server/orders/search.ts — id, state, description,
+    // quantity, widthValue, heightValue, dimensionUnit, departmentId,
+    // productTypeId): REMOVED as provably identical (same PK rows, same
+    // request, read-only — values sourced from `detail.workItems` below):
+    // description, quantity, widthValue, heightValue, dimensionUnit,
+    // departmentId, productTypeId (`id` stays as the map key). KEPT — NOT
+    // loaded by detail: assigneeId, assignee.name, requiresDesign, material,
+    // finishNotes, productType.defaultDepartmentId, currentSpecVersion.version.
+    db.workItem.findMany({
+      where: { id: { in: workItemIds } },
+      select: {
+        id: true,
+        assigneeId: true,
+        assignee: { select: { name: true } },
+        requiresDesign: true,
+        material: true,
+        finishNotes: true,
+        productType: { select: { defaultDepartmentId: true } },
+        currentSpecVersion: { select: { version: true } },
+      },
+    }),
+    // US5 (013, T036): rework count per Work Item
+    db.return.groupBy({
+      by: ["workItemId"],
+      where: { workItemId: { in: workItemIds } },
+      _count: { _all: true },
+    }),
+    canAssignDesigner && assignableWorkItemIds.length > 0
+      ? getEligibleDesignersBatch(actor, assignableWorkItemIds)
+      : Promise.resolve(new Map<string, EligibleDesigner[]>()),
+  ]);
+
   const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
   const workItemExtraById = new Map(assigneeRows.map((r) => [r.id, r]));
-
-  // US5 (013, T036): rework count per Work Item
-  const reworkCounts = await db.return.groupBy({
-    by: ["workItemId"],
-    where: { workItemId: { in: workItemIds } },
-    _count: { _all: true },
-  });
+  type AssigneeRow = (typeof assigneeRows)[number];
+  // T052: the spec snapshot merges `detail.workItems` scalars (trimmed out of
+  // `assigneeRows` above) with the two spec columns only `assigneeRows`
+  // loads. Same rows, same request — DF-005 identical values.
+  const specSnapshot = (wi: (typeof detail.workItems)[number], extra: AssigneeRow) =>
+    toSpecSnapshot({
+      productTypeId: wi.productTypeId,
+      description: wi.description,
+      quantity: wi.quantity,
+      widthValue: wi.widthValue,
+      heightValue: wi.heightValue,
+      dimensionUnit: wi.dimensionUnit,
+      material: extra.material,
+      finishNotes: extra.finishNotes,
+    } as SpecColumns);
   const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
-
-  const eligibleDesignersByWorkItem = new Map<string, EligibleDesigner[]>();
-  if (canAssignDesigner) {
-    for (const wi of detail.workItems) {
-      if (DESIGNER_ASSIGNABLE_STATES.has(wi.state)) {
-        eligibleDesignersByWorkItem.set(wi.id, await getEligibleDesigners(actor, wi.id));
-      }
-    }
-  }
 
   const canEditSpec = actor.permissions.has("order.edit");
   const needsDepartments =
@@ -514,27 +548,31 @@ export default async function OrderDetailPage({
     detail.workItems.some((wi) => {
       const extra = workItemExtraById.get(wi.id);
       const choice = redesignChoice(wi.state, extra?.requiresDesign ?? false);
+      // T052: departmentId comes from `detail.workItems` (trimmed from assigneeRows).
       const effectiveDept =
-        extra?.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
+        wi.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
       return choice === "REQUIRED" && !effectiveDept;
     });
 
-  const departments = needsDepartments
-    ? await db.department.findMany({
-        select: { id: true, name: true },
-      })
-    : undefined;
-
-  // 016 US3: open change request per IN_PRODUCTION Work Item (withdraw action).
-  //     One query for all of them, not one per Work Item.
-  const pendingChangeRequestByWorkItem = await findPendingChangeRequestIds(
-    db,
-    canEditSpec
-      ? detail.workItems
-          .filter((wi) => specEditPolicy(wi.state) === "CHANGE_REQUEST")
-          .map((wi) => wi.id)
-      : [],
-  );
+  // US3 / FR-013 (T020): independent of each other — pending CRs need only
+  // `detail`, departments only `needsDepartments` — so run them together.
+  const [departments, pendingChangeRequestByWorkItem] = await Promise.all([
+    needsDepartments
+      ? db.department.findMany({
+          select: { id: true, name: true },
+        })
+      : Promise.resolve(undefined),
+    // 016 US3: open change request per IN_PRODUCTION Work Item (withdraw action).
+    //     One query for all of them, not one per Work Item.
+    findPendingChangeRequestIds(
+      db,
+      canEditSpec
+        ? detail.workItems
+            .filter((wi) => specEditPolicy(wi.state) === "CHANGE_REQUEST")
+            .map((wi) => wi.id)
+        : [],
+    ),
+  ]);
 
   const activeStepIdx = getActiveStepIndex(detail.order.status, detail.workItems);
   const customerInitials = (detail.order.customerName || "ع")
@@ -1062,10 +1100,10 @@ export default async function OrderDetailPage({
                       choice={redesignChoice(wi.state, extra.requiresDesign)}
                       expectedVersion={extra.currentSpecVersion?.version ?? 1}
                       canEdit={canEditSpec}
-                      currentSpec={toSpecSnapshot(extra)}
+                      currentSpec={specSnapshot(wi, extra)}
                       departments={departments}
                       effectiveDepartmentId={
-                        extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                        wi.departmentId ?? extra.productType?.defaultDepartmentId ?? null
                       }
                       action={editSpecAction}
                       changeRequest={{
@@ -1088,20 +1126,27 @@ export default async function OrderDetailPage({
                         workItemId={wi.id}
                         orderId={orderId}
                         expectedVersion={extra.currentSpecVersion?.version ?? 1}
-                        currentSpec={toSpecSnapshot(extra)}
+                        currentSpec={specSnapshot(wi, extra)}
                         inProduction={wi.state === "IN_PRODUCTION"}
                         canRedesign={canRedesignOnApproval(extra)}
                         choice={redesignChoice(wi.state, extra.requiresDesign)}
                         departments={departments}
                         effectiveDepartmentId={
-                          extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                          wi.departmentId ?? extra.productType?.defaultDepartmentId ?? null
                         }
                         action={adminOverrideAction}
                       />
                     );
                   })()}
 
-                <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
+                {/* 092 T008: per-row history streams behind its own skeleton —
+                    one slow history query never blocks its siblings' rows.
+                    T050: shared shimmer Skeleton (aria-busy + .skeleton glint). */}
+                <Suspense
+                  fallback={<Skeleton className="h-16 w-full rounded-lg bg-muted/60" />}
+                >
+                  <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
+                </Suspense>
               </div>
             );
           })}
@@ -1225,7 +1270,19 @@ export default async function OrderDetailPage({
       </section>
 
       {/* ── Finance & Payments Panel ── */}
-      <OrderFinancePanel orderId={orderId} />
+      {/* 092 T007: the finance panel streams behind a skeleton — order header
+          paints without waiting on its four reads (SR-002, FR-006). T050:
+          shimmer Skeleton blocks (aria-busy kept on the wrapper). */}
+      <Suspense
+        fallback={
+          <div aria-busy="true" className="space-y-3">
+            <Skeleton className="h-6 w-40 rounded" />
+            <Skeleton className="h-32 w-full rounded-lg" />
+          </div>
+        }
+      >
+        <OrderFinancePanel orderId={orderId} />
+      </Suspense>
     </div>
   );
 }

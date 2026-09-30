@@ -1327,3 +1327,96 @@
   animation: loading-container-exit-reduced 620ms cubic-bezier(0.16, 1, 0.3, 1)
     forwards;
 }
+
+/* ── Shimmer skeleton (092-performance T050; investigation §6.2 / §17 Fix B) ──
+   A lighter band sweeps across the block via `background-position` (no
+   directional `left`/`right` properties, so RTL flips nothing), ~1.5s linear
+   infinite, over the element's own `bg-muted`. `animation: none` under
+   prefers-reduced-motion — and the !important also cancels any co-applied
+   Tailwind `animate-pulse` on the same element. The keyframes are declared
+   here too so the reduced-motion contract lives in one place. */
+.skeleton {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 45%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  background-position: 200% 0;
+  animation: skeleton-shimmer 1.5s linear infinite;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none !important;
+    background-image: none;
+  }
+}
+
+/* ── Route progress indicator (092 T010, spec FR-004) ──────────────────────
+   A 2px top-edge bar for navigations slower than SHOW_DELAY_MS. It is
+   decorative feedback only — aria-hidden, pointer-events: none, never
+   full-screen. The fill is an indeterminate sweep; under
+   prefers-reduced-motion it collapses to a static accent so no motion is
+   shown. */
+.nav-progress {
+  opacity: 0;
+  transition: opacity 100ms ease-out;
+}
+
+.nav-progress[data-visible="true"] {
+  opacity: 1;
+}
+
+.nav-progress__fill {
+  /* Visible in both themes: a solid primary base with a lighter glint band
+     sweeping across it — a transparent-ended gradient alone disappears on a
+     dark background. */
+  background-color: var(--primary);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 55%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: nav-progress-sweep 0.9s linear infinite;
+  /* Faint glow so the 1px bar reads at a glance on a busy screen. Purely
+     decorative — the element is pointer-events: none, so it still cannot
+     block anything. */
+  box-shadow: 0 0 6px 0 color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+@keyframes nav-progress-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress {
+    transition: none;
+  }
+
+  .nav-progress__fill {
+    animation: none;
+    background-image: none;
+    background-color: var(--primary);
+    opacity: 0.6;
+  }
+}

@@ -668,7 +668,10 @@ model FileObject {
   fileVersions FileVersion[]
   attachments  Attachment[]
 
-  @@index([sha256])
+  // 092 T037: the plain @@index([sha256]) was dropped as an exact duplicate
+  // of the unique `sha256` constraint (FileObject_sha256_key) — see
+  // specs/092-performance/db-verification.md. Keeping this declaration would
+  // let a future `db push` silently recreate the redundant index.
 }
 
 /// Logical file attached to one Work Item and category.
@@ -1556,7 +1559,10 @@ model PricingStatus {
 generator client {
   provider        = "prisma-client-js"
   output          = "../../generated/prisma"
-  previewFeatures = ["prismaSchemaFolder"]
+  // relationJoins (092-performance AC-005): lets getActorForSession load the
+  // whole RBAC graph with relationLoadStrategy:"join" — one statement instead
+  // of four. Client-generation flag only; NO database/DDL effect.
+  previewFeatures = ["prismaSchemaFolder", "relationJoins"]
   binaryTargets   = ["native", "darwin-arm64", "windows", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl-openssl-3.0.x"]
 }
 

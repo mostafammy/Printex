@@ -17,6 +17,7 @@
 //     row (contract §3) — otherwise a user with 400 unread rows writes 400
 //     audit rows to mark them read.
 
+import { cache } from "react";
 import type { Prisma } from "../../../generated/prisma";
 import type { Actor } from "~/server/auth";
 import { audit } from "~/server/auth";
@@ -94,12 +95,66 @@ function toView(row: Row): NotificationView {
  * A single indexed count with NO join and no event resolution
  * (research.md §2) — this runs on every authenticated page render for the
  * shell bell, so its cost has to be constant.
+ *
+ * 092 T053: memoized on the userId alone, so the layout's direct
+ * `unreadCount(actor)` call and the one inside `list`/`readFirstPage`
+ * collapse to ONE count per request (React `cache()` — request-scoped,
+ * never persistent).
  */
+const countUnread = cache(async (userId: string): Promise<number> =>
+  db.notification.count({ where: { userId, readAt: null, archivedAt: null } }),
+);
+
 export async function unreadCount(actor: Actor): Promise<number> {
-  return db.notification.count({
-    where: { userId: actor.userId, readAt: null, archivedAt: null },
-  });
+  return countUnread(actor.userId);
 }
+
+/**
+ * The unfiltered first page — 092 T053 (investigation §13#4).
+ *
+ * The shell bell (`layout.tsx`, `{ page: 1, pageSize: 10 }`) and the
+ * /notifications page's default view (`page.tsx`, `{ page: 1, pageSize: 20 }`)
+ * issue the SAME read on the same request. `list` normalizes both onto this
+ * single memoized function keyed by userId alone — identical arguments, so
+ * React `cache()` dedupes them within one render; each caller's pageSize is
+ * applied as a slice over the shared `DEFAULT_PAGE_SIZE` rows. Request-level
+ * only: zero persistent caching, and the rows are exactly the newest-first
+ * prefix both call sites selected before.
+ */
+const readFirstPage = cache(
+  async (
+    userId: string,
+  ): Promise<{
+    readonly rows: NotificationView[];
+    readonly total: number;
+    readonly unreadTotal: number;
+  }> => {
+    const where: Prisma.NotificationWhereInput = { userId, archivedAt: null };
+    const [rows, total, unread] = await Promise.all([
+      db.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: 0,
+        take: DEFAULT_PAGE_SIZE,
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          body: true,
+          severity: true,
+          entityType: true,
+          entityId: true,
+          linkHref: true,
+          readAt: true,
+          createdAt: true,
+        },
+      }),
+      db.notification.count({ where }),
+      countUnread(userId),
+    ]);
+    return { rows: rows.map((row) => toView(row)), total, unreadTotal: unread };
+  },
+);
 
 /**
  * One page of the actor's notifications, newest first (FR-021).
@@ -113,6 +168,26 @@ export async function list(
 ): Promise<NotificationListResult> {
   const pageSize = Math.min(Math.max(filter.pageSize ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
   const page = Math.max(filter.page ?? 1, 1);
+
+  // 092 T053: the shared-path gate. An unfiltered first page at (or under)
+  // DEFAULT_PAGE_SIZE is the read the layout bell and the /notifications
+  // default view both want — served once per request from `readFirstPage`,
+  // with each caller's pageSize honored as a slice (the bell keeps its 10
+  // rows, the page keeps the contract's 20/page — FR-021).
+  if (
+    page === 1 &&
+    filter.read === undefined &&
+    filter.type === undefined &&
+    pageSize <= DEFAULT_PAGE_SIZE
+  ) {
+    const first = await readFirstPage(actor.userId);
+    return {
+      rows: first.rows.slice(0, pageSize),
+      total: first.total,
+      unreadTotal: first.unreadTotal,
+      nextPage: page * pageSize < first.total ? page + 1 : undefined,
+    };
+  }
 
   const where: Prisma.NotificationWhereInput = {
     userId: actor.userId,

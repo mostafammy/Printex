@@ -6,6 +6,7 @@ import { Readable } from "node:stream";
 import type { ReadableStream as NodeWebReadableStream } from "node:stream/web";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { Suspense } from "react";
 import {
   ArrowRight,
   Palette,
@@ -26,6 +27,7 @@ import {
   WorkItemDesignTransitionError,
 } from "~/server/designers";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -85,6 +87,15 @@ async function markDesignCompleteAction(formData: FormData) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
+/** The page's phase-1 read — also the child section's prop type source (T051). */
+const loadWorkItem = (workItemId: string) =>
+  db.workItem.findUnique({
+    where: { id: workItemId },
+    include: { order: { include: { customer: true } }, productType: true },
+  });
+
+type DesignWorkItem = NonNullable<Awaited<ReturnType<typeof loadWorkItem>>>;
+
 export default async function DesignWorkspacePage({
   params,
 }: {
@@ -92,10 +103,7 @@ export default async function DesignWorkspacePage({
 }) {
   const { workItemId } = await params;
 
-  const workItem = await db.workItem.findUnique({
-    where: { id: workItemId },
-    include: { order: { include: { customer: true } }, productType: true },
-  });
+  const workItem = await loadWorkItem(workItemId);
 
   if (!workItem) {
     return (
@@ -115,13 +123,6 @@ export default async function DesignWorkspacePage({
       </div>
     );
   }
-
-  const versions = await db.designVersion.findMany({
-    where: { workItemId },
-    orderBy: { version: "desc" },
-  });
-
-  const canMarkComplete = versions.length > 0 && workItem.state === "IN_DESIGN";
 
   return (
     <div className="flex flex-col gap-6">
@@ -189,8 +190,42 @@ export default async function DesignWorkspacePage({
         </div>
       </div>
 
-      {/* ── Main Workspace Bento Grid ── */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+      {/* ── Main Workspace Bento Grid ── 092 T051: streams behind a skeleton. */}
+      <Suspense
+        fallback={
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            <Skeleton className="h-96 w-full rounded-2xl lg:col-span-7" />
+            <Skeleton className="h-96 w-full rounded-2xl lg:col-span-5" />
+          </div>
+        }
+      >
+        <DesignWorkspaceBody workItem={workItem} workItemId={workItemId} />
+      </Suspense>
+    </div>
+  );
+}
+
+/**
+ * 092 T051 (investigation §12c): phase 2 — the version-list read streams
+ * behind a shimmer skeleton while the hero header above has painted. Query
+ * order unchanged (the workItem read stays in the page for not-found + hero).
+ */
+async function DesignWorkspaceBody({
+  workItem,
+  workItemId,
+}: {
+  workItem: DesignWorkItem;
+  workItemId: string;
+}) {
+  const versions = await db.designVersion.findMany({
+    where: { workItemId },
+    orderBy: { version: "desc" },
+  });
+
+  const canMarkComplete = versions.length > 0 && workItem.state === "IN_DESIGN";
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Left Column: Upload New Version & Mark Complete */}
         <div className="flex flex-col gap-6 lg:col-span-7">
           {/* Upload card */}
@@ -385,6 +420,5 @@ export default async function DesignWorkspacePage({
           </section>
         </div>
       </div>
-    </div>
   );
 }
