@@ -105,6 +105,18 @@ jobs:
           PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d printex_test \
             -f prisma/manual-sql/016-change-control-constraints.sql
 
+      - name: Apply customer name trigram index
+        # 092 T055 (investigation §7.2). `findCustomers` filters on
+        # `normalizedName LIKE '%x%'`; a btree index cannot serve a leading
+        # wildcard, and Prisma cannot declare an index with a non-default
+        # operator class (gin_trgm_ops). The index therefore lives only here
+        # and in the migration tree — so the `db push` above DROPS it and this
+        # step puts it back. Without it, customer search silently degrades to
+        # a full table scan.
+        run: |
+          PGPASSWORD=postgres psql -v ON_ERROR_STOP=1 -h localhost -U postgres -d printex_test \
+            -f prisma/manual-sql/customer-name-trgm-index.sql
+
       - name: Grant printex_app its runtime privileges
         # SELECT/INSERT/UPDATE/DELETE on every table — audit_event's
         # UPDATE/DELETE are revoked specifically in a later step. Tables
