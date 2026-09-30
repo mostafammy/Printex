@@ -149,20 +149,96 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
   });
   if (!customer) return null;
 
+  // 092 T054 (investigation §8): the old loop called computeOrderSummary per
+  // order — order.findUnique + payments + voids + the prices pair + a port
+  // call EACH — unbounded by the customer's order count. Everything that can
+  // batch across orders now batches to a CONSTANT number of reads; the
+  // per-order math below reproduces computeOrderSummary's Remaining exactly
+  // (billable = state !== CANCELLED, null price → pricingIncomplete,
+  // Total − Paid − CREDIT compensations, Decimal throughout).
+  const orderIds = customer.orders.map((order) => order.id);
+
+  const workItems =
+    orderIds.length === 0
+      ? []
+      : await db.workItem.findMany({
+          where: { orderId: { in: orderIds } },
+          select: { id: true, orderId: true, state: true },
+        });
+  const billable = workItems.filter((item) => item.state !== "CANCELLED");
+  const priceById = await getCurrentPrices(billable.map((item) => item.id));
+
+  const payments =
+    orderIds.length === 0
+      ? []
+      : await db.payment.findMany({
+          where: { orderId: { in: orderIds } },
+          select: { id: true, orderId: true, amount: true },
+        });
+  const voidedIds =
+    payments.length === 0
+      ? new Set<string>()
+      : new Set(
+          (
+            await db.financeVoid.findMany({
+              where: { entityType: "PAYMENT", entityId: { in: payments.map((p) => p.id) } },
+              select: { entityId: true },
+            })
+          ).map((row) => row.entityId),
+        );
+
+  // ponytail: credits still go through CompensationReadPort one order at a
+  // time — the port contract is (orderId) => … and no orderId IN surface
+  // exists (015 owns the Compensation read; production binds nothing, so the
+  // unbound default answers [] at zero queries). Add a batch port when 015
+  // lands and switch this Promise.all to one read.
+  const creditRows = await Promise.all(
+    customer.orders.map((order) => readCreditCompensations(order.id)),
+  );
+
+  const billableByOrder = new Map<string, string[]>();
+  for (const item of billable) {
+    const ids = billableByOrder.get(item.orderId);
+    if (ids) ids.push(item.id);
+    else billableByOrder.set(item.orderId, [item.id]);
+  }
+  const paidByOrder = new Map<string, Prisma.Decimal>();
+  for (const payment of payments) {
+    if (voidedIds.has(payment.id)) continue;
+    paidByOrder.set(
+      payment.orderId,
+      (paidByOrder.get(payment.orderId) ?? new Prisma.Decimal(0)).plus(payment.amount),
+    );
+  }
+
   const orders: CustomerBalanceOrderRow[] = [];
   let balance = new Prisma.Decimal(0);
-  for (const order of customer.orders) {
-    const summary = await computeOrderSummary(order.id);
-    if (summary.status !== "AVAILABLE") continue;
+  for (const [index, order] of customer.orders.entries()) {
+    let total = new Prisma.Decimal(0);
+    let pricingIncomplete = false;
+    for (const itemId of billableByOrder.get(order.id) ?? []) {
+      const price = priceById.get(itemId) ?? null;
+      if (!price) {
+        pricingIncomplete = true;
+        continue;
+      }
+      total = total.plus(new Prisma.Decimal(price.amount));
+    }
+    const paid = paidByOrder.get(order.id) ?? new Prisma.Decimal(0);
+    let creditTotal = new Prisma.Decimal(0);
+    for (const credit of creditRows[index] ?? []) {
+      creditTotal = creditTotal.plus(new Prisma.Decimal(credit.amount));
+    }
+    const remaining = total.minus(paid).minus(creditTotal);
     orders.push({
       orderId: order.id,
       orderNumber: order.number,
-      total: summary.total,
-      paid: summary.paid,
-      remaining: summary.remaining,
-      pricingIncomplete: summary.pricingIncomplete,
+      total: toDecimalString(total),
+      paid: toDecimalString(paid),
+      remaining: toDecimalString(remaining),
+      pricingIncomplete,
     });
-    balance = balance.plus(new Prisma.Decimal(summary.remaining));
+    balance = balance.plus(remaining);
   }
 
   const credit = customer.customerCredit;
