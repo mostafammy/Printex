@@ -13,7 +13,7 @@ import { ShellHeader } from "./_components/shell-header";
 import { IconRail } from "~/components/shell/IconRail";
 import { CommandBar } from "~/components/shell/CommandBar";
 import { NotificationBell } from "~/components/notifications/NotificationBell";
-import { markAllReadAction, markReadAction } from "./notifications/actions";
+import { markAllReadAction, markReadAction, revalidateBellAction } from "./notifications/actions";
 
 function getRoleLabel(roles: readonly string[]): string {
   if (roles.includes("ADMIN_OWNER")) return "مدير النظام";
@@ -100,6 +100,10 @@ export default async function ShellLayout({
             initialRows={firstPage.rows}
             markReadAction={markReadAction}
             markAllReadAction={markAllReadAction}
+            // 092 T030 (FR-019, FR-020): the bell's re-read seam. The action
+            // returns { count, rows } for the caller, so every refresh applies
+            // server state locally — no route-tree re-execution on any path.
+            revalidate={revalidateBellAction}
           />
         }
       />

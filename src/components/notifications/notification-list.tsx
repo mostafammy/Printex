@@ -41,7 +41,16 @@ export function relativeTime(iso: string, now: number): string {
   return N.relativeDays.replace("{count}", toArabicDigits(days));
 }
 
-/** The `/notifications` page's row list. Server-rendered; the toggle is an action. */
+/**
+ * The `/notifications` page's row list. Server-rendered; the toggle is an action.
+ *
+ * `revalidate` shares the bell's widened seam type (092 contract
+ * notification-refresh §1.3). There is NO local count/rows state to apply the
+ * payload to — this list is the page's server-rendered view (a filtered,
+ * paginated one the bell's unfiltered first page must never overwrite), so a
+ * passed payload is awaited and the page's own re-render stays on
+ * `router.refresh()`: a mutation path for THIS route, not a passive re-read.
+ */
 export function NotificationList({
   rows,
   markReadAction,
@@ -51,7 +60,7 @@ export function NotificationList({
   readonly rows: readonly NotificationView[];
   readonly markReadAction: (id: string) => Promise<unknown>;
   readonly markUnreadAction: (id: string) => Promise<unknown>;
-  readonly revalidate?: () => Promise<void>;
+  readonly revalidate?: () => Promise<{ count: number; rows: NotificationView[] }>;
 }) {
   const router = useRouter();
 

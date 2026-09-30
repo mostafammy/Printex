@@ -15,7 +15,6 @@
 //
 // RTL: logical properties only (constitution IX, SC-007).
 
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import type { NotificationView } from "~/server/notifications";
@@ -33,11 +32,14 @@ export interface NotificationBellProps {
   readonly markReadAction: (id: string) => Promise<unknown>;
   readonly markAllReadAction: () => Promise<unknown>;
   /**
-   * Re-reads list + count after a mutation or a stream signal. Optional: a
-   * server-rendered page revalidates through its own Server Action, so it has
-   * nothing to re-read client-side.
+   * The targeted server re-read (092 contract notification-refresh §1): a
+   * no-input Server Action returning `{ count, rows }` for the CALLER. The
+   * payload IS the delivery channel for a successful re-read — the bell
+   * applies it to local state, so no route refresh is ever needed (FR-019,
+   * FR-020). Optional: a server-rendered page revalidates through its own
+   * Server Action, so it has nothing to re-read client-side.
    */
-  readonly revalidate?: () => Promise<void>;
+  readonly revalidate?: () => Promise<{ count: number; rows: NotificationView[] }>;
 }
 
 export function NotificationBell(props: NotificationBellProps) {
@@ -46,24 +48,38 @@ export function NotificationBell(props: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [rows, setRows] = useState<NotificationView[]>([...initialRows]);
-  // A genuine re-read failure (the Server Action or router.refresh threw),
-  // surfaced next to the bell with a retry — contracts/ui.md §Dropdown
-  // error state. Not a transport warning: that is the polling dot below.
+  // A genuine re-read failure (the Server Action rejected), surfaced next to
+  // the bell with a retry — contracts/ui.md §Dropdown error state. Not a
+  // transport warning: that is the polling dot below.
   const [error, setError] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const router = useRouter();
+  // 092 contract notification-refresh §3 — latest-response-wins. Monotonic id
+  // of the newest ISSUED re-read: only its outcome may apply state or drive
+  // the error surface; a late older response is discarded silently.
+  const requestIdRef = useRef(0);
 
-  // Re-read through the server on any invalidation. Never trusting the
-  // client's own count: the server is the only authority for read state.
+  // Re-read through the server on any invalidation, then apply the returned
+  // {count, rows} locally. Never trusting the client's own count: the server
+  // is the only authority for read state — and NO route refresh on any
+  // success path (FR-019, FR-020, contract §2.2).
   const refresh = useCallback(async () => {
+    if (!revalidate) return;
+    const requestId = ++requestIdRef.current;
     try {
-      await revalidate?.();
-      router.refresh();
+      const payload = await revalidate();
+      // Superseded while in flight: the newest issued request wins, so an
+      // older response must not overwrite newer local state (§3.1) or an
+      // error already surfaced by the latest one (§3.2).
+      if (requestId !== requestIdRef.current) return;
+      setCount(payload.count);
+      setRows([...payload.rows]);
       setError(false);
     } catch {
+      // Only the latest issued request's outcome drives the error surface.
+      if (requestId !== requestIdRef.current) return;
       setError(true);
     }
-  }, [revalidate, router]);
+  }, [revalidate]);
 
   const retry = () => {
     setError(false);
