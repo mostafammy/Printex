@@ -4,6 +4,7 @@
 // shop-local date (optionally filtered by method).
 
 import { authorize, getActor } from "~/server/auth";
+import Link from "next/link";
 import {
   dailyCashSummary,
   getShopTimezone,
@@ -86,9 +87,9 @@ export default async function DailyCashPage({
             {methodFilter && (
               <>
                 {" · "}
-                <a href={`/finance/daily-cash?date=${date}`} className="font-bold text-destructive hover:underline">
+                <Link href={`/finance/daily-cash?date=${date}`} className="font-bold text-destructive hover:underline">
                   إلغاء التصفية ×
-                </a>
+                </Link>
               </>
             )}
           </span>
@@ -124,18 +125,18 @@ export default async function DailyCashPage({
                     {S.recorder}: <strong className="text-foreground">{payment.recordedByName ?? payment.recordedById}</strong>
                   </span>
                   {payment.note && <span className="text-foreground/80 font-medium">«{payment.note}»</span>}
-                  <a
+                  <Link
                     href={`/orders/${payment.orderId}`}
                     className="font-bold text-primary hover:underline"
                   >
                     الطلب #{payment.orderId.slice(-6)}
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href={`/finance/receipt/${payment.id}`}
                     className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                   >
                     {S.receipt} ←
-                  </a>
+                  </Link>
                 </div>
               </li>
             ))}

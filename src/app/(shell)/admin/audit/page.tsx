@@ -3,6 +3,7 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import { History, Filter, X, ChevronDown, User } from "lucide-react";
+import Link from "next/link";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import { Button } from "~/components/ui/button";
@@ -203,13 +204,13 @@ export default async function AdminAuditPage({
               <Filter className="h-3.5 w-3.5" />
               <span>{S.auditFilterSubmitButton}</span>
             </Button>
-            <a
+            <Link
               href="/admin/audit"
               className="inline-flex items-center gap-1.5 rounded-xl border border-border/70 px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted transition-colors"
             >
               <X className="h-3.5 w-3.5" />
               <span>{S.auditFilterClearButton}</span>
-            </a>
+            </Link>
           </div>
         </form>
       </section>
