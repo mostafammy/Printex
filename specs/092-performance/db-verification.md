@@ -233,3 +233,31 @@ Conditional gate open per VERDICT above (R1/R2/R3 MISSING, `FileObject_sha256_id
   - `FileObject_sha256_key` retained (unique); `FileObject_sha256_idx` absent (0 rows).
 - **Checks**: `pnpm exec vitest run tests/integration/shell-layout-queries.test.ts` → 1 file / 3 tests passed (exit 0). `pnpm exec tsc --noEmit` → exit 2 with 6 errors all in `tests/integration/phaseDurationsBatch.test.ts` (pre-existing, untracked file from another workstream; no TS touched by T037 — only the migration dir + this file).
 - **Notes**: identifiers verified against `prisma/schema/*.prisma` (`WorkItem`/`FileObject` unmapped, `Notification` → `@@map("notification")`, `AuditEvent` → `@@map("audit_event")`); R2 index name keeps spec-mandated `Notification_…` casing per tasks.md/db-verification VERDICT while the table is `"notification"`. `files.prisma:61 @@index([sha256])` still declares the dropped index — future `db push` would recreate it; removing the schema declaration is a schema-model change out of T037 scope (flagged for 091 baseline fold / follow-up).
+
+## Part 4 — T055 `pg_trgm` customer-name index applied · 2026-09-30
+
+- **Migration dir**: `prisma/schema/migrations/20260930084032_customer_name_trgm/` (`migration.sql`), authored in the authoritative tree (Part 1(c)). Contents (verbatim):
+  ```sql
+  CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  CREATE INDEX IF NOT EXISTS "Customer_normalizedName_trgm_idx" ON "Customer" USING gin ("normalizedName" gin_trgm_ops);
+  ```
+  Header comment cites 092 T055 + investigation §7.2 + DB-005 write-cost notes; replay-safe `IF NOT EXISTS` guards (same convention as `20260930090000_nav_perf_indexes`). Identifiers verified against `prisma/schema/core.prisma`: `model Customer` has **no `@@map`** → table `"Customer"`; column `normalizedName String @default("")` → `"normalizedName"`; existing btree sibling index `Customer_normalizedName_idx` (from `20260924084346_add_files_schema`) confirms casing. **No `*.prisma` edit** (tasks.md T055: Prisma schema does not model trgm indexes — raw-SQL only).
+- **Deploy**: `pnpm exec prisma migrate deploy` via CLI with `DATABASE_URL`/`DIRECT_URL` exported to the `.env` `DATABASE_URL_TEST` value (T037 env-override pattern; same instance/database as proven in Part 2 header; credentials never printed). Output (verbatim essentials):
+  ```
+  Datasource "db": PostgreSQL database "postgres", schema "public" at "aws-1-eu-west-1.pooler.supabase.com:5432"
+  6 migrations found in prisma/migrations
+  Applying migration `20260930084032_customer_name_trgm`
+  migrations applied:
+    └─ 20260930084032_customer_name_trgm/
+        └─ migration.sql
+  All migrations have been successfully applied.
+  ```
+  Exit code **0** — `CREATE EXTENSION pg_trgm` was **not** permission-denied on the verified (test/dev) database; no improvising, no `db push` needed.
+- **Post-DDL `pg_indexes` confirmation** (`SELECT tablename, indexname, indexdef FROM pg_indexes WHERE schemaname='public' AND tablename='Customer' AND indexname LIKE '%trgm%'` — via `pg` client against `DATABASE_URL_TEST`, read-only):
+  ```
+  Customer | Customer_normalizedName_trgm_idx | CREATE INDEX "Customer_normalizedName_trgm_idx" ON public."Customer" USING gin ("normalizedName" gin_trgm_ops)
+  ROWS=1
+  extension: pg_trgm 1.6
+  ```
+- **`prisma migrate status`**: `6 migrations found in prisma/migrations` / `Database schema is up to date!` — exit **0**. `_prisma_migrations` now includes `20260930084032_customer_name_trgm`.
+- **Notes / fidelity gap (091 follow-up)**: `pg_indexes`/schema drift in the OTHER direction of T037's case — the GIN index exists in the database but is **not declared in `prisma/schema/*.prisma`** (no Prisma syntax for `gin_trgm_ops` raw operator class without an `unsupported()` column hack, which T055 forbids editing models for). A future `prisma db push` compares schema↔database and would **drop** `Customer_normalizedName_trgm_idx` (unknown to the schema) unless it is baselined into 091's migration-tree fold or recorded as an accepted out-of-schema index. Phone `startsWith` on `CustomerPhone.phoneE164` left btree-served per scope. No code touched by this part beyond the migration dir + this file.
