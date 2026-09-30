@@ -20,12 +20,12 @@ export class TravelChoreography implements Choreography {
     }
 
     const duration = ctx.tokens?.durationTravel ?? 380;
-    const easing = ctx.tokens?.springEasing ?? "cubic-bezier(0.2, 0.9, 0.3, 1)";
+    const easing = ctx.tokens?.springEasing ?? "cubic-bezier(0.34, 1.56, 0.64, 1)";
 
     const animation = el.animate(
       [
-        { transform: `translate3d(${dx}px, ${dy}px, 0)` },
-        { transform: "translate3d(0, 0, 0)" },
+        { transform: `translate3d(${dx}px, ${dy}px, 0) scale(1.03)` },
+        { transform: "translate3d(0, 0, 0) scale(1)" },
       ],
       {
         duration,
