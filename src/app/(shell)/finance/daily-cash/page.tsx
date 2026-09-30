@@ -5,6 +5,7 @@
 
 import { authorize, getActor } from "~/server/auth";
 import Link from "next/link";
+import { Suspense } from "react";
 import {
   dailyCashSummary,
   getShopTimezone,
@@ -15,26 +16,28 @@ import {
 import { DailyCashSummary } from "~/components/finance/daily-cash-summary";
 import { PaginationBar } from "~/components/pagination-bar";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui.finance;
 
 type Search = Record<string, string | string[] | undefined>;
 
-export default async function DailyCashPage({
-  searchParams,
+/**
+ * 092 T051 (investigation §12c): the summary phase (timezone → day bounds →
+ * the parallel summary+payments read) is the page's only work past the date
+ * parse — it streams behind skeletons while the date filter bar paints.
+ * The queries themselves are untouched (same order, same Promise.all).
+ */
+async function DailyCashPanels({
+  date,
+  methodFilter,
+  page,
 }: {
-  searchParams: Promise<Search>;
+  date: string;
+  methodFilter: string | undefined;
+  page: number;
 }) {
-  const actor = await getActor();
-  authorize(actor, "finance.view");
-  const params = await searchParams;
-  const requested = typeof params.date === "string" && params.date ? params.date : null;
-  const date = requested ?? (await todayShopLocalDate());
-  const methodFilter = typeof params.method === "string" && params.method ? params.method : undefined;
-  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
-  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
-
   const timezone = await getShopTimezone();
   const { startUtc, endUtc } = shopLocalDayBoundsUtc(date, timezone);
   const [summary, payments] = await Promise.all([
@@ -51,30 +54,7 @@ export default async function DailyCashPage({
   ]);
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Date Filter Bar */}
-      <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 border-border/70">
-        <form method="get" className="flex flex-wrap items-end gap-3 text-sm">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">{S.expenseDate}</span>
-            <input
-              name="date"
-              type="date"
-              defaultValue={date}
-              className="rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none"
-            />
-          </label>
-          {methodFilter && <input type="hidden" name="method" value={methodFilter} />}
-          <Button
-            type="submit"
-            variant="default"
-            size="sm"
-          >
-            <span>تطبيق التاريخ</span>
-          </Button>
-        </form>
-      </div>
-
+    <>
       <DailyCashSummary summary={summary} methodFilter={methodFilter} />
 
       {/* FR-020 drill-down: the actual payments behind every figure above. */}
@@ -151,6 +131,62 @@ export default async function DailyCashPage({
           />
         </div>
       </section>
+    </>
+  );
+}
+
+export default async function DailyCashPage({
+  searchParams,
+}: {
+  searchParams: Promise<Search>;
+}) {
+  const actor = await getActor();
+  authorize(actor, "finance.view");
+  const params = await searchParams;
+  const requested = typeof params.date === "string" && params.date ? params.date : null;
+  const date = requested ?? (await todayShopLocalDate());
+  const methodFilter = typeof params.method === "string" && params.method ? params.method : undefined;
+  const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
+  const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Date Filter Bar */}
+      <div className="rounded-2xl border border-border/70 bg-card shadow-xs p-5 border-border/70">
+        <form method="get" className="flex flex-wrap items-end gap-3 text-sm">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-muted-foreground">{S.expenseDate}</span>
+            <input
+              name="date"
+              type="date"
+              defaultValue={date}
+              className="rounded-xl border border-input bg-background/80 px-3.5 py-2 text-sm text-foreground shadow-2xs focus:border-primary focus:ring-3 focus:ring-primary/25 focus:outline-none"
+            />
+          </label>
+          {methodFilter && <input type="hidden" name="method" value={methodFilter} />}
+          <Button
+            type="submit"
+            variant="default"
+            size="sm"
+          >
+            <span>تطبيق التاريخ</span>
+          </Button>
+        </form>
+      </div>
+
+      {/* 092 T051 (investigation §12c): summary + payments stream behind
+          shimmer skeletons — the date filter bar above has already painted.
+          Queries unchanged (same order, same Promise.all). */}
+      <Suspense
+        fallback={
+          <div className="space-y-8">
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-96 w-full rounded-2xl" />
+          </div>
+        }
+      >
+        <DailyCashPanels date={date} methodFilter={methodFilter} page={page} />
+      </Suspense>
     </div>
   );
 }

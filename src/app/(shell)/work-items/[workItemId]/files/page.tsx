@@ -22,11 +22,13 @@
 // by the repo's ESLint rule (constitution IX).
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { ArrowRight, Lock } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { canListFileVersions, fileService } from "~/server/files";
 import { db } from "~/server/db";
 import { FilePanel } from "~/components/files/file-panel";
+import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -45,6 +47,15 @@ const CATEGORIES = [
   "SUPPORTING",
 ] as const;
 
+/** The page's phase-2 read — also the child section's prop type source (T051). */
+const loadWorkItem = (workItemId: string) =>
+  db.workItem.findUnique({
+    where: { id: workItemId },
+    select: { id: true, orderId: true, state: true, description: true },
+  });
+
+type FilesWorkItem = NonNullable<Awaited<ReturnType<typeof loadWorkItem>>>;
+
 export default async function WorkItemFilesPage({
   params,
 }: {
@@ -53,10 +64,7 @@ export default async function WorkItemFilesPage({
   const actor = await getActor();
   const { workItemId } = await params;
 
-  const workItem = await db.workItem.findUnique({
-    where: { id: workItemId },
-    select: { id: true, orderId: true, state: true, description: true },
-  });
+  const workItem = await loadWorkItem(workItemId);
 
   if (!workItem) {
     return (
@@ -100,8 +108,6 @@ export default async function WorkItemFilesPage({
     );
   }
 
-  const versions = await fileService.listVersions({ workItemId });
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -125,44 +131,73 @@ export default async function WorkItemFilesPage({
         The READ path — categories, history, status, size, uploader, time —
         is what makes the panel useful on day one, and 050's own API routes
         under /api/files/** already serve the mutations.
+
+        092 T051 (investigation §12c): the 4-phase page's panel (phase 4)
+        streams behind a shimmer skeleton — title, back link and the
+        not-found/forbidden decisions above have already painted. Query
+        order unchanged.
       */}
-      <FilePanel
-        workItemId={workItemId}
-        categories={[...CATEGORIES]}
-        fileVersions={versions.map((version) => ({
-          id: version.id,
-          versionNumber: version.versionNumber,
-          originalName: version.originalName,
-          uploadedById: version.uploadedById,
-          note: version.note,
-          status: version.status,
-          approved: version.approved,
-          createdAt: version.createdAt,
-          fileObject: version.fileObject
-            ? {
-                id: version.fileObject.id,
-                sizeBytes: version.fileObject.sizeBytes,
-                mimeType: version.fileObject.mimeType,
-                sha256: version.fileObject.sha256,
-                storageKey: version.fileObject.storageKey,
-              }
-            : null,
-        }))}
-        workItem={{
-          id: workItem.id,
-          orderId: workItem.orderId,
-          state: workItem.state,
-          description: workItem.description,
-        }}
-        currentUser={{
-          id: actor.userId,
-          // `actor.permissions` is a ReadonlySet (001's Actor) while the
-          // panel's prop is a mutable Set — the panel only reads it, so a
-          // copy is correct and keeps 001's readonly guarantee intact.
-          permissions: new Set(actor.permissions),
-          departmentIds: [...actor.departmentIds],
-        }}
-      />
+      <Suspense fallback={<Skeleton className="h-96 w-full rounded-2xl" />}>
+        <FileVersionsSection
+          actor={actor}
+          workItem={workItem}
+          workItemId={workItemId}
+        />
+      </Suspense>
     </div>
+  );
+}
+
+/** T051: phase 4 isolated so its await streams behind the Suspense above. */
+async function FileVersionsSection({
+  actor,
+  workItem,
+  workItemId,
+}: {
+  actor: Awaited<ReturnType<typeof getActor>>;
+  workItem: FilesWorkItem;
+  workItemId: string;
+}) {
+  // Cheap when there are no versions yet (the common case mid-design).
+  const versions = await fileService.listVersions({ workItemId });
+
+  return (
+    <FilePanel
+      workItemId={workItemId}
+      categories={[...CATEGORIES]}
+      fileVersions={versions.map((version) => ({
+        id: version.id,
+        versionNumber: version.versionNumber,
+        originalName: version.originalName,
+        uploadedById: version.uploadedById,
+        note: version.note,
+        status: version.status,
+        approved: version.approved,
+        createdAt: version.createdAt,
+        fileObject: version.fileObject
+          ? {
+              id: version.fileObject.id,
+              sizeBytes: version.fileObject.sizeBytes,
+              mimeType: version.fileObject.mimeType,
+              sha256: version.fileObject.sha256,
+              storageKey: version.fileObject.storageKey,
+            }
+          : null,
+      }))}
+      workItem={{
+        id: workItem.id,
+        orderId: workItem.orderId,
+        state: workItem.state,
+        description: workItem.description,
+      }}
+      currentUser={{
+        id: actor.userId,
+        // `actor.permissions` is a ReadonlySet (001's Actor) while the
+        // panel's prop is a mutable Set — the panel only reads it, so a
+        // copy is correct and keeps 001's readonly guarantee intact.
+        permissions: new Set(actor.permissions),
+        departmentIds: [...actor.departmentIds],
+      }}
+    />
   );
 }

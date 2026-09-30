@@ -48,11 +48,13 @@ import {
 import type { EligibleDesigner } from "~/server/designers";
 import { OrderFinancePanel } from "~/components/finance/order-finance-panel";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   editSpec,
   specEditPolicy,
   redesignChoice,
   toSpecSnapshot,
+  type SpecColumns,
   type SpecPatchInput,
   type WorkItemDimensionUnit,
 } from "~/server/changes";
@@ -487,6 +489,16 @@ export default async function OrderDetailPage({
   // US3 / FR-013 (T020): both row reads need only IDs from `detail`; the
   // eligibility batch depends on `detail` + actor alone, so it joins them.
   const [assigneeRows, reworkCounts, eligibleDesignersByWorkItem] = await Promise.all([
+    // T052 audit (investigation §8 over-fetch #3): this re-reads rows
+    // `getOrderDetail` already loaded. Field-for-field vs `getOrderDetail`'s
+    // workItems mapping (src/server/orders/search.ts — id, state, description,
+    // quantity, widthValue, heightValue, dimensionUnit, departmentId,
+    // productTypeId): REMOVED as provably identical (same PK rows, same
+    // request, read-only — values sourced from `detail.workItems` below):
+    // description, quantity, widthValue, heightValue, dimensionUnit,
+    // departmentId, productTypeId (`id` stays as the map key). KEPT — NOT
+    // loaded by detail: assigneeId, assignee.name, requiresDesign, material,
+    // finishNotes, productType.defaultDepartmentId, currentSpecVersion.version.
     db.workItem.findMany({
       where: { id: { in: workItemIds } },
       select: {
@@ -494,13 +506,6 @@ export default async function OrderDetailPage({
         assigneeId: true,
         assignee: { select: { name: true } },
         requiresDesign: true,
-        departmentId: true,
-        productTypeId: true,
-        description: true,
-        quantity: true,
-        widthValue: true,
-        heightValue: true,
-        dimensionUnit: true,
         material: true,
         finishNotes: true,
         productType: { select: { defaultDepartmentId: true } },
@@ -520,6 +525,21 @@ export default async function OrderDetailPage({
 
   const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
   const workItemExtraById = new Map(assigneeRows.map((r) => [r.id, r]));
+  type AssigneeRow = (typeof assigneeRows)[number];
+  // T052: the spec snapshot merges `detail.workItems` scalars (trimmed out of
+  // `assigneeRows` above) with the two spec columns only `assigneeRows`
+  // loads. Same rows, same request — DF-005 identical values.
+  const specSnapshot = (wi: (typeof detail.workItems)[number], extra: AssigneeRow) =>
+    toSpecSnapshot({
+      productTypeId: wi.productTypeId,
+      description: wi.description,
+      quantity: wi.quantity,
+      widthValue: wi.widthValue,
+      heightValue: wi.heightValue,
+      dimensionUnit: wi.dimensionUnit,
+      material: extra.material,
+      finishNotes: extra.finishNotes,
+    } as SpecColumns);
   const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
 
   const canEditSpec = actor.permissions.has("order.edit");
@@ -528,8 +548,9 @@ export default async function OrderDetailPage({
     detail.workItems.some((wi) => {
       const extra = workItemExtraById.get(wi.id);
       const choice = redesignChoice(wi.state, extra?.requiresDesign ?? false);
+      // T052: departmentId comes from `detail.workItems` (trimmed from assigneeRows).
       const effectiveDept =
-        extra?.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
+        wi.departmentId ?? extra?.productType?.defaultDepartmentId ?? null;
       return choice === "REQUIRED" && !effectiveDept;
     });
 
@@ -1034,10 +1055,10 @@ export default async function OrderDetailPage({
                       choice={redesignChoice(wi.state, extra.requiresDesign)}
                       expectedVersion={extra.currentSpecVersion?.version ?? 1}
                       canEdit={canEditSpec}
-                      currentSpec={toSpecSnapshot(extra)}
+                      currentSpec={specSnapshot(wi, extra)}
                       departments={departments}
                       effectiveDepartmentId={
-                        extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                        wi.departmentId ?? extra.productType?.defaultDepartmentId ?? null
                       }
                       action={editSpecAction}
                       changeRequest={{
@@ -1060,13 +1081,13 @@ export default async function OrderDetailPage({
                         workItemId={wi.id}
                         orderId={orderId}
                         expectedVersion={extra.currentSpecVersion?.version ?? 1}
-                        currentSpec={toSpecSnapshot(extra)}
+                        currentSpec={specSnapshot(wi, extra)}
                         inProduction={wi.state === "IN_PRODUCTION"}
                         canRedesign={canRedesignOnApproval(extra)}
                         choice={redesignChoice(wi.state, extra.requiresDesign)}
                         departments={departments}
                         effectiveDepartmentId={
-                          extra.departmentId ?? extra.productType?.defaultDepartmentId ?? null
+                          wi.departmentId ?? extra.productType?.defaultDepartmentId ?? null
                         }
                         action={adminOverrideAction}
                       />
@@ -1074,14 +1095,10 @@ export default async function OrderDetailPage({
                   })()}
 
                 {/* 092 T008: per-row history streams behind its own skeleton —
-                    one slow history query never blocks its siblings' rows. */}
+                    one slow history query never blocks its siblings' rows.
+                    T050: shared shimmer Skeleton (aria-busy + .skeleton glint). */}
                 <Suspense
-                  fallback={
-                    <div
-                      aria-busy="true"
-                      className="h-16 w-full animate-pulse rounded-lg bg-muted/60"
-                    />
-                  }
+                  fallback={<Skeleton className="h-16 w-full rounded-lg bg-muted/60" />}
                 >
                   <SpecHistory actor={actor} workItemId={wi.id} searchParams={specDiffParams} />
                 </Suspense>
@@ -1209,12 +1226,13 @@ export default async function OrderDetailPage({
 
       {/* ── Finance & Payments Panel ── */}
       {/* 092 T007: the finance panel streams behind a skeleton — order header
-          paints without waiting on its four reads (SR-002, FR-006). */}
+          paints without waiting on its four reads (SR-002, FR-006). T050:
+          shimmer Skeleton blocks (aria-busy kept on the wrapper). */}
       <Suspense
         fallback={
           <div aria-busy="true" className="space-y-3">
-            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-            <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
+            <Skeleton className="h-6 w-40 rounded" />
+            <Skeleton className="h-32 w-full rounded-lg" />
           </div>
         }
       >

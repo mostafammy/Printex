@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Suspense } from "react";
 import { db } from "~/server/db";
 import { getActor } from "~/server/auth";
 import {
@@ -18,6 +19,7 @@ import {
   rejectChangeRequest,
 } from "~/server/changes";
 import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import {
   SpecDiff,
   getChangeErrorMessage,
@@ -94,6 +96,31 @@ async function rejectAction(formData: FormData) {
 
 // ── Page ─────────────────────────────────────────────────────────────────
 
+type ChangeRequestDetail = Extract<
+  Awaited<ReturnType<typeof getChangeRequestDetail>>,
+  { ok: true }
+>["data"];
+
+/**
+ * 092 T051 (investigation §12c): the base-vs-proposed diff section is the
+ * detail page's only post-detail async read — its product-type label lookup
+ * streams behind a skeleton while the summary paints. Wrapping only; the
+ * query itself is unchanged.
+ */
+async function SpecDiffSection({ cr }: { cr: ChangeRequestDetail }) {
+  const productTypeNames = await productTypeNamesForChanges(db, [cr.changes]);
+  return (
+    <section className="border-border bg-card rounded-lg border p-6">
+      <h2 className="mb-3 text-base font-semibold">{Q.changesHeading}</h2>
+      <SpecDiff
+        changes={cr.changes}
+        productTypeNames={productTypeNames}
+        caption={Q.changesCaption}
+      />
+    </section>
+  );
+}
+
 export default async function ChangeRequestDetailPage({
   params,
   searchParams,
@@ -132,9 +159,6 @@ export default async function ChangeRequestDetailPage({
     typeof error === "string"
       ? getChangeErrorMessage(error as ChangeErrorCode)
       : null;
-
-  // One query, and none unless the diff touches productTypeId.
-  const productTypeNames = await productTypeNamesForChanges(db, [cr.changes]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -199,15 +223,10 @@ export default async function ChangeRequestDetailPage({
         </dl>
       </section>
 
-      {/* Base vs proposed */}
-      <section className="border-border bg-card rounded-lg border p-6">
-        <h2 className="mb-3 text-base font-semibold">{Q.changesHeading}</h2>
-        <SpecDiff
-          changes={cr.changes}
-          productTypeNames={productTypeNames}
-          caption={Q.changesCaption}
-        />
-      </section>
+      {/* Base vs proposed — 092 T051: streams behind a shimmer skeleton. */}
+      <Suspense fallback={<Skeleton className="h-48 w-full rounded-lg" />}>
+        <SpecDiffSection cr={cr} />
+      </Suspense>
 
       {isPending ? (
         <section className="border-border bg-card flex flex-col gap-6 rounded-lg border p-6">
