@@ -219,9 +219,9 @@ export function SubLane(props: SubLaneProps) {
   const laneOffer = useLaneDropOffer(props.state);
   const laneRing =
     laneOffer === "over"
-      ? "ring-2 ring-primary rounded-lg"
+      ? "ring-2 ring-primary rounded-lg bg-primary/[0.04] transition-all duration-150"
       : laneOffer === "offered"
-        ? "ring-1 ring-primary/40 rounded-lg"
+        ? "ring-1 ring-primary/40 rounded-lg bg-primary/[0.015] transition-all duration-200"
         : "";
 
   return (
@@ -232,6 +232,15 @@ export function SubLane(props: SubLaneProps) {
       className={`flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${laneRing}`}
     >
       <LaneHeader labelAr={label} count={cardIds.length} showCount={props.labelAr !== undefined} />
+      {laneOffer === "over" && (
+        <div className="mx-1.5 my-1 flex h-11 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-primary/70 bg-primary/10 px-2 text-xs font-bold text-primary shadow-xs animate-in fade-in zoom-in-95 duration-150">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="text-xs animate-bounce">↓</span>
+            <span>إفلات لدفع الطلب للمرحلة</span>
+            <span className="text-xs animate-bounce">↓</span>
+          </span>
+        </div>
+      )}
       {cardIds.length === 0 ? <EmptyLane labelAr={label} /> : <VirtualizedCardList {...props} cardIds={cardIds} />}
     </div>
   );
