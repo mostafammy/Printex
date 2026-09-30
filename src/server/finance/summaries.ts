@@ -8,7 +8,7 @@
 import { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { paginateQuery } from "~/server/pagination";
-import { getCurrentPrice } from "~/server/pricing";
+import { getCurrentPrices } from "~/server/pricing";
 import { readCreditCompensations } from "./ports";
 import { toDecimalString } from "./money";
 
@@ -77,8 +77,11 @@ export async function computeOrderSummary(orderId: string): Promise<OrderFinance
   const billable = order.workItems.filter((item) => item.state !== "CANCELLED");
   let total = new Prisma.Decimal(0);
   let pricingIncomplete = false;
+  // 092 T043: one batched pointer-resolution read instead of W serial
+  // status+history pairs — identical per-item semantics (FR-032, BC-003).
+  const priceById = await getCurrentPrices(billable.map((item) => item.id));
   for (const item of billable) {
-    const price = await getCurrentPrice(item.id);
+    const price = priceById.get(item.id) ?? null;
     if (!price) {
       pricingIncomplete = true;
       continue;

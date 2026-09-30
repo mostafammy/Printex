@@ -234,7 +234,7 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 **Goal**: verification evidence first; DDL only if shown missing; drift filed to 091 (plan S8, GATED)
 
-**Independent Test**: `db-verification.md` exists with answers (or recorded unreachable failure); if R1–R3 already present → zero index tasks execute. *Evidence-first note: unlike US1–US6, this story has no automated tests-first block — spec Test Expectations §1–10 cover code surfaces only; T035/T036 ARE the checks (they produce and assert the evidence artifact the Independent Test reads), so no separate gate-test task or renumbering is used.*
+**Independent Test**: `db-verification.md` exists with answers (or recorded unreachable failure); if R1–R3 already present → zero index tasks execute. _Evidence-first note: unlike US1–US6, this story has no automated tests-first block — spec Test Expectations §1–10 cover code surfaces only; T035/T036 ARE the checks (they produce and assert the evidence artifact the Independent Test reads), so no separate gate-test task or renumbering is used._
 
 - [x] T035 [US7] **Reconcile migration source of truth (repo evidence)** — create `specs/092-performance/db-verification.md`; document: `package.json` Prisma schema path + `prismaSchemaFolder`; which directory `migrate deploy` resolves; full inventory of `prisma/migrations/` (6) vs `prisma/schema/migrations/` (4) incl. where `WorkItem_state_idx`/`workitem_order_perf_indexes` live; 091's `0_baseline` plan and compose `migrate deploy` command; CI's `db push` path; conclude **which tree a production deploy actually consumes and what that implies for R1–R3/change-control tables** (spec DB-001(a), FR-027, investigation §6.10)
   - **Acceptance**: section (a) of DB-001 answered with file evidence
@@ -248,7 +248,7 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
   - **Acceptance**: AC-019; migration reviewed like any schema change; **skipped entirely if indexes exist**
   - **Tests**: `pnpm test` post-migration; drift check
   - **Deps**: T036 (**hard gate**)
-- [ ] T038* [US7] **Conditional — file migration-split drift to 091**: if T035/T036 show `migrate deploy` would miss tables/indexes living only in the inactive tree → record the finding in `db-verification.md` with a cross-reference issue/note against `specs/091-deploy-backup` (baseline fold); **no reconciliation code in 092** (spec FR-027, DB-004, AC-020)
+- [x] T038* [US7] **Conditional — file migration-split drift to 091**: if T035/T036 show `migrate deploy` would miss tables/indexes living only in the inactive tree → record the finding in `db-verification.md` with a cross-reference issue/note against `specs/091-deploy-backup` (baseline fold); **no reconciliation code in 092** (spec FR-027, DB-004, AC-020)
   - **Acceptance**: dependency documented; 092 contains no tree-rewrite
   - **Tests**: review gate
   - **Deps**: T035, T036
@@ -273,7 +273,7 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 - [x] T042 [P] **Remove dead navigation links** — `src/components/shell/IconRail.tsx:51-52` (`/orders`) and `:129` (`/settings`): delete the entries (routes don't exist; building them is product scope — spec Assumptions) (spec FR-031, AC-023)
   - **Tests**: static check (every rail `href` resolves to an existing route) + rail renders
   - **Deps**: none
-- [ ] T043* [P] **Batch finance price lookups (money-path gated)** — replace the serial `for … await getCurrentPrice` loops at `src/server/finance/summaries.ts:81`, `profitability.ts:73`, `payments.ts:202` with one `priceHistory.findMany({ where: { workItemId: { in: ids } } })` reduced to latest-per-item **iff** it reproduces `getCurrentPrice`/effective-dating semantics exactly; `payments.ts` variant must respect its `$transaction` read context; **abort and keep the loops if any doubt** and record the AC-024 waiver note in the PR evidence (spec FR-032, BC-003, AC-024)
+- [x] T043* [P] **Batch finance price lookups (money-path gated)** — replace the serial `for … await getCurrentPrice` loops at `src/server/finance/summaries.ts:81`, `profitability.ts:73`, `payments.ts:202` with one `priceHistory.findMany({ where: { workItemId: { in: ids } } })` reduced to latest-per-item **iff** it reproduces `getCurrentPrice`/effective-dating semantics exactly; `payments.ts` variant must respect its `$transaction` read context; **abort and keep the loops if any doubt** and record the AC-024 waiver note in the PR evidence (spec FR-032, BC-003, AC-024)
   - **Tests**: `pnpm test:pricing` green unmodified **before merge**; finance summaries tests
   - **Deps**: none; hard gate = pricing suite
 
@@ -281,8 +281,9 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 ## Phase 10: Verification & Regression (plan S10)
 
-- [ ] T044 Run the full gate: `pnpm check` (lint + tsc), `pnpm test` (no skipped/edited semantic tests), `pnpm test:pricing` if T043 shipped; re-run T002/T003/T011/T012/T017/T018/T023/T024/T027/T033 as a set; confirm AC-001…AC-025 each map to a green test or recorded manual check; spot-check negative constraints FC-003 / NB-005 / SEC-004 / SEC-005 / BC-004 (no `staleTimes`, prefetch untouched, no client authz, no new public route, no time-semantics change) (spec AC-025, Test Expectations §10)
-- [ ] T045 Record before/after evidence in the PR series: query counts per surface (shell, my-queue, order detail), overlay floor gone (DevTools pointerdown→unmount per investigation §21.5), poll-tick route executions = 0, board drop document loads = 0; update `PERFORMANCE_INVESTIGATION.md` §16/§18 with `resolved-by 092` pointers per rank (spec Rollout; PR-001…PR-008)
+- [x] T044 Run the full gate: `pnpm check` (lint + tsc), `pnpm test` (no skipped/edited semantic tests), `pnpm test:pricing` if T043 shipped; re-run T002/T003/T011/T012/T017/T018/T023/T024/T027/T033 as a set; confirm AC-001…AC-025 each map to a green test or recorded manual check; spot-check negative constraints FC-003 / NB-005 / SEC-004 / SEC-005 / BC-004 (no `staleTimes`, prefetch untouched, no client authz, no new public route, no time-semantics change) (spec AC-025, Test Expectations §10)
+  - **Implementation note (documented deviation)**: full `pnpm test` was skipped per explicit user directive ("don't run the full test suite"). Gate actually run: `pnpm check` exit 0; 78/78 across the 13 feature test targets; `pnpm test:pricing` 87/87 (baseline + post-T043); T044's named task set all green. Pre-existing shared-DB failures (42501 Expense grants, polluted paymentVoid/dailyCash fixtures) reproduce WITHOUT this feature's changes — recorded in PERFORMANCE_INVESTIGATION.md resolution banner, not regressions.
+- [x] T045 Record before/after evidence in the PR series: query counts per surface (shell, my-queue, order detail), overlay floor gone (DevTools pointerdown→unmount per investigation §21.5), poll-tick route executions = 0, board drop document loads = 0; update `PERFORMANCE_INVESTIGATION.md` §16/§18 with `resolved-by 092` pointers per rank (spec Rollout; PR-001…PR-008)
 - [ ] T046 [P] Documentation pass: `checklists/requirements.md` reviewed/complete; `LINEAR_PERFORMANCE_ISSUES.md` issue bodies posted/linked to the real Linear IDs (placeholders replaced); `db-verification.md` final; no production code outside the task list changed
 
 ---
