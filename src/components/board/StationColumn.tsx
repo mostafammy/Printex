@@ -154,7 +154,7 @@ function resolveDropStyle(dropState: DropVisual): {
 } {
   // .column-drop-over carries the lane-drop-pulse keyframes in ink.css.
   if (dropState === "over") {
-    return { cls: "column-drop-over ring-2 ring-primary border-transparent", over: true, dimmed: false };
+    return { cls: "column-drop-over ring-2 ring-primary border-transparent bg-primary/[0.04] shadow-lg", over: true, dimmed: false };
   }
   if (dropState === "offered") {
     return {
@@ -169,6 +169,23 @@ function resolveDropStyle(dropState: DropVisual): {
     return { cls: "opacity-40 grayscale-[40%] cursor-not-allowed", over: false, dimmed: true };
   }
   return { cls: "border-border/60", over: false, dimmed: false };
+}
+
+function DropHintPill({ labelAr }: { readonly labelAr: string }) {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-1 z-20 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
+      <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
+        <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary via-primary/95 to-primary px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-xl shadow-primary/30 ring-2 ring-primary/40 border border-white/20">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+          </span>
+          <span>دفع إلى {labelAr}</span>
+        </span>
+      </div>
+    </>
+  );
 }
 
 export function StationColumn(props: StationColumnProps) {
@@ -213,17 +230,7 @@ export function StationColumn(props: StationColumnProps) {
     >
       <ColumnHeader station={props.station} countLabel={countLabel} now={now} />
       {isDimmed && <BlockedBanner hint={props.blockedHint} />}
-      {isOver && (
-        <div className="pointer-events-none absolute inset-x-3 top-14 z-10 flex justify-center animate-in fade-in slide-in-from-top-2 duration-200">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1 text-xs font-bold text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/40">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-80" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-            </span>
-            <span>نقل إلى {props.station.labelAr}</span>
-          </span>
-        </div>
-      )}
+      {isOver && <DropHintPill labelAr={props.station.labelAr} />}
       <SubLaneList {...props} />
     </section>
   );
