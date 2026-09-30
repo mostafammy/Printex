@@ -38,6 +38,7 @@ export interface TimelineEntry {
   from: WorkItemState | null;
   to: WorkItemState;
   actorId: string;
+  actorName?: string;
   at: Date;
   reason?: string;
 }
@@ -308,7 +309,12 @@ export async function getOrderDetail(
     include: {
       customer: { select: { name: true } },
       workItems: {
-        include: { transitions: { orderBy: { at: "asc" } } },
+        include: {
+          transitions: {
+            include: { actor: { select: { name: true } } },
+            orderBy: { at: "asc" },
+          },
+        },
       },
     },
   });
@@ -320,6 +326,7 @@ export async function getOrderDetail(
         from: t.from,
         to: t.to,
         actorId: t.actorId,
+        actorName: t.actor?.name,
         at: t.at,
         reason: t.reason ?? undefined,
       })),

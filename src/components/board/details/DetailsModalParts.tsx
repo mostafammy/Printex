@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * DetailsModalParts: Subcomponents and layout shells for the WorkItemDetailsModal.
+ * World-class Apple-grade DetailsModalParts: Subcomponents and layout shells for the WorkItemDetailsModal.
  * (specs/017-press-floor-board)
  */
 
-import React from "react";
+import React, { useState } from "react";
+import { Check, Copy } from "lucide-react";
 import type { BoardCard, WorkItemFullDetail } from "~/lib/board/types";
 import { DetailsTabBar, type DetailTabKey } from "./DetailsTabBar";
 import { DetailsSpecsTab } from "./DetailsSpecsTab";
@@ -37,14 +38,14 @@ export function ModalShell({
       aria-modal="true"
       aria-label={`تفاصيل بطاقة العمل #${orderNumber}`}
       dir="rtl"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 backdrop-blur-xl animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         ref={dialogRef}
-        className="relative flex h-full max-h-[92vh] w-full max-w-2xl md:max-w-3xl md:w-[720px] flex-col overflow-hidden rounded-2xl border border-border/80 bg-card text-card-foreground shadow-2xl transition-all sm:max-h-[85vh]"
+        className="relative flex h-full max-h-[94vh] w-full max-w-2xl md:max-w-3xl lg:max-w-4xl md:w-[780px] flex-col overflow-hidden rounded-3xl sm:rounded-[28px] border border-border/80 bg-card/95 text-card-foreground shadow-[0_25px_80px_rgba(0,0,0,0.35),0_0_0_1px_rgba(255,255,255,0.08)] backdrop-blur-2xl transition-all sm:max-h-[88vh] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/30 before:to-transparent before:pointer-events-none"
         data-station={stationKey}
       >
         {children}
@@ -79,15 +80,38 @@ export function DetailsTabContent({
 }
 
 export function DetailsFooter({ cardId, onClose }: { readonly cardId: string; readonly onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyId = () => {
+    try {
+      void navigator.clipboard.writeText(cardId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   return (
-    <div className="flex shrink-0 items-center justify-between border-t border-border/70 bg-muted/30 p-3 sm:px-5">
-      <div className="font-mono text-2xs text-muted-foreground">ID: {cardId}</div>
+    <div className="flex shrink-0 items-center justify-between border-t border-border/70 bg-muted/30 px-4 sm:px-6 py-3 backdrop-blur-md">
+      <button
+        type="button"
+        onClick={handleCopyId}
+        className="group inline-flex items-center gap-1.5 rounded-xl border border-border/50 bg-background/60 px-3 py-1 text-2xs font-mono text-muted-foreground transition-all hover:bg-muted hover:text-foreground active:scale-95"
+        title="نسخ معرف صنف العمل"
+      >
+        <span>ID: {cardId}</span>
+        {copied ? (
+          <Check className="h-3 w-3 text-emerald-500" />
+        ) : (
+          <Copy className="h-3 w-3 opacity-60 group-hover:opacity-100" />
+        )}
+      </button>
+
       <button
         type="button"
         onClick={onClose}
-        className="rounded-lg bg-secondary px-4 py-1.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+        className="inline-flex items-center gap-2 rounded-xl bg-secondary/80 px-4 py-1.5 text-xs font-bold text-secondary-foreground shadow-2xs backdrop-blur-sm transition-all hover:bg-secondary active:scale-95"
       >
-        إغلاق (Esc)
+        <span>إغلاق (Esc)</span>
       </button>
     </div>
   );
@@ -119,7 +143,7 @@ export function ModalBody({
         reworkCount={reworkCount}
         showReworkTab={reworkCount > 0}
       />
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <DetailsTabContent
           activeTab={activeTab}
           card={card}
