@@ -4,10 +4,12 @@
  */
 
 import { EdgeCatalog, type EdgeHandler } from "../edgeCatalog";
+import { approvedHandoffEdges } from "./approvedHandoff";
 import { cancelEdges } from "./cancel";
 import { collectionEdges } from "./collection";
 import { designEdges } from "./design";
 import { designHandoffEdges } from "./designHandoff";
+import { adminSendBackEdges } from "./adminSendBack";
 import { pricingEdges } from "./pricing";
 import { productionEdges } from "./production";
 import { receptionEdges } from "./reception";
@@ -18,7 +20,9 @@ export const ALL_EDGE_HANDLERS: readonly EdgeHandler[] = [
   ...receptionEdges,
   ...designEdges,
   ...designHandoffEdges,
+  ...adminSendBackEdges,
   ...reviewEdges,
+  ...approvedHandoffEdges,
   ...productionEdges,
   ...systemEdges,
   ...pricingEdges,
@@ -41,10 +45,12 @@ export function createDefaultEdgeCatalog(): EdgeCatalog {
 export const edgeCatalog: EdgeCatalog = createDefaultEdgeCatalog();
 
 export {
+  approvedHandoffEdges,
   cancelEdges,
   collectionEdges,
   designEdges,
   designHandoffEdges,
+  adminSendBackEdges,
   pricingEdges,
   productionEdges,
   receptionEdges,
