@@ -244,7 +244,7 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
   - **Acceptance**: AC-019 precondition satisfied (evidence or explicit unreachable record)
   - **Tests**: documentation review gate
   - **Deps**: T035
-- [ ] T037* [US7] **Conditional — apply verified index changes**: only if T036 shows R1 (`WorkItem_state_createdAt_id_idx`), R2 (`Notification_userId_archivedAt_createdAt_idx`), R3 (`audit_event_entityId_action_createdAt_idx`) missing and/or `FileObject_sha256_idx` still present as a duplicate → author **one** Prisma migration in the tree T035 proved authoritative (never `db push` over prod), with write-cost notes from spec DB-005 and a drop-index companion plan; run the suite against the migrated test DB (spec FR-026, DB-003)
+- [x] T037* [US7] **Conditional — apply verified index changes**: only if T036 shows R1 (`WorkItem_state_createdAt_id_idx`), R2 (`Notification_userId_archivedAt_createdAt_idx`), R3 (`audit_event_entityId_action_createdAt_idx`) missing and/or `FileObject_sha256_idx` still present as a duplicate → author **one** Prisma migration in the tree T035 proved authoritative (never `db push` over prod), with write-cost notes from spec DB-005 and a drop-index companion plan; run the suite against the migrated test DB (spec FR-026, DB-003)
   - **Acceptance**: AC-019; migration reviewed like any schema change; **skipped entirely if indexes exist**
   - **Tests**: `pnpm test` post-migration; drift check
   - **Deps**: T036 (**hard gate**)

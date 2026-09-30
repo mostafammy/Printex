@@ -216,3 +216,20 @@ No `EXPLAIN ANALYZE` was run (per T036 instruction: `EXPLAIN` without ANALYZE is
 - Supporting: `WorkItem_state_idx` **present**; change-control tables present; `migrate status` **succeeded, exit 0, "Database schema is up to date!"**; **no access errors** on any of the three `.env` URLs.
 
 **Consequences for T037/T038:** on this verified (test/dev) database R1–R3 are missing and the duplicate `FileObject_sha256_idx` exists, which would make T037's conditional DDL *candidate* — but T037 remains **gated**: (1) confirm the production target's reachability and re-run Part 2 there if the production env differs from `.env`; (2) apply any index migration **only in `prisma/schema/migrations`** (the tree Part 1 proved authoritative) with DB-005 write-cost notes; (3) the migration-tree/baseline drift observation in Part 1(d) is a **091 dependency** (DB-004/FR-027) — no tree rewrite in 092.
+
+---
+
+## Part 3 — T037 applied index migration · 2026-09-30
+
+Conditional gate open per VERDICT above (R1/R2/R3 MISSING, `FileObject_sha256_idx` duplicate PRESENT on verified test/dev DB). One migration authored in the authoritative tree (Part 1(c)):
+
+- **Migration dir**: `prisma/schema/migrations/20260930090000_nav_perf_indexes/` (`migration.sql`)
+- Contents: `CREATE INDEX IF NOT EXISTS "WorkItem_state_createdAt_id_idx" ON "WorkItem" ("state", "createdAt", "id")`; `CREATE INDEX IF NOT EXISTS "Notification_userId_archivedAt_createdAt_idx" ON "notification" ("userId", "archivedAt", "createdAt" DESC)`; `CREATE INDEX IF NOT EXISTS "audit_event_entityId_action_createdAt_idx" ON "audit_event" ("entityId", "action", "createdAt")`; `DROP INDEX IF EXISTS "FileObject_sha256_idx"` — header comment cites 092 T037 + this file (2026-09-30) + DB-005 write-cost notes; replay-safe guards.
+- **Deploy**: `prisma migrate deploy` via CLI with `DATABASE_URL`/`DIRECT_URL` overridden to `DATABASE_URL_TEST` (same instance/database as proven in Part 2 header) — `_prisma_migrations` row: `20260930090000_nav_perf_indexes` finished `2026-09-30T06:25:04.604Z`; post-deploy `migrate status` → `5 migrations found` / `Database schema is up to date!` (exit 0).
+- **Post-DDL `pg_indexes` confirmation**:
+  - `WorkItem | WorkItem_state_createdAt_id_idx | CREATE INDEX "WorkItem_state_createdAt_id_idx" ON public."WorkItem" USING btree (state, "createdAt", id)`
+  - `notification | Notification_userId_archivedAt_createdAt_idx | CREATE INDEX "Notification_userId_archivedAt_createdAt_idx" ON public.notification USING btree ("userId", "archivedAt", "createdAt" DESC)`
+  - `audit_event | audit_event_entityId_action_createdAt_idx | CREATE INDEX "audit_event_entityId_action_createdAt_idx" ON public.audit_event USING btree ("entityId", action, "createdAt")`
+  - `FileObject_sha256_key` retained (unique); `FileObject_sha256_idx` absent (0 rows).
+- **Checks**: `pnpm exec vitest run tests/integration/shell-layout-queries.test.ts` → 1 file / 3 tests passed (exit 0). `pnpm exec tsc --noEmit` → exit 2 with 6 errors all in `tests/integration/phaseDurationsBatch.test.ts` (pre-existing, untracked file from another workstream; no TS touched by T037 — only the migration dir + this file).
+- **Notes**: identifiers verified against `prisma/schema/*.prisma` (`WorkItem`/`FileObject` unmapped, `Notification` → `@@map("notification")`, `AuditEvent` → `@@map("audit_event")`); R2 index name keeps spec-mandated `Notification_…` casing per tasks.md/db-verification VERDICT while the table is `"notification"`. `files.prisma:61 @@index([sha256])` still declares the dropped index — future `db push` would recreate it; removing the schema declaration is a schema-model change out of T037 scope (flagged for 091 baseline fold / follow-up).
