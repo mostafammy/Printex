@@ -74,7 +74,7 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
   - **Acceptance**: profile paints; tab streams; no stale data in fallback
   - **Tests**: part of T003
   - **Deps**: none
-- [ ] T010* [US1] **Optional — non-blocking route progress indicator** (product sign-off required, NOT part of acceptance): if approved, add a thin top-edge progress bar in `src/components/loading/nav-progress-bar.tsx` driven by real navigation state, ≥2 s show-delay, `pointer-events: none`, never full-screen (spec FR-004)
+- [x] T010* [US1] **Optional — non-blocking route progress indicator** (product sign-off required, NOT part of acceptance): if approved, add a thin top-edge progress bar in `src/components/loading/nav-progress-bar.tsx` driven by real navigation state, ≥2 s show-delay, `pointer-events: none`, never full-screen (spec FR-004)
   - **Acceptance**: cannot block input; absent entirely if sign-off withheld
   - **Tests**: component test asserting `pointer-events: none` + delayed show
   - **Deps**: T004 (must land after overlay removal so no two indicators coexist)

@@ -1363,3 +1363,56 @@
     background-image: none;
   }
 }
+
+/* ── Route progress indicator (092 T010, spec FR-004) ──────────────────────
+   A 2px top-edge bar for navigations slower than SHOW_DELAY_MS. It is
+   decorative feedback only — aria-hidden, pointer-events: none, never
+   full-screen. The fill is an indeterminate sweep; under
+   prefers-reduced-motion it collapses to a static accent so no motion is
+   shown. */
+.nav-progress {
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+.nav-progress[data-visible="true"] {
+  opacity: 1;
+}
+
+.nav-progress__fill {
+  /* Visible in both themes: a solid primary base with a lighter glint band
+     sweeping across it — a transparent-ended gradient alone disappears on a
+     dark background. */
+  background-color: var(--primary);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, white 55%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: nav-progress-sweep 1.1s linear infinite;
+}
+
+@keyframes nav-progress-sweep {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress {
+    transition: none;
+  }
+
+  .nav-progress__fill {
+    animation: none;
+    background-image: none;
+    background-color: var(--primary);
+    opacity: 0.6;
+  }
+}
