@@ -139,6 +139,150 @@ export async function getEligibleDesigners(actor: Actor, workItemId: string): Pr
   }));
 }
 
+/**
+ * Batched sibling of {@link getEligibleDesigners} — 092-performance FR-014,
+ * contracts/query-batching.md §4, research.md Decision "Designer eligibility
+ * is five set-based reads".
+ *
+ * Same per-work-item output (including suggestion output) as repeated
+ * single-item calls, produced by five set-based reads constant in the number
+ * of work items (W) and designers (D):
+ *   1. workItem.findMany (IN over the requested ids) — validates parity
+ *      (WORK_ITEM_NOT_FOUND / NOT_ASSIGNABLE, same abort semantics),
+ *   2. findActiveDesignWorkHolders() — shared candidate base,
+ *   3. workItem.groupBy — active (non-terminal) count per assignee,
+ *   4. workItem.groupBy — past jobs per assignee, one query per distinct
+ *      customer (the order page passes one order ⇒ one customer ⇒ 1 query),
+ *   5. $queryRaw SELECT DISTINCT ON — latest ASSIGNED transition per designer
+ *      (Prisma groupBy/distinct cannot express it).
+ *
+ * `authorize()` runs once, in-memory, before any query; an empty id list
+ * returns an empty Map with zero queries (contract §4.3).
+ */
+export async function getEligibleDesignersBatch(
+  actor: Actor,
+  workItemIds: string[],
+): Promise<Map<string, EligibleDesigner[]>> {
+  authorize(actor, "workitem.assign_designer");
+
+  const eligibleByWorkItem = new Map<string, EligibleDesigner[]>();
+  if (workItemIds.length === 0) {
+    return eligibleByWorkItem;
+  }
+
+  // Reads 1 + 2 — concurrent; both feed everything below.
+  const [workItems, designers] = await Promise.all([
+    db.workItem.findMany({
+      where: { id: { in: workItemIds } },
+      select: { id: true, state: true, order: { select: { customerId: true } } },
+    }),
+    findActiveDesignWorkHolders(),
+  ]);
+
+  // Read #1 parity (research table): missing id → WORK_ITEM_NOT_FOUND,
+  // non-assignable → NOT_ASSIGNABLE — first bad id in input order wins,
+  // matching the sequential loop's abort semantics.
+  const itemById = new Map(workItems.map((w) => [w.id, w]));
+  for (const id of workItemIds) {
+    const item = itemById.get(id);
+    if (!item) {
+      throw new DomainDesignerError("WORK_ITEM_NOT_FOUND", "Work item not found");
+    }
+    if (!ASSIGNABLE_STATES.has(item.state)) {
+      throw new DomainDesignerError(
+        "NOT_ASSIGNABLE",
+        `Work item state ${item.state} is not assignable`,
+      );
+    }
+  }
+
+  if (designers.length === 0) {
+    // Identical output to the single path over an empty candidate list.
+    for (const item of workItems) {
+      eligibleByWorkItem.set(item.id, []);
+    }
+    return eligibleByWorkItem;
+  }
+
+  const designerIds = designers.map((d) => d.id);
+  const customerIds = [...new Set(workItems.map((w) => w.order.customerId))];
+
+  // Reads 3 + 4 + 5 — one Promise.all over the full id sets (nothing
+  // per-item, nothing per-designer). They cannot share reads 1–2's
+  // Promise.all: their predicates need designerIds (read 2) and customerIds
+  // (read 1) first. Read 4 runs once per distinct customer (the page always
+  // passes a single order ⇒ single customer).
+  const [activeCountRows, pastCountRowsByCustomer, lastAssignedRows] = await Promise.all([
+    db.workItem.groupBy({
+      by: ["assigneeId"],
+      where: { assigneeId: { in: designerIds }, state: { notIn: [...TERMINAL_STATES] } },
+      _count: { _all: true },
+    }),
+    Promise.all(
+      customerIds.map((customerId) =>
+        db.workItem.groupBy({
+          by: ["assigneeId"],
+          where: {
+            assigneeId: { in: designerIds },
+            state: { in: ["DELIVERED", "COMPLETED"] },
+            order: { customerId },
+          },
+          _count: { _all: true },
+        }),
+      ),
+    ),
+    // Read #5 — same predicate as the single path's
+    // findFirst({ to: "ASSIGNED", workItem: { assigneeId } }, orderBy: at desc).
+    db.$queryRaw<Array<{ assigneeId: string; at: Date }>>`
+      SELECT DISTINCT ON (wi."assigneeId") wi."assigneeId", t."at"
+      FROM "WorkItemTransition" t
+      JOIN "WorkItem" wi ON wi."id" = t."workItemId"
+      WHERE t."to" = 'ASSIGNED' AND wi."assigneeId" = ANY(${designerIds})
+      ORDER BY wi."assigneeId", t."at" DESC`,
+  ]);
+
+  const activeByAssignee = new Map(activeCountRows.map((r) => [r.assigneeId, r._count._all]));
+  const lastAssignedByAssignee = new Map(lastAssignedRows.map((r) => [r.assigneeId, r.at]));
+
+  // Pure-JS assembly (research): one candidate base per customer — with the
+  // page's single order every item's candidates are identical, so each
+  // suggestion matches what repeated single-path calls compute.
+  const eligibleByCustomer = new Map<string, EligibleDesigner[]>();
+  for (const [i, customerId] of customerIds.entries()) {
+    const pastByAssignee = new Map(
+      (pastCountRowsByCustomer[i] ?? []).map((r) => [r.assigneeId, r._count._all]),
+    );
+    const candidates: Array<DesignerLoadCandidate & { pastJobsForCustomer: number }> =
+      designers.map((designer) => ({
+        userId: designer.id,
+        name: designer.name,
+        activeWorkItemCount: activeByAssignee.get(designer.id) ?? 0,
+        lastAssignedAt: lastAssignedByAssignee.get(designer.id) ?? null,
+        pastJobsForCustomer: pastByAssignee.get(designer.id) ?? 0,
+      }));
+
+    const suggestedId = suggestDesigner(candidates);
+    eligibleByCustomer.set(
+      customerId,
+      candidates.map((candidate) => ({
+        userId: candidate.userId,
+        name: candidate.name,
+        activeWorkItemCount: candidate.activeWorkItemCount,
+        queueSize: candidate.activeWorkItemCount,
+        estimatedWaitMinutes:
+          candidate.activeWorkItemCount * ESTIMATED_MINUTES_PER_QUEUED_ITEM,
+        pastJobsForCustomer: candidate.pastJobsForCustomer,
+        isSuggested: candidate.userId === suggestedId,
+      })),
+    );
+  }
+
+  for (const item of workItems) {
+    eligibleByWorkItem.set(item.id, eligibleByCustomer.get(item.order.customerId) ?? []);
+  }
+  return eligibleByWorkItem;
+}
+
 export async function assignDesigner(
   actor: Actor,
   workItemId: string,

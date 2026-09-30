@@ -125,24 +125,24 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 ### Tests for User Story 3 (write FIRST)
 
-- [ ] T017 [US3] Contract test `tests/contract/designers/eligibilityBatch.test.ts`: `getEligibleDesignersBatch(actor, ids)` output per work item **deep-equals** repeated `getEligibleDesigners(actor, id)` on fixtures (including empty id list → `{}` with **zero** queries; unauthorized actor → same `FORBIDDEN` as single path; non-assignable state → same error/absent behavior as today) — **fails until T019**
-- [ ] T018 [US3] Structure + query test `tests/integration/orderDetailOrchestration.test.ts`: source assertion — no `await` inside a loop over `detail.workItems` in `src/app/(shell)/orders/[orderId]/page.tsx`; query-capture on a 5-item × 4-designer fixture — creation-event read overlaps `getOrderDetail` (not sequenced after), total eligibility query count **≤ 10** and constant on a second larger fixture (spec Clarifications 2026-09-29; fails the 15-query per-item fan-out) — **fails until T020/T021**
+- [x] T017 [US3] Contract test `tests/contract/designers/eligibilityBatch.test.ts`: `getEligibleDesignersBatch(actor, ids)` output per work item **deep-equals** repeated `getEligibleDesigners(actor, id)` on fixtures (including empty id list → `{}` with **zero** queries; unauthorized actor → same `FORBIDDEN` as single path; non-assignable state → same error/absent behavior as today) — **fails until T019**
+- [x] T018 [US3] Structure + query test `tests/integration/orderDetailOrchestration.test.ts`: source assertion — no `await` inside a loop over `detail.workItems` in `src/app/(shell)/orders/[orderId]/page.tsx`; query-capture on a 5-item × 4-designer fixture — creation-event read overlaps `getOrderDetail` (not sequenced after), total eligibility query count **≤ 10** and constant on a second larger fixture (spec Clarifications 2026-09-29; fails the 15-query per-item fan-out) — **fails until T020/T021**
 
 ### Implementation for User Story 3
 
-- [ ] T019 [US3] **Batch eligible-designer reads** — add `getEligibleDesignersBatch(actor, workItemIds)` to `src/server/designers/assignment.ts` (keep single-item export): exactly **5 reads in one `Promise.all`** (research Decision "Designer eligibility is five set-based reads"): (1) `workItem.findMany({ where: { id: { in: ids } }, select: { id, state, order.customerId } })`, (2) `findActiveDesignWorkHolders()`, (3–4) `workItem.groupBy` for non-terminal counts and past-jobs-per-customer, (5) one `$queryRaw` `SELECT DISTINCT ON (…)` read for the latest `ASSIGNED` transition per designer (Prisma `groupBy`/`distinct` cannot express it); return `Map<workItemId, EligibleDesigner[]>`; then run the existing `suggestDesigner`/per-item assembly logic on shared bases; `authorize(actor, "workitem.assign_designer")` once, server-side (spec FR-014, DF-002, contract §5/§4.1)
+- [x] T019 [US3] **Batch eligible-designer reads** — add `getEligibleDesignersBatch(actor, workItemIds)` to `src/server/designers/assignment.ts` (keep single-item export): exactly **5 reads in one `Promise.all`** (research Decision "Designer eligibility is five set-based reads"): (1) `workItem.findMany({ where: { id: { in: ids } }, select: { id, state, order.customerId } })`, (2) `findActiveDesignWorkHolders()`, (3–4) `workItem.groupBy` for non-terminal counts and past-jobs-per-customer, (5) one `$queryRaw` `SELECT DISTINCT ON (…)` read for the latest `ASSIGNED` transition per designer (Prisma `groupBy`/`distinct` cannot express it); return `Map<workItemId, EligibleDesigner[]>`; then run the existing `suggestDesigner`/per-item assembly logic on shared bases; `authorize(actor, "workitem.assign_designer")` once, server-side (spec FR-014, DF-002, contract §5/§4.1)
   - **Acceptance**: AC-009; T017 equivalence; identical suggestion output
   - **Tests**: T017
   - **Deps**: T001 (query assertions), none code-wise
-- [ ] T020 [US3] **Parallelize independent order-detail queries** — in `src/app/(shell)/orders/[orderId]/page.tsx:452-537`: `Promise.all([getOrderDetail, creationEvent])` first; then `Promise.all([assigneeRows, reworkCounts])` (both need only IDs); join `departments` and `findPendingChangeRequestIds` where independent of each other; preserve every genuine dependency (detail → IDs) (spec FR-013, PR-004)
+- [x] T020 [US3] **Parallelize independent order-detail queries** — in `src/app/(shell)/orders/[orderId]/page.tsx:452-537`: `Promise.all([getOrderDetail, creationEvent])` first; then `Promise.all([assigneeRows, reworkCounts])` (both need only IDs); join `departments` and `findPendingChangeRequestIds` where independent of each other; preserve every genuine dependency (detail → IDs) (spec FR-013, PR-004)
   - **Acceptance**: AC-008; no behavioral change (reads only)
   - **Tests**: T018; existing order suite
   - **Deps**: none (parallel with T019)
-- [ ] T021 [US3] Replace the `for … await getEligibleDesigners` loop (:501-511) with one `getEligibleDesignersBatch` call over assignable work items; skip entirely when `!canAssignDesigner` or no assignable items (spec FR-014)
+- [x] T021 [US3] Replace the `for … await getEligibleDesigners` loop (:501-511) with one `getEligibleDesignersBatch` call over assignable work items; skip entirely when `!canAssignDesigner` or no assignable items (spec FR-014)
   - **Acceptance**: AC-009 (≤ 10 queries on the 5×4 fixture, constant as W/D grow); assign dialog data identical
   - **Tests**: T017, T018
   - **Deps**: T019, T020
-- [ ] T022 [US3] Run the **unmodified** order/collection/change-control suites; confirm zero semantic test edits were needed; record before/after query counts in the PR (spec AC-010, PR-004)
+- [x] T022 [US3] Run the **unmodified** order/collection/change-control suites; confirm zero semantic test edits were needed; record before/after query counts in the PR (spec AC-010, PR-004)
   - **Acceptance**: `pnpm test` green; PR contains the numbers
   - **Deps**: T020, T021
 

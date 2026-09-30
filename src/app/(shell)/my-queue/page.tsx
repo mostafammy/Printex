@@ -10,9 +10,11 @@ import {
   Flame,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
-import { getMyQueuePage, getMyQueueStats } from "~/server/designers";
-// US4 batch loader (FR-016) — not yet re-exported from the designers barrel.
-import { phaseDurationsByIds } from "~/server/designers/timer";
+import {
+  getMyQueuePage,
+  getMyQueueStats,
+  phaseDurationsByIds,
+} from "~/server/designers";
 import { MyQueueTable } from "./MyQueueTable";
 import ar from "~/messages/ar.json";
 

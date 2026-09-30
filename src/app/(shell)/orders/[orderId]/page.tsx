@@ -39,7 +39,12 @@ import {
   DomainOrderError,
   WorkItemTransitionError,
 } from "~/server/orders";
-import { getEligibleDesigners, assignDesigner, DomainDesignerError } from "~/server/designers";
+// US3 / FR-014 (T021): batched eligibility loader (092-performance).
+import {
+  assignDesigner,
+  DomainDesignerError,
+  getEligibleDesignersBatch,
+} from "~/server/designers";
 import type { EligibleDesigner } from "~/server/designers";
 import { OrderFinancePanel } from "~/components/finance/order-finance-panel";
 import { Button } from "~/components/ui/button";
@@ -452,12 +457,16 @@ export default async function OrderDetailPage({
 }) {
   const [{ orderId }, specDiffParams] = await Promise.all([params, searchParams]);
   const actor = await getActor();
-  const detail = await getOrderDetail(actor, orderId);
 
-  const creationEvent = await db.auditEvent.findFirst({
-    where: { entityId: orderId, action: "order.created" },
-    orderBy: { createdAt: "asc" },
-  });
+  // US3 / FR-013 (T020): the creation-event read shares no data dependency
+  // with getOrderDetail — run both concurrently instead of chaining.
+  const [detail, creationEvent] = await Promise.all([
+    getOrderDetail(actor, orderId),
+    db.auditEvent.findFirst({
+      where: { entityId: orderId, action: "order.created" },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
   const isQuickCreate =
     typeof creationEvent?.after === "object" &&
     creationEvent.after !== null &&
@@ -469,45 +478,49 @@ export default async function OrderDetailPage({
   const canAssignDesigner = actor.permissions.has("workitem.assign_designer");
 
   const workItemIds = detail.workItems.map((wi) => wi.id);
-  const assigneeRows = await db.workItem.findMany({
-    where: { id: { in: workItemIds } },
-    select: {
-      id: true,
-      assigneeId: true,
-      assignee: { select: { name: true } },
-      requiresDesign: true,
-      departmentId: true,
-      productTypeId: true,
-      description: true,
-      quantity: true,
-      widthValue: true,
-      heightValue: true,
-      dimensionUnit: true,
-      material: true,
-      finishNotes: true,
-      productType: { select: { defaultDepartmentId: true } },
-      currentSpecVersion: { select: { version: true } },
-    },
-  });
+  // US3 / FR-014 (T021): one batched set-based read over every assignable
+  // item — replaces the per-item `for … await getEligibleDesigners` loop.
+  const assignableWorkItemIds = detail.workItems
+    .filter((wi) => DESIGNER_ASSIGNABLE_STATES.has(wi.state))
+    .map((wi) => wi.id);
+
+  // US3 / FR-013 (T020): both row reads need only IDs from `detail`; the
+  // eligibility batch depends on `detail` + actor alone, so it joins them.
+  const [assigneeRows, reworkCounts, eligibleDesignersByWorkItem] = await Promise.all([
+    db.workItem.findMany({
+      where: { id: { in: workItemIds } },
+      select: {
+        id: true,
+        assigneeId: true,
+        assignee: { select: { name: true } },
+        requiresDesign: true,
+        departmentId: true,
+        productTypeId: true,
+        description: true,
+        quantity: true,
+        widthValue: true,
+        heightValue: true,
+        dimensionUnit: true,
+        material: true,
+        finishNotes: true,
+        productType: { select: { defaultDepartmentId: true } },
+        currentSpecVersion: { select: { version: true } },
+      },
+    }),
+    // US5 (013, T036): rework count per Work Item
+    db.return.groupBy({
+      by: ["workItemId"],
+      where: { workItemId: { in: workItemIds } },
+      _count: { _all: true },
+    }),
+    canAssignDesigner && assignableWorkItemIds.length > 0
+      ? getEligibleDesignersBatch(actor, assignableWorkItemIds)
+      : Promise.resolve(new Map<string, EligibleDesigner[]>()),
+  ]);
+
   const assigneeById = new Map(assigneeRows.map((row) => [row.id, row]));
   const workItemExtraById = new Map(assigneeRows.map((r) => [r.id, r]));
-
-  // US5 (013, T036): rework count per Work Item
-  const reworkCounts = await db.return.groupBy({
-    by: ["workItemId"],
-    where: { workItemId: { in: workItemIds } },
-    _count: { _all: true },
-  });
   const reworkCountByWorkItem = new Map(reworkCounts.map((r) => [r.workItemId, r._count._all]));
-
-  const eligibleDesignersByWorkItem = new Map<string, EligibleDesigner[]>();
-  if (canAssignDesigner) {
-    for (const wi of detail.workItems) {
-      if (DESIGNER_ASSIGNABLE_STATES.has(wi.state)) {
-        eligibleDesignersByWorkItem.set(wi.id, await getEligibleDesigners(actor, wi.id));
-      }
-    }
-  }
 
   const canEditSpec = actor.permissions.has("order.edit");
   const needsDepartments =
@@ -520,22 +533,25 @@ export default async function OrderDetailPage({
       return choice === "REQUIRED" && !effectiveDept;
     });
 
-  const departments = needsDepartments
-    ? await db.department.findMany({
-        select: { id: true, name: true },
-      })
-    : undefined;
-
-  // 016 US3: open change request per IN_PRODUCTION Work Item (withdraw action).
-  //     One query for all of them, not one per Work Item.
-  const pendingChangeRequestByWorkItem = await findPendingChangeRequestIds(
-    db,
-    canEditSpec
-      ? detail.workItems
-          .filter((wi) => specEditPolicy(wi.state) === "CHANGE_REQUEST")
-          .map((wi) => wi.id)
-      : [],
-  );
+  // US3 / FR-013 (T020): independent of each other — pending CRs need only
+  // `detail`, departments only `needsDepartments` — so run them together.
+  const [departments, pendingChangeRequestByWorkItem] = await Promise.all([
+    needsDepartments
+      ? db.department.findMany({
+          select: { id: true, name: true },
+        })
+      : Promise.resolve(undefined),
+    // 016 US3: open change request per IN_PRODUCTION Work Item (withdraw action).
+    //     One query for all of them, not one per Work Item.
+    findPendingChangeRequestIds(
+      db,
+      canEditSpec
+        ? detail.workItems
+            .filter((wi) => specEditPolicy(wi.state) === "CHANGE_REQUEST")
+            .map((wi) => wi.id)
+        : [],
+    ),
+  ]);
 
   const activeStepIdx = getActiveStepIndex(detail.order.status, detail.workItems);
   const customerInitials = (detail.order.customerName || "ع")
