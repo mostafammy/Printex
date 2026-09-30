@@ -32,10 +32,10 @@ export interface DndBridgeProps {
 }
 
 const dropAnimation: DropAnimation = {
-  duration: 300,
-  easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+  duration: 260,
+  easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
   sideEffects: defaultDropAnimationSideEffects({
-    styles: { active: { opacity: "0.35" } },
+    styles: { active: { opacity: "0.45" } },
   }),
 };
 
@@ -60,9 +60,17 @@ function CardDragOverlay({ card }: { readonly card: BoardCard | null }) {
           stack; the keyframes and their reduced-motion kill-switch live in
           ink.css. The drop animation then flies it back into the lane. */}
       <div
-        className={`drag-overlay-enter pointer-events-none cursor-grabbing opacity-90 shadow-2xl${traveling ? " drag-overlay-travel" : ""}`}
+        className={`drag-overlay-enter relative pointer-events-none cursor-grabbing opacity-95 shadow-2xl${traveling ? " drag-overlay-travel" : ""}`}
       >
         <JobTicket card={card} />
+        {traveling && (
+          <div className="absolute -bottom-3 inset-x-0 flex justify-center animate-in fade-in zoom-in-95 duration-150">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/95 backdrop-blur-md px-3 py-0.5 text-[11px] font-bold text-primary-foreground shadow-lg shadow-primary/40 ring-2 ring-background border border-white/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+              <span>دفع إلى المرحلة التالية ←</span>
+            </span>
+          </div>
+        )}
       </div>
     </DragOverlay>
   );
