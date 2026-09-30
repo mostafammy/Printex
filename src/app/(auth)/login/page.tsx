@@ -20,7 +20,11 @@ const STRINGS = ar.ui;
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/";
+  // Default to /board so post-login skips the "/" hop (getSession +
+  // redirect("/board") — a second RSC round-trip on the heaviest page;
+  // investigation §7.6/§18.13). An explicit ?callbackUrl= still wins;
+  // direct visits to "/" (app/page.tsx) are unchanged.
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/board";
   const envConfig = getAuthEnvironmentConfig();
 
   const [username, setUsername] = useState("");
