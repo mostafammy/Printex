@@ -158,16 +158,16 @@ Single project (per plan.md): `src/`, `tests/`, `prisma/` at repository root.
 
 ### Tests for User Story 4 (write FIRST)
 
-- [ ] T023 [US4] Equivalence + scoping tests `tests/integration/phaseDurationsBatch.test.ts`: table of fixtures (queue-only, active-only, rework-restarted, `DESIGN_COMPLETED` with/without start, no segments → `null` total) — batch result **deep-equals** `phaseDurations` per row; two-user leakage case — passing only user A's IDs returns only A's rows and the `where` never contains B's ids (use T001 to assert); query count for the batch = 2 regardless of id-list length — **fails until T025**
-- [ ] T024 [US4] My-queue page query test in `tests/integration/phaseDurationsBatch.test.ts` (alongside T023, per quickstart): `captureQueries` around the page's data section at pageSize 1 vs 10 → duration-related query count identical — **fails until T026**
+- [x] T023 [US4] Equivalence + scoping tests `tests/integration/phaseDurationsBatch.test.ts`: table of fixtures (queue-only, active-only, rework-restarted, `DESIGN_COMPLETED` with/without start, no segments → `null` total) — batch result **deep-equals** `phaseDurations` per row; two-user leakage case — passing only user A's IDs returns only A's rows and the `where` never contains B's ids (use T001 to assert); query count for the batch = 2 regardless of id-list length — **fails until T025**
+- [x] T024 [US4] My-queue page query test in `tests/integration/phaseDurationsBatch.test.ts` (alongside T023, per quickstart): `captureQueries` around the page's data section at pageSize 1 vs 10 → duration-related query count identical — **fails until T026**
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] **Batch my-queue phase durations** — in `src/server/designers/timer.ts`: extract the pure math (`computePhaseDurations(segments, transitions)`) from `phaseDurations` (:165-199) so both paths share one implementation; add `phaseDurationsByIds(actor, ids)` → `Promise.all([phaseTiming.findMany({ where: { workItemId: { in: ids } } }), workItemTransition.findMany({ where: { workItemId: { in: ids }, to: { in: [...] }, orderBy: { at: "asc" } })])` grouped in JS → `Map<id, PhaseDurations>` (spec FR-016, FR-017, contract §4)
+- [x] T025 [US4] **Batch my-queue phase durations** — in `src/server/designers/timer.ts`: extract the pure math (`computePhaseDurations(segments, transitions)`) from `phaseDurations` (:165-199) so both paths share one implementation; add `phaseDurationsByIds(actor, ids)` → `Promise.all([phaseTiming.findMany({ where: { workItemId: { in: ids } } }), workItemTransition.findMany({ where: { workItemId: { in: ids }, to: { in: [...] }, orderBy: { at: "asc" } })])` grouped in JS → `Map<id, PhaseDurations>` (spec FR-016, FR-017, contract §4)
   - **Acceptance**: AC-011 (constant queries), AC-012 (equivalence), AC-013 (scoping — ids are inputs; loader widens nothing)
   - **Tests**: T023
   - **Deps**: none
-- [ ] T026 [US4] Wire `src/app/(shell)/my-queue/page.tsx:38-43` to `phaseDurationsByIds(actor, rows.map(r => r.workItemId))` (rows already actor-scoped by `getMyQueuePage`), preserving the `{ row, durations }` shape handed to the UI; keep the outer `Promise.all([page, stats])` as-is (spec FR-016)
+- [x] T026 [US4] Wire `src/app/(shell)/my-queue/page.tsx:38-43` to `phaseDurationsByIds(actor, rows.map(r => r.workItemId))` (rows already actor-scoped by `getMyQueuePage`), preserving the `{ row, durations }` shape handed to the UI; keep the outer `Promise.all([page, stats])` as-is (spec FR-016)
   - **Acceptance**: page renders identical durations; AC-011 page-level
   - **Tests**: T024; existing my-queue tests; T044
   - **Deps**: T025

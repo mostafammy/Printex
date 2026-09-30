@@ -10,11 +10,9 @@ import {
   Flame,
 } from "lucide-react";
 import { getActor } from "~/server/auth";
-import {
-  getMyQueuePage,
-  getMyQueueStats,
-  phaseDurations,
-} from "~/server/designers";
+import { getMyQueuePage, getMyQueueStats } from "~/server/designers";
+// US4 batch loader (FR-016) — not yet re-exported from the designers barrel.
+import { phaseDurationsByIds } from "~/server/designers/timer";
 import { MyQueueTable } from "./MyQueueTable";
 import ar from "~/messages/ar.json";
 
@@ -35,12 +33,17 @@ export default async function MyQueuePage({
     getMyQueueStats(actor),
   ]);
 
-  const rowsWithDurations = await Promise.all(
-    rows.map(async (row) => ({
-      row,
-      durations: await phaseDurations(actor, row.workItemId),
-    })),
+  // One batched duration read for the whole page (FR-016/FR-017): rows are
+  // already actor-scoped by getMyQueuePage, so their ids are the batch's
+  // complete scoping (FR-018).
+  const durationsById = await phaseDurationsByIds(
+    actor,
+    rows.map((row) => row.workItemId),
   );
+  const rowsWithDurations = rows.map((row) => ({
+    row,
+    durations: durationsById.get(row.workItemId)!,
+  }));
 
   const activeTimersCount = rows.filter((r) => r.hasOpenTimer).length;
 
