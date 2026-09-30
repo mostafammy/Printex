@@ -25,7 +25,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 
 /** Content must still be missing this long after a nav starts to draw. */
@@ -52,7 +52,7 @@ export function NavProgressBar() {
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const safetyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     if (revealTimer.current) {
       clearTimeout(revealTimer.current);
       revealTimer.current = null;
@@ -61,16 +61,16 @@ export function NavProgressBar() {
       clearTimeout(safetyTimer.current);
       safetyTimer.current = null;
     }
-  };
+  }, []);
 
   const show = () => setVisible(true);
 
-  const release = () => {
+  const release = useCallback(() => {
     armed.current = false;
     committed.current = false;
     clearTimers();
     setVisible(false);
-  };
+  }, [clearTimers]);
 
   // ── Navigation start ────────────────────────────────────────────────────
   useEffect(() => {
@@ -118,7 +118,7 @@ export function NavProgressBar() {
       document.removeEventListener("click", onActivate, true);
       clearTimers();
     };
-  }, [pathname]);
+  }, [pathname, release, clearTimers]);
 
   // ── Route committed: the page is still streaming behind its skeletons ───
   useEffect(() => {
@@ -162,7 +162,7 @@ export function NavProgressBar() {
       observer.disconnect();
       if (quietTimer) clearTimeout(quietTimer);
     };
-  }, [visible, pathname]);
+  }, [visible, pathname, release]);
 
   return (
     <div

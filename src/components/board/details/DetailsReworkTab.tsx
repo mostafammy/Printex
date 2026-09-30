@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { AlertTriangle, Clock, User, ArrowLeft, Tag, FileText } from "lucide-react";
+import { AlertTriangle, Clock, User, ArrowLeft, Tag } from "lucide-react";
 import type { DetailReturn, WorkItemFullDetail } from "~/lib/board/detailTypes";
 
 export interface DetailsReworkTabProps {
@@ -42,28 +42,34 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
+function ReturnHeader({ ret }: { readonly ret: DetailReturn }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
+      <div className="flex items-center gap-2">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400">
+          <AlertTriangle className="h-4 w-4" />
+        </div>
+        <span className="font-bold text-amber-900 dark:text-amber-200">
+          من: {ret.originDepartmentName}
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-2xs font-black text-amber-800 dark:text-amber-300">
+          <Tag className="h-3 w-3" />
+          {getCategoryLabel(ret.category)}
+        </span>
+      </div>
+
+      <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground bg-background/60 px-2 py-0.5 rounded-md border border-border/40">
+        <Clock className="h-3 w-3" />
+        {formatDate(ret.createdAt)}
+      </span>
+    </div>
+  );
+}
+
 function ReturnItem({ ret }: { readonly ret: DetailReturn }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-4 sm:p-5 text-xs shadow-xs backdrop-blur-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-400">
-            <AlertTriangle className="h-4 w-4" />
-          </div>
-          <span className="font-bold text-amber-900 dark:text-amber-200">
-            من: {ret.originDepartmentName}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/20 px-2 py-0.5 text-2xs font-black text-amber-800 dark:text-amber-300">
-            <Tag className="h-3 w-3" />
-            {getCategoryLabel(ret.category)}
-          </span>
-        </div>
-
-        <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground bg-background/60 px-2 py-0.5 rounded-md border border-border/40">
-          <Clock className="h-3 w-3" />
-          {formatDate(ret.createdAt)}
-        </span>
-      </div>
+      <ReturnHeader ret={ret} />
 
       <div className="mt-3">
         <p className="font-bold text-foreground text-sm leading-relaxed">{ret.explanation}</p>

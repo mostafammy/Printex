@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * World-class Apple-grade Secondary card components for DetailsSpecsTab (Pricing, Material).
+ * Secondary card components for DetailsSpecsTab (Pricing, Material).
  * (specs/017-press-floor-board)
  */
 
@@ -23,44 +23,39 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
+const BADGE_CONFIG: Record<string, { cls: string; label: string; Icon: typeof BadgeCheck }> = {
+  PRICED: { cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", label: "تم التسعير", Icon: BadgeCheck },
+  PENDING: { cls: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "قيد التسعير", Icon: Clock },
+  DISPUTED: { cls: "border-destructive/30 bg-destructive/10 text-destructive", label: "نزاع تسعير", Icon: AlertCircle },
+};
+
 export function PricingBadge({ pricing }: { readonly pricing: BoardCard["pricing"] }) {
-  const isPriced = pricing === "PRICED";
-  const isPending = pricing === "PENDING";
-  const isDisputed = pricing === "DISPUTED";
-
-  const cls = isPriced
-    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-    : isPending
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-      : isDisputed
-        ? "border-destructive/30 bg-destructive/10 text-destructive"
-        : "border-border/60 bg-muted/60 text-muted-foreground";
-
-  const label = isPriced
-    ? "تم التسعير"
-    : isPending
-      ? "قيد التسعير"
-      : isDisputed
-        ? "نزاع تسعير"
-        : "غير مطلوب";
+  const conf = BADGE_CONFIG[pricing] ?? { cls: "border-border/60 bg-muted/60 text-muted-foreground", label: "غير مطلوب", Icon: Clock };
+  const { cls, label, Icon } = conf;
 
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-2xs ${cls}`}>
-      {isPriced && <BadgeCheck className="h-3.5 w-3.5" />}
-      {isPending && <Clock className="h-3.5 w-3.5" />}
-      {isDisputed && <AlertCircle className="h-3.5 w-3.5" />}
+      <Icon className="h-3.5 w-3.5" />
       <span>{label}</span>
     </span>
   );
 }
 
-export function SpecsPricingCard({
-  card,
-  detail,
-}: {
-  readonly card: BoardCard;
-  readonly detail: WorkItemFullDetail | null;
-}) {
+function PriceValue({ price }: { readonly price: NonNullable<WorkItemFullDetail["currentPrice"]> }) {
+  return (
+    <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex items-baseline gap-2">
+        <span className="font-mono text-3xl font-black text-foreground tracking-tight">{price.amount}</span>
+        <span className="font-bold text-sm text-primary">{price.currency}</span>
+      </div>
+      <div className="rounded-xl border border-border/50 bg-background/80 px-3 py-1.5 text-2xs text-muted-foreground backdrop-blur-xs">
+        بواسطة: <span className="font-bold text-foreground/90">{price.setByName}</span> في {formatDate(price.setAt)}
+      </div>
+    </div>
+  );
+}
+
+export function SpecsPricingCard({ card, detail }: { readonly card: BoardCard; readonly detail: WorkItemFullDetail | null }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-4 sm:p-5 shadow-xs backdrop-blur-md">
       <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -77,20 +72,7 @@ export function SpecsPricingCard({
       </div>
 
       {detail?.currentPrice ? (
-        <div className="mt-4 flex flex-wrap items-baseline justify-between gap-3">
-          <div className="flex items-baseline gap-2">
-            <span className="font-mono text-3xl font-black text-foreground tracking-tight">
-              {detail.currentPrice.amount}
-            </span>
-            <span className="font-bold text-sm text-primary">
-              {detail.currentPrice.currency}
-            </span>
-          </div>
-
-          <div className="rounded-xl border border-border/50 bg-background/80 px-3 py-1.5 text-2xs text-muted-foreground backdrop-blur-xs">
-            بواسطة: <span className="font-bold text-foreground/90">{detail.currentPrice.setByName}</span> في {formatDate(detail.currentPrice.setAt)}
-          </div>
-        </div>
+        <PriceValue price={detail.currentPrice} />
       ) : (
         <div className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-border/80 bg-muted/20 p-3 text-xs text-muted-foreground">
           <Clock className="h-4 w-4 text-muted-foreground/60" />
@@ -128,9 +110,7 @@ export function SpecsMaterialCard({ detail }: { readonly detail: WorkItemFullDet
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
             ملاحظات التشطيب:
           </span>
-          <span className="font-semibold text-foreground pe-2 pt-0.5">
-            {detail?.finishNotes ?? "لا توجد ملاحظات خاصة"}
-          </span>
+          <span className="font-semibold text-foreground pe-2 pt-0.5">{detail?.finishNotes ?? "لا توجد ملاحظات خاصة"}</span>
         </div>
 
         {detail?.productionNotes && (
@@ -139,9 +119,7 @@ export function SpecsMaterialCard({ detail }: { readonly detail: WorkItemFullDet
               <Scissors className="h-3.5 w-3.5 text-blue-500" />
               ملاحظات الإنتاج:
             </span>
-            <span className="font-medium text-foreground pe-2 pt-0.5">
-              {detail.productionNotes}
-            </span>
+            <span className="font-medium text-foreground pe-2 pt-0.5">{detail.productionNotes}</span>
           </div>
         )}
       </div>

@@ -1,23 +1,12 @@
 "use client";
 
 /**
- * World-class Apple-grade Specifications and production tab for WorkItemDetailsSheet.
- * Structured Bento Grid layout with micro-interactions and refined typography.
+ * Specifications and production tab for WorkItemDetailsSheet.
  * (specs/017-press-floor-board)
  */
 
 import React from "react";
-import {
-  Package,
-  Ruler,
-  User as UserIcon,
-  Building2,
-  Calendar,
-  Clock,
-  ArrowRight,
-  Sparkles,
-  ExternalLink,
-} from "lucide-react";
+import { Package, Ruler, User as UserIcon, Building2, Calendar, Clock, ArrowRight, Sparkles } from "lucide-react";
 import type { BoardCard, MoveOption, WorkItemFullDetail } from "~/lib/board/types";
 import { useBoardController } from "../hooks/useBoardController";
 import { SpecsPricingCard, SpecsMaterialCard } from "./SpecsCards";
@@ -90,7 +79,6 @@ function SpecsTile({
         </div>
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
-
       <div className="mt-3">
         <div className={`truncate font-black text-foreground ${mono ? "font-mono text-base sm:text-lg" : "text-base sm:text-lg"}`}>
           {value}
@@ -106,6 +94,13 @@ function SpecsTile({
   );
 }
 
+function getProducedSubtext(detail: WorkItemFullDetail | null): string | null {
+  if (typeof detail?.producedQuantity === "number") {
+    return `تم إنتاج: ${detail.producedQuantity} نسخة`;
+  }
+  return null;
+}
+
 function getAssigneeName(card: BoardCard, detail: WorkItemFullDetail | null): string {
   if (card.assignee?.name) return card.assignee.name;
   if (detail?.assignee?.name) return detail.assignee.name;
@@ -116,13 +111,6 @@ function getDeptName(detail: WorkItemFullDetail | null): string {
   if (detail?.department?.name) return detail.department.name;
   if (detail?.productType?.name) return detail.productType.name;
   return "عام";
-}
-
-function getProducedSubtext(detail: WorkItemFullDetail | null): string | null {
-  if (typeof detail?.producedQuantity === "number") {
-    return `تم إنتاج: ${detail.producedQuantity} نسخة`;
-  }
-  return null;
 }
 
 function SpecsInfoGrid({
@@ -136,62 +124,28 @@ function SpecsInfoGrid({
 }) {
   const qtySub = getProducedSubtext(detail);
   const qty = card.quantity ? `${card.quantity} نسخة` : "—";
-  const assignee = getAssigneeName(card, detail);
-  const dept = getDeptName(detail);
   const due = formatDate(card.dueAt ?? detail?.dueDate);
   const entered = formatDate(card.enteredStationAt);
 
+  const tiles = [
+    { icon: Package, label: "الكمية المطلوبة", value: qty, subtext: qtySub, color: "text-blue-600 bg-blue-500/10 dark:text-blue-400" },
+    { icon: Ruler, label: "المقاس والأبعاد", value: dimensions, mono: true, color: "text-purple-600 bg-purple-500/10 dark:text-purple-400" },
+    { icon: UserIcon, label: "المسؤول المعين", value: getAssigneeName(card, detail), color: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
+    { icon: Building2, label: "القسم والنوع", value: getDeptName(detail), color: "text-teal-600 bg-teal-500/10 dark:text-teal-400" },
+    { icon: Calendar, label: "تاريخ التسليم المتوقع", value: due, color: "text-rose-600 bg-rose-500/10 dark:text-rose-400" },
+    { icon: Clock, label: "الوقت بالمحطة", value: entered, color: "text-indigo-600 bg-indigo-500/10 dark:text-indigo-400" },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <SpecsTile
-        icon={Package}
-        label="الكمية المطلوبة"
-        value={qty}
-        subtext={qtySub}
-        accentColor="text-blue-600 bg-blue-500/10 dark:text-blue-400"
-      />
-      <SpecsTile
-        icon={Ruler}
-        label="المقاس والأبعاد"
-        value={dimensions}
-        mono
-        accentColor="text-purple-600 bg-purple-500/10 dark:text-purple-400"
-      />
-      <SpecsTile
-        icon={UserIcon}
-        label="المسؤول المعين"
-        value={assignee}
-        accentColor="text-amber-600 bg-amber-500/10 dark:text-amber-400"
-      />
-      <SpecsTile
-        icon={Building2}
-        label="القسم والنوع"
-        value={dept}
-        accentColor="text-teal-600 bg-teal-500/10 dark:text-teal-400"
-      />
-      <SpecsTile
-        icon={Calendar}
-        label="تاريخ التسليم المتوقع"
-        value={due}
-        accentColor="text-rose-600 bg-rose-500/10 dark:text-rose-400"
-      />
-      <SpecsTile
-        icon={Clock}
-        label="الوقت بالمحطة"
-        value={entered}
-        accentColor="text-indigo-600 bg-indigo-500/10 dark:text-indigo-400"
-      />
+      {tiles.map((t) => (
+        <SpecsTile key={t.label} icon={t.icon} label={t.label} value={t.value} subtext={t.subtext} mono={t.mono} accentColor={t.color} />
+      ))}
     </div>
   );
 }
 
-function SpecsMovesList({
-  card,
-  onExecuteMove,
-}: {
-  readonly card: BoardCard;
-  readonly onExecuteMove: (move: MoveOption) => void;
-  }) {
+function SpecsMovesList({ card, onExecuteMove }: { readonly card: BoardCard; readonly onExecuteMove: (move: MoveOption) => void }) {
   const controller = useBoardController();
   if (!card.moves || card.moves.length === 0) return null;
 
