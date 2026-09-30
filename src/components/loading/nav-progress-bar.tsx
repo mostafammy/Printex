@@ -117,7 +117,7 @@ export function NavProgressBar() {
       aria-hidden="true"
       data-testid="nav-progress"
       data-visible={visible ? "true" : "false"}
-      className="nav-progress pointer-events-none fixed inset-x-0 top-0 z-[9999] h-0.5 overflow-hidden"
+      className="nav-progress pointer-events-none fixed inset-x-0 top-0 z-[9999] h-2 overflow-hidden"
     >
       {visible && <div className="nav-progress__fill h-full w-full" />}
     </div>
