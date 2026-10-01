@@ -112,7 +112,7 @@ export function WorkItemRow({
   const [productTypeId, setProductTypeId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [customerWidthCm, setCustomerWidthCm] = useState("");
-  const [heightM, setHeightM] = useState("");
+  const [heightCm, setHeightCm] = useState("");
   const [ratePerSqm, setRatePerSqm] = useState("");
   const [finishingCodes, setFinishingCodes] = useState<readonly string[]>([]);
   // Held as state, not `defaultChecked`, so they can actually follow the chosen
@@ -199,7 +199,7 @@ export function WorkItemRow({
     }
 
     const width = parseDecimalField(customerWidthCm);
-    const height = parseDecimalField(heightM);
+    const height = parseDecimalField(heightCm);
     const rate = parseDecimalField(ratePerSqm);
     if (!width || !height || !rate) return null;
     if (!Number.isInteger(quantity) || quantity <= 0) return null;
@@ -231,7 +231,7 @@ export function WorkItemRow({
       const derived = deriveProductionSpec(
         {
           customerWidthCm: width,
-          heightM: height,
+          heightCm: height,
           quantity,
           baseRatePerSqm: rate,
           finishingRates,
@@ -253,7 +253,7 @@ export function WorkItemRow({
     rule,
     configuration,
     customerWidthCm,
-    heightM,
+    heightCm,
     ratePerSqm,
     quantity,
     finishingCodes,
@@ -266,11 +266,11 @@ export function WorkItemRow({
     );
   };
 
-  // The legacy generic dimension columns are derived from the spec panel while a
-  // product is governed, so the Work Item still carries a coherent
-  // width/height pair (both in centimetres) and the free-text dimension fields
-  // do not compete with the ones that actually drive the price.
-  const heightCm = Number.isFinite(Number(heightM)) ? String(Number(heightM) * 100) : "";
+  // The legacy generic dimension columns carry the CUSTOMER's requested
+  // dimensions, both in centimetres, because those are what the designer lays
+  // out and what the printer physically produces. The rounded-up billing width
+  // never reaches them — it is frozen separately on the work item's production
+  // specification and is used only for area and money.
   const derivedWidthCm = Number.isFinite(Number(customerWidthCm)) ? String(Number(customerWidthCm)) : "";
 
   return (
@@ -405,16 +405,16 @@ export function WorkItemRow({
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-foreground">الطول (متر)</label>
+              <label className="text-xs font-semibold text-foreground">الطول (سم)</label>
               <input
-                name={p("spec.heightM")}
+                name={p("spec.heightCm")}
                 type="number"
                 min={0}
-                step="0.01"
+                step="0.1"
                 required
-                value={heightM}
-                onChange={(event) => setHeightM(event.target.value)}
-                placeholder="2"
+                value={heightCm}
+                onChange={(event) => setHeightCm(event.target.value)}
+                placeholder="200"
                 className={inputCls}
               />
             </div>

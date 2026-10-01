@@ -93,7 +93,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const spec = await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -114,7 +114,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -136,7 +136,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -154,7 +154,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -191,7 +191,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -213,7 +213,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -244,7 +244,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -253,7 +253,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const requoted = await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "110",
         finishingCodes: [],
@@ -272,7 +272,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -280,7 +280,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -310,7 +310,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -318,7 +318,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [eyeletCode],
@@ -346,7 +346,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -354,7 +354,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "110",
         finishingCodes: [],
@@ -383,7 +383,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "330",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -398,7 +398,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "150",
-          heightM: "50.5",
+          heightCm: "5050",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -412,12 +412,13 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const spec = await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "150",
-        heightM: "50",
+        heightCm: "5000",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
       });
 
+      expect(spec.heightCm).toBe("5000");
       expect(spec.heightM).toBe("50");
     });
 
@@ -428,7 +429,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "150",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: rate,
           finishingCodes: [],
@@ -445,7 +446,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "150",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: ["NOT_A_REAL_FINISHING"],
@@ -460,7 +461,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "wide",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -480,7 +481,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId: item.id,
           customerWidthCm: "150",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -498,7 +499,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "150",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -525,7 +526,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         setProductionSpec(receptionActor(receptionId), {
           workItemId,
           customerWidthCm: "330",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],
@@ -550,7 +551,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const spec = await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "330",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -580,7 +581,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await setProductionSpec(receptionActor(receptionId), {
         workItemId,
         customerWidthCm: "330",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [],
@@ -656,7 +657,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const preview = await previewProductionSpec({
         workItemId: previewItem,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -666,7 +667,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       const committed = await setProductionSpec(receptionActor(receptionId), {
         workItemId: commitItem,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -684,7 +685,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
       await previewProductionSpec({
         workItemId,
         customerWidthCm: "145",
-        heightM: "2",
+        heightCm: "200",
         quantity: 1,
         baseRatePerSqm: "100",
         finishingCodes: [sulfanCode],
@@ -705,7 +706,7 @@ describe("093 reception production specification (US1, SC-002, SC-006)", { timeo
         previewProductionSpec({
           workItemId,
           customerWidthCm: "330",
-          heightM: "2",
+          heightCm: "200",
           quantity: 1,
           baseRatePerSqm: "100",
           finishingCodes: [],

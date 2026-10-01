@@ -16,8 +16,15 @@ import { DomainProductionSpecError } from "~/server/production-spec/errors";
 
 const dec = (value: string) => new Prisma.Decimal(value);
 
+// The domain takes BOTH dimensions in centimetres (FR-005). The heights are
+// written in metres here because that is how the business speaks them, and the
+// conversion belongs in the test's own helper, not in two call sites per case.
 function area(productionWidthCm: string, heightM: string, quantity = 1) {
-  return computeProductionArea({ productionWidthCm: dec(productionWidthCm), heightM: dec(heightM), quantity });
+  return computeProductionArea({
+    productionWidthCm: dec(productionWidthCm),
+    heightCm: dec(heightM).mul(100),
+    quantity,
+  });
 }
 
 const SULFAN: FinishingRate = {

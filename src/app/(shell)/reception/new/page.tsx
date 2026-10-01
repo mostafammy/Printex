@@ -6,7 +6,15 @@ import { ArrowRight } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import { listActiveProductTypes } from "~/server/orders";
+import {
+  listActiveFinishingServices,
+  loadProductionConstraints,
+} from "~/server/production-spec";
 import { MasterPrintOrderView } from "~/components/reception/master-order/MasterPrintOrderView";
+import type {
+  FinishingServiceOption,
+  ProductionGovernance,
+} from "~/components/reception/master-order/types";
 
 export default async function NewOrderPage() {
   const actor = await getActor();
@@ -27,21 +35,75 @@ export default async function NewOrderPage() {
   const defaultDueDate = dueDateObj.toISOString().split("T")[0] ?? "2026-10-05";
 
   // Data loads
-  const [customerRows, departments, productTypes] = await Promise.all([
-    db.customer.findMany({
-      where: { isArchived: false },
-      select: {
-        id: true,
-        name: true,
-        isCashCustomer: true,
-        phones: { select: { phoneE164: true }, take: 1 },
-      },
-      orderBy: { name: "asc" },
-      take: 100,
+  const [customerRows, departments, productTypes, designerRows, finishingSnapshots] =
+    await Promise.all([
+      db.customer.findMany({
+        where: { isArchived: false },
+        select: {
+          id: true,
+          name: true,
+          isCashCustomer: true,
+          phones: { select: { phoneE164: true }, take: 1 },
+        },
+        orderBy: { name: "asc" },
+        take: 100,
+      }),
+      db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
+      listActiveProductTypes(actor),
+      // The designer roster reception may hand work to: active users holding
+      // `design.work` through a role or a per-user extra grant. Same predicate
+      // `getEligibleDesigners` uses, so the dropdown cannot offer someone who
+      // would be refused at assignment.
+      db.user.findMany({
+        where: {
+          isActive: true,
+          OR: [
+            { roles: { some: { role: { permissions: { some: { permission: "design.work" } } } } } },
+            { extraPermissions: { some: { permission: "design.work" } } },
+          ],
+        },
+        select: { id: true, name: true, username: true },
+        orderBy: { name: "asc" },
+      }),
+      // The extensible finishing catalogue. Sulfan at 90 EGP/m² is a ROW here,
+      // not a branch in the pricing code — adding the next add-on is one insert.
+      listActiveFinishingServices(),
+    ]);
+
+  // 093 configuration, read through the ONE boundary that validates it
+  // (`loadProductionConstraints`). The reception form derives from this rather
+  // than from a ladder literal, so the width ladder, the height ceiling and the
+  // EGP/m² band each come from `ProductionWidthRule` and cannot drift.
+  const governed = await Promise.all(
+    productTypes.map(async (pt) => {
+      const constraints = await loadProductionConstraints(pt.id);
+      if (!constraints) return null;
+      const mid = constraints.minRatePerSqm.plus(constraints.maxRatePerSqm).div(2);
+      return [
+        pt.id,
+        {
+          productTypeId: pt.id,
+          productTypeName: pt.name,
+          ladderCm: constraints.ladder,
+          maxHeightM: constraints.maxHeightM.toString(),
+          minRatePerSqm: constraints.minRatePerSqm.toString(),
+          maxRatePerSqm: constraints.maxRatePerSqm.toString(),
+          suggestedRatePerSqm: mid.toDecimalPlaces(2).toString(),
+        } satisfies ProductionGovernance,
+      ] as const;
     }),
-    db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
-    listActiveProductTypes(actor),
-  ]);
+  );
+
+  const governance: Record<string, ProductionGovernance> = Object.fromEntries(
+    governed.filter((entry): entry is NonNullable<typeof entry> => entry !== null),
+  );
+
+  const finishingServices: FinishingServiceOption[] = finishingSnapshots.map((f) => ({
+    id: f.id,
+    code: f.code,
+    labelAr: f.labelAr,
+    ratePerSqm: f.ratePerSqm,
+  }));
 
   const customers = customerRows.map((c) => ({
     id: c.id,
@@ -81,7 +143,13 @@ export default async function NewOrderPage() {
           defaultRequiresDesign: pt.defaultRequiresDesign,
           defaultRequiresReview: pt.defaultRequiresReview,
         }))}
-        defaultRatePerSqm={100}
+        designers={designerRows.map((d) => ({
+          id: d.id,
+          name: d.name,
+          username: d.username,
+        }))}
+        governance={governance}
+        finishingServices={finishingServices}
       />
     </div>
   );

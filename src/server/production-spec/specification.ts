@@ -15,6 +15,19 @@
 //                           the consequence of what they are typing).
 //   setProductionSpec     — the same derivation, then one audited write.
 //
+// UNITS AND THE TWO WIDTHES (FR-002, FR-005, FR-006)
+// --------------------------------------------------
+// Both dimensions are CENTIMETRES, in and out. `productionHeightM` is stored in
+// metres because the schema and the 50 m business ceiling are expressed that
+// way; it is a unit projection of the same height, never a second value.
+//
+// `customerWidthCm` is what the customer asked for, and it is what the designer
+// and the printer work to — it is never overwritten. `productionWidthCm` is the
+// BILLING width: the nearest ladder step at or above the request, and the only
+// width that feeds area. Keeping both is the whole point; collapsing them
+// either prints a banner bigger than the customer paid for or bills for one
+// smaller than they asked for.
+//
 // Both go through `deriveProductionSpec`, which delegates to the shared core in
 // `src/lib/production/derive.ts`. That core is where the sequence of validation
 // and the money maths live, and it is pure with respect to the database — which
@@ -53,7 +66,7 @@ import { maxProductionWidthCm } from "./widths";
 export const productionSpecInputSchema = z.object({
   workItemId: z.string().min(1),
   customerWidthCm: z.string().trim().min(1, "أدخل العرض المطلوب بالسنتيمتر"),
-  heightM: z.string().trim().min(1, "أدخل الطول بالمتر"),
+  heightCm: z.string().trim().min(1, "أدخل الطول بالسنتيمتر"),
   quantity: z.number().int().positive(),
   baseRatePerSqm: z.string().trim().min(1, "أدخل سعر المتر المربع"),
   finishingCodes: z.array(z.string().trim().min(1)).default([]),
@@ -75,9 +88,16 @@ export type ProductionSpecSnapshot = {
   readonly workItemId: string;
   /** Exactly what the customer asked for — never overwritten by rounding. */
   readonly customerWidthCm: string;
-  /** What production consumes, after rounding up to a ladder step. */
+  /**
+   * The BILLING width: the first ladder step ≥ `customerWidthCm`. The customer
+   * is charged on this, and it is the only width that feeds area. It is NOT the
+   * width production physically works to.
+   */
   readonly productionWidthCm: string;
   readonly roundedUp: boolean;
+  /** Height in centimetres — the canonical dimension unit (FR-005). */
+  readonly heightCm: string;
+  /** The same height in metres, for the stored column and the ceiling. */
   readonly heightM: string;
   readonly quantity: number;
   readonly areaSqm: string;
@@ -147,6 +167,7 @@ export async function getProductionSpec(
     customerWidthCm: customerWidthCm.toString(),
     productionWidthCm: productionWidthCm.toString(),
     roundedUp: !customerWidthCm.equals(productionWidthCm),
+    heightCm: item.productionHeightM.mul(100).toString(),
     heightM: item.productionHeightM.toString(),
     quantity: item.quantitySnapshot ?? 1,
     areaSqm: (item.productionAreaSqm ?? new Prisma.Decimal(0)).toString(),
@@ -193,7 +214,7 @@ function deriveProductionSpec(params: {
   readonly workItemId: string;
   readonly constraints: ProductionConstraints;
   readonly customerWidthCm: Prisma.Decimal;
-  readonly heightM: Prisma.Decimal;
+  readonly heightCm: Prisma.Decimal;
   readonly quantity: number;
   readonly baseRatePerSqm: Prisma.Decimal;
   readonly finishingRates: readonly FinishingRate[];
@@ -202,7 +223,7 @@ function deriveProductionSpec(params: {
   const derived = deriveProductionSpecCore(
     {
       customerWidthCm: params.customerWidthCm,
-      heightM: params.heightM,
+      heightCm: params.heightCm,
       quantity: params.quantity,
       baseRatePerSqm: params.baseRatePerSqm,
       finishingRates: params.finishingRates,
@@ -268,7 +289,7 @@ export async function previewProductionSpec(
     workItemId: parsed.workItemId,
     constraints,
     customerWidthCm: parseDecimal(parsed.customerWidthCm, "العرض المطلوب"),
-    heightM: parseDecimal(parsed.heightM, "الطول"),
+    heightCm: parseDecimal(parsed.heightCm, "الطول"),
     quantity: parsed.quantity,
     baseRatePerSqm: parseDecimal(parsed.baseRatePerSqm, "سعر المتر المربع"),
     finishingRates,
@@ -303,7 +324,7 @@ export async function setProductionSpec(
     workItemId: parsed.workItemId,
     constraints,
     customerWidthCm: parseDecimal(parsed.customerWidthCm, "العرض المطلوب"),
-    heightM: parseDecimal(parsed.heightM, "الطول"),
+    heightCm: parseDecimal(parsed.heightCm, "الطول"),
     quantity: parsed.quantity,
     baseRatePerSqm: parseDecimal(parsed.baseRatePerSqm, "سعر المتر المربع"),
     finishingRates,
@@ -389,7 +410,7 @@ export async function setProductionSpec(
       after: {
         customerWidthCm: derived.snapshot.customerWidthCm,
         productionWidthCm: derived.snapshot.productionWidthCm,
-        heightM: derived.snapshot.heightM,
+        heightCm: derived.snapshot.heightCm,
         quantity: derived.snapshot.quantity,
         areaSqm: derived.snapshot.areaSqm,
         baseRatePerSqm: derived.snapshot.baseRatePerSqm,

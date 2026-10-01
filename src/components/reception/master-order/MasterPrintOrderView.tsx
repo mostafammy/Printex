@@ -20,9 +20,12 @@ import type {
   ClientDepartment,
   ClientProductType,
   CustomerSummary,
+  DesignerSummary,
+  FinishingServiceOption,
   JobCategory,
   MasterOrderItem,
   BannerJobSpec,
+  ProductionGovernance,
 } from "./types";
 import { BannerJobModal } from "./BannerJobModal";
 import { GenericJobModal } from "./GenericJobModal";
@@ -41,7 +44,17 @@ export interface MasterPrintOrderViewProps {
   readonly cashCustomer: CustomerSummary | null;
   readonly departments: readonly ClientDepartment[];
   readonly productTypes: readonly ClientProductType[];
-  readonly defaultRatePerSqm?: number;
+  /**
+   * Designers reception may hand the job to. Assignment is MANDATORY before an
+   * order may leave reception (see the `DESIGNER_REQUIRED` guard in
+   * `server/pipeline/guards.ts`), so this list is not optional — an empty one
+   * is surfaced as a blocker rather than an empty dropdown.
+   */
+  readonly designers: readonly DesignerSummary[];
+  /** 093 production configuration per product type (ladder, height cap, rate band). */
+  readonly governance: Readonly<Record<string, ProductionGovernance>>;
+  /** The extensible finishing catalogue the receptionist may add on top. */
+  readonly finishingServices: readonly FinishingServiceOption[];
 }
 
 const PRINT_CATEGORIES: readonly {
@@ -97,7 +110,9 @@ export function MasterPrintOrderView({
   cashCustomer,
   departments,
   productTypes,
-  defaultRatePerSqm = 100,
+  designers,
+  governance,
+  finishingServices,
 }: MasterPrintOrderViewProps) {
   const router = useRouter();
   const generatedId = useId();
@@ -112,6 +127,17 @@ export function MasterPrintOrderView({
   const [orderStatus, setOrderStatus] = useState("PENDING");
   const [priority, setPriority] = useState<"NORMAL" | "URGENT">("NORMAL");
   const [salesRep, setSalesRep] = useState(salesRepName);
+
+  /**
+   * The designer the job is handed to. MANDATORY.
+   *
+   * The RECEPTION → DESIGNER edge is the first mandatory stage of the pipeline,
+   * and `assignDesigner` is what moves a Work Item out of `NEW`. An order saved
+   * without one would sit in reception as work nobody owns, which is exactly
+   * what the `DESIGNER_REQUIRED` guard refuses to let reach production. So it is
+   * validated here (for the receptionist's benefit) AND again on the server.
+   */
+  const [designerId, setDesignerId] = useState<string>("");
 
   // Section 4: Jobs
   const [jobs, setJobs] = useState<MasterOrderItem[]>([]);
@@ -178,14 +204,18 @@ export function MasterPrintOrderView({
       categoryLabelAr: "بنر وفليكس (أوفست)",
       jobName: bannerSpec.jobName,
       quantity: bannerSpec.quantity,
-      width: bannerSpec.width,
-      height: bannerSpec.height,
-      measurementUnit: bannerSpec.measurementUnit,
+      // The legacy WorkItem columns carry the CUSTOMER's dimensions, both in
+      // centimetres — the same unit for both, and the numbers the designer lays
+      // out and the printer physically cuts. The rounded-up BILLING width stays
+      // on `bannerSpec` and reaches the money path only.
+      width: bannerSpec.customerWidthCm,
+      height: bannerSpec.heightCm,
+      measurementUnit: "CM",
       unit: bannerSpec.unit === "PIECES" ? "قطع" : "م²",
       material: `${bannerSpec.printType} - ${bannerSpec.materialWeight}`,
-      finishing: bannerSpec.finishingOptions.join("، "),
+      finishing: bannerSpec.finishingLines.map((f) => f.labelAr).join("، "),
       notes: bannerSpec.notes,
-      totalCost: bannerSpec.totalCost,
+      totalCost: bannerSpec.total,
       departmentId: bannerSpec.departmentId,
       productTypeId: bannerSpec.productTypeId,
       bannerSpec,
@@ -215,6 +245,22 @@ export function MasterPrintOrderView({
       return;
     }
 
+    // Mandatory: the order may not leave reception without a designer. This is
+    // a convenience check, not the enforcement — `createMasterOrderAction`
+    // re-checks it and refuses, and the pipeline guard re-checks it again on
+    // every transition out of reception.
+    if (!designerId) {
+      setSaveError("يجب تعيين مصمم قبل حفظ أمر الطباعة — لا يمكن للأمر مغادرة الاستقبال بدون مصمم");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    if (designers.length === 0) {
+      setSaveError("لا يوجد مصممين مسجلين في النظام — راجع مدير النظام قبل حفظ الطلب");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setIsSaving(true);
     setSaveError("");
 
@@ -224,6 +270,7 @@ export function MasterPrintOrderView({
         priority,
         dueDate: expectedDeliveryDate || undefined,
         salesRep,
+        designerId,
         discountAmount: calculatedDiscount,
         taxAmount: calculatedTax,
         paidAmount,
@@ -486,6 +533,47 @@ export function MasterPrintOrderView({
               className="w-full rounded-xl border border-border/80 bg-background px-3.5 py-2 text-xs font-semibold text-foreground focus:border-primary focus:outline-none"
             />
           </div>
+
+          {/* Designer — MANDATORY. Reception is the entry point of the
+              RECEPTION → DESIGNER → ACCOUNTANT → (BRANDING) → PRINTER pipeline,
+              and an order may not become an executable designer task without an
+              owner. Refusing here is a courtesy for the receptionist; the server
+              refuses regardless, and the pipeline guard refuses again. */}
+          <div className="sm:col-span-2 lg:col-span-3">
+            <label
+              htmlFor={`designer-${generatedId}`}
+              className="block text-xs font-bold text-foreground mb-1.5"
+            >
+              المصمم المسؤول (Assigned Designer)
+              <span className="ms-1 text-destructive">*</span>
+              <span className="ms-1.5 font-normal text-muted-foreground">
+                إلزامي — لا يمكن للأمر مغادرة الاستقبال بدون مصمم
+              </span>
+            </label>
+            <select
+              id={`designer-${generatedId}`}
+              value={designerId}
+              onChange={(e) => setDesignerId(e.target.value)}
+              required
+              className={`w-full rounded-xl border bg-background px-3.5 py-2.5 text-xs font-semibold text-foreground focus:outline-none ${
+                designers.length > 0 && designerId.length === 0
+                  ? "border-destructive/70 focus:border-destructive"
+                  : "border-border/80 focus:border-primary"
+              }`}
+            >
+              <option value="">
+                {designers.length === 0
+                  ? "لا يوجد مصممين مسجلين — راجع مدير النظام"
+                  : "اختر المصمم المسؤول عن الشغلانة..."}
+              </option>
+              {designers.map((designer) => (
+                <option key={designer.id} value={designer.id}>
+                  {designer.name}
+                  {designer.username ? ` (${designer.username})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -609,9 +697,28 @@ export function MasterPrintOrderView({
                       </span>
                     </div>
 
+                    {/* A governed roll job shows BOTH widths side by side. Collapsing them
+                        into one "الأبعاد" number is what hides the difference
+                        between the width the customer is charged on and the
+                        width the job is actually produced at. */}
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                       <span>الكمية: {job.quantity} {job.unit ?? "قطع"}</span>
-                      {job.width && job.height ? (
+                      {job.bannerSpec ? (
+                        <>
+                          <span className="font-mono">
+                            عرض العميل: {job.bannerSpec.customerWidthCm} سم
+                          </span>
+                          <span className="font-mono font-bold text-foreground">
+                            عرض التسعير: {job.bannerSpec.productionWidthCm} سم
+                          </span>
+                          <span className="font-mono">
+                            الطول: {job.bannerSpec.heightCm} سم
+                          </span>
+                          <span className="font-mono">
+                            المساحة: {job.bannerSpec.totalAreaSqm} م²
+                          </span>
+                        </>
+                      ) : job.width && job.height ? (
                         <span>
                           الأبعاد: {job.width} × {job.height} {job.measurementUnit ?? "سم"}
                         </span>
@@ -867,9 +974,10 @@ export function MasterPrintOrderView({
         isOpen={isBannerModalOpen}
         onClose={() => setIsBannerModalOpen(false)}
         onSave={handleSaveBannerJob}
-        defaultRatePerSqm={defaultRatePerSqm}
         departments={departments}
         productTypes={productTypes}
+        governance={governance}
+        finishingServices={finishingServices}
       />
 
       {genericModalCategory && (

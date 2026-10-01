@@ -32,35 +32,46 @@ import { DomainProductionSpecError } from "./errors";
 const AREA_DECIMAL_PLACES = 4;
 
 export type AreaInput = {
-  /** Already rounded UP to a ladder step, in centimetres. */
+  /**
+   * The BILLING width, already rounded UP to a ladder step, in CENTIMETRES.
+   *
+   * This is the width the customer is CHARGED for, not the width that gets
+   * printed. The physical job is cut to the customer's own requested width
+   * (`WorkItem.widthValue`) — that is what the designer and the printer work
+   * to. The two are different numbers on purpose: a 145 cm request is printed
+   * at 145 cm and billed at 150 cm, so the customer pays for the roll that
+   * actually carries their banner.
+   */
   readonly productionWidthCm: Prisma.Decimal;
-  /** Height in metres. */
-  readonly heightM: Prisma.Decimal;
+  /** Height in CENTIMETRES — the same unit as the width, always (FR-005). */
+  readonly heightCm: Prisma.Decimal;
   /** Pieces to bill. Must be a positive integer. */
   readonly quantity: number;
 };
 
 export type ProductionArea = {
-  /** `productionWidthCm / 100 * heightM * quantity`, to 4 dp. */
+  /** `(productionWidthCm / 100) * (heightCm / 100) * quantity`, to 4 dp. */
   readonly areaSqm: Prisma.Decimal;
   /** The same product before display rounding — the basis for every amount. */
   readonly exactAreaSqm: Prisma.Decimal;
   /** `productionWidthCm / 100`, carried for display alongside the area. */
   readonly productionWidthM: Prisma.Decimal;
+  /** `heightCm / 100`, so the area can be read without recomputing it. */
   readonly heightM: Prisma.Decimal;
+  readonly heightCm: Prisma.Decimal;
   readonly quantity: number;
 };
 
 /**
- * FR-006 — billable area is PRODUCTION width × height × quantity.
+ * FR-006 — billable area is BILLING width × height × quantity.
  *
- * The customer's requested width is deliberately not a parameter. Making it
- * structurally impossible to pass is stronger than documenting that it must
- * not be passed: no future caller can accidentally price off the requested
- * width because the function has no way to receive it.
+ * The width parameter is deliberately the rounded-up one, because the customer
+ * pays for the roll that carries the job. The customer's own requested width is
+ * NOT an input and never overwrites anything: it is stored separately as
+ * `customerWidthCm` and is the width production physically works to.
  */
 export function computeProductionArea(input: AreaInput): ProductionArea {
-  const { productionWidthCm, heightM, quantity } = input;
+  const { productionWidthCm, heightCm, quantity } = input;
 
   if (productionWidthCm.isNegative() || productionWidthCm.isZero()) {
     throw new DomainProductionSpecError(
@@ -68,7 +79,7 @@ export function computeProductionArea(input: AreaInput): ProductionArea {
       "The production width must be greater than zero",
     );
   }
-  if (heightM.isNegative() || heightM.isZero()) {
+  if (heightCm.isNegative() || heightCm.isZero()) {
     throw new DomainProductionSpecError(
       "INVALID_DIMENSIONS",
       "The height must be greater than zero",
@@ -82,6 +93,7 @@ export function computeProductionArea(input: AreaInput): ProductionArea {
   }
 
   const productionWidthM = productionWidthCm.div(100);
+  const heightM = heightCm.div(100);
   const exactAreaSqm = productionWidthM.mul(heightM).mul(quantity);
 
   return {
@@ -89,6 +101,7 @@ export function computeProductionArea(input: AreaInput): ProductionArea {
     exactAreaSqm,
     productionWidthM,
     heightM,
+    heightCm,
     quantity,
   };
 }

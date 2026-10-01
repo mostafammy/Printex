@@ -18,26 +18,37 @@ import { DomainProductionSpecError } from "./errors";
 
 /** The subset of a loaded `ProductionWidthRule` these refusals read. */
 export type ProductionConstraintsLike = {
+  /** The configured height ceiling, stored in METRES (50 m for the roll class). */
   readonly maxHeightM: Prisma.Decimal;
   readonly minRatePerSqm: Prisma.Decimal;
   readonly maxRatePerSqm: Prisma.Decimal;
 };
 
-/** FR-004 — height must be positive and within the configured ceiling. */
+/**
+ * FR-004 — height must be positive and within the configured ceiling.
+ *
+ * The height ARRIVES in centimetres, like the width, because a form with a
+ * width in centimetres next to a height in metres is a form where the
+ * receptionist transposes the two. The configured ceiling stays in metres —
+ * "up to 50 m" is the business statement, and the rule is stored that way —
+ * so the comparison converts once, here, and the refusal is phrased in the unit
+ * the business actually speaks.
+ */
 export function assertHeightWithinCap(
-  heightM: Prisma.Decimal,
+  heightCm: Prisma.Decimal,
   constraints: ProductionConstraintsLike,
 ): void {
-  if (heightM.isNegative() || heightM.isZero()) {
+  if (heightCm.isNegative() || heightCm.isZero()) {
     throw new DomainProductionSpecError(
       "INVALID_DIMENSIONS",
       "Height must be greater than zero",
     );
   }
-  if (heightM.gt(constraints.maxHeightM)) {
+  const maxHeightCm = constraints.maxHeightM.mul(100);
+  if (heightCm.gt(maxHeightCm)) {
     throw new DomainProductionSpecError(
       "HEIGHT_ABOVE_MAXIMUM",
-      `Height ${heightM.toString()} m exceeds the maximum of ${constraints.maxHeightM.toString()} m for this product`,
+      `Height ${heightCm.div(100).toString()} m exceeds the maximum of ${constraints.maxHeightM.toString()} m for this product`,
     );
   }
 }

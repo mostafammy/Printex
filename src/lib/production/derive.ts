@@ -44,8 +44,10 @@ export type DeriveConstraints = {
 };
 
 export type DeriveInput = {
+  /** Exactly what the customer asked for, in CENTIMETRES. Never rounded. */
   readonly customerWidthCm: DecimalValue;
-  readonly heightM: DecimalValue;
+  /** Height in CENTIMETRES — the same unit as the width (FR-005). */
+  readonly heightCm: DecimalValue;
   readonly quantity: number;
   readonly baseRatePerSqm: DecimalValue;
   readonly finishingRates: readonly FinishingRate[];
@@ -71,9 +73,16 @@ export type DerivedFinishingLine = {
 export type DerivedSnapshot = {
   /** Exactly what the customer asked for — never overwritten by rounding. */
   readonly customerWidthCm: string;
-  /** What production consumes, after rounding up to a ladder step. */
+  /**
+   * The BILLING width: the first ladder step ≥ `customerWidthCm`. This is the
+   * number the customer is charged on. It is NOT the number the job is printed
+   * at — production works to `customerWidthCm`.
+   */
   readonly productionWidthCm: string;
   readonly roundedUp: boolean;
+  /** Height in CENTIMETRES, the canonical dimension unit (FR-005). */
+  readonly heightCm: string;
+  /** The same height in metres — the unit the stored column and the ceiling use. */
   readonly heightM: string;
   readonly quantity: number;
   readonly areaSqm: string;
@@ -101,6 +110,24 @@ export type DerivedSpec = {
 /**
  * FR-002…FR-010 — validate, round, price.
  *
+ * TWO WIDTHS, ONE JOB (FR-002, FR-006)
+ * ------------------------------------
+ * `customerWidthCm` is what the customer asked for and what production
+ * physically works to — the designer lays out the file and the printer cuts the
+ * banner to it, and neither of them ever sees a rounded number. `productionWidthCm`
+ * is the BILLING width: the nearest ladder step at or above the request, and the
+ * only width that feeds area. A 145 cm request is therefore printed at 145 cm
+ * and billed at 150 cm, which is what makes the ladder rule a pricing rule
+ * rather than a production one.
+ *
+ * UNITS (FR-005)
+ * -------------
+ * Both dimensions are CENTIMETRES. Width in cm and height in metres is the
+ * kind of pairing that produces a 2.00 × 1.45 banner because somebody read the
+ * wrong field. The ladder is defined in centimetres and so is everything else;
+ * metres appear only where the schema and the 50 m ceiling are expressed that
+ * way.
+ *
  * Order matters and is deliberate: dimension validity first (a nonsense width
  * should not be reported as a band problem), then the height cap, then the
  * width, then the money band.
@@ -114,27 +141,31 @@ export function deriveProductionSpec(
 ): DerivedSpec {
   const { quantity, baseRatePerSqm } = input;
 
-  assertHeightWithinCap(input.heightM, constraints);
+  assertHeightWithinCap(input.heightCm, constraints);
 
   const width = resolveProductionWidth(input.customerWidthCm, constraints.ladder);
   const approvedException =
     width.ok === false && width.code === "WIDTH_ABOVE_MAXIMUM" ? input.exception : null;
 
-  let productionWidthCm: DecimalValue;
+  let billingWidthCm: DecimalValue;
   if (width.ok) {
-    productionWidthCm = new Decimal(width.productionWidthCm);
+    billingWidthCm = new Decimal(width.productionWidthCm);
   } else if (approvedException) {
     // FR-003: an over-ceiling width proceeds ONLY behind an approved ticket,
-    // and it is recorded at the width the customer actually asked for. It is
+    // and it is billed at the width the customer actually asked for. It is
     // never rounded down to the ceiling.
-    productionWidthCm = new Decimal(width.customerWidthCm);
+    billingWidthCm = new Decimal(width.customerWidthCm);
   } else {
     throw new DomainProductionSpecError(width.code, width.message);
   }
 
   assertRateWithinBand(baseRatePerSqm, constraints);
 
-  const area = computeProductionArea({ productionWidthCm, heightM: input.heightM, quantity });
+  const area = computeProductionArea({
+    productionWidthCm: billingWidthCm,
+    heightCm: input.heightCm,
+    quantity,
+  });
   const quote = quoteRoll({ area, baseRatePerSqm, finishings: input.finishingRates });
 
   return {
@@ -142,9 +173,10 @@ export function deriveProductionSpec(
     exceptionId: approvedException?.id ?? null,
     snapshot: {
       customerWidthCm: input.customerWidthCm.toString(),
-      productionWidthCm: productionWidthCm.toString(),
-      roundedUp: !input.customerWidthCm.equals(productionWidthCm),
-      heightM: input.heightM.toString(),
+      productionWidthCm: billingWidthCm.toString(),
+      roundedUp: !input.customerWidthCm.equals(billingWidthCm),
+      heightCm: input.heightCm.toString(),
+      heightM: area.heightM.toString(),
       quantity,
       areaSqm: quote.areaSqm.toString(),
       baseRatePerSqm: quote.baseRatePerSqm.toString(),
@@ -164,7 +196,7 @@ export function deriveProductionSpec(
       widthException: approvedException
         ? {
             id: approvedException.id,
-            requestedWidthCm: productionWidthCm.toString(),
+            requestedWidthCm: billingWidthCm.toString(),
             reason: approvedException.reason,
           }
         : null,

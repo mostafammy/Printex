@@ -42,7 +42,7 @@ const CONSTRAINTS: DeriveConstraints = {
 function input(overrides: Partial<DeriveInput> = {}): DeriveInput {
   return {
     customerWidthCm: dec("145"),
-    heightM: dec("2"),
+    heightCm: dec("200"),
     quantity: 1,
     baseRatePerSqm: dec("100"),
     finishingRates: [],
@@ -154,11 +154,11 @@ describe("deriveProductionSpec — the width round-up (FR-002/FR-003)", () => {
 
 describe("deriveProductionSpec — refusals, in order", () => {
   it("reports a nonsense height before anything else", () => {
-    expect(refusalCode({ heightM: dec("0") })).toBe("INVALID_DIMENSIONS");
+    expect(refusalCode({ heightCm: dec("0") })).toBe("INVALID_DIMENSIONS");
   });
 
   it("reports a height above the ceiling", () => {
-    expect(refusalCode({ heightM: dec("4") })).toBe("HEIGHT_ABOVE_MAXIMUM");
+    expect(refusalCode({ heightCm: dec("400") })).toBe("HEIGHT_ABOVE_MAXIMUM");
   });
 
   it("reports a non-integer quantity as a dimension problem", () => {
@@ -176,7 +176,7 @@ describe("deriveProductionSpec — refusals, in order", () => {
     // receptionist is shown depends entirely on the order of the sequence, and
     // this is the assertion that pins it.
     expect(
-      refusalCode({ heightM: dec("4"), customerWidthCm: dec("330"), baseRatePerSqm: dec("1") }),
+      refusalCode({ heightCm: dec("400"), customerWidthCm: dec("330"), baseRatePerSqm: dec("1") }),
     ).toBe("HEIGHT_ABOVE_MAXIMUM");
     expect(
       refusalCode({ customerWidthCm: dec("330"), baseRatePerSqm: dec("1") }),
