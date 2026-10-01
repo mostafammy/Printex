@@ -44,15 +44,17 @@ export default async function PricingQueuePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="default"
-              size="default"
-              render={<Link href="/accounting/orders" />}
-              className="bg-amber-600 hover:bg-amber-500 text-white font-bold shadow-xs"
-            >
-              <ReceiptText className="h-4 w-4" />
-              <span>سجل وطلبات المحاسب</span>
-            </Button>
+            {(actor.roles.includes("ACCOUNTING") || actor.roles.includes("ADMIN_OWNER")) && (
+              <Button
+                variant="default"
+                size="default"
+                render={<Link href="/accounting/orders" />}
+                className="bg-amber-600 hover:bg-amber-500 text-white font-bold shadow-xs"
+              >
+                <ReceiptText className="h-4 w-4" />
+                <span>سجل وطلبات المحاسب</span>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="default"

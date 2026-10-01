@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Receipt, Kanban, Calculator, WalletCards } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { getAccountantOrders } from "~/server/accounting";
@@ -15,6 +16,9 @@ interface PageProps {
 
 export default async function AccountantOrdersPage({ searchParams }: PageProps) {
   const actor = await getActor();
+  if (!actor.roles.includes("ACCOUNTING") && !actor.roles.includes("ADMIN_OWNER")) {
+    redirect("/board");
+  }
   const params = await searchParams;
 
   const result = await getAccountantOrders(actor, {

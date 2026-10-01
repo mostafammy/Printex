@@ -31,6 +31,7 @@ interface RailItem {
   readonly labelAr: string;
   readonly icon: React.ReactNode;
   readonly inkToken?: string;
+  readonly roles?: readonly string[];
 }
 
 const RAIL_ITEMS: readonly RailItem[] = [
@@ -61,6 +62,7 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "طلبات وسجل المحاسب",
     icon: <ReceiptText className="h-5 w-5" />,
     inkToken: "var(--ink-orange)",
+    roles: ["ACCOUNTING", "ADMIN_OWNER"],
   },
   {
     id: "my-queue",
@@ -109,8 +111,12 @@ function RailLink({ item, pathname }: { readonly item: RailItem; readonly pathna
   );
 }
 
-export function IconRail({ actor: _actor, onOpenCommandBar }: IconRailProps) {
+export function IconRail({ actor, onOpenCommandBar }: IconRailProps) {
   const pathname = usePathname();
+
+  const visibleItems = RAIL_ITEMS.filter(
+    (item) => !item.roles || item.roles.length === 0 || item.roles.some((r) => actor.roles.includes(r))
+  );
 
   return (
     <nav
@@ -134,7 +140,7 @@ export function IconRail({ actor: _actor, onOpenCommandBar }: IconRailProps) {
 
         <div className="my-1 h-px w-8 bg-border/60" />
 
-        {RAIL_ITEMS.map((item) => (
+        {visibleItems.map((item) => (
           <RailLink key={item.id} item={item} pathname={pathname} />
         ))}
       </div>
