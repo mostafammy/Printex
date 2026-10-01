@@ -65,6 +65,7 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "التسعير والمالية",
     icon: <Calculator className="h-5 w-5" />,
     inkToken: "var(--ink-yellow)",
+    roles: ["ACCOUNTING", "ADMIN_OWNER"],
   },
   {
     id: "accounting-orders",
@@ -75,17 +76,25 @@ const RAIL_ITEMS: readonly RailItem[] = [
     roles: ["ACCOUNTING", "ADMIN_OWNER"],
   },
   {
+    id: "customers",
+    href: "/customers",
+    labelAr: "العملاء",
+    icon: <Users className="h-5 w-5" />,
+    roles: ["RECEPTION", "ACCOUNTING", "ADMIN_OWNER"],
+  },
+  {
     id: "my-queue",
     href: "/my-queue",
     labelAr: "قائمتي",
     icon: <Clock className="h-5 w-5" />,
     inkToken: "var(--ink-key)",
-  },
-  {
-    id: "customers",
-    href: "/customers",
-    labelAr: "العملاء",
-    icon: <Users className="h-5 w-5" />,
+    roles: [
+      "DESIGNER",
+      "HEAD_DESIGNER",
+      "RECEPTION",
+      "PRINT_RECEPTION_DELIVERY",
+      "ADMIN_OWNER",
+    ],
   },
   {
     id: "review",
@@ -93,6 +102,7 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "المراجعة",
     icon: <CheckCircle2 className="h-5 w-5" />,
     inkToken: "var(--ink-violet)",
+    roles: ["HEAD_DESIGNER", "ADMIN_OWNER"],
   },
 ];
 

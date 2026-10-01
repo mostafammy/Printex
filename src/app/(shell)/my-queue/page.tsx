@@ -2,6 +2,7 @@
 // Server Component: loads initial page, durations, and stats, delegates infinite scroll table to client.
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
+import { redirect } from "next/navigation";
 import {
   Clock,
   Layers,
@@ -26,6 +27,16 @@ export default async function MyQueuePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const actor = await getActor();
+  const allowedRoles = [
+    "DESIGNER",
+    "HEAD_DESIGNER",
+    "RECEPTION",
+    "PRINT_RECEPTION_DELIVERY",
+    "ADMIN_OWNER",
+  ];
+  if (!actor.roles.some((r) => allowedRoles.includes(r))) {
+    redirect("/board");
+  }
   const params = await searchParams;
   const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
   const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);

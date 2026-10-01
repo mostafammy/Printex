@@ -1,14 +1,23 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { CustomerProfile } from "~/components/customers/customer-profile";
 import { SpecialPricingTab } from "~/components/customers/special-pricing-tab";
 import { CustomerBalanceTab } from "~/components/finance/customer-balance-tab";
+import { getActor } from "~/server/auth";
 import { getCustomer } from "~/server/customers";
 
 export default async function CustomerPage({ params }: { params: Promise<{ id: string }> }) {
+  const actor = await getActor();
+  if (
+    !actor.roles.includes("RECEPTION") &&
+    !actor.roles.includes("ACCOUNTING") &&
+    !actor.roles.includes("ADMIN_OWNER")
+  ) {
+    redirect("/board");
+  }
   const { id } = await params;
   const customer = await getCustomer(id);
   if (!customer) notFound();

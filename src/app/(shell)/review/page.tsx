@@ -3,6 +3,7 @@
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Calendar,
@@ -35,6 +36,9 @@ export default async function ReviewQueuePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const actor = await getActor();
+  if (!actor.roles.includes("HEAD_DESIGNER") && !actor.roles.includes("ADMIN_OWNER")) {
+    redirect("/board");
+  }
   const params = await searchParams;
   const pageParam = Array.isArray(params.page) ? params.page[0] : params.page;
   const page = Math.max(Number.parseInt(pageParam ?? "1", 10) || 1, 1);

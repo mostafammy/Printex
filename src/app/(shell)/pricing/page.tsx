@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Tag, Sparkles, SlidersHorizontal, Flame, Clock, Kanban, ReceiptText } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { getPricingQueue } from "~/server/pricing";
@@ -8,6 +9,9 @@ import ar from "~/messages/ar.json";
 
 export default async function PricingQueuePage() {
   const actor = await getActor();
+  if (!actor.roles.includes("ACCOUNTING") && !actor.roles.includes("ADMIN_OWNER")) {
+    redirect("/board");
+  }
   const result = await getPricingQueue(actor);
 
   const urgentCount = result.rows.filter((r) => r.priority === "URGENT").length;

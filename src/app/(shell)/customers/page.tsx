@@ -1,13 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Users,
   Phone,
   ArrowUpRight,
   ShieldCheck,
 } from "lucide-react";
+import { getActor } from "~/server/auth";
 import { findCustomers } from "~/server/customers";
 
 export default async function CustomersPage() {
+  const actor = await getActor();
+  if (
+    !actor.roles.includes("RECEPTION") &&
+    !actor.roles.includes("ACCOUNTING") &&
+    !actor.roles.includes("ADMIN_OWNER")
+  ) {
+    redirect("/board");
+  }
   const customers = await findCustomers({ text: "", limit: 50 });
 
   const classifiedCount = customers.filter((c) => c.classification).length;
