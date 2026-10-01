@@ -766,7 +766,6 @@ export function BannerJobModal({
                     </div>
                   )}
                 </div>
-              </div>
           </div>
 
           {/* ── 4. Pricing + extensible finishings ── */}
