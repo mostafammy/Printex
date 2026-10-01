@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import pg from "pg";
 import { hashPassword } from "better-auth/crypto";
 
@@ -8,6 +9,94 @@ if (!connectionString) {
 }
 
 const SHARED_DEV_PASSWORD = "Printex123!";
+
+// ── Modes ───────────────────────────────────────────────────────────────────
+//
+// Three modes, selected with `--mode=`:
+//
+//   legacy              (default) full TRUNCATE of everything, then seed.
+//                       Preserves the historical `pnpm db:seed:demo` behaviour,
+//                       including wiping users/roles/customers, so it stays a
+//                       valid "rebuild the demo DB from nothing" tool.
+//
+//   purge-transactional TRUNCATE operational data ONLY, then stop. Reference
+//                       and identity data (users, roles, departments, customers,
+//                       product types, price lists, finance + notification
+//                       config) survives, so the app is still usable and logged-in
+//                       demo staff keep their sessions. This is the "show the
+//                       customer a clean board" mode.
+//
+//   reseed              purge-transactional, then reload the curated demo data.
+//                       Full reset in one step.
+//
+// The two non-legacy modes back the admin UI buttons in
+// `src/app/(shell)/admin/health/demo-controls.tsx`, which invoke this script as
+// a child process — the SQL here is deliberately NOT duplicated in the app.
+const MODE = (() => {
+  const arg = process.argv.find((a) => a.startsWith("--mode="));
+  const value = arg ? arg.slice("--mode=".length) : "legacy";
+  if (!["legacy", "purge-transactional", "reseed"].includes(value)) {
+    throw new Error(`Unknown --mode=${value} (expected legacy | purge-transactional | reseed)`);
+  }
+  return value;
+})();
+
+/** Sentinel prefix for the machine-readable summary the admin UI parses. */
+export const SUMMARY_SENTINEL = "::PRINTEX-DEMO-SUMMARY::";
+
+const TRANSACTIONAL_ONLY = MODE !== "legacy";
+
+// Operational data: orders and everything that hangs off them, plus
+// transactional finance and the audit/notification trail. Safe to drop for a
+// clean demo — none of it is configuration, and none of it is needed for the app
+// to boot or for anyone to log in.
+//
+// Ordering is child-before-parent purely for readability; TRUNCATE ... CASCADE
+// makes it non-load-bearing.
+//
+// NOTE what is deliberately ABSENT, because CASCADE makes an omission dangerous
+// rather than harmless: `user`, `account`, `role`, `Customer`, `Department`,
+// `ProductType`. Truncating any of those with CASCADE takes the whole database
+// with it. That is exactly why transactional mode exists as a separate list
+// instead of "the legacy list minus a few lines".
+// NOTE the mixed casing: most models map to a PascalCase quoted relation, but
+// identity/notification models are @@map'd to snake_case (`audit_event`,
+// `notification`, `delay_breach` — see prisma/schema/{identity,notifications}.prisma).
+// Getting these wrong is silent: TRUNCATE of a non-existent table only warns,
+// so a typo here quietly leaves demo data behind rather than erroring.
+//
+// The three tables at the end are pulled in by TRUNCATE ... CASCADE (they hold
+// FKs to Order/WorkItem) and are listed for explicitness, not because cascade
+// needs them.
+const TRANSACTIONAL_TABLES = [
+  `"WorkItemTransition"`, `"PhaseTiming"`, `"DesignVersion"`, `"ReturnAttachment"`, `"Return"`,
+  `"VendorProductionRecord"`, `"Attachment"`, `"FileAuditEvent"`, `"FileVersion"`, `"FileAsset"`, `"FileObject"`,
+  `"WorkItemPrice"`, `"PricingStatus"`,
+  `"Payment"`, `"ExpenseApproval"`, `"Expense"`, `"DirectCost"`, `"FinanceVoid"`, `"CustomerCredit"`,
+  `"delay_breach"`, `"notification"`, `"NotificationEvent"`, `"scheduler_run"`, `"audit_event"`,
+  `"LateCancellation"`, `"ChangeRequest"`, `"SpecVersion"`,
+  `"WorkItem"`, `"Order"`,
+  `"WorkItemFinishing"`, `"AccountingApproval"`, `"WidthExceptionTicket"`,
+];
+
+// The original hand-maintained list, kept verbatim for `legacy` mode.
+const ALL_TABLES = [
+  ...TRANSACTIONAL_TABLES,
+  `"PriceTier"`, `"PriceList"`, `"CustomerPricingRule"`, `"ProductPricingPolicy"`,
+  `"FinanceConfig"`,
+  `"delay_threshold"`, `"notification_type_override"`,
+  `"CustomerPhone"`, `"CustomerAddress"`, `"CustomerPromotion"`, `"Customer"`, `"CustomerClassification"`,
+  `"ProductType"`, `"Department"`,
+  `"session"`, `"verification"`, `"user_department"`, `"user_permission"`, `"user_role"`, `"role_permission"`, `"account"`, `"user"`, `"role"`,
+];
+
+const TRUNCATE_TABLES = TRANSACTIONAL_ONLY ? TRANSACTIONAL_TABLES : ALL_TABLES;
+
+// Prisma/Postgres `audit_event` has `REVOKE UPDATE, DELETE` (manual-sql/
+// audit-event-append-only.sql). TRUNCATE is a separate privilege from DELETE and
+// is not revoked, which is why a purge can clear the audit trail at all — worth
+// knowing before someone "fixes" this to a DELETE loop and it stops working.
+
 
 const ROLES = [
   {
@@ -166,9 +255,49 @@ const WORKFLOW_USERS = [
   },
 ];
 
+/**
+ * Row counts captured immediately BEFORE the truncate, so the admin UI can show
+ * the operator exactly how much was removed instead of just "done".
+ */
+async function snapshotCounts(client) {
+  // Aliases are QUOTED so they survive as camelCase. Postgres folds unquoted
+  // identifiers to lower case, which silently turned `workItems` into `workitems`
+  // and made every count read as `undefined` on the admin UI.
+  const { rows } = await client.query(`
+    SELECT
+      (SELECT COUNT(*) FROM "Order")          AS "orders",
+      (SELECT COUNT(*) FROM "WorkItem")       AS "workItems",
+      (SELECT COUNT(*) FROM "Payment")        AS "payments",
+      (SELECT COUNT(*) FROM "Expense")        AS "expenses",
+      (SELECT COUNT(*) FROM audit_event)      AS "auditEvents",
+      (SELECT COUNT(*) FROM notification)     AS "notifications",
+      (SELECT COUNT(*) FROM "FileAsset")      AS "fileAssets",
+      (SELECT COUNT(*) FROM "DesignVersion")  AS "designVersions"
+  `);
+  // node-postgres hands back int8 as a string; normalise so the admin UI can do
+  // arithmetic on it instead of concatenating "48" + 1.
+  return Object.fromEntries(Object.entries(rows[0]).map(([k, v]) => [k, Number(v)]));
+}
+
+/**
+ * Machine-readable result for the admin UI, on a single sentinel-prefixed line
+ * so it survives the human-facing console noise above. Parsed by
+ * `parseDemoSummary()` in src/server/admin/demo.ts.
+ */
+function emitSummary(summary) {
+  process.stdout.write(`${SUMMARY_SENTINEL}${JSON.stringify(summary)}\n`);
+}
+
 async function main() {
+  const startedAt = Date.now();
   console.log("=================================================");
-  console.log("🚀 STARTING LIVE DEMO DATABASE CLEANUP & SEEDING");
+  if (MODE === "legacy") {
+    console.log("🚀 STARTING LIVE DEMO DATABASE CLEANUP & SEEDING (full wipe)");
+  } else if (MODE === "purge-transactional") {
+    console.log("🧹 STARTING OPERATIONAL DATA PURGE (reference data & logins kept)");
+  } else {
+    console.log("♻️  STARTING FULL DEMO RESET (purge + reseed)");
+  }
   console.log("=================================================");
 
   const client = new Client({
@@ -186,28 +315,47 @@ async function main() {
     console.log("✓ Disabled foreign keys and triggers for clean purge.");
 
     // 2. Truncate bloated tables
-    console.log("Clearing ~40,000 synthetic test records...");
-    const truncateTables = [
-      `"WorkItemTransition"`, `"PhaseTiming"`, `"DesignVersion"`, `"ReturnAttachment"`, `"Return"`,
-      `"VendorProductionRecord"`, `"Attachment"`, `"FileAuditEvent"`, `"FileVersion"`, `"FileAsset"`, `"FileObject"`,
-      `"WorkItemPrice"`, `"PricingStatus"`, `"PriceTier"`, `"PriceList"`, `"CustomerPricingRule"`, `"ProductPricingPolicy"`,
-      `"Payment"`, `"ExpenseApproval"`, `"Expense"`, `"DirectCost"`, `"FinanceVoid"`, `"CustomerCredit"`, `"FinanceConfig"`,
-      `"DelayBreach"`, `"DelayThreshold"`, `"Notification"`, `"NotificationTypeOverride"`, `"NotificationEvent"`, `"AuditEvent"`,
-      `"LateCancellation"`, `"ChangeRequest"`, `"SpecVersion"`,
-      `"WorkItem"`, `"Order"`,
-      `"CustomerPhone"`, `"CustomerAddress"`, `"CustomerPromotion"`, `"Customer"`, `"CustomerClassification"`,
-      `"ProductType"`, `"Department"`,
-      `"session"`, `"verification"`, `"user_department"`, `"user_permission"`, `"user_role"`, `"role_permission"`, `"account"`, `"user"`, `"role"`
-    ];
+    const before = TRANSACTIONAL_ONLY
+      ? await snapshotCounts(client)
+      : null;
+    if (TRANSACTIONAL_ONLY) {
+      console.log("Clearing operational data (orders, work items, finance, audit trail)...");
+    } else {
+      console.log("Clearing ~40,000 synthetic test records...");
+    }
 
-    for (const tbl of truncateTables) {
+    // Seeded rows are referenced by id further down, and in transactional mode
+    // the reference/identity tables were NOT truncated — so a row may already
+    // exist under the SAME unique key (username / name / id) but with a
+    // DIFFERENT primary key, e.g. an admin created through the Admin UI. Every
+    // upsert below therefore RETURNs its real id and downstream inserts use that
+    // id, not the literal seed id. Skipping this makes the seed die on a FK
+    // violation the moment it runs against a database it did not create.
+    const deptIds = new Map();
+    const roleIds = new Map();
+    const userIds = new Map();
+    const custIds = new Map();
+    const prodIds = new Map();
+
+    /** Look up a resolved id, failing loudly rather than writing a null FK. */
+    const R = (map, key) => {
+      const id = map.get(key);
+      if (!id) throw new Error(`Seed id resolution failed for "${key}"`);
+      return id;
+    };
+
+    for (const tbl of TRUNCATE_TABLES) {
       try {
         await client.query(`TRUNCATE TABLE ${tbl} CASCADE;`);
       } catch (e) {
         console.warn(`  Warning on truncate ${tbl}:`, e.message);
       }
     }
-    console.log("✓ Truncate completed. Database tables are completely clean.");
+    console.log(
+      TRANSACTIONAL_ONLY
+        ? "✓ Truncate completed. Operational data is clean; reference data and logins intact."
+        : "✓ Truncate completed. Database tables are completely clean.",
+    );
 
     // 3. Reset autoincrement sequences
     try {
@@ -215,6 +363,25 @@ async function main() {
       await client.query(`ALTER SEQUENCE IF EXISTS "Payment_receiptNumber_seq" RESTART WITH 5001;`);
     } catch (e) {
       console.warn("  Sequence restart warning:", e.message);
+    }
+
+    // ── purge-transactional stops here ──────────────────────────────────────
+    // Placed immediately after the truncate, NOT at the end: the steps below
+    // re-seed the demo dataset, and a "clean the board" button that reloads 48
+    // demo orders is worse than no button at all. Steps 4-12 are the seed, so
+    // the early return has to precede them.
+    if (MODE === "purge-transactional") {
+      await client.query("SET session_replication_role = 'origin';");
+      const after = await snapshotCounts(client);
+      console.log("\n=================================================");
+      console.log("✨ OPERATIONAL DATA PURGED. APP IS READY FOR DEMO.");
+      console.log("=================================================");
+      console.log("✓ Users, roles, departments, customers, product types and");
+      console.log("  configuration were NOT touched. Nobody was logged out.");
+
+      emitSummary({ mode: MODE, before, after, durationMs: Date.now() - startedAt });
+      await client.end();
+      return;
     }
 
     // 4. Seed Canonical 5 Factory Departments
@@ -228,29 +395,34 @@ async function main() {
     ];
 
     for (const d of departmentsData) {
-      await client.query(`
+      const { rows } = await client.query(`
         INSERT INTO "Department" (id, name, "isActive", "isExternalProduction", "createdAt")
         VALUES ($1, $2, true, $3, NOW())
-        ON CONFLICT (name) DO UPDATE SET "isExternalProduction" = EXCLUDED."isExternalProduction", "isActive" = true;
+        ON CONFLICT (name) DO UPDATE SET "isExternalProduction" = EXCLUDED."isExternalProduction", "isActive" = true
+        RETURNING id;
       `, [d.id, d.name, d.isExternalProduction]);
+      deptIds.set(d.id, rows[0].id);
     }
     console.log("✓ 5 Canonical Factory Departments ready: Digital, Banner, Outdoor, Laser, External.");
 
     // 5. Seed Roles & Permissions
     console.log("Seeding roles and permissions...");
     for (const r of ROLES) {
-      await client.query(`
+      const { rows } = await client.query(`
         INSERT INTO "role" (id, key, name, "createdAt")
         VALUES ($1, $2, $3, NOW())
-        ON CONFLICT (key) DO UPDATE SET name = EXCLUDED.name;
+        ON CONFLICT (key) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id;
       `, [r.id, r.key, r.name]);
+      const roleId = rows[0].id;
+      roleIds.set(r.id, roleId);
 
       for (const p of r.permissions) {
         await client.query(`
           INSERT INTO "role_permission" (id, "roleId", permission)
           VALUES ($1, $2, $3)
           ON CONFLICT ("roleId", permission) DO NOTHING;
-        `, [`${r.id}_${p}`, r.id, p]);
+        `, [`${r.id}_${p}`, roleId, p]);
       }
     }
     console.log("✓ 7 Canonical Roles and Permission bundles ready.");
@@ -260,25 +432,45 @@ async function main() {
     const hashedPassword = await hashPassword(SHARED_DEV_PASSWORD);
 
     for (const u of WORKFLOW_USERS) {
-      await client.query(`
+      const { rows } = await client.query(`
         INSERT INTO "user" (id, name, email, "emailVerified", username, "displayUsername", "isActive", "failedLoginAttempts", "createdAt", "updatedAt")
         VALUES ($1, $2, $3, false, $4, $5, true, 0, NOW(), NOW())
-        ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, "displayUsername" = EXCLUDED."displayUsername", "isActive" = true;
+        ON CONFLICT (username) DO UPDATE SET name = EXCLUDED.name, "displayUsername" = EXCLUDED."displayUsername", "isActive" = true
+        RETURNING id;
       `, [u.id, u.name, u.email, u.username, u.displayUsername]);
 
-      const accountId = `seed_account_${u.username}`;
-      await client.query(`
-        INSERT INTO "account" (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
-        VALUES ($1, $2, 'credential', $3, $4, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password;
-      `, [accountId, u.id, u.id, hashedPassword]);
+      const userId = rows[0].id;
+      userIds.set(u.id, userId);
+
+      // `account` has NO unique constraint on ("userId","providerId") — only its
+      // own `id` is unique — so ON CONFLICT can only key on `id`. A pre-existing
+      // credential row for this user therefore has to be FOUND first and updated
+      // by its real id, otherwise the insert would create a second credential
+      // row and the user could end up with two (one stale password).
+      const existing = await client.query(
+        `SELECT id FROM "account" WHERE "userId" = $1 AND "providerId" = 'credential' LIMIT 1`,
+        [userId],
+      );
+      if (existing.rows[0]) {
+        await client.query(
+          `UPDATE "account" SET password = $1, "accountId" = $2, "updatedAt" = NOW() WHERE id = $3`,
+          [hashedPassword, userId, existing.rows[0].id],
+        );
+      } else {
+        await client.query(
+          `INSERT INTO "account" (id, "accountId", "providerId", "userId", password, "createdAt", "updatedAt")
+           VALUES ($1, $2, 'credential', $3, $4, NOW(), NOW())
+           ON CONFLICT (id) DO UPDATE SET password = EXCLUDED.password`,
+          [`seed_account_${u.username}`, userId, userId, hashedPassword],
+        );
+      }
 
       // UserRole
       await client.query(`
         INSERT INTO "user_role" (id, "userId", "roleId")
         VALUES ($1, $2, $3)
         ON CONFLICT ("userId", "roleId") DO NOTHING;
-      `, [`ur_${u.id}`, u.id, u.roleId]);
+      `, [`ur_${userId}`, userId, R(roleIds, u.roleId)]);
 
       // UserDepartment
       if (u.allDepartments) {
@@ -287,7 +479,7 @@ async function main() {
             INSERT INTO "user_department" (id, "userId", "departmentId")
             VALUES ($1, $2, $3)
             ON CONFLICT ("userId", "departmentId") DO NOTHING;
-          `, [`ud_${u.id}_${d.id}`, u.id, d.id]);
+          `, [`ud_${userId}_${d.id}`, userId, R(deptIds, d.id)]);
         }
       }
     }
@@ -405,18 +597,21 @@ async function main() {
     ];
 
     for (const c of clientsData) {
-      await client.query(`
+      const { rows } = await client.query(`
         INSERT INTO "Customer" (id, name, "normalizedName", "isCashCustomer", "isArchived", "classificationId", "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, false, $5, NOW(), NOW())
-        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, "normalizedName" = EXCLUDED."normalizedName";
+        ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, "normalizedName" = EXCLUDED."normalizedName"
+        RETURNING id;
       `, [c.id, c.name, c.normalizedName, c.isCash, c.classId]);
+      const customerId = rows[0].id;
+      custIds.set(c.id, customerId);
 
       if (c.phone) {
         await client.query(`
           INSERT INTO "CustomerPhone" (id, "customerId", "phoneE164", kind, "createdAt", "updatedAt")
           VALUES ($1, $2, $3, 'MOBILE', NOW(), NOW())
           ON CONFLICT ("phoneE164") DO NOTHING;
-        `, [`phone_${c.id}`, c.id, c.phone]);
+        `, [`phone_${customerId}`, customerId, c.phone]);
       }
 
       if (c.address) {
@@ -424,7 +619,7 @@ async function main() {
           INSERT INTO "CustomerAddress" (id, "customerId", label, value, "isDefault", "createdAt", "updatedAt")
           VALUES ($1, $2, 'الرئيسي', $3, true, NOW(), NOW())
           ON CONFLICT (id) DO NOTHING;
-        `, [`addr_${c.id}`, c.id, c.address]);
+        `, [`addr_${customerId}`, customerId, c.address]);
       }
     }
     console.log("✓ 10 Authentic Egyptian Print Clients ready.");
@@ -447,16 +642,21 @@ async function main() {
     ];
 
     for (const p of productsData) {
-      await client.query(`
+      const { rows } = await client.query(`
         INSERT INTO "ProductType" (id, name, "defaultDepartmentId", "defaultRequiresDesign", "defaultRequiresReview", "pricingModeHint", "isActive", "createdAt")
         VALUES ($1, $2, $3, true, $4, $5, true, NOW())
-        ON CONFLICT (name) DO UPDATE SET "defaultDepartmentId" = EXCLUDED."defaultDepartmentId", "pricingModeHint" = EXCLUDED."pricingModeHint";
-      `, [p.id, p.name, p.deptId, p.review, p.mode]);
+        ON CONFLICT (name) DO UPDATE SET "defaultDepartmentId" = EXCLUDED."defaultDepartmentId", "pricingModeHint" = EXCLUDED."pricingModeHint"
+        RETURNING id;
+      `, [p.id, p.name, R(deptIds, p.deptId), p.review, p.mode]);
+      prodIds.set(p.id, rows[0].id);
     }
     console.log("✓ 12 Standard Product Offerings mapped to departments.");
 
     // 10. Seed FinanceConfig
     console.log("Seeding Finance Configuration...");
+    // `updatedById` is an FK to `user`. In transactional mode the user table was
+    // not truncated, so resolve through the map rather than assuming the seed id
+    // still exists.
     const financeConfigData = {
       id: "finance-config",
       paymentMethods: JSON.stringify(["Cash", "Card", "Bank transfer", "InstaPay", "Vodafone Cash", "Cheque"]),
@@ -471,7 +671,7 @@ async function main() {
       ]),
       approvalThreshold: "1000.00",
       shopTimezone: "Africa/Cairo",
-      updatedById: "seed_admin_user"
+      updatedById: R(userIds, "seed_admin_user"),
     };
 
     await client.query(`
@@ -580,16 +780,22 @@ async function main() {
     let totalCollected = 0;
     let totalExpenses = 0;
 
+    // Declared out here, not inside the loop below: the expenses block that
+    // follows the loop also needs the accounting user's id.
+    const receptionId = R(userIds, "seed_user_reception");
+    const accountingId = R(userIds, "seed_user_accounting");
+
     for (let i = 0; i < demoJobs.length; i++) {
       const job = demoJobs[i];
       const orderId = `order_demo_${i + 1}`;
       const workItemId = `wi_demo_${i + 1}`;
 
+      // Every FK below is resolved through the maps, never the literal seed id.
       // Insert Order
       await client.query(`
         INSERT INTO "Order" (id, number, "customerId", channel, priority, mode, "dueDate", "createdById", "createdAt")
-        VALUES ($1, $2, $3, $4, $5, 'GROUPED', NOW() + INTERVAL '3 days', 'seed_user_reception', NOW() - INTERVAL '${48 - i} hours');
-      `, [orderId, orderSeq++, job.cust, job.channel, job.prio]);
+        VALUES ($1, $2, $3, $4, $5, 'GROUPED', NOW() + INTERVAL '3 days', $6, NOW() - INTERVAL '${48 - i} hours');
+      `, [orderId, orderSeq++, R(custIds, job.cust), job.channel, job.prio, receptionId]);
 
       // Insert WorkItem
       await client.query(`
@@ -598,7 +804,10 @@ async function main() {
           "assigneeId", description, quantity, "dimensionUnit", "createdAt", "updatedAt"
         )
         VALUES ($1, $2, $3, $4, $5, true, true, $6, $7, $8, 'CM', NOW() - INTERVAL '${48 - i} hours', NOW());
-      `, [workItemId, orderId, job.prod, job.dept, job.state, job.designer || null, job.desc, job.qty]);
+      `, [
+        workItemId, orderId, R(prodIds, job.prod), R(deptIds, job.dept), job.state,
+        job.designer ? R(userIds, job.designer) : null, job.desc, job.qty,
+      ]);
 
       // Insert PricingStatus & WorkItemPrice
       const isPriced = !['NEW', 'ASSIGNED', 'IN_DESIGN', 'WAITING_PRICING'].includes(job.state);
@@ -612,8 +821,8 @@ async function main() {
       if (isPriced || job.price) {
         await client.query(`
           INSERT INTO "WorkItemPrice" (id, "workItemId", amount, currency, source, "setById", "setAt")
-          VALUES ($1, $2, $3, 'EGP', 'LIST', 'seed_user_accounting', NOW() - INTERVAL '1 hour');
-        `, [`wip_${workItemId}`, workItemId, job.price]);
+          VALUES ($1, $2, $3, 'EGP', 'LIST', $4, NOW() - INTERVAL '1 hour');
+        `, [`wip_${workItemId}`, workItemId, job.price, accountingId]);
       }
 
       // Insert DesignVersion for items that reached review / approved / later
@@ -628,9 +837,9 @@ async function main() {
             $6, $7);
         `, [
           `dv_${workItemId}`, workItemId, `storage/designs/${workItemId}_v1.pdf`, `${job.prod}_v1.pdf`,
-          job.designer || "seed_user_designer",
+          R(userIds, job.designer || "seed_user_designer"),
           ['APPROVED', 'READY_FOR_PRODUCTION', 'IN_PRODUCTION', 'PRODUCTION_COMPLETED', 'READY_FOR_COLLECTION', 'DELIVERED', 'COMPLETED'].includes(job.state) ? new Date() : null,
-          ['APPROVED', 'READY_FOR_PRODUCTION', 'IN_PRODUCTION', 'PRODUCTION_COMPLETED', 'READY_FOR_COLLECTION', 'DELIVERED', 'COMPLETED'].includes(job.state) ? 'seed_user_head_designer' : null
+          ['APPROVED', 'READY_FOR_PRODUCTION', 'IN_PRODUCTION', 'PRODUCTION_COMPLETED', 'READY_FOR_COLLECTION', 'DELIVERED', 'COMPLETED'].includes(job.state) ? R(userIds, "seed_user_head_designer") : null
         ]);
       }
 
@@ -645,8 +854,8 @@ async function main() {
             id, "orderId", "customerId", amount, currency, method, source, note,
             "occurredAt", "recordedAt", "recordedById", "receiptNumber"
           )
-          VALUES ($1, $2, $3, $4, 'EGP', $5, $6, 'دفعة سداد أمر الطباعة', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'seed_user_reception', $7);
-        `, [`pay_${workItemId}`, orderId, job.cust, payAmount, method, source, paymentSeq++]);
+          VALUES ($1, $2, $3, $4, 'EGP', $5, $6, 'دفعة سداد أمر الطباعة', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', $7, $8);
+        `, [`pay_${workItemId}`, orderId, R(custIds, job.cust), payAmount, method, source, receptionId, paymentSeq++]);
 
         totalCollected += payAmount;
       }
@@ -708,8 +917,8 @@ async function main() {
         INSERT INTO "Expense" (
           id, amount, category, "expenseDate", employee, description, "createdById", "createdAt"
         )
-        VALUES ($1, $2, $3, NOW() - INTERVAL '${expIdx * 6} hours', $4, $5, 'seed_user_accounting', NOW() - INTERVAL '${expIdx * 6} hours');
-      `, [`exp_${expIdx++}`, exp.amount, exp.cat, exp.emp, exp.desc]);
+        VALUES ($1, $2, $3, NOW() - INTERVAL '${expIdx * 6} hours', $4, $5, $6, NOW() - INTERVAL '${expIdx * 6} hours');
+      `, [`exp_${expIdx++}`, exp.amount, exp.cat, exp.emp, exp.desc, accountingId]);
       totalExpenses += exp.amount;
     }
     console.log(`✓ Operational expenses seeded. Total expenses: ${totalExpenses.toLocaleString()} EGP.`);
@@ -750,6 +959,39 @@ async function main() {
       ORDER BY count DESC;
     `);
     console.table(stageRes.rows);
+
+    // ── Timeline transitions ─────────────────────────────────────────────────
+    // Chain into the sibling script (`pnpm db:seed:demo` has always run both)
+    // rather than duplicating its fixtures. Without this the board has 56 cards
+    // with zero history, so every card opens with an empty timeline and the
+    // phase-duration analytics on the health page read as zero — which looks
+    // broken to a customer, since that history is the actual selling point.
+    if (MODE === "reseed") {
+      const timeline = spawnSync(process.execPath, ["scripts/seed-timeline-transitions.mjs"], {
+        cwd: process.cwd(),
+        env: process.env,
+        encoding: "utf8",
+        maxBuffer: 8 * 1024 * 1024,
+      });
+      if (timeline.status === 0) {
+        console.log("✓ Work item timeline + phase timings seeded.");
+      } else {
+        // Non-fatal: the board itself is seeded and demo-ready, only the history
+        // is missing. Failing here would be a false alarm about the whole run.
+        console.warn("  Warning: timeline seeding failed (demo data itself is fine):");
+        console.warn((timeline.stderr || "").trim().split("\n").slice(-4).join("\n"));
+      }
+    }
+
+    // Snapshot AFTER the timeline script, so the counts the admin UI shows
+    // include the transition/audit history it just wrote.
+    emitSummary({
+      mode: MODE,
+      before,
+      after: await snapshotCounts(client),
+      seeded: { orders: demoJobs.length, workItems: demoJobs.length, expenses: expensesList.length },
+      durationMs: Date.now() - startedAt,
+    });
 
     await client.end();
   } catch (err) {
