@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Kanban,
+  ReceiptText,
   Search,
   Users,
 } from "lucide-react";
@@ -45,6 +46,13 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "التسعير والمالية",
     icon: <Calculator className="h-5 w-5" />,
     inkToken: "var(--ink-yellow)",
+  },
+  {
+    id: "accounting-orders",
+    href: "/accounting/orders",
+    labelAr: "طلبات وسجل المحاسب",
+    icon: <ReceiptText className="h-5 w-5" />,
+    inkToken: "var(--ink-orange)",
   },
   {
     id: "my-queue",

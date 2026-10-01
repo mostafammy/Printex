@@ -13,7 +13,7 @@
 import type { WorkItemState } from "./states";
 
 export const ALLOWED_EDGES: Readonly<Record<WorkItemState, readonly WorkItemState[]>> = {
-  NEW: ["ASSIGNED", "READY_FOR_PRODUCTION", "CANCELLED"],
+  NEW: ["ASSIGNED", "WAITING_PRICING", "READY_FOR_PRODUCTION", "CANCELLED"],
   ASSIGNED: ["IN_DESIGN", "CANCELLED"],
   IN_DESIGN: ["DESIGN_COMPLETED", "CANCELLED"],
   DESIGN_COMPLETED: ["WAITING_REVIEW", "APPROVED", "CANCELLED"],
