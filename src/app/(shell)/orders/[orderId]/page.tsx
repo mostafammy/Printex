@@ -136,12 +136,24 @@ function missingFields(wi: {
   return missing;
 }
 
+function toDimString(v: unknown): string {
+  if (v == null) return "";
+  if (typeof v === "string") return v;
+  if (typeof v === "number") return v.toString();
+  if (typeof v === "object" && "toString" in v && typeof (v as { toString(): string }).toString === "function") {
+    return (v as { toString(): string }).toString();
+  }
+  return "";
+}
+
 function formatDimensions(
   widthValue: unknown,
   heightValue: unknown,
   dimensionUnit: string | null,
 ): string {
-  if (widthValue == null && heightValue == null) return "—";
+  const w = toDimString(widthValue);
+  const h = toDimString(heightValue);
+  if (!w && !h) return "—";
   const unitAr =
     dimensionUnit === "CM"
       ? "سم"
@@ -152,9 +164,6 @@ function formatDimensions(
       : dimensionUnit === "IN"
       ? "بوصة"
       : dimensionUnit ?? "سم";
-
-  const w = widthValue != null ? String(widthValue) : "";
-  const h = heightValue != null ? String(heightValue) : "";
 
   if (w && h) return `${w} × ${h} ${unitAr}`;
   if (w) return `${w} ${unitAr}`;
