@@ -100,6 +100,28 @@ export async function createMasterOrderAction(
     );
   }
 
+  // ── Can this actor actually take the deposit? ────────────────────────────
+  //
+  // Checked HERE, before a single row is written, and with a real message
+  // instead of letting `recordPayment` fail three steps later.
+  //
+  // RECEPTION now holds `payment.record` (migration 20261001120000), because
+  // reception takes the customer's money at the counter. This guard is not about
+  // that default — it is about every actor who does NOT: a second role opening
+  // this form, or the grant being revoked later.
+  //
+  // Without it, `recordPayment` failed *after* the order, its work items and
+  // their frozen specs were already committed — so the receptionist got an
+  // opaque 500, a half-written order, and a deposit that was nowhere. The only
+  // two acceptable outcomes are "the deposit is recorded" or "the save is
+  // refused"; silently creating an order without the deposit is not one of them.
+  if (paid.gt(0) && !actor.permissions.has("payment.record")) {
+    throw new Error(
+      "حسابك لا يملك صلاحية تسجيل الدفعات (payment.record)، لذلك لا يمكن حفظ دفعة مع هذا الأمر. " +
+        "امسح خانة المدفوع واحفظ الأمر، ثم سجّل الدفعة من صفحة المالية الخاصة بالأمر.",
+    );
+  }
+
   // Map items to WorkItemCreateInput
   const workItems = payload.items.map((item) => {
     const isBanner = Boolean(item.bannerSpec);

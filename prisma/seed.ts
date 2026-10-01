@@ -67,6 +67,11 @@ const ROLE_SEED_DATA = [
       "delivery.record",
       "pricing.use_fixed",
       "finance.view",
+      // Reception takes the customer's money at the counter, so it must be able
+      // to RECORD it — `finance.view` above is read-only and is not enough for
+      // `recordPayment`. Granted by migration 20261001120000 as well, so a shop
+      // provisioned by either route lands on the same matrix.
+      "payment.record",
     ],
   },
   {
