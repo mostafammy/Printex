@@ -54,6 +54,25 @@ export interface WorkItemDetailQueryRow {
     readonly disputeReason: string | null;
     readonly waitingSince: Date | null;
   } | null;
+  // 093's frozen production spec: the inputs and add-on lines behind
+  // `productionTotal`. Decimals are carried as `{ toString() }` rather than
+  // number so the mapper keeps full precision until the DTO formats them.
+  readonly customerWidthCm: { toString(): string } | null;
+  readonly productionWidthCm: { toString(): string } | null;
+  readonly productionHeightM: { toString(): string } | null;
+  readonly productionAreaSqm: { toString(): string } | null;
+  readonly baseRatePerSqm: { toString(): string } | null;
+  readonly baseTotal: { toString(): string } | null;
+  readonly finishingTotal: { toString(): string } | null;
+  readonly productionTotal: { toString(): string } | null;
+  /// Append-only, newest generation first — the mapper keeps only the current
+  /// generation so a superseded quote is never shown as the live one.
+  readonly finishings: readonly {
+    readonly generation: number;
+    readonly labelSnapshot: string;
+    readonly rateSnapshot: { toString(): string };
+    readonly totalAmount: { toString(): string };
+  }[];
   readonly prices: readonly {
     readonly amount: { toString(): string };
     readonly currency: string;

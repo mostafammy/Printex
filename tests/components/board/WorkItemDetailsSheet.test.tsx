@@ -105,6 +105,10 @@ const mockDetail: WorkItemFullDetail = {
     setAt: "2026-09-26T09:15:00Z",
     setByName: "موظف التسعير",
   },
+  // 093's quote breakdown. Null here because this fixture has no frozen
+  // production spec, which is the case the popup must render as absent rather
+  // than as a row of zeros.
+  priceBreakdown: null,
   reworkCount: 1,
   returns: [
     {

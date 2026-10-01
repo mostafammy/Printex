@@ -69,6 +69,30 @@ export interface DetailTransition {
   readonly actorName: string;
 }
 
+/**
+ * The 093 quote as the receptionist's rate and the width ladder produced it.
+ *
+ * `currentPrice` alone is one number with no visible derivation, so it gives an
+ * accountant nothing to check against the customer's quote and nothing to argue
+ * with when it looks wrong. These are the inputs and add-on lines that produced
+ * it, so approving or changing the price is an informed decision.
+ */
+export interface DetailPriceBreakdown {
+  readonly customerWidthCm: string | null;
+  readonly productionWidthCm: string | null;
+  readonly productionHeightM: string | null;
+  readonly productionAreaSqm: string | null;
+  readonly baseRatePerSqm: string | null;
+  readonly baseTotal: string | null;
+  readonly finishingTotal: string | null;
+  readonly productionTotal: string | null;
+  readonly finishings: readonly {
+    readonly labelAr: string;
+    readonly ratePerSqm: string;
+    readonly totalAmount: string;
+  }[];
+}
+
 export interface WorkItemFullDetail {
   readonly id: string;
   readonly orderId: string;
@@ -118,6 +142,7 @@ export interface WorkItemFullDetail {
     readonly setAt: string;
     readonly setByName: string;
   } | null;
+  readonly priceBreakdown: DetailPriceBreakdown | null;
   readonly reworkCount: number;
   readonly returns: readonly DetailReturn[];
   readonly designVersions: readonly DetailDesignVersion[];

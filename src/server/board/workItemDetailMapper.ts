@@ -8,6 +8,7 @@ import type {
   DetailCustomer,
 } from "~/lib/board/detailTypes";
 import type { WorkItemDetailQueryRow } from "./workItemDetailQueryTypes";
+import { mapPriceBreakdown } from "./workItemDetailPricing";
 import {
   mapReturns,
   mapDesignVersions,
@@ -126,6 +127,7 @@ export function mapWorkItemToDetail(row: WorkItemDetailQueryRow): WorkItemFullDe
     assignee: row.assignee ? { id: row.assignee.id, name: row.assignee.name, email: row.assignee.email } : null,
     pricingStatus,
     currentPrice,
+    priceBreakdown: mapPriceBreakdown(row),
     ...mapOrderInfo(row),
     ...mapSpecs(row),
     ...mapHistoryInfo(row),

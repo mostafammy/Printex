@@ -20,9 +20,15 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import type { AccountantOrderRow, AccountantOrdersMetrics } from "~/server/accounting";
+import type {
+  AccountantOrderItem,
+  AccountantOrderRow,
+  AccountantOrdersMetrics,
+} from "~/server/accounting";
 import { approveAccountantOrderItemAction } from "~/app/(shell)/accounting/orders/actions";
 import { Button } from "~/components/ui/button";
+
+import { AccountantPriceBreakdown } from "./AccountantPriceBreakdown";
 
 interface AccountantOrdersViewProps {
   readonly initialOrders: readonly AccountantOrderRow[];
@@ -63,6 +69,11 @@ export function AccountantOrdersView({
   } | null>(null);
   const [editPriceValue, setEditPriceValue] = useState<string>("");
   const [editPriceNote, setEditPriceNote] = useState<string>("");
+
+  // Which item's pricing breakdown is open. Single-open rather than a Set: one
+  // expanded row is all an accountant needs to read, and it keeps the toggle
+  // state trivial.
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
   function applyFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -519,6 +530,20 @@ export function AccountantOrdersView({
                             <span className="font-mono text-sm font-extrabold text-foreground">
                               {(item.productionTotal ?? item.baseTotal ?? 0).toLocaleString()} ج.م
                             </span>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedItemId((cur) =>
+                                  cur === item.id ? null : item.id,
+                                )
+                              }
+                              className="text-2xs font-semibold text-amber-700 underline-offset-2 hover:underline dark:text-amber-400"
+                              aria-expanded={expandedItemId === item.id}
+                            >
+                              {expandedItemId === item.id
+                                ? "إخفاء تفاصيل التسعير"
+                                : "عرض تفاصيل التسعير"}
+                            </button>
                             <span className="text-2xs text-muted-foreground">
                               {item.pricingStatus === "PENDING"
                                 ? "تسعير مقترح"
@@ -579,6 +604,12 @@ export function AccountantOrdersView({
                             </div>
                           )}
                         </div>
+
+                        {expandedItemId === item.id && (
+                          <div className="w-full">
+                            <AccountantPriceBreakdown item={item} />
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -168,7 +168,28 @@ export async function createMasterOrderAction(
       material: materialDesc || undefined,
       finishNotes: finishNotesParts.length > 0 ? finishNotesParts.join(" | ") : undefined,
       requiresDesign: true,
-      requiresReview: isBanner ? false : true,
+      // ALWAYS true, with no product-type branch.
+      //
+      // `requiresReview` decides where a finished design lands
+      // (server/designers/designVersions.ts, `markDesignComplete`):
+      //
+      //   true  -> DESIGN_COMPLETED -> WAITING_REVIEW -> APPROVED -> WAITING_PRICING
+      //   false -> DESIGN_COMPLETED -> APPROVED        -> WAITING_PRICING
+      //
+      // The shop's pipeline is RECEPTION -> DESIGNER -> HEAD DESIGNER ->
+      // ACCOUNTANT -> PRINTER, so every design is reviewed by the Head Designer
+      // before the accountant ever sees it. Setting this from `isBanner` sent
+      // every banner and roll job -- the shop's main product -- straight past
+      // review to the accountant, because the designer marked it complete and
+      // nothing was ever shown to a reviewer.
+      //
+      // It was previously a per-product-type configuration
+      // (`ProductType.defaultRequiresReview`), seeded false for Roll-up Banner on
+      // the 093 assumption that this pipeline has no review stage. That
+      // assumption is wrong for this business, so the value is now stated here
+      // as a single rule rather than derived from the product type. Review is a
+      // stage of the pipeline, not a property of a product.
+      requiresReview: true,
       dueDate: payload.dueDate ? new Date(payload.dueDate) : undefined,
       description,
     };

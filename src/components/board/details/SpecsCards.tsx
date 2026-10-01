@@ -9,6 +9,7 @@ import React from "react";
 import { BadgeCheck, Clock, Coins, Sparkles, AlertCircle, FileText, Layers, Scissors } from "lucide-react";
 import type { BoardCard, MoveOption, WorkItemFullDetail } from "~/lib/board/types";
 import { useBoardController } from "../hooks/useBoardController";
+import { SpecsPriceBreakdown } from "./SpecsPriceBreakdown";
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -124,6 +125,7 @@ export interface SpecsPricingCardProps {
   readonly onExecuteMove?: (move: MoveOption) => void;
 }
 
+
 export function SpecsPricingCard({ card, detail, onExecuteMove }: SpecsPricingCardProps) {
   const pricingMove = card.moves?.find((m) => m.edgeId === "WAITING_PRICING->READY_FOR_PRODUCTION");
 
@@ -150,6 +152,12 @@ export function SpecsPricingCard({ card, detail, onExecuteMove }: SpecsPricingCa
           <span>لا يوجد سعر نهائي مسجل حتى الآن، بانتظار اعتماد التكلفة من الإدارة المالية.</span>
         </div>
       )}
+
+      {/* The derivation behind the number above. `currentPrice` is what the
+          accountant approves; this is what lets them check it. Absent rather
+          than zeroed when no production spec was frozen, so a non-roll item
+          never looks like it was quoted at nothing. */}
+      {detail?.priceBreakdown && <SpecsPriceBreakdown breakdown={detail.priceBreakdown} />}
 
       {card.state === "WAITING_PRICING" && (
         <PricingActionButtons

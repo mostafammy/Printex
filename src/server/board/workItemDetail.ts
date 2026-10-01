@@ -21,6 +21,20 @@ const WORK_ITEM_DETAIL_INCLUDE = {
   department: { select: { id: true, name: true, isExternalProduction: true } },
   assignee: { select: { id: true, name: true, email: true } },
   pricingStatus: true,
+  // 093's frozen spec + the add-on lines behind `productionTotal`, so the
+  // popup can show the accountant how the price was derived rather than only its
+  // sum. Newest generation first; the mapper keeps only that generation.
+  // `productionSpecAt` is not exposed: it is a "was this ever frozen" marker,
+  // and the mapper infers that from the values themselves.
+  finishings: {
+    select: {
+      generation: true,
+      labelSnapshot: true,
+      rateSnapshot: true,
+      totalAmount: true,
+    },
+    orderBy: [{ generation: "desc" as const }, { quotedAt: "desc" as const }],
+  },
   prices: {
     include: { setBy: { select: { name: true } } },
     orderBy: { setAt: "desc" as const },

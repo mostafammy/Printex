@@ -481,15 +481,23 @@ async function seedCashCustomer() {
 // starter list". Not a business requirement to validate, just a reasonable
 // starting point; an Admin can add more at any time.
 //
-// 093: "Roll-up Banner" is the ROLL product class the width ladder, the area
-// pricing and the four-stage pipeline are specified for. Its
-// `requiresReview` is FALSE by configuration (not by a code branch) because
-// the business runs RECEPTION → DESIGNER → ACCOUNTANT → PRINTER for it with
-// no Head-Designer design-review stage — 093 spec Assumptions, recorded as
-// the one Constitution II exception in the feature's plan.md Complexity
-// Tracking. Every other product type keeps Head Designer review.
+// 093: "Roll-up Banner" is the ROLL product class the width ladder and the area
+// pricing are specified for.
+//
+// It originally carried `requiresReview: false` on the 093 assumption that this
+// business runs RECEPTION → DESIGNER → ACCOUNTANT → PRINTER with no Head-Designer
+// review stage. That assumption is wrong: the shop reviews every design before
+// the accountant prices it. `markDesignComplete` routes a reviewed item
+// DESIGN_COMPLETED → WAITING_REVIEW → APPROVED → WAITING_PRICING, and
+// `approveDesign` performs the last two steps, so a false here skipped the Head
+// Designer entirely for the shop's main product.
+//
+// `defaultRequiresReview` is now advisory only. The reception save action sets
+// `WorkItem.requiresReview: true` unconditionally, because design review is a
+// stage of the pipeline rather than a property of a product; this column records
+// the shop's starting preference for the catalogue.
 const PRODUCT_TYPE_SEED_DATA = [
-  { name: "Roll-up Banner", department: "Banner", requiresReview: false },
+  { name: "Roll-up Banner", department: "Banner", requiresReview: true },
   { name: "Business Cards", department: "Digital", requiresReview: false },
   { name: "Flyer/Poster", department: "Digital", requiresReview: true },
   { name: "Vinyl Sticker", department: "Digital", requiresReview: true },

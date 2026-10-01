@@ -17,6 +17,17 @@ export interface AccountantOrdersFilter {
   readonly pageSize?: number;
 }
 
+/**
+ * One add-on line as it was priced, with the rate and label frozen at selection
+ * time. The accountant is approving a number he can be asked to defend, so the
+ * composition of that number has to be visible, not just its sum.
+ */
+export interface AccountantFinishingLine {
+  readonly labelAr: string;
+  readonly ratePerSqm: number;
+  readonly totalAmount: number;
+}
+
 export interface AccountantOrderItem {
   readonly id: string;
   readonly state: WorkItemState;
@@ -31,6 +42,19 @@ export interface AccountantOrderItem {
   readonly approvedAt: Date | null;
   readonly approvedByName: string | null;
   readonly note: string | null;
+
+  // ── The quote breakdown the accountant approves or overrides ──────────────
+  //
+  // `productionTotal` alone is not something an accountant can meaningfully
+  // approve: it is one number with no visible derivation. These are the inputs
+  // and the add-on lines that produced it, so "approve" and "change it" are
+  // both informed decisions rather than a rubber stamp on a mystery figure.
+  readonly customerWidthCm: number | null;
+  readonly productionWidthCm: number | null;
+  readonly productionHeightM: number | null;
+  readonly baseRatePerSqm: number | null;
+  readonly finishingTotal: number | null;
+  readonly finishingLines: readonly AccountantFinishingLine[];
 }
 
 export interface AccountantOrderRow {
@@ -208,6 +232,20 @@ export async function getAccountantOrders(
         include: {
           productType: { select: { name: true } },
           pricingStatus: { select: { status: true, waitingSince: true } },
+          // The frozen add-on lines behind `finishingTotal`. Ordered newest
+          // first so the mapping below can keep only the latest quote
+          // generation -- WorkItemFinishing is append-only, so a re-price adds
+          // rows rather than replacing them, and showing a superseded generation
+          // to the accountant would add up to a total that no longer exists.
+          finishings: {
+            orderBy: [{ generation: "desc" }, { quotedAt: "desc" }],
+            select: {
+              generation: true,
+              labelSnapshot: true,
+              rateSnapshot: true,
+              totalAmount: true,
+            },
+          },
           accountingApprovals: {
             orderBy: { approvedAt: "desc" },
             take: 1,
@@ -265,6 +303,22 @@ export async function getAccountantOrders(
         dimensions = `${item.widthValue.toString()} × ${item.heightValue.toString()}`;
       }
 
+      // Only the newest quote generation's lines. `finishings` arrives
+      // ordered by generation DESC, so a single pass dropping everything after
+      // the first generation boundary keeps exactly the current quote. An item
+      // with no add-ons yields an empty list, not a stale one.
+      const currentGeneration = item.finishings[0]?.generation ?? null;
+      const finishingLines: AccountantFinishingLine[] =
+        currentGeneration === null
+          ? []
+          : item.finishings
+              .filter((line) => line.generation === currentGeneration)
+              .map((line) => ({
+                labelAr: line.labelSnapshot,
+                ratePerSqm: Number(line.rateSnapshot),
+                totalAmount: Number(line.totalAmount),
+              }));
+
       return {
         id: item.id,
         state: item.state,
@@ -279,6 +333,12 @@ export async function getAccountantOrders(
         approvedAt: approval?.approvedAt ?? null,
         approvedByName: approval?.approvedBy?.name ?? null,
         note: approval?.note ?? null,
+        customerWidthCm: item.customerWidthCm ? Number(item.customerWidthCm) : null,
+        productionWidthCm: item.productionWidthCm ? Number(item.productionWidthCm) : null,
+        productionHeightM: item.productionHeightM ? Number(item.productionHeightM) : null,
+        baseRatePerSqm: item.baseRatePerSqm ? Number(item.baseRatePerSqm) : null,
+        finishingTotal: item.finishingTotal ? Number(item.finishingTotal) : null,
+        finishingLines,
       };
     });
 
