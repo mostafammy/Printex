@@ -23,7 +23,7 @@
 
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, Lock, Ruler, Layers, Sparkles } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { canListFileVersions, fileService } from "~/server/files";
 import { db } from "~/server/db";
@@ -32,6 +32,32 @@ import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
+
+function formatDimensions(
+  widthValue: unknown,
+  heightValue: unknown,
+  dimensionUnit: string | null,
+): string {
+  if (widthValue == null && heightValue == null) return "—";
+  const unitAr =
+    dimensionUnit === "CM"
+      ? "سم"
+      : dimensionUnit === "M"
+      ? "م"
+      : dimensionUnit === "MM"
+      ? "مم"
+      : dimensionUnit === "IN"
+      ? "بوصة"
+      : dimensionUnit ?? "سم";
+
+  const w = widthValue != null ? String(widthValue) : "";
+  const h = heightValue != null ? String(heightValue) : "";
+
+  if (w && h) return `${w} × ${h} ${unitAr}`;
+  if (w) return `${w} ${unitAr}`;
+  if (h) return `${h} ${unitAr}`;
+  return "—";
+}
 
 /**
  * 050's category vocabulary (DEFAULT_CATEGORIES in file-panel.tsx), passed
@@ -51,7 +77,24 @@ const CATEGORIES = [
 const loadWorkItem = (workItemId: string) =>
   db.workItem.findUnique({
     where: { id: workItemId },
-    select: { id: true, orderId: true, state: true, description: true },
+    select: {
+      id: true,
+      orderId: true,
+      state: true,
+      description: true,
+      widthValue: true,
+      heightValue: true,
+      dimensionUnit: true,
+      quantity: true,
+      material: true,
+      order: {
+        select: {
+          number: true,
+          customer: { select: { name: true } },
+        },
+      },
+      productType: { select: { name: true } },
+    },
   });
 
 type FilesWorkItem = NonNullable<Awaited<ReturnType<typeof loadWorkItem>>>;
@@ -110,15 +153,77 @@ export default async function WorkItemFilesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href={`/orders/${workItem.orderId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
-        >
-          <ArrowRight className="h-3.5 w-3.5" />
-          <span>{S.designWorkspaceBackLink}</span>
-        </Link>
-        <h1 className="mt-2 text-xl font-bold text-foreground">{S.filesTitle}</h1>
+      <div className="flex flex-col gap-4">
+        <div>
+          <Link
+            href={`/orders/${workItem.orderId}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-primary"
+          >
+            <ArrowRight className="h-3.5 w-3.5" />
+            <span>{S.designWorkspaceBackLink}</span>
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-xl font-bold text-foreground sm:text-2xl">{S.filesTitle}</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/20 px-3 py-1 font-mono text-xs font-bold text-primary">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{workItem.state}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Work Item Specs Card */}
+        <div className="rounded-2xl border border-border/70 bg-card p-4 sm:p-5 shadow-2xs">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/50 pb-3">
+            <div>
+              <h2 className="text-base font-bold text-foreground">
+                {workItem.description ?? `صنف #${workItem.id.slice(-6)}`}
+              </h2>
+              {workItem.order && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  الطلب #{workItem.order.number} · {workItem.order.customer?.name}
+                </p>
+              )}
+            </div>
+            {workItem.productType?.name && (
+              <span className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-muted/30 px-3 py-1 text-xs font-semibold text-foreground">
+                <Layers className="h-3.5 w-3.5 text-primary" />
+                <span>{workItem.productType.name}</span>
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 pt-3 sm:grid-cols-3">
+            <div className="flex flex-col gap-0.5 rounded-xl border border-border/60 bg-muted/20 p-2.5">
+              <span className="text-2xs font-semibold text-muted-foreground flex items-center gap-1">
+                <Ruler className="h-3 w-3 text-primary" />
+                الأبعاد والمقاس
+              </span>
+              <span className="text-sm font-bold font-mono text-foreground">
+                {formatDimensions(workItem.widthValue, workItem.heightValue, workItem.dimensionUnit)}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-0.5 rounded-xl border border-border/60 bg-muted/20 p-2.5">
+              <span className="text-2xs font-semibold text-muted-foreground">
+                {S.quantityLabel}
+              </span>
+              <span className="text-sm font-bold text-foreground">
+                {workItem.quantity ?? "—"} قطعة
+              </span>
+            </div>
+
+            {workItem.material && (
+              <div className="col-span-2 sm:col-span-1 flex flex-col gap-0.5 rounded-xl border border-border/60 bg-muted/20 p-2.5">
+                <span className="text-2xs font-semibold text-muted-foreground">
+                  الخامة
+                </span>
+                <span className="text-sm font-bold text-foreground truncate">
+                  {workItem.material}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/*
