@@ -180,6 +180,34 @@ export class FileService {
         return { fileVersion, priorActive };
       });
 
+      // After the transaction commits successfully, sync to DesignVersion.
+      // This is intentionally outside the transaction: a caught error inside a
+      // Prisma interactive transaction aborts the entire tx even when caught,
+      // poisoning any subsequent query on that tx object ("Transaction not found").
+      // Running this separately keeps the FileVersion write atomic and the
+      // DesignVersion sync non-fatal.
+      if (workItemId) {
+        try {
+          const existingCount = await prisma.designVersion.count({ where: { workItemId } });
+          await prisma.designVersion.create({
+            data: {
+              workItemId,
+              version: existingCount + 1,
+              storageKey,
+              fileName: input.fileName,
+              mimeType,
+              sizeBytes: Number(size),
+              sha256,
+              note: input.note ?? null,
+              uploadedById: actor.userId,
+            },
+          });
+        } catch {
+          // Non-fatal: WorkItem may not exist (attachment-only flow), or a
+          // concurrent upload already created the DesignVersion row.
+        }
+      }
+
       // Audit the upload
       await audit.record({
         actorId: actor.userId,

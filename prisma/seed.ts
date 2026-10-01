@@ -29,7 +29,7 @@
 // client's `package.json#exports` map the way Next's bundler-mode resolver
 // does for a plain `"../generated/prisma"` import elsewhere in this repo
 // (e.g. src/server/db.ts).
-import { PrismaClient } from "../generated/prisma/index.js";
+import { Prisma, PrismaClient } from "../generated/prisma/index.js";
 // Better Auth's own password hasher — ensures hashes produced here are
 // verifiable by Better Auth's credential provider at runtime.
 import { hashPassword } from "better-auth/crypto";
@@ -101,13 +101,25 @@ const ROLE_SEED_DATA = [
     name: "Accounting",
     // pricing.set_variable and pricing.override intentionally omitted — see
     // note above. Grant per-user via UserPermission for specific users.
-    permissions: ["payment.record", "payment.void", "expense.record", "finance.view"],
+    // 093 FR-014: workitem.approve_production is what makes ACCOUNTING the
+    // stage that releases work to the printer. It is granted HERE and nowhere
+    // else (RECEPTION deliberately does not get it) so the
+    // RECEPTION → DESIGNER → ACCOUNTANT → PRINTER pipeline cannot be
+    // short-circuited by the person who took the order.
+    permissions: [
+      "payment.record",
+      "payment.void",
+      "expense.record",
+      "finance.view",
+      "workitem.approve_production",
+    ],
   },
   {
     id: "seed_role_admin_owner",
     key: "ADMIN_OWNER",
     name: "Admin/Owner",
-    // All 23 permission keys — Admin/Owner has full access (016 FR-013).
+    // All 24 permission keys — Admin/Owner has full access (016 FR-013,
+    // 093 FR-014).
     permissions: [
       "order.create",
       "order.edit",
@@ -115,6 +127,7 @@ const ROLE_SEED_DATA = [
       "customer.manage",
       "workitem.assign_designer",
       "workitem.send_to_production",
+      "workitem.approve_production",
       "design.work",
       "design.review",
       "change.approve",
@@ -457,8 +470,16 @@ async function seedCashCustomer() {
 // 011-orders-reception starter catalog — spec.md Assumptions "Product type
 // starter list". Not a business requirement to validate, just a reasonable
 // starting point; an Admin can add more at any time.
+//
+// 093: "Roll-up Banner" is the ROLL product class the width ladder, the area
+// pricing and the four-stage pipeline are specified for. Its
+// `requiresReview` is FALSE by configuration (not by a code branch) because
+// the business runs RECEPTION → DESIGNER → ACCOUNTANT → PRINTER for it with
+// no Head-Designer design-review stage — 093 spec Assumptions, recorded as
+// the one Constitution II exception in the feature's plan.md Complexity
+// Tracking. Every other product type keeps Head Designer review.
 const PRODUCT_TYPE_SEED_DATA = [
-  { name: "Roll-up Banner", department: "Banner", requiresReview: true },
+  { name: "Roll-up Banner", department: "Banner", requiresReview: false },
   { name: "Business Cards", department: "Digital", requiresReview: false },
   { name: "Flyer/Poster", department: "Digital", requiresReview: true },
   { name: "Vinyl Sticker", department: "Digital", requiresReview: true },
@@ -466,7 +487,120 @@ const PRODUCT_TYPE_SEED_DATA = [
   { name: "Laser-cut Sign", department: "Laser", requiresReview: true },
 ] as const;
 
+// 093 FR-002/FR-003: the production width ladder, in centimetres, strictly
+// ascending. `resolveProductionWidth` rounds UP to the first entry >= the
+// customer's width; the last entry (320) is the maximum — anything wider
+// raises a WidthExceptionTicket and is never clamped (FR-003).
+const ROLL_WIDTH_LADDER_CM = [80, 110, 150, 210, 260, 270, 320] as const;
+
+// 093 FR-004: height ceiling in metres, and FR-007: the inclusive EGP/m² band
+// the reception-entered base rate must fall inside.
+const ROLL_MAX_HEIGHT_M = "50";
+const ROLL_MIN_RATE_PER_SQM = "80";
+const ROLL_MAX_RATE_PER_SQM = "120";
+
+// 093 FR-009: the seeded finishing catalogue. Sulfan at 90 EGP/m² is the
+// worked example in the spec; the other two prove the point — a second
+// add-on and a second price band exist purely as rows, with no code change
+// and no `switch` anywhere in the pricing path.
+const FINISHING_SERVICE_SEED_DATA = [
+  { code: "SULFAN", labelAr: "سلوفان", ratePerSqm: "90" },
+  { code: "EYELET", labelAr: "عيون", ratePerSqm: "15" },
+  { code: "HEMMING", labelAr: "خياطة", ratePerSqm: "25" },
+] as const;
+
+// 093 FR-008: the roll class is priced per square metre of PRODUCTION area.
+// 100 EGP/m² is the midpoint of the permitted 80–120 band and the value the
+// spec's worked example (145 cm × 2 m → 300 EGP) is built on.
+const ROLL_BASE_RATE_PER_SQM = "100";
+
+async function seedProductionWidthRules(params: {
+  readonly productTypeIdsByName: ReadonlyMap<string, string>;
+  readonly updatedById: string;
+}) {
+  const rollProductTypeId = params.productTypeIdsByName.get("Roll-up Banner");
+  if (!rollProductTypeId) {
+    throw new Error("Expected the seeded Roll-up Banner product type");
+  }
+
+  const rule = await db.productionWidthRule.upsert({
+    where: { productTypeId: rollProductTypeId },
+    update: {
+      ladderCm: [...ROLL_WIDTH_LADDER_CM],
+      maxHeightM: new Prisma.Decimal(ROLL_MAX_HEIGHT_M),
+      minRatePerSqm: new Prisma.Decimal(ROLL_MIN_RATE_PER_SQM),
+      maxRatePerSqm: new Prisma.Decimal(ROLL_MAX_RATE_PER_SQM),
+      updatedById: params.updatedById,
+    },
+    create: {
+      productTypeId: rollProductTypeId,
+      ladderCm: [...ROLL_WIDTH_LADDER_CM],
+      maxHeightM: new Prisma.Decimal(ROLL_MAX_HEIGHT_M),
+      minRatePerSqm: new Prisma.Decimal(ROLL_MIN_RATE_PER_SQM),
+      maxRatePerSqm: new Prisma.Decimal(ROLL_MAX_RATE_PER_SQM),
+      updatedById: params.updatedById,
+    },
+  });
+  console.log(
+    `  roll width rule: [${rule.ladderCm.join(", ")}] cm, max ${rule.maxHeightM.toString()} m, ${rule.minRatePerSqm.toString()}-${rule.maxRatePerSqm.toString()} EGP/m2`,
+  );
+}
+
+async function seedFinishingServices(createdById: string) {
+  for (const finishing of FINISHING_SERVICE_SEED_DATA) {
+    const seeded = await db.finishingService.upsert({
+      where: { code: finishing.code },
+      update: { ratePerSqm: new Prisma.Decimal(finishing.ratePerSqm), labelAr: finishing.labelAr },
+      create: {
+        code: finishing.code,
+        labelAr: finishing.labelAr,
+        ratePerSqm: new Prisma.Decimal(finishing.ratePerSqm),
+        createdById,
+      },
+    });
+    console.log(`  finishing service: ${seeded.code} (${seeded.ratePerSqm.toString()} EGP/m2)`);
+  }
+}
+
+async function seedRollPriceList(params: {
+  readonly productTypeIdsByName: ReadonlyMap<string, string>;
+  readonly createdById: string;
+}) {
+  const rollProductTypeId = params.productTypeIdsByName.get("Roll-up Banner");
+  if (!rollProductTypeId) {
+    throw new Error("Expected the seeded Roll-up Banner product type");
+  }
+
+  // Idempotent: a SQUARE_METER PriceList is only created when the product type
+  // does not already have an active one. Re-running the seed must not stack
+  // duplicate effective-dated lists, which `createPriceList` rejects anyway
+  // (EFFECTIVE_DATE_CONFLICT).
+  const existing = await db.priceList.findFirst({
+    where: { productTypeId: rollProductTypeId, unit: "SQUARE_METER", status: "ACTIVE" },
+    select: { id: true },
+  });
+  if (existing) {
+    console.log("  roll price list: already seeded, skipping");
+    return;
+  }
+
+  const list = await db.priceList.create({
+    data: {
+      productTypeId: rollProductTypeId,
+      unit: "SQUARE_METER",
+      effectiveFrom: new Date("2020-01-01T00:00:00.000Z"),
+      createdById: params.createdById,
+      tiers: {
+        // One open-ended tier: roll pricing is area-based, not quantity-tiered.
+        create: [{ minimumQuantity: 1, maximumQuantity: null, basePrice: new Prisma.Decimal(ROLL_BASE_RATE_PER_SQM) }],
+      },
+    },
+  });
+  console.log(`  roll price list: ${list.id} at ${ROLL_BASE_RATE_PER_SQM} EGP/m2`);
+}
+
 async function seedProductTypes(departments: { readonly id: string; readonly name: string }[]) {
+  const productTypeIdsByName = new Map<string, string>();
   for (const productType of PRODUCT_TYPE_SEED_DATA) {
     const defaultDepartment = departments.find((d) => d.name === productType.department);
     const seeded = await db.productType.upsert({
@@ -483,7 +617,9 @@ async function seedProductTypes(departments: { readonly id: string; readonly nam
       },
     });
     console.log(`  product type: ${seeded.name} (${seeded.id})`);
+    productTypeIdsByName.set(seeded.name, seeded.id);
   }
+  return productTypeIdsByName;
 }
 
 async function seedSampleCustomer() {
@@ -594,7 +730,13 @@ async function main() {
   const adminUser = await seedAdminUser();
   const departments = await seedDepartments();
   await seedWorkflowUsers(departments);
-  await seedProductTypes(departments);
+  const productTypeIdsByName = await seedProductTypes(departments);
+  await seedProductionWidthRules({
+    productTypeIdsByName,
+    updatedById: adminUser.id,
+  });
+  await seedFinishingServices(adminUser.id);
+  await seedRollPriceList({ productTypeIdsByName, createdById: adminUser.id });
   await seedClassifications();
   await seedCashCustomer();
   const sampleCustomer = await seedSampleCustomer();

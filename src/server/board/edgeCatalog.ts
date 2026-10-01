@@ -75,8 +75,12 @@ export class EdgeCatalog {
   }
 
   private matchesPermissions(handler: EdgeHandler, actor: Actor, card: BoardCard): boolean {
-    if (handler.permission && !actor.permissions.has(handler.permission)) return false;
-    if (handler.departmentScoped && card.departmentId) {
+    const hasAdminOverride =
+      actor.permissions.has("admin.override") ||
+      actor.roles.includes("ADMIN_OWNER");
+
+    if (handler.permission && !actor.permissions.has(handler.permission) && !hasAdminOverride) return false;
+    if (handler.departmentScoped && card.departmentId && !hasAdminOverride) {
       return actor.departmentIds.includes(card.departmentId);
     }
     return true;

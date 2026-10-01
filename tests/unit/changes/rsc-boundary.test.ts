@@ -63,7 +63,9 @@ describe("RSC boundary: src/components client imports", () => {
       return isUseClientFile(sf);
     });
     expect(clientFiles.length).toBeGreaterThan(0);
-    const relativePaths = clientFiles.map((p) => path.relative(componentsDir, p));
+    const relativePaths = clientFiles.map((p) =>
+      path.relative(componentsDir, p).replace(/\\/g, "/"),
+    );
     expect(relativePaths).toContain("changes/direct-edit-spec-form.tsx");
   });
 

@@ -11,7 +11,9 @@ import type {
 } from "~/lib/board/detailTypes";
 import type { WorkItemDetailQueryRow } from "./workItemDetailQueryTypes";
 
-export function mapReturns(returns: WorkItemDetailQueryRow["returns"]): readonly DetailReturn[] {
+export function mapReturns(
+  returns: WorkItemDetailQueryRow["returns"],
+): readonly DetailReturn[] {
   return returns.map((r) => ({
     id: r.id,
     originDepartmentName: r.originDepartment.name,
@@ -24,7 +26,9 @@ export function mapReturns(returns: WorkItemDetailQueryRow["returns"]): readonly
   }));
 }
 
-export function mapDesignVersions(versions: WorkItemDetailQueryRow["designVersions"]): readonly DetailDesignVersion[] {
+export function mapDesignVersions(
+  versions: WorkItemDetailQueryRow["designVersions"],
+): readonly DetailDesignVersion[] {
   return versions.map((dv) => ({
     id: dv.id,
     version: dv.version,
@@ -38,7 +42,9 @@ export function mapDesignVersions(versions: WorkItemDetailQueryRow["designVersio
   }));
 }
 
-export function mapFileAssets(assets: WorkItemDetailQueryRow["fileAssets"]): readonly DetailFileAsset[] {
+export function mapFileAssets(
+  assets: WorkItemDetailQueryRow["fileAssets"],
+): readonly DetailFileAsset[] {
   return assets.map((fa) => ({
     id: fa.id,
     category: fa.category,
@@ -51,13 +57,16 @@ export function mapFileAssets(assets: WorkItemDetailQueryRow["fileAssets"]): rea
       sizeBytes: Number(fv.fileObject.sizeBytes),
       note: fv.note,
       approved: fv.approved,
+      status: fv.status,
       createdAt: fv.createdAt.toISOString(),
       uploadedByName: fv.uploadedBy.name,
     })),
   }));
 }
 
-export function mapTransitions(transitions: WorkItemDetailQueryRow["transitions"]): readonly DetailTransition[] {
+export function mapTransitions(
+  transitions: WorkItemDetailQueryRow["transitions"],
+): readonly DetailTransition[] {
   return transitions.map((t) => ({
     id: t.id,
     from: t.from,

@@ -7,7 +7,6 @@ import {
   PackagePlus,
   ArrowRight,
   Plus,
-  Trash2,
   Layers,
   Calendar,
   User,
@@ -17,8 +16,10 @@ import {
 import { db } from "~/server/db";
 import { getActor, authorize } from "~/server/auth";
 import { createOrder, listActiveProductTypes } from "~/server/orders";
+import { listActiveFinishingServices, setProductionSpec } from "~/server/production-spec";
 import { Button } from "~/components/ui/button";
 import { CustomerSelectField } from "~/components/customers";
+import { WorkItemRow, type RowGovernance } from "./_components/WorkItemRow";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -32,6 +33,10 @@ const MAX_ITEMS = 20;
 
 function formStr(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value : "";
+}
+
+function formStrs(values: FormDataEntryValue[]): string[] {
+  return values.filter((v): v is string => typeof v === "string" && v !== "");
 }
 
 function parseItemsCount(raw: string | string[] | undefined): number {
@@ -53,7 +58,22 @@ async function createOrderAction(formData: FormData) {
   const itemCount = Number(formStr(formData.get("itemCount"))) || 1;
   if (!customerId) return;
 
-  const workItems = Array.from({ length: itemCount }, (_, i) => {
+  // 093: the production specification travels alongside the item it belongs to.
+  // It is kept in a parallel array keyed by the SAME form index rather than
+  // smuggled into the work-item payload, because `createOrder` validates and
+  // re-orders what it is given — pairing a quote back to its work item by array
+  // position after the fact is how a 570 EGP price ends up on the wrong banner.
+  type SpecEntry = {
+    readonly workItemId: string;
+    readonly customerWidthCm: string;
+    readonly heightM: string;
+    readonly quantity: number;
+    readonly baseRatePerSqm: string;
+    readonly finishingCodes: string[];
+  };
+  const pendingSpecs = new Map<number, Omit<SpecEntry, "workItemId">>();
+
+  const drafts = Array.from({ length: itemCount }, (_, i) => {
     const productTypeId = formStr(formData.get(`item.${i}.productTypeId`));
     const quantity = Number(formStr(formData.get(`item.${i}.quantity`)));
     const widthValue = Number(formStr(formData.get(`item.${i}.widthValue`)));
@@ -61,11 +81,27 @@ async function createOrderAction(formData: FormData) {
     const dimensionUnit = formStr(formData.get(`item.${i}.dimensionUnit`));
     const material = formStr(formData.get(`item.${i}.material`)).trim();
     const finishNotes = formStr(formData.get(`item.${i}.finishNotes`)).trim();
-    const departmentId = formStr(formData.get(`item.${i}.departmentId`));
     const itemDueDateRaw = formStr(formData.get(`item.${i}.dueDate`));
     const description = formStr(formData.get(`item.${i}.description`)).trim();
 
+    // A governed row always sends these; a free-text row never does.
+    const specWidth = formStr(formData.get(`item.${i}.spec.customerWidthCm`)).trim();
+    const specHeight = formStr(formData.get(`item.${i}.spec.heightM`)).trim();
+    const specRate = formStr(formData.get(`item.${i}.spec.baseRatePerSqm`)).trim();
+    const specFinishings = formStrs(formData.getAll(`item.${i}.spec.finishingCodes`));
+
+    if (specWidth && specHeight && specRate) {
+      pendingSpecs.set(i, {
+        customerWidthCm: specWidth,
+        heightM: specHeight,
+        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        baseRatePerSqm: specRate,
+        finishingCodes: specFinishings,
+      });
+    }
+
     return {
+      formIndex: i,
       productTypeId: productTypeId || undefined,
       quantity,
       widthValue,
@@ -75,15 +111,21 @@ async function createOrderAction(formData: FormData) {
       finishNotes: finishNotes || undefined,
       requiresDesign: formData.get(`item.${i}.requiresDesign`) === "on",
       requiresReview: formData.get(`item.${i}.requiresReview`) === "on",
-      departmentId: departmentId || undefined,
+      // No department: `createOrder` resolves it from the product type.
       dueDate: itemDueDateRaw ? new Date(itemDueDateRaw) : undefined,
       description: description || undefined,
     };
-  }).filter((item) => Number.isFinite(item.quantity) && item.quantity > 0);
+  });
+
+  const workItems = drafts
+    .filter((item) => Number.isFinite(item.quantity) && item.quantity > 0)
+    // The row index is not part of the domain payload; `pendingSpecs` keys off
+    // the surviving drafts' own index, so it must be dropped before the call.
+    .map(({ formIndex: _formIndex, ...item }) => item);
 
   if (workItems.length === 0) return;
 
-  const { orderId } = await createOrder(actor, {
+  const { orderId, workItemIds } = await createOrder(actor, {
     customerId,
     channel: (channel || "WALK_IN") as "WALK_IN" | "WHATSAPP" | "PHONE" | "RETURNING" | "DIRECT_TO_DESIGNER",
     priority: priority === "URGENT" ? "URGENT" : "NORMAL",
@@ -91,6 +133,29 @@ async function createOrderAction(formData: FormData) {
     dueDate: dueDateRaw ? new Date(dueDateRaw) : undefined,
     workItems,
   });
+
+  // `workItemIds` is index-aligned with the array handed to `createOrder` (its
+  // Zod schema is a plain `z.array`, so nothing is reordered or dropped there).
+  const surviving = drafts.filter((item) => Number.isFinite(item.quantity) && item.quantity > 0);
+
+  for (const [position, draft] of surviving.entries()) {
+    const spec = pendingSpecs.get(draft.formIndex);
+    const workItemId = workItemIds[position];
+    if (!spec || !workItemId) continue;
+
+    try {
+      await setProductionSpec(actor, { workItemId, ...spec });
+    } catch (error) {
+      // The order exists and the work item does too; a rejected specification
+      // must not silently disappear. The item stays in reception (NEW) with no
+      // frozen quote, which is exactly what the pipeline gate then refuses to
+      // release — the data is missing visibly, not quietly.
+      console.error(
+        `[reception/new] order ${orderId}: could not freeze the production specification for work item ${workItemId}`,
+        error,
+      );
+    }
+  }
 
   redirect(`/orders/${orderId}`);
 }
@@ -106,14 +171,53 @@ export default async function NewOrderPage({
   const params = await searchParams;
   const itemCount = parseItemsCount(params.items);
 
-  const [cashCustomerRow, departments, productTypes] = await Promise.all([
+  // No `department` query: a work item's department IS its product type's
+  // department, so the only department data this page needs is the name that
+  // `listActiveProductTypes` resolves alongside each type.
+  const [cashCustomerRow, productTypes, finishings, widthRules] = await Promise.all([
     db.customer.findFirst({ where: { isCashCustomer: true }, select: { id: true } }),
-    db.department.findMany({ where: { isActive: true }, orderBy: { name: "asc" } }),
     listActiveProductTypes(actor),
+    listActiveFinishingServices(),
+    // 093: the width ladder and rate band are CONFIGURATION (data-model §2.3),
+    // so the form reads them the same way it reads product types. A product
+    // type absent from this map simply is not governed, and its row renders the
+    // ordinary free-text fields — no branching on product name anywhere.
+    db.productionWidthRule.findMany({
+      select: {
+        productTypeId: true,
+        ladderCm: true,
+        maxHeightM: true,
+        minRatePerSqm: true,
+        maxRatePerSqm: true,
+      },
+    }),
   ]);
   const cashCustomer = cashCustomerRow
     ? { id: cashCustomerRow.id, label: S.cashCustomerOption }
     : null;
+
+  const governance: Record<string, RowGovernance> = {};
+  for (const rule of widthRules) {
+    const min = Number(rule.minRatePerSqm);
+    const max = Number(rule.maxRatePerSqm);
+    governance[rule.productTypeId] = {
+      ladderCm: rule.ladderCm,
+      maxHeightM: rule.maxHeightM.toString(),
+      minRatePerSqm: rule.minRatePerSqm.toString(),
+      maxRatePerSqm: rule.maxRatePerSqm.toString(),
+      // Midpoint, so the field opens on a valid rate. Rounded to 2 dp because a
+      // band like 80–120 gives 100, but a band like 85–115 gives 100 only after
+      // rounding — and an un-rounded 100.000000000000014 would look broken.
+      suggestedRatePerSqm: (Math.round(((min + max) / 2) * 100) / 100).toString(),
+    };
+  }
+
+  const rowFinishings = finishings.map((f) => ({
+    id: f.id,
+    code: f.code,
+    labelAr: f.labelAr,
+    ratePerSqm: f.ratePerSqm,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -228,121 +332,21 @@ export default async function NewOrderPage({
           </div>
 
           {Array.from({ length: itemCount }, (_, i) => (
-            <div key={i} className="rounded-xl border border-border/70 bg-card shadow-xs p-6 sm:p-7 relative">
-              <div className="mb-4 flex items-center justify-between border-b border-border/60 pb-3">
-                <span className="inline-flex items-center rounded-lg bg-primary/10 px-2.5 py-1 font-mono text-xs font-bold text-primary">
-                  صنف #{i + 1}
-                </span>
-                {itemCount > 1 && (
-                  <Link
-                    href={`/reception/new?items=${itemCount - 1}`}
-                    className="inline-flex items-center gap-1 text-xs text-destructive hover:underline"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>{S.removeWorkItemRowButton}</span>
-                  </Link>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.productTypeLabel}</label>
-                  <select name={`item.${i}.productTypeId`} className={inputCls} defaultValue="">
-                    <option value="">{S.productTypeNone}</option>
-                    {productTypes.map((pt) => (
-                      <option key={pt.id} value={pt.id}>
-                        {pt.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.quantityLabel}</label>
-                  <input name={`item.${i}.quantity`} type="number" min={1} step={1} required placeholder="1" className={inputCls} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.dimensionUnitLabel}</label>
-                  <select name={`item.${i}.dimensionUnit`} className={inputCls} defaultValue="CM">
-                    <option value="MM">MM (مليمتر)</option>
-                    <option value="CM">CM (سنتيمتر)</option>
-                    <option value="M">M (متر)</option>
-                    <option value="IN">IN (بوصة)</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.widthLabel}</label>
-                  <input name={`item.${i}.widthValue`} type="number" min={0.01} step="0.01" required placeholder="العرض..." className={inputCls} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.heightLabel}</label>
-                  <input name={`item.${i}.heightValue`} type="number" min={0.01} step="0.01" required placeholder="الارتفاع..." className={inputCls} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.departmentOverrideLabel}</label>
-                  <select name={`item.${i}.departmentId`} className={inputCls} defaultValue="">
-                    <option value="">{S.productTypeNone}</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.materialLabel}</label>
-                  <input name={`item.${i}.material`} type="text" placeholder="نوع الورق أو الخامة..." className={inputCls} />
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:col-span-2">
-                  <label className="text-xs font-semibold text-foreground">{S.finishNotesLabel}</label>
-                  <input name={`item.${i}.finishNotes`} type="text" placeholder="سلوفان، ريجة، تكسير، بصمة..." className={inputCls} />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-foreground">{S.itemDueDateLabel}</label>
-                  <input name={`item.${i}.dueDate`} type="date" className={inputCls} />
-                </div>
-
-                <div className="flex items-center gap-2 pt-4">
-                  <input
-                    id={`item.${i}.requiresDesign`}
-                    name={`item.${i}.requiresDesign`}
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 rounded accent-primary cursor-pointer"
-                  />
-                  <label htmlFor={`item.${i}.requiresDesign`} className="text-xs font-semibold text-foreground cursor-pointer">
-                    {S.requiresDesignLabel}
-                  </label>
-                </div>
-
-                <div className="flex items-center gap-2 pt-4">
-                  <input
-                    id={`item.${i}.requiresReview`}
-                    name={`item.${i}.requiresReview`}
-                    type="checkbox"
-                    defaultChecked
-                    className="h-4 w-4 rounded accent-primary cursor-pointer"
-                  />
-                  <label htmlFor={`item.${i}.requiresReview`} className="text-xs font-semibold text-foreground cursor-pointer">
-                    {S.requiresReviewLabel}
-                  </label>
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:col-span-3">
-                  <label className="text-xs font-semibold text-foreground">{S.descriptionLabel}</label>
-                  <input name={`item.${i}.description`} type="text" placeholder="وصف تفصيلي لصنف العمل..." className={inputCls} />
-                </div>
-              </div>
-
-              <p className="mt-4 text-2xs text-muted-foreground">{S.filesPlaceholderNote}</p>
-            </div>
+            <WorkItemRow
+              key={i}
+              index={i}
+              isFirst={i === 0}
+              removeHref={`/reception/new?items=${itemCount - 1}`}
+              productTypes={productTypes.map((pt) => ({
+                id: pt.id,
+                name: pt.name,
+                defaultDepartmentName: pt.defaultDepartmentName,
+                defaultRequiresDesign: pt.defaultRequiresDesign,
+                defaultRequiresReview: pt.defaultRequiresReview,
+              }))}
+              governance={governance}
+              finishings={rowFinishings}
+            />
           ))}
         </section>
 

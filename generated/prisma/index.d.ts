@@ -61,6 +61,43 @@ export type WorkItem = $Result.DefaultSelection<Prisma.$WorkItemPayload>
  */
 export type ProductType = $Result.DefaultSelection<Prisma.$ProductTypePayload>
 /**
+ * Model ProductionWidthRule
+ * 093-order-production-workflow. Per-ProductType production constraints —
+ * DATA, not code branches (constitution VI). Owns the ordered width ladder
+ * that `production-spec/widths.resolveProductionWidth` rounds against, the
+ * height ceiling, and the permitted EGP/m² band for the base rate.
+ * 
+ * The ladder is a scalar list rather than a child table on purpose: it is
+ * an ordered, small, all-or-nothing set that is replaced wholesale by
+ * `configureWidthRule` inside one audited transaction. A child table would
+ * need a delete-and-reinsert (a hard delete, which constitution III
+ * forbids) or a versioning scheme that buys nothing for eight numbers.
+ */
+export type ProductionWidthRule = $Result.DefaultSelection<Prisma.$ProductionWidthRulePayload>
+/**
+ * Model WidthExceptionTicket
+ * 093-order-production-workflow. An audited request to produce a banner
+ * wider than the configured maximum. Raising one is how reception records
+ * "the customer insists"; resolving one is how a manager authorises it.
+ * 
+ * Append-only in spirit: the row is created once and only its
+ * status/resolution fields are ever written, each by an explicit, audited
+ * action. It is never deleted (constitution III).
+ */
+export type WidthExceptionTicket = $Result.DefaultSelection<Prisma.$WidthExceptionTicketPayload>
+/**
+ * Model AccountingApproval
+ * 093-order-production-workflow. The accountant's sign-off. Its existence is
+ * what the `-> READY_FOR_PRODUCTION` guard checks, which is how "only an
+ * accountant can put work in front of the printer" is enforced in the one
+ * authoritative transition function rather than in UI code (FR-014/FR-015,
+ * SC-003).
+ * 
+ * Append-only (constitution III): a corrected approval is a new row, never
+ * an update. Revoking an approval is a `Return`/rework, not a delete.
+ */
+export type AccountingApproval = $Result.DefaultSelection<Prisma.$AccountingApprovalPayload>
+/**
  * Model WorkItemTransition
  * Immutable — application code never updates or deletes a row here (constitution III).
  */
@@ -344,6 +381,27 @@ export type WorkItemPrice = $Result.DefaultSelection<Prisma.$WorkItemPricePayloa
  * 
  */
 export type PricingStatus = $Result.DefaultSelection<Prisma.$PricingStatusPayload>
+/**
+ * Model FinishingService
+ * An add-on charged per square metre of PRODUCTION area. `SULFAN` ships at
+ * 90 EGP/m² as seed data; the code is a business key, not a branch.
+ */
+export type FinishingService = $Result.DefaultSelection<Prisma.$FinishingServicePayload>
+/**
+ * Model WorkItemFinishing
+ * One finishing selected on one Work Item, with the rate and label FROZEN at
+ * selection time. The snapshots are the whole point: a later rate change
+ * must not retroactively alter what this job cost (FR-007, FR-010, SC-006).
+ * 
+ * Strictly append-only (constitution III): a re-price inserts a NEW
+ * generation and leaves every earlier row untouched, so the composition of
+ * each quote ever given to a customer remains reconstructible. That is why
+ * there is deliberately no unique constraint on (workItemId,
+ * finishingServiceId) — duplicates across generations are the point, and
+ * duplicates WITHIN one quote are already impossible (`resolveFinishingRates`
+ * de-duplicates the requested codes).
+ */
+export type WorkItemFinishing = $Result.DefaultSelection<Prisma.$WorkItemFinishingPayload>
 
 /**
  * Enums
@@ -466,6 +524,15 @@ export const ReturnAttachmentKind: {
 };
 
 export type ReturnAttachmentKind = (typeof ReturnAttachmentKind)[keyof typeof ReturnAttachmentKind]
+
+
+export const WidthExceptionStatus: {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
+
+export type WidthExceptionStatus = (typeof WidthExceptionStatus)[keyof typeof WidthExceptionStatus]
 
 
 export const FileCategory: {
@@ -668,6 +735,10 @@ export const WorkItemDimensionUnit: typeof $Enums.WorkItemDimensionUnit
 export type ReturnAttachmentKind = $Enums.ReturnAttachmentKind
 
 export const ReturnAttachmentKind: typeof $Enums.ReturnAttachmentKind
+
+export type WidthExceptionStatus = $Enums.WidthExceptionStatus
+
+export const WidthExceptionStatus: typeof $Enums.WidthExceptionStatus
 
 export type FileCategory = $Enums.FileCategory
 
@@ -930,6 +1001,36 @@ export class PrismaClient<
     * ```
     */
   get productType(): Prisma.ProductTypeDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.productionWidthRule`: Exposes CRUD operations for the **ProductionWidthRule** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ProductionWidthRules
+    * const productionWidthRules = await prisma.productionWidthRule.findMany()
+    * ```
+    */
+  get productionWidthRule(): Prisma.ProductionWidthRuleDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.widthExceptionTicket`: Exposes CRUD operations for the **WidthExceptionTicket** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WidthExceptionTickets
+    * const widthExceptionTickets = await prisma.widthExceptionTicket.findMany()
+    * ```
+    */
+  get widthExceptionTicket(): Prisma.WidthExceptionTicketDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.accountingApproval`: Exposes CRUD operations for the **AccountingApproval** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more AccountingApprovals
+    * const accountingApprovals = await prisma.accountingApproval.findMany()
+    * ```
+    */
+  get accountingApproval(): Prisma.AccountingApprovalDelegate<ExtArgs, ClientOptions>;
 
   /**
    * `prisma.workItemTransition`: Exposes CRUD operations for the **WorkItemTransition** model.
@@ -1390,6 +1491,26 @@ export class PrismaClient<
     * ```
     */
   get pricingStatus(): Prisma.PricingStatusDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.finishingService`: Exposes CRUD operations for the **FinishingService** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more FinishingServices
+    * const finishingServices = await prisma.finishingService.findMany()
+    * ```
+    */
+  get finishingService(): Prisma.FinishingServiceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.workItemFinishing`: Exposes CRUD operations for the **WorkItemFinishing** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WorkItemFinishings
+    * const workItemFinishings = await prisma.workItemFinishing.findMany()
+    * ```
+    */
+  get workItemFinishing(): Prisma.WorkItemFinishingDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -1839,6 +1960,9 @@ export namespace Prisma {
     Order: 'Order',
     WorkItem: 'WorkItem',
     ProductType: 'ProductType',
+    ProductionWidthRule: 'ProductionWidthRule',
+    WidthExceptionTicket: 'WidthExceptionTicket',
+    AccountingApproval: 'AccountingApproval',
     WorkItemTransition: 'WorkItemTransition',
     PhaseTiming: 'PhaseTiming',
     DesignVersion: 'DesignVersion',
@@ -1884,7 +2008,9 @@ export namespace Prisma {
     PriceTier: 'PriceTier',
     CustomerPricingRule: 'CustomerPricingRule',
     WorkItemPrice: 'WorkItemPrice',
-    PricingStatus: 'PricingStatus'
+    PricingStatus: 'PricingStatus',
+    FinishingService: 'FinishingService',
+    WorkItemFinishing: 'WorkItemFinishing'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -1903,7 +2029,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "specVersion" | "changeRequest" | "lateCancellation" | "department" | "customer" | "order" | "workItem" | "productType" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "notification" | "notificationTypeOverride" | "delayThreshold" | "delayBreach" | "schedulerRun" | "schedulerLease" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus"
+      modelProps: "specVersion" | "changeRequest" | "lateCancellation" | "department" | "customer" | "order" | "workItem" | "productType" | "productionWidthRule" | "widthExceptionTicket" | "accountingApproval" | "workItemTransition" | "phaseTiming" | "designVersion" | "return" | "returnAttachment" | "vendorProductionRecord" | "notificationEvent" | "customerPhone" | "customerAddress" | "customerClassification" | "customerPromotion" | "fileObject" | "fileAsset" | "fileVersion" | "attachment" | "fileAuditEvent" | "fileConfig" | "payment" | "financeVoid" | "expense" | "expenseApproval" | "directCost" | "customerCredit" | "financeConfig" | "user" | "session" | "account" | "verification" | "role" | "rolePermission" | "userRole" | "userPermission" | "userDepartment" | "auditEvent" | "notification" | "notificationTypeOverride" | "delayThreshold" | "delayBreach" | "schedulerRun" | "schedulerLease" | "productPricingPolicy" | "priceList" | "priceTier" | "customerPricingRule" | "workItemPrice" | "pricingStatus" | "finishingService" | "workItemFinishing"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2496,6 +2622,228 @@ export namespace Prisma {
           count: {
             args: Prisma.ProductTypeCountArgs<ExtArgs>
             result: $Utils.Optional<ProductTypeCountAggregateOutputType> | number
+          }
+        }
+      }
+      ProductionWidthRule: {
+        payload: Prisma.$ProductionWidthRulePayload<ExtArgs>
+        fields: Prisma.ProductionWidthRuleFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ProductionWidthRuleFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ProductionWidthRuleFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          findFirst: {
+            args: Prisma.ProductionWidthRuleFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ProductionWidthRuleFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          findMany: {
+            args: Prisma.ProductionWidthRuleFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>[]
+          }
+          create: {
+            args: Prisma.ProductionWidthRuleCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          createMany: {
+            args: Prisma.ProductionWidthRuleCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ProductionWidthRuleCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>[]
+          }
+          delete: {
+            args: Prisma.ProductionWidthRuleDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          update: {
+            args: Prisma.ProductionWidthRuleUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          deleteMany: {
+            args: Prisma.ProductionWidthRuleDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ProductionWidthRuleUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ProductionWidthRuleUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>[]
+          }
+          upsert: {
+            args: Prisma.ProductionWidthRuleUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProductionWidthRulePayload>
+          }
+          aggregate: {
+            args: Prisma.ProductionWidthRuleAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateProductionWidthRule>
+          }
+          groupBy: {
+            args: Prisma.ProductionWidthRuleGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ProductionWidthRuleGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ProductionWidthRuleCountArgs<ExtArgs>
+            result: $Utils.Optional<ProductionWidthRuleCountAggregateOutputType> | number
+          }
+        }
+      }
+      WidthExceptionTicket: {
+        payload: Prisma.$WidthExceptionTicketPayload<ExtArgs>
+        fields: Prisma.WidthExceptionTicketFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WidthExceptionTicketFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WidthExceptionTicketFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          findFirst: {
+            args: Prisma.WidthExceptionTicketFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WidthExceptionTicketFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          findMany: {
+            args: Prisma.WidthExceptionTicketFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>[]
+          }
+          create: {
+            args: Prisma.WidthExceptionTicketCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          createMany: {
+            args: Prisma.WidthExceptionTicketCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WidthExceptionTicketCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>[]
+          }
+          delete: {
+            args: Prisma.WidthExceptionTicketDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          update: {
+            args: Prisma.WidthExceptionTicketUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          deleteMany: {
+            args: Prisma.WidthExceptionTicketDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WidthExceptionTicketUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WidthExceptionTicketUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>[]
+          }
+          upsert: {
+            args: Prisma.WidthExceptionTicketUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WidthExceptionTicketPayload>
+          }
+          aggregate: {
+            args: Prisma.WidthExceptionTicketAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWidthExceptionTicket>
+          }
+          groupBy: {
+            args: Prisma.WidthExceptionTicketGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WidthExceptionTicketGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WidthExceptionTicketCountArgs<ExtArgs>
+            result: $Utils.Optional<WidthExceptionTicketCountAggregateOutputType> | number
+          }
+        }
+      }
+      AccountingApproval: {
+        payload: Prisma.$AccountingApprovalPayload<ExtArgs>
+        fields: Prisma.AccountingApprovalFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AccountingApprovalFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AccountingApprovalFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          findFirst: {
+            args: Prisma.AccountingApprovalFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AccountingApprovalFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          findMany: {
+            args: Prisma.AccountingApprovalFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>[]
+          }
+          create: {
+            args: Prisma.AccountingApprovalCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          createMany: {
+            args: Prisma.AccountingApprovalCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AccountingApprovalCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>[]
+          }
+          delete: {
+            args: Prisma.AccountingApprovalDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          update: {
+            args: Prisma.AccountingApprovalUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          deleteMany: {
+            args: Prisma.AccountingApprovalDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AccountingApprovalUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AccountingApprovalUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>[]
+          }
+          upsert: {
+            args: Prisma.AccountingApprovalUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AccountingApprovalPayload>
+          }
+          aggregate: {
+            args: Prisma.AccountingApprovalAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAccountingApproval>
+          }
+          groupBy: {
+            args: Prisma.AccountingApprovalGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AccountingApprovalGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AccountingApprovalCountArgs<ExtArgs>
+            result: $Utils.Optional<AccountingApprovalCountAggregateOutputType> | number
           }
         }
       }
@@ -5903,6 +6251,154 @@ export namespace Prisma {
           }
         }
       }
+      FinishingService: {
+        payload: Prisma.$FinishingServicePayload<ExtArgs>
+        fields: Prisma.FinishingServiceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.FinishingServiceFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.FinishingServiceFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          findFirst: {
+            args: Prisma.FinishingServiceFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.FinishingServiceFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          findMany: {
+            args: Prisma.FinishingServiceFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>[]
+          }
+          create: {
+            args: Prisma.FinishingServiceCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          createMany: {
+            args: Prisma.FinishingServiceCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.FinishingServiceCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>[]
+          }
+          delete: {
+            args: Prisma.FinishingServiceDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          update: {
+            args: Prisma.FinishingServiceUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          deleteMany: {
+            args: Prisma.FinishingServiceDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.FinishingServiceUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.FinishingServiceUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>[]
+          }
+          upsert: {
+            args: Prisma.FinishingServiceUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$FinishingServicePayload>
+          }
+          aggregate: {
+            args: Prisma.FinishingServiceAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateFinishingService>
+          }
+          groupBy: {
+            args: Prisma.FinishingServiceGroupByArgs<ExtArgs>
+            result: $Utils.Optional<FinishingServiceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.FinishingServiceCountArgs<ExtArgs>
+            result: $Utils.Optional<FinishingServiceCountAggregateOutputType> | number
+          }
+        }
+      }
+      WorkItemFinishing: {
+        payload: Prisma.$WorkItemFinishingPayload<ExtArgs>
+        fields: Prisma.WorkItemFinishingFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WorkItemFinishingFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WorkItemFinishingFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          findFirst: {
+            args: Prisma.WorkItemFinishingFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WorkItemFinishingFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          findMany: {
+            args: Prisma.WorkItemFinishingFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>[]
+          }
+          create: {
+            args: Prisma.WorkItemFinishingCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          createMany: {
+            args: Prisma.WorkItemFinishingCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WorkItemFinishingCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>[]
+          }
+          delete: {
+            args: Prisma.WorkItemFinishingDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          update: {
+            args: Prisma.WorkItemFinishingUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          deleteMany: {
+            args: Prisma.WorkItemFinishingDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WorkItemFinishingUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WorkItemFinishingUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>[]
+          }
+          upsert: {
+            args: Prisma.WorkItemFinishingUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WorkItemFinishingPayload>
+          }
+          aggregate: {
+            args: Prisma.WorkItemFinishingAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWorkItemFinishing>
+          }
+          groupBy: {
+            args: Prisma.WorkItemFinishingGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WorkItemFinishingGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WorkItemFinishingCountArgs<ExtArgs>
+            result: $Utils.Optional<WorkItemFinishingCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -6007,6 +6503,9 @@ export namespace Prisma {
     order?: OrderOmit
     workItem?: WorkItemOmit
     productType?: ProductTypeOmit
+    productionWidthRule?: ProductionWidthRuleOmit
+    widthExceptionTicket?: WidthExceptionTicketOmit
+    accountingApproval?: AccountingApprovalOmit
     workItemTransition?: WorkItemTransitionOmit
     phaseTiming?: PhaseTimingOmit
     designVersion?: DesignVersionOmit
@@ -6053,6 +6552,8 @@ export namespace Prisma {
     customerPricingRule?: CustomerPricingRuleOmit
     workItemPrice?: WorkItemPriceOmit
     pricingStatus?: PricingStatusOmit
+    finishingService?: FinishingServiceOmit
+    workItemFinishing?: WorkItemFinishingOmit
   }
 
   /* Types for Logging */
@@ -6377,6 +6878,9 @@ export namespace Prisma {
     expenses: number
     directCosts: number
     delayBreaches: number
+    finishings: number
+    widthExceptions: number
+    accountingApprovals: number
   }
 
   export type WorkItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6392,6 +6896,9 @@ export namespace Prisma {
     expenses?: boolean | WorkItemCountOutputTypeCountExpensesArgs
     directCosts?: boolean | WorkItemCountOutputTypeCountDirectCostsArgs
     delayBreaches?: boolean | WorkItemCountOutputTypeCountDelayBreachesArgs
+    finishings?: boolean | WorkItemCountOutputTypeCountFinishingsArgs
+    widthExceptions?: boolean | WorkItemCountOutputTypeCountWidthExceptionsArgs
+    accountingApprovals?: boolean | WorkItemCountOutputTypeCountAccountingApprovalsArgs
   }
 
   // Custom InputTypes
@@ -6487,6 +6994,27 @@ export namespace Prisma {
    */
   export type WorkItemCountOutputTypeCountDelayBreachesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DelayBreachWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountFinishingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkItemFinishingWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountWidthExceptionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WidthExceptionTicketWhereInput
+  }
+
+  /**
+   * WorkItemCountOutputType without action
+   */
+  export type WorkItemCountOutputTypeCountAccountingApprovalsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AccountingApprovalWhereInput
   }
 
 
@@ -6788,6 +7316,11 @@ export namespace Prisma {
     changeRequestsDecided: number
     changeRequestsAcknowledged: number
     lateCancellations: number
+    widthRulesUpdated: number
+    widthExceptionsRaised: number
+    widthExceptionsResolved: number
+    accountingApprovalsGiven: number
+    finishingServicesCreated: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6831,6 +7364,11 @@ export namespace Prisma {
     changeRequestsDecided?: boolean | UserCountOutputTypeCountChangeRequestsDecidedArgs
     changeRequestsAcknowledged?: boolean | UserCountOutputTypeCountChangeRequestsAcknowledgedArgs
     lateCancellations?: boolean | UserCountOutputTypeCountLateCancellationsArgs
+    widthRulesUpdated?: boolean | UserCountOutputTypeCountWidthRulesUpdatedArgs
+    widthExceptionsRaised?: boolean | UserCountOutputTypeCountWidthExceptionsRaisedArgs
+    widthExceptionsResolved?: boolean | UserCountOutputTypeCountWidthExceptionsResolvedArgs
+    accountingApprovalsGiven?: boolean | UserCountOutputTypeCountAccountingApprovalsGivenArgs
+    finishingServicesCreated?: boolean | UserCountOutputTypeCountFinishingServicesCreatedArgs
   }
 
   // Custom InputTypes
@@ -7124,6 +7662,41 @@ export namespace Prisma {
     where?: LateCancellationWhereInput
   }
 
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWidthRulesUpdatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProductionWidthRuleWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWidthExceptionsRaisedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WidthExceptionTicketWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountWidthExceptionsResolvedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WidthExceptionTicketWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAccountingApprovalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AccountingApprovalWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountFinishingServicesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FinishingServiceWhereInput
+  }
+
 
   /**
    * Count Type RoleCountOutputType
@@ -7193,6 +7766,37 @@ export namespace Prisma {
    */
   export type PriceListCountOutputTypeCountTiersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PriceTierWhereInput
+  }
+
+
+  /**
+   * Count Type FinishingServiceCountOutputType
+   */
+
+  export type FinishingServiceCountOutputType = {
+    selections: number
+  }
+
+  export type FinishingServiceCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    selections?: boolean | FinishingServiceCountOutputTypeCountSelectionsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * FinishingServiceCountOutputType without action
+   */
+  export type FinishingServiceCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingServiceCountOutputType
+     */
+    select?: FinishingServiceCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * FinishingServiceCountOutputType without action
+   */
+  export type FinishingServiceCountOutputTypeCountSelectionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkItemFinishingWhereInput
   }
 
 
@@ -14995,6 +15599,15 @@ export namespace Prisma {
     widthValue: Decimal | null
     heightValue: Decimal | null
     producedQuantity: number | null
+    customerWidthCm: Decimal | null
+    productionWidthCm: Decimal | null
+    productionHeightM: Decimal | null
+    quantitySnapshot: number | null
+    productionAreaSqm: Decimal | null
+    baseRatePerSqm: Decimal | null
+    baseTotal: Decimal | null
+    finishingTotal: Decimal | null
+    productionTotal: Decimal | null
   }
 
   export type WorkItemSumAggregateOutputType = {
@@ -15002,6 +15615,15 @@ export namespace Prisma {
     widthValue: Decimal | null
     heightValue: Decimal | null
     producedQuantity: number | null
+    customerWidthCm: Decimal | null
+    productionWidthCm: Decimal | null
+    productionHeightM: Decimal | null
+    quantitySnapshot: number | null
+    productionAreaSqm: Decimal | null
+    baseRatePerSqm: Decimal | null
+    baseTotal: Decimal | null
+    finishingTotal: Decimal | null
+    productionTotal: Decimal | null
   }
 
   export type WorkItemMinAggregateOutputType = {
@@ -15024,6 +15646,16 @@ export namespace Prisma {
     producedQuantity: number | null
     productionNotes: string | null
     pendingFileRevisionAt: Date | null
+    customerWidthCm: Decimal | null
+    productionWidthCm: Decimal | null
+    productionHeightM: Decimal | null
+    quantitySnapshot: number | null
+    productionAreaSqm: Decimal | null
+    baseRatePerSqm: Decimal | null
+    baseTotal: Decimal | null
+    finishingTotal: Decimal | null
+    productionTotal: Decimal | null
+    productionSpecAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
     currentSpecVersionId: string | null
@@ -15049,6 +15681,16 @@ export namespace Prisma {
     producedQuantity: number | null
     productionNotes: string | null
     pendingFileRevisionAt: Date | null
+    customerWidthCm: Decimal | null
+    productionWidthCm: Decimal | null
+    productionHeightM: Decimal | null
+    quantitySnapshot: number | null
+    productionAreaSqm: Decimal | null
+    baseRatePerSqm: Decimal | null
+    baseTotal: Decimal | null
+    finishingTotal: Decimal | null
+    productionTotal: Decimal | null
+    productionSpecAt: Date | null
     createdAt: Date | null
     updatedAt: Date | null
     currentSpecVersionId: string | null
@@ -15074,6 +15716,16 @@ export namespace Prisma {
     producedQuantity: number
     productionNotes: number
     pendingFileRevisionAt: number
+    customerWidthCm: number
+    productionWidthCm: number
+    productionHeightM: number
+    quantitySnapshot: number
+    productionAreaSqm: number
+    baseRatePerSqm: number
+    baseTotal: number
+    finishingTotal: number
+    productionTotal: number
+    productionSpecAt: number
     createdAt: number
     updatedAt: number
     currentSpecVersionId: number
@@ -15086,6 +15738,15 @@ export namespace Prisma {
     widthValue?: true
     heightValue?: true
     producedQuantity?: true
+    customerWidthCm?: true
+    productionWidthCm?: true
+    productionHeightM?: true
+    quantitySnapshot?: true
+    productionAreaSqm?: true
+    baseRatePerSqm?: true
+    baseTotal?: true
+    finishingTotal?: true
+    productionTotal?: true
   }
 
   export type WorkItemSumAggregateInputType = {
@@ -15093,6 +15754,15 @@ export namespace Prisma {
     widthValue?: true
     heightValue?: true
     producedQuantity?: true
+    customerWidthCm?: true
+    productionWidthCm?: true
+    productionHeightM?: true
+    quantitySnapshot?: true
+    productionAreaSqm?: true
+    baseRatePerSqm?: true
+    baseTotal?: true
+    finishingTotal?: true
+    productionTotal?: true
   }
 
   export type WorkItemMinAggregateInputType = {
@@ -15115,6 +15785,16 @@ export namespace Prisma {
     producedQuantity?: true
     productionNotes?: true
     pendingFileRevisionAt?: true
+    customerWidthCm?: true
+    productionWidthCm?: true
+    productionHeightM?: true
+    quantitySnapshot?: true
+    productionAreaSqm?: true
+    baseRatePerSqm?: true
+    baseTotal?: true
+    finishingTotal?: true
+    productionTotal?: true
+    productionSpecAt?: true
     createdAt?: true
     updatedAt?: true
     currentSpecVersionId?: true
@@ -15140,6 +15820,16 @@ export namespace Prisma {
     producedQuantity?: true
     productionNotes?: true
     pendingFileRevisionAt?: true
+    customerWidthCm?: true
+    productionWidthCm?: true
+    productionHeightM?: true
+    quantitySnapshot?: true
+    productionAreaSqm?: true
+    baseRatePerSqm?: true
+    baseTotal?: true
+    finishingTotal?: true
+    productionTotal?: true
+    productionSpecAt?: true
     createdAt?: true
     updatedAt?: true
     currentSpecVersionId?: true
@@ -15165,6 +15855,16 @@ export namespace Prisma {
     producedQuantity?: true
     productionNotes?: true
     pendingFileRevisionAt?: true
+    customerWidthCm?: true
+    productionWidthCm?: true
+    productionHeightM?: true
+    quantitySnapshot?: true
+    productionAreaSqm?: true
+    baseRatePerSqm?: true
+    baseTotal?: true
+    finishingTotal?: true
+    productionTotal?: true
+    productionSpecAt?: true
     createdAt?: true
     updatedAt?: true
     currentSpecVersionId?: true
@@ -15277,6 +15977,16 @@ export namespace Prisma {
     producedQuantity: number | null
     productionNotes: string | null
     pendingFileRevisionAt: Date | null
+    customerWidthCm: Decimal | null
+    productionWidthCm: Decimal | null
+    productionHeightM: Decimal | null
+    quantitySnapshot: number | null
+    productionAreaSqm: Decimal | null
+    baseRatePerSqm: Decimal | null
+    baseTotal: Decimal | null
+    finishingTotal: Decimal | null
+    productionTotal: Decimal | null
+    productionSpecAt: Date | null
     createdAt: Date
     updatedAt: Date
     currentSpecVersionId: string | null
@@ -15321,6 +16031,16 @@ export namespace Prisma {
     producedQuantity?: boolean
     productionNotes?: boolean
     pendingFileRevisionAt?: boolean
+    customerWidthCm?: boolean
+    productionWidthCm?: boolean
+    productionHeightM?: boolean
+    quantitySnapshot?: boolean
+    productionAreaSqm?: boolean
+    baseRatePerSqm?: boolean
+    baseTotal?: boolean
+    finishingTotal?: boolean
+    productionTotal?: boolean
+    productionSpecAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     currentSpecVersionId?: boolean
@@ -15343,6 +16063,9 @@ export namespace Prisma {
     expenses?: boolean | WorkItem$expensesArgs<ExtArgs>
     directCosts?: boolean | WorkItem$directCostsArgs<ExtArgs>
     delayBreaches?: boolean | WorkItem$delayBreachesArgs<ExtArgs>
+    finishings?: boolean | WorkItem$finishingsArgs<ExtArgs>
+    widthExceptions?: boolean | WorkItem$widthExceptionsArgs<ExtArgs>
+    accountingApprovals?: boolean | WorkItem$accountingApprovalsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["workItem"]>
 
@@ -15366,6 +16089,16 @@ export namespace Prisma {
     producedQuantity?: boolean
     productionNotes?: boolean
     pendingFileRevisionAt?: boolean
+    customerWidthCm?: boolean
+    productionWidthCm?: boolean
+    productionHeightM?: boolean
+    quantitySnapshot?: boolean
+    productionAreaSqm?: boolean
+    baseRatePerSqm?: boolean
+    baseTotal?: boolean
+    finishingTotal?: boolean
+    productionTotal?: boolean
+    productionSpecAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     currentSpecVersionId?: boolean
@@ -15396,6 +16129,16 @@ export namespace Prisma {
     producedQuantity?: boolean
     productionNotes?: boolean
     pendingFileRevisionAt?: boolean
+    customerWidthCm?: boolean
+    productionWidthCm?: boolean
+    productionHeightM?: boolean
+    quantitySnapshot?: boolean
+    productionAreaSqm?: boolean
+    baseRatePerSqm?: boolean
+    baseTotal?: boolean
+    finishingTotal?: boolean
+    productionTotal?: boolean
+    productionSpecAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     currentSpecVersionId?: boolean
@@ -15426,12 +16169,22 @@ export namespace Prisma {
     producedQuantity?: boolean
     productionNotes?: boolean
     pendingFileRevisionAt?: boolean
+    customerWidthCm?: boolean
+    productionWidthCm?: boolean
+    productionHeightM?: boolean
+    quantitySnapshot?: boolean
+    productionAreaSqm?: boolean
+    baseRatePerSqm?: boolean
+    baseTotal?: boolean
+    finishingTotal?: boolean
+    productionTotal?: boolean
+    productionSpecAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     currentSpecVersionId?: boolean
   }
 
-  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "producedQuantity" | "productionNotes" | "pendingFileRevisionAt" | "createdAt" | "updatedAt" | "currentSpecVersionId", ExtArgs["result"]["workItem"]>
+  export type WorkItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "productTypeId" | "departmentId" | "state" | "requiresDesign" | "requiresReview" | "assigneeId" | "description" | "quantity" | "widthValue" | "heightValue" | "dimensionUnit" | "material" | "finishNotes" | "dueDate" | "producedQuantity" | "productionNotes" | "pendingFileRevisionAt" | "customerWidthCm" | "productionWidthCm" | "productionHeightM" | "quantitySnapshot" | "productionAreaSqm" | "baseRatePerSqm" | "baseTotal" | "finishingTotal" | "productionTotal" | "productionSpecAt" | "createdAt" | "updatedAt" | "currentSpecVersionId", ExtArgs["result"]["workItem"]>
   export type WorkItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order?: boolean | OrderDefaultArgs<ExtArgs>
     productType?: boolean | WorkItem$productTypeArgs<ExtArgs>
@@ -15452,6 +16205,9 @@ export namespace Prisma {
     expenses?: boolean | WorkItem$expensesArgs<ExtArgs>
     directCosts?: boolean | WorkItem$directCostsArgs<ExtArgs>
     delayBreaches?: boolean | WorkItem$delayBreachesArgs<ExtArgs>
+    finishings?: boolean | WorkItem$finishingsArgs<ExtArgs>
+    widthExceptions?: boolean | WorkItem$widthExceptionsArgs<ExtArgs>
+    accountingApprovals?: boolean | WorkItem$accountingApprovalsArgs<ExtArgs>
     _count?: boolean | WorkItemCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type WorkItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -15494,6 +16250,9 @@ export namespace Prisma {
       expenses: Prisma.$ExpensePayload<ExtArgs>[]
       directCosts: Prisma.$DirectCostPayload<ExtArgs>[]
       delayBreaches: Prisma.$DelayBreachPayload<ExtArgs>[]
+      finishings: Prisma.$WorkItemFinishingPayload<ExtArgs>[]
+      widthExceptions: Prisma.$WidthExceptionTicketPayload<ExtArgs>[]
+      accountingApprovals: Prisma.$AccountingApprovalPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -15542,7 +16301,41 @@ export namespace Prisma {
        */
       pendingFileRevisionAt: Date | null
       /**
-       * --- end 014-production fields -------------------------------------------
+       * --- 093-order-production-workflow: frozen production specification -----
+       * Everything below is an immutable SNAPSHOT taken by
+       * `production-spec.setProductionSpec` at reception time (FR-001…FR-010,
+       * FR-024). It is deliberately denormalized onto WorkItem — the same
+       * pattern 014 used for `producedQuantity`/`productionNotes` — because the
+       * audit requirement is "a later price-list or width-table change must
+       * never rewrite what a customer was quoted" (SC-006). Recomputing these
+       * columns from mutable configuration is a defect, not a feature.
+       * 
+       * Canonical units (FR-005): widths cm, heights m, area m².
+       * `customerWidthCm` is what the customer asked for and is NEVER
+       * overwritten by rounding; `productionWidthCm` is the rounded-up width
+       * that production actually consumes and the ONLY width that feeds area.
+       */
+      customerWidthCm: Prisma.Decimal | null
+      productionWidthCm: Prisma.Decimal | null
+      productionHeightM: Prisma.Decimal | null
+      quantitySnapshot: number | null
+      productionAreaSqm: Prisma.Decimal | null
+      /**
+       * EGP per m² chosen at quote time; frozen so history never moves (FR-007).
+       */
+      baseRatePerSqm: Prisma.Decimal | null
+      baseTotal: Prisma.Decimal | null
+      finishingTotal: Prisma.Decimal | null
+      /**
+       * `baseTotal + finishingTotal`, whole-EGP rounded once at the end (FR-008).
+       */
+      productionTotal: Prisma.Decimal | null
+      /**
+       * When the snapshot above was written. Null = never priced.
+       */
+      productionSpecAt: Date | null
+      /**
+       * --- end 093-order-production-workflow fields ---------------------------
        */
       createdAt: Date
       updatedAt: Date
@@ -15966,6 +16759,9 @@ export namespace Prisma {
     expenses<T extends WorkItem$expensesArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$expensesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ExpensePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     directCosts<T extends WorkItem$directCostsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$directCostsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DirectCostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     delayBreaches<T extends WorkItem$delayBreachesArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$delayBreachesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DelayBreachPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    finishings<T extends WorkItem$finishingsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$finishingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    widthExceptions<T extends WorkItem$widthExceptionsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$widthExceptionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    accountingApprovals<T extends WorkItem$accountingApprovalsArgs<ExtArgs> = {}>(args?: Subset<T, WorkItem$accountingApprovalsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -16014,6 +16810,16 @@ export namespace Prisma {
     readonly producedQuantity: FieldRef<"WorkItem", 'Int'>
     readonly productionNotes: FieldRef<"WorkItem", 'String'>
     readonly pendingFileRevisionAt: FieldRef<"WorkItem", 'DateTime'>
+    readonly customerWidthCm: FieldRef<"WorkItem", 'Decimal'>
+    readonly productionWidthCm: FieldRef<"WorkItem", 'Decimal'>
+    readonly productionHeightM: FieldRef<"WorkItem", 'Decimal'>
+    readonly quantitySnapshot: FieldRef<"WorkItem", 'Int'>
+    readonly productionAreaSqm: FieldRef<"WorkItem", 'Decimal'>
+    readonly baseRatePerSqm: FieldRef<"WorkItem", 'Decimal'>
+    readonly baseTotal: FieldRef<"WorkItem", 'Decimal'>
+    readonly finishingTotal: FieldRef<"WorkItem", 'Decimal'>
+    readonly productionTotal: FieldRef<"WorkItem", 'Decimal'>
+    readonly productionSpecAt: FieldRef<"WorkItem", 'DateTime'>
     readonly createdAt: FieldRef<"WorkItem", 'DateTime'>
     readonly updatedAt: FieldRef<"WorkItem", 'DateTime'>
     readonly currentSpecVersionId: FieldRef<"WorkItem", 'String'>
@@ -16824,6 +17630,78 @@ export namespace Prisma {
   }
 
   /**
+   * WorkItem.finishings
+   */
+  export type WorkItem$finishingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    where?: WorkItemFinishingWhereInput
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    cursor?: WorkItemFinishingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WorkItemFinishingScalarFieldEnum | WorkItemFinishingScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.widthExceptions
+   */
+  export type WorkItem$widthExceptionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    where?: WidthExceptionTicketWhereInput
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+  }
+
+  /**
+   * WorkItem.accountingApprovals
+   */
+  export type WorkItem$accountingApprovalsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    where?: AccountingApprovalWhereInput
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    cursor?: AccountingApprovalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AccountingApprovalScalarFieldEnum | AccountingApprovalScalarFieldEnum[]
+  }
+
+  /**
    * WorkItem without action
    */
   export type WorkItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -17036,6 +17914,7 @@ export namespace Prisma {
     pricingPolicy?: boolean | ProductType$pricingPolicyArgs<ExtArgs>
     priceLists?: boolean | ProductType$priceListsArgs<ExtArgs>
     customerPricingRules?: boolean | ProductType$customerPricingRulesArgs<ExtArgs>
+    widthRule?: boolean | ProductType$widthRuleArgs<ExtArgs>
     _count?: boolean | ProductTypeCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["productType"]>
 
@@ -17082,6 +17961,7 @@ export namespace Prisma {
     pricingPolicy?: boolean | ProductType$pricingPolicyArgs<ExtArgs>
     priceLists?: boolean | ProductType$priceListsArgs<ExtArgs>
     customerPricingRules?: boolean | ProductType$customerPricingRulesArgs<ExtArgs>
+    widthRule?: boolean | ProductType$widthRuleArgs<ExtArgs>
     _count?: boolean | ProductTypeCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ProductTypeIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -17100,6 +17980,14 @@ export namespace Prisma {
       pricingPolicy: Prisma.$ProductPricingPolicyPayload<ExtArgs> | null
       priceLists: Prisma.$PriceListPayload<ExtArgs>[]
       customerPricingRules: Prisma.$CustomerPricingRulePayload<ExtArgs>[]
+      /**
+       * Non-null exactly when this ProductType is governed by the production
+       * specification (width ladder, height cap, base-rate band). This is the
+       * configuration switch the pipeline guards read: a Work Item whose
+       * ProductType has no rule keeps 011/014's pre-existing behaviour, and a
+       * governed one cannot skip the width/area/price/file/accountant gates.
+       */
+      widthRule: Prisma.$ProductionWidthRulePayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -17514,6 +18402,7 @@ export namespace Prisma {
     pricingPolicy<T extends ProductType$pricingPolicyArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$pricingPolicyArgs<ExtArgs>>): Prisma__ProductPricingPolicyClient<$Result.GetResult<Prisma.$ProductPricingPolicyPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     priceLists<T extends ProductType$priceListsArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$priceListsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PriceListPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     customerPricingRules<T extends ProductType$customerPricingRulesArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$customerPricingRulesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CustomerPricingRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    widthRule<T extends ProductType$widthRuleArgs<ExtArgs> = {}>(args?: Subset<T, ProductType$widthRuleArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -18090,6 +18979,25 @@ export namespace Prisma {
   }
 
   /**
+   * ProductType.widthRule
+   */
+  export type ProductType$widthRuleArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    where?: ProductionWidthRuleWhereInput
+  }
+
+  /**
    * ProductType without action
    */
   export type ProductTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -18105,6 +19013,3553 @@ export namespace Prisma {
      * Choose, which related nodes to fetch as well
      */
     include?: ProductTypeInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ProductionWidthRule
+   */
+
+  export type AggregateProductionWidthRule = {
+    _count: ProductionWidthRuleCountAggregateOutputType | null
+    _avg: ProductionWidthRuleAvgAggregateOutputType | null
+    _sum: ProductionWidthRuleSumAggregateOutputType | null
+    _min: ProductionWidthRuleMinAggregateOutputType | null
+    _max: ProductionWidthRuleMaxAggregateOutputType | null
+  }
+
+  export type ProductionWidthRuleAvgAggregateOutputType = {
+    ladderCm: number | null
+    maxHeightM: Decimal | null
+    minRatePerSqm: Decimal | null
+    maxRatePerSqm: Decimal | null
+  }
+
+  export type ProductionWidthRuleSumAggregateOutputType = {
+    ladderCm: number[]
+    maxHeightM: Decimal | null
+    minRatePerSqm: Decimal | null
+    maxRatePerSqm: Decimal | null
+  }
+
+  export type ProductionWidthRuleMinAggregateOutputType = {
+    id: string | null
+    productTypeId: string | null
+    maxHeightM: Decimal | null
+    minRatePerSqm: Decimal | null
+    maxRatePerSqm: Decimal | null
+    updatedById: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ProductionWidthRuleMaxAggregateOutputType = {
+    id: string | null
+    productTypeId: string | null
+    maxHeightM: Decimal | null
+    minRatePerSqm: Decimal | null
+    maxRatePerSqm: Decimal | null
+    updatedById: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type ProductionWidthRuleCountAggregateOutputType = {
+    id: number
+    productTypeId: number
+    ladderCm: number
+    maxHeightM: number
+    minRatePerSqm: number
+    maxRatePerSqm: number
+    updatedById: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type ProductionWidthRuleAvgAggregateInputType = {
+    ladderCm?: true
+    maxHeightM?: true
+    minRatePerSqm?: true
+    maxRatePerSqm?: true
+  }
+
+  export type ProductionWidthRuleSumAggregateInputType = {
+    ladderCm?: true
+    maxHeightM?: true
+    minRatePerSqm?: true
+    maxRatePerSqm?: true
+  }
+
+  export type ProductionWidthRuleMinAggregateInputType = {
+    id?: true
+    productTypeId?: true
+    maxHeightM?: true
+    minRatePerSqm?: true
+    maxRatePerSqm?: true
+    updatedById?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ProductionWidthRuleMaxAggregateInputType = {
+    id?: true
+    productTypeId?: true
+    maxHeightM?: true
+    minRatePerSqm?: true
+    maxRatePerSqm?: true
+    updatedById?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type ProductionWidthRuleCountAggregateInputType = {
+    id?: true
+    productTypeId?: true
+    ladderCm?: true
+    maxHeightM?: true
+    minRatePerSqm?: true
+    maxRatePerSqm?: true
+    updatedById?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type ProductionWidthRuleAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProductionWidthRule to aggregate.
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProductionWidthRules to fetch.
+     */
+    orderBy?: ProductionWidthRuleOrderByWithRelationInput | ProductionWidthRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ProductionWidthRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProductionWidthRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProductionWidthRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ProductionWidthRules
+    **/
+    _count?: true | ProductionWidthRuleCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ProductionWidthRuleAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ProductionWidthRuleSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ProductionWidthRuleMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ProductionWidthRuleMaxAggregateInputType
+  }
+
+  export type GetProductionWidthRuleAggregateType<T extends ProductionWidthRuleAggregateArgs> = {
+        [P in keyof T & keyof AggregateProductionWidthRule]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateProductionWidthRule[P]>
+      : GetScalarType<T[P], AggregateProductionWidthRule[P]>
+  }
+
+
+
+
+  export type ProductionWidthRuleGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProductionWidthRuleWhereInput
+    orderBy?: ProductionWidthRuleOrderByWithAggregationInput | ProductionWidthRuleOrderByWithAggregationInput[]
+    by: ProductionWidthRuleScalarFieldEnum[] | ProductionWidthRuleScalarFieldEnum
+    having?: ProductionWidthRuleScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ProductionWidthRuleCountAggregateInputType | true
+    _avg?: ProductionWidthRuleAvgAggregateInputType
+    _sum?: ProductionWidthRuleSumAggregateInputType
+    _min?: ProductionWidthRuleMinAggregateInputType
+    _max?: ProductionWidthRuleMaxAggregateInputType
+  }
+
+  export type ProductionWidthRuleGroupByOutputType = {
+    id: string
+    productTypeId: string
+    ladderCm: number[]
+    maxHeightM: Decimal
+    minRatePerSqm: Decimal
+    maxRatePerSqm: Decimal
+    updatedById: string
+    createdAt: Date
+    updatedAt: Date
+    _count: ProductionWidthRuleCountAggregateOutputType | null
+    _avg: ProductionWidthRuleAvgAggregateOutputType | null
+    _sum: ProductionWidthRuleSumAggregateOutputType | null
+    _min: ProductionWidthRuleMinAggregateOutputType | null
+    _max: ProductionWidthRuleMaxAggregateOutputType | null
+  }
+
+  type GetProductionWidthRuleGroupByPayload<T extends ProductionWidthRuleGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ProductionWidthRuleGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ProductionWidthRuleGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ProductionWidthRuleGroupByOutputType[P]>
+            : GetScalarType<T[P], ProductionWidthRuleGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ProductionWidthRuleSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productTypeId?: boolean
+    ladderCm?: boolean
+    maxHeightM?: boolean
+    minRatePerSqm?: boolean
+    maxRatePerSqm?: boolean
+    updatedById?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["productionWidthRule"]>
+
+  export type ProductionWidthRuleSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productTypeId?: boolean
+    ladderCm?: boolean
+    maxHeightM?: boolean
+    minRatePerSqm?: boolean
+    maxRatePerSqm?: boolean
+    updatedById?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["productionWidthRule"]>
+
+  export type ProductionWidthRuleSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productTypeId?: boolean
+    ladderCm?: boolean
+    maxHeightM?: boolean
+    minRatePerSqm?: boolean
+    maxRatePerSqm?: boolean
+    updatedById?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["productionWidthRule"]>
+
+  export type ProductionWidthRuleSelectScalar = {
+    id?: boolean
+    productTypeId?: boolean
+    ladderCm?: boolean
+    maxHeightM?: boolean
+    minRatePerSqm?: boolean
+    maxRatePerSqm?: boolean
+    updatedById?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type ProductionWidthRuleOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productTypeId" | "ladderCm" | "maxHeightM" | "minRatePerSqm" | "maxRatePerSqm" | "updatedById" | "createdAt" | "updatedAt", ExtArgs["result"]["productionWidthRule"]>
+  export type ProductionWidthRuleInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type ProductionWidthRuleIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type ProductionWidthRuleIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    productType?: boolean | ProductTypeDefaultArgs<ExtArgs>
+    updatedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $ProductionWidthRulePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ProductionWidthRule"
+    objects: {
+      productType: Prisma.$ProductTypePayload<ExtArgs>
+      updatedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      productTypeId: string
+      /**
+       * Ascending, strictly increasing, whole centimetres. The last element is
+       * the maximum production width: anything above it raises a
+       * `WidthExceptionTicket` rather than clamping (FR-003).
+       */
+      ladderCm: number[]
+      /**
+       * Maximum production height in metres (50 m for the seeded roll class).
+       */
+      maxHeightM: Prisma.Decimal
+      /**
+       * Inclusive EGP/m² band the base rate must fall inside (80–120 seeded).
+       */
+      minRatePerSqm: Prisma.Decimal
+      maxRatePerSqm: Prisma.Decimal
+      updatedById: string
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["productionWidthRule"]>
+    composites: {}
+  }
+
+  type ProductionWidthRuleGetPayload<S extends boolean | null | undefined | ProductionWidthRuleDefaultArgs> = $Result.GetResult<Prisma.$ProductionWidthRulePayload, S>
+
+  type ProductionWidthRuleCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ProductionWidthRuleFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: ProductionWidthRuleCountAggregateInputType | true
+    }
+
+  export interface ProductionWidthRuleDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ProductionWidthRule'], meta: { name: 'ProductionWidthRule' } }
+    /**
+     * Find zero or one ProductionWidthRule that matches the filter.
+     * @param {ProductionWidthRuleFindUniqueArgs} args - Arguments to find a ProductionWidthRule
+     * @example
+     * // Get one ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ProductionWidthRuleFindUniqueArgs>(args: SelectSubset<T, ProductionWidthRuleFindUniqueArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ProductionWidthRule that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ProductionWidthRuleFindUniqueOrThrowArgs} args - Arguments to find a ProductionWidthRule
+     * @example
+     * // Get one ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ProductionWidthRuleFindUniqueOrThrowArgs>(args: SelectSubset<T, ProductionWidthRuleFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProductionWidthRule that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleFindFirstArgs} args - Arguments to find a ProductionWidthRule
+     * @example
+     * // Get one ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ProductionWidthRuleFindFirstArgs>(args?: SelectSubset<T, ProductionWidthRuleFindFirstArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProductionWidthRule that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleFindFirstOrThrowArgs} args - Arguments to find a ProductionWidthRule
+     * @example
+     * // Get one ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ProductionWidthRuleFindFirstOrThrowArgs>(args?: SelectSubset<T, ProductionWidthRuleFindFirstOrThrowArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ProductionWidthRules that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ProductionWidthRules
+     * const productionWidthRules = await prisma.productionWidthRule.findMany()
+     * 
+     * // Get first 10 ProductionWidthRules
+     * const productionWidthRules = await prisma.productionWidthRule.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const productionWidthRuleWithIdOnly = await prisma.productionWidthRule.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ProductionWidthRuleFindManyArgs>(args?: SelectSubset<T, ProductionWidthRuleFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ProductionWidthRule.
+     * @param {ProductionWidthRuleCreateArgs} args - Arguments to create a ProductionWidthRule.
+     * @example
+     * // Create one ProductionWidthRule
+     * const ProductionWidthRule = await prisma.productionWidthRule.create({
+     *   data: {
+     *     // ... data to create a ProductionWidthRule
+     *   }
+     * })
+     * 
+     */
+    create<T extends ProductionWidthRuleCreateArgs>(args: SelectSubset<T, ProductionWidthRuleCreateArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ProductionWidthRules.
+     * @param {ProductionWidthRuleCreateManyArgs} args - Arguments to create many ProductionWidthRules.
+     * @example
+     * // Create many ProductionWidthRules
+     * const productionWidthRule = await prisma.productionWidthRule.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ProductionWidthRuleCreateManyArgs>(args?: SelectSubset<T, ProductionWidthRuleCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ProductionWidthRules and returns the data saved in the database.
+     * @param {ProductionWidthRuleCreateManyAndReturnArgs} args - Arguments to create many ProductionWidthRules.
+     * @example
+     * // Create many ProductionWidthRules
+     * const productionWidthRule = await prisma.productionWidthRule.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ProductionWidthRules and only return the `id`
+     * const productionWidthRuleWithIdOnly = await prisma.productionWidthRule.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ProductionWidthRuleCreateManyAndReturnArgs>(args?: SelectSubset<T, ProductionWidthRuleCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ProductionWidthRule.
+     * @param {ProductionWidthRuleDeleteArgs} args - Arguments to delete one ProductionWidthRule.
+     * @example
+     * // Delete one ProductionWidthRule
+     * const ProductionWidthRule = await prisma.productionWidthRule.delete({
+     *   where: {
+     *     // ... filter to delete one ProductionWidthRule
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ProductionWidthRuleDeleteArgs>(args: SelectSubset<T, ProductionWidthRuleDeleteArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ProductionWidthRule.
+     * @param {ProductionWidthRuleUpdateArgs} args - Arguments to update one ProductionWidthRule.
+     * @example
+     * // Update one ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ProductionWidthRuleUpdateArgs>(args: SelectSubset<T, ProductionWidthRuleUpdateArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ProductionWidthRules.
+     * @param {ProductionWidthRuleDeleteManyArgs} args - Arguments to filter ProductionWidthRules to delete.
+     * @example
+     * // Delete a few ProductionWidthRules
+     * const { count } = await prisma.productionWidthRule.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ProductionWidthRuleDeleteManyArgs>(args?: SelectSubset<T, ProductionWidthRuleDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ProductionWidthRules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ProductionWidthRules
+     * const productionWidthRule = await prisma.productionWidthRule.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ProductionWidthRuleUpdateManyArgs>(args: SelectSubset<T, ProductionWidthRuleUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ProductionWidthRules and returns the data updated in the database.
+     * @param {ProductionWidthRuleUpdateManyAndReturnArgs} args - Arguments to update many ProductionWidthRules.
+     * @example
+     * // Update many ProductionWidthRules
+     * const productionWidthRule = await prisma.productionWidthRule.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ProductionWidthRules and only return the `id`
+     * const productionWidthRuleWithIdOnly = await prisma.productionWidthRule.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ProductionWidthRuleUpdateManyAndReturnArgs>(args: SelectSubset<T, ProductionWidthRuleUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ProductionWidthRule.
+     * @param {ProductionWidthRuleUpsertArgs} args - Arguments to update or create a ProductionWidthRule.
+     * @example
+     * // Update or create a ProductionWidthRule
+     * const productionWidthRule = await prisma.productionWidthRule.upsert({
+     *   create: {
+     *     // ... data to create a ProductionWidthRule
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ProductionWidthRule we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ProductionWidthRuleUpsertArgs>(args: SelectSubset<T, ProductionWidthRuleUpsertArgs<ExtArgs>>): Prisma__ProductionWidthRuleClient<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ProductionWidthRules.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleCountArgs} args - Arguments to filter ProductionWidthRules to count.
+     * @example
+     * // Count the number of ProductionWidthRules
+     * const count = await prisma.productionWidthRule.count({
+     *   where: {
+     *     // ... the filter for the ProductionWidthRules we want to count
+     *   }
+     * })
+    **/
+    count<T extends ProductionWidthRuleCountArgs>(
+      args?: Subset<T, ProductionWidthRuleCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ProductionWidthRuleCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ProductionWidthRule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ProductionWidthRuleAggregateArgs>(args: Subset<T, ProductionWidthRuleAggregateArgs>): Prisma.PrismaPromise<GetProductionWidthRuleAggregateType<T>>
+
+    /**
+     * Group by ProductionWidthRule.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProductionWidthRuleGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ProductionWidthRuleGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ProductionWidthRuleGroupByArgs['orderBy'] }
+        : { orderBy?: ProductionWidthRuleGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ProductionWidthRuleGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetProductionWidthRuleGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ProductionWidthRule model
+   */
+  readonly fields: ProductionWidthRuleFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ProductionWidthRule.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ProductionWidthRuleClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    productType<T extends ProductTypeDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProductTypeDefaultArgs<ExtArgs>>): Prisma__ProductTypeClient<$Result.GetResult<Prisma.$ProductTypePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    updatedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ProductionWidthRule model
+   */
+  interface ProductionWidthRuleFieldRefs {
+    readonly id: FieldRef<"ProductionWidthRule", 'String'>
+    readonly productTypeId: FieldRef<"ProductionWidthRule", 'String'>
+    readonly ladderCm: FieldRef<"ProductionWidthRule", 'Int[]'>
+    readonly maxHeightM: FieldRef<"ProductionWidthRule", 'Decimal'>
+    readonly minRatePerSqm: FieldRef<"ProductionWidthRule", 'Decimal'>
+    readonly maxRatePerSqm: FieldRef<"ProductionWidthRule", 'Decimal'>
+    readonly updatedById: FieldRef<"ProductionWidthRule", 'String'>
+    readonly createdAt: FieldRef<"ProductionWidthRule", 'DateTime'>
+    readonly updatedAt: FieldRef<"ProductionWidthRule", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ProductionWidthRule findUnique
+   */
+  export type ProductionWidthRuleFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter, which ProductionWidthRule to fetch.
+     */
+    where: ProductionWidthRuleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule findUniqueOrThrow
+   */
+  export type ProductionWidthRuleFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter, which ProductionWidthRule to fetch.
+     */
+    where: ProductionWidthRuleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule findFirst
+   */
+  export type ProductionWidthRuleFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter, which ProductionWidthRule to fetch.
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProductionWidthRules to fetch.
+     */
+    orderBy?: ProductionWidthRuleOrderByWithRelationInput | ProductionWidthRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProductionWidthRules.
+     */
+    cursor?: ProductionWidthRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProductionWidthRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProductionWidthRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProductionWidthRules.
+     */
+    distinct?: ProductionWidthRuleScalarFieldEnum | ProductionWidthRuleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule findFirstOrThrow
+   */
+  export type ProductionWidthRuleFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter, which ProductionWidthRule to fetch.
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProductionWidthRules to fetch.
+     */
+    orderBy?: ProductionWidthRuleOrderByWithRelationInput | ProductionWidthRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProductionWidthRules.
+     */
+    cursor?: ProductionWidthRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProductionWidthRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProductionWidthRules.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProductionWidthRules.
+     */
+    distinct?: ProductionWidthRuleScalarFieldEnum | ProductionWidthRuleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule findMany
+   */
+  export type ProductionWidthRuleFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter, which ProductionWidthRules to fetch.
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProductionWidthRules to fetch.
+     */
+    orderBy?: ProductionWidthRuleOrderByWithRelationInput | ProductionWidthRuleOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ProductionWidthRules.
+     */
+    cursor?: ProductionWidthRuleWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProductionWidthRules from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProductionWidthRules.
+     */
+    skip?: number
+    distinct?: ProductionWidthRuleScalarFieldEnum | ProductionWidthRuleScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule create
+   */
+  export type ProductionWidthRuleCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ProductionWidthRule.
+     */
+    data: XOR<ProductionWidthRuleCreateInput, ProductionWidthRuleUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule createMany
+   */
+  export type ProductionWidthRuleCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ProductionWidthRules.
+     */
+    data: ProductionWidthRuleCreateManyInput | ProductionWidthRuleCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ProductionWidthRule createManyAndReturn
+   */
+  export type ProductionWidthRuleCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * The data used to create many ProductionWidthRules.
+     */
+    data: ProductionWidthRuleCreateManyInput | ProductionWidthRuleCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ProductionWidthRule update
+   */
+  export type ProductionWidthRuleUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ProductionWidthRule.
+     */
+    data: XOR<ProductionWidthRuleUpdateInput, ProductionWidthRuleUncheckedUpdateInput>
+    /**
+     * Choose, which ProductionWidthRule to update.
+     */
+    where: ProductionWidthRuleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule updateMany
+   */
+  export type ProductionWidthRuleUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ProductionWidthRules.
+     */
+    data: XOR<ProductionWidthRuleUpdateManyMutationInput, ProductionWidthRuleUncheckedUpdateManyInput>
+    /**
+     * Filter which ProductionWidthRules to update
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * Limit how many ProductionWidthRules to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProductionWidthRule updateManyAndReturn
+   */
+  export type ProductionWidthRuleUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * The data used to update ProductionWidthRules.
+     */
+    data: XOR<ProductionWidthRuleUpdateManyMutationInput, ProductionWidthRuleUncheckedUpdateManyInput>
+    /**
+     * Filter which ProductionWidthRules to update
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * Limit how many ProductionWidthRules to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ProductionWidthRule upsert
+   */
+  export type ProductionWidthRuleUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ProductionWidthRule to update in case it exists.
+     */
+    where: ProductionWidthRuleWhereUniqueInput
+    /**
+     * In case the ProductionWidthRule found by the `where` argument doesn't exist, create a new ProductionWidthRule with this data.
+     */
+    create: XOR<ProductionWidthRuleCreateInput, ProductionWidthRuleUncheckedCreateInput>
+    /**
+     * In case the ProductionWidthRule was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ProductionWidthRuleUpdateInput, ProductionWidthRuleUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule delete
+   */
+  export type ProductionWidthRuleDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    /**
+     * Filter which ProductionWidthRule to delete.
+     */
+    where: ProductionWidthRuleWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * ProductionWidthRule deleteMany
+   */
+  export type ProductionWidthRuleDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProductionWidthRules to delete
+     */
+    where?: ProductionWidthRuleWhereInput
+    /**
+     * Limit how many ProductionWidthRules to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProductionWidthRule without action
+   */
+  export type ProductionWidthRuleDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WidthExceptionTicket
+   */
+
+  export type AggregateWidthExceptionTicket = {
+    _count: WidthExceptionTicketCountAggregateOutputType | null
+    _avg: WidthExceptionTicketAvgAggregateOutputType | null
+    _sum: WidthExceptionTicketSumAggregateOutputType | null
+    _min: WidthExceptionTicketMinAggregateOutputType | null
+    _max: WidthExceptionTicketMaxAggregateOutputType | null
+  }
+
+  export type WidthExceptionTicketAvgAggregateOutputType = {
+    requestedWidthCm: Decimal | null
+    maxWidthCm: Decimal | null
+  }
+
+  export type WidthExceptionTicketSumAggregateOutputType = {
+    requestedWidthCm: Decimal | null
+    maxWidthCm: Decimal | null
+  }
+
+  export type WidthExceptionTicketMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    requestedWidthCm: Decimal | null
+    maxWidthCm: Decimal | null
+    reason: string | null
+    status: $Enums.WidthExceptionStatus | null
+    raisedById: string | null
+    resolvedById: string | null
+    resolutionNote: string | null
+    resolvedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type WidthExceptionTicketMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    requestedWidthCm: Decimal | null
+    maxWidthCm: Decimal | null
+    reason: string | null
+    status: $Enums.WidthExceptionStatus | null
+    raisedById: string | null
+    resolvedById: string | null
+    resolutionNote: string | null
+    resolvedAt: Date | null
+    createdAt: Date | null
+  }
+
+  export type WidthExceptionTicketCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    requestedWidthCm: number
+    maxWidthCm: number
+    reason: number
+    status: number
+    raisedById: number
+    resolvedById: number
+    resolutionNote: number
+    resolvedAt: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type WidthExceptionTicketAvgAggregateInputType = {
+    requestedWidthCm?: true
+    maxWidthCm?: true
+  }
+
+  export type WidthExceptionTicketSumAggregateInputType = {
+    requestedWidthCm?: true
+    maxWidthCm?: true
+  }
+
+  export type WidthExceptionTicketMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    requestedWidthCm?: true
+    maxWidthCm?: true
+    reason?: true
+    status?: true
+    raisedById?: true
+    resolvedById?: true
+    resolutionNote?: true
+    resolvedAt?: true
+    createdAt?: true
+  }
+
+  export type WidthExceptionTicketMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    requestedWidthCm?: true
+    maxWidthCm?: true
+    reason?: true
+    status?: true
+    raisedById?: true
+    resolvedById?: true
+    resolutionNote?: true
+    resolvedAt?: true
+    createdAt?: true
+  }
+
+  export type WidthExceptionTicketCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    requestedWidthCm?: true
+    maxWidthCm?: true
+    reason?: true
+    status?: true
+    raisedById?: true
+    resolvedById?: true
+    resolutionNote?: true
+    resolvedAt?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type WidthExceptionTicketAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WidthExceptionTicket to aggregate.
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WidthExceptionTickets to fetch.
+     */
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WidthExceptionTickets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WidthExceptionTickets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WidthExceptionTickets
+    **/
+    _count?: true | WidthExceptionTicketCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: WidthExceptionTicketAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: WidthExceptionTicketSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WidthExceptionTicketMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WidthExceptionTicketMaxAggregateInputType
+  }
+
+  export type GetWidthExceptionTicketAggregateType<T extends WidthExceptionTicketAggregateArgs> = {
+        [P in keyof T & keyof AggregateWidthExceptionTicket]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWidthExceptionTicket[P]>
+      : GetScalarType<T[P], AggregateWidthExceptionTicket[P]>
+  }
+
+
+
+
+  export type WidthExceptionTicketGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WidthExceptionTicketWhereInput
+    orderBy?: WidthExceptionTicketOrderByWithAggregationInput | WidthExceptionTicketOrderByWithAggregationInput[]
+    by: WidthExceptionTicketScalarFieldEnum[] | WidthExceptionTicketScalarFieldEnum
+    having?: WidthExceptionTicketScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WidthExceptionTicketCountAggregateInputType | true
+    _avg?: WidthExceptionTicketAvgAggregateInputType
+    _sum?: WidthExceptionTicketSumAggregateInputType
+    _min?: WidthExceptionTicketMinAggregateInputType
+    _max?: WidthExceptionTicketMaxAggregateInputType
+  }
+
+  export type WidthExceptionTicketGroupByOutputType = {
+    id: string
+    workItemId: string
+    requestedWidthCm: Decimal
+    maxWidthCm: Decimal
+    reason: string
+    status: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolvedById: string | null
+    resolutionNote: string | null
+    resolvedAt: Date | null
+    createdAt: Date
+    _count: WidthExceptionTicketCountAggregateOutputType | null
+    _avg: WidthExceptionTicketAvgAggregateOutputType | null
+    _sum: WidthExceptionTicketSumAggregateOutputType | null
+    _min: WidthExceptionTicketMinAggregateOutputType | null
+    _max: WidthExceptionTicketMaxAggregateOutputType | null
+  }
+
+  type GetWidthExceptionTicketGroupByPayload<T extends WidthExceptionTicketGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WidthExceptionTicketGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WidthExceptionTicketGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WidthExceptionTicketGroupByOutputType[P]>
+            : GetScalarType<T[P], WidthExceptionTicketGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WidthExceptionTicketSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    requestedWidthCm?: boolean
+    maxWidthCm?: boolean
+    reason?: boolean
+    status?: boolean
+    raisedById?: boolean
+    resolvedById?: boolean
+    resolutionNote?: boolean
+    resolvedAt?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }, ExtArgs["result"]["widthExceptionTicket"]>
+
+  export type WidthExceptionTicketSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    requestedWidthCm?: boolean
+    maxWidthCm?: boolean
+    reason?: boolean
+    status?: boolean
+    raisedById?: boolean
+    resolvedById?: boolean
+    resolutionNote?: boolean
+    resolvedAt?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }, ExtArgs["result"]["widthExceptionTicket"]>
+
+  export type WidthExceptionTicketSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    requestedWidthCm?: boolean
+    maxWidthCm?: boolean
+    reason?: boolean
+    status?: boolean
+    raisedById?: boolean
+    resolvedById?: boolean
+    resolutionNote?: boolean
+    resolvedAt?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }, ExtArgs["result"]["widthExceptionTicket"]>
+
+  export type WidthExceptionTicketSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    requestedWidthCm?: boolean
+    maxWidthCm?: boolean
+    reason?: boolean
+    status?: boolean
+    raisedById?: boolean
+    resolvedById?: boolean
+    resolutionNote?: boolean
+    resolvedAt?: boolean
+    createdAt?: boolean
+  }
+
+  export type WidthExceptionTicketOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "requestedWidthCm" | "maxWidthCm" | "reason" | "status" | "raisedById" | "resolvedById" | "resolutionNote" | "resolvedAt" | "createdAt", ExtArgs["result"]["widthExceptionTicket"]>
+  export type WidthExceptionTicketInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }
+  export type WidthExceptionTicketIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }
+  export type WidthExceptionTicketIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    raisedBy?: boolean | UserDefaultArgs<ExtArgs>
+    resolvedBy?: boolean | WidthExceptionTicket$resolvedByArgs<ExtArgs>
+  }
+
+  export type $WidthExceptionTicketPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WidthExceptionTicket"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      raisedBy: Prisma.$UserPayload<ExtArgs>
+      resolvedBy: Prisma.$UserPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      /**
+       * The width the customer asked for, in cm — preserved exactly as entered.
+       */
+      requestedWidthCm: Prisma.Decimal
+      /**
+       * The ceiling that was exceeded, snapshotted so the ticket still reads
+       * correctly after the ladder is reconfigured.
+       */
+      maxWidthCm: Prisma.Decimal
+      reason: string
+      status: $Enums.WidthExceptionStatus
+      raisedById: string
+      resolvedById: string | null
+      resolutionNote: string | null
+      resolvedAt: Date | null
+      createdAt: Date
+    }, ExtArgs["result"]["widthExceptionTicket"]>
+    composites: {}
+  }
+
+  type WidthExceptionTicketGetPayload<S extends boolean | null | undefined | WidthExceptionTicketDefaultArgs> = $Result.GetResult<Prisma.$WidthExceptionTicketPayload, S>
+
+  type WidthExceptionTicketCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WidthExceptionTicketFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: WidthExceptionTicketCountAggregateInputType | true
+    }
+
+  export interface WidthExceptionTicketDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WidthExceptionTicket'], meta: { name: 'WidthExceptionTicket' } }
+    /**
+     * Find zero or one WidthExceptionTicket that matches the filter.
+     * @param {WidthExceptionTicketFindUniqueArgs} args - Arguments to find a WidthExceptionTicket
+     * @example
+     * // Get one WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WidthExceptionTicketFindUniqueArgs>(args: SelectSubset<T, WidthExceptionTicketFindUniqueArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WidthExceptionTicket that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WidthExceptionTicketFindUniqueOrThrowArgs} args - Arguments to find a WidthExceptionTicket
+     * @example
+     * // Get one WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WidthExceptionTicketFindUniqueOrThrowArgs>(args: SelectSubset<T, WidthExceptionTicketFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WidthExceptionTicket that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketFindFirstArgs} args - Arguments to find a WidthExceptionTicket
+     * @example
+     * // Get one WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WidthExceptionTicketFindFirstArgs>(args?: SelectSubset<T, WidthExceptionTicketFindFirstArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WidthExceptionTicket that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketFindFirstOrThrowArgs} args - Arguments to find a WidthExceptionTicket
+     * @example
+     * // Get one WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WidthExceptionTicketFindFirstOrThrowArgs>(args?: SelectSubset<T, WidthExceptionTicketFindFirstOrThrowArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WidthExceptionTickets that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WidthExceptionTickets
+     * const widthExceptionTickets = await prisma.widthExceptionTicket.findMany()
+     * 
+     * // Get first 10 WidthExceptionTickets
+     * const widthExceptionTickets = await prisma.widthExceptionTicket.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const widthExceptionTicketWithIdOnly = await prisma.widthExceptionTicket.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WidthExceptionTicketFindManyArgs>(args?: SelectSubset<T, WidthExceptionTicketFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WidthExceptionTicket.
+     * @param {WidthExceptionTicketCreateArgs} args - Arguments to create a WidthExceptionTicket.
+     * @example
+     * // Create one WidthExceptionTicket
+     * const WidthExceptionTicket = await prisma.widthExceptionTicket.create({
+     *   data: {
+     *     // ... data to create a WidthExceptionTicket
+     *   }
+     * })
+     * 
+     */
+    create<T extends WidthExceptionTicketCreateArgs>(args: SelectSubset<T, WidthExceptionTicketCreateArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WidthExceptionTickets.
+     * @param {WidthExceptionTicketCreateManyArgs} args - Arguments to create many WidthExceptionTickets.
+     * @example
+     * // Create many WidthExceptionTickets
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WidthExceptionTicketCreateManyArgs>(args?: SelectSubset<T, WidthExceptionTicketCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WidthExceptionTickets and returns the data saved in the database.
+     * @param {WidthExceptionTicketCreateManyAndReturnArgs} args - Arguments to create many WidthExceptionTickets.
+     * @example
+     * // Create many WidthExceptionTickets
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WidthExceptionTickets and only return the `id`
+     * const widthExceptionTicketWithIdOnly = await prisma.widthExceptionTicket.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WidthExceptionTicketCreateManyAndReturnArgs>(args?: SelectSubset<T, WidthExceptionTicketCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WidthExceptionTicket.
+     * @param {WidthExceptionTicketDeleteArgs} args - Arguments to delete one WidthExceptionTicket.
+     * @example
+     * // Delete one WidthExceptionTicket
+     * const WidthExceptionTicket = await prisma.widthExceptionTicket.delete({
+     *   where: {
+     *     // ... filter to delete one WidthExceptionTicket
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WidthExceptionTicketDeleteArgs>(args: SelectSubset<T, WidthExceptionTicketDeleteArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WidthExceptionTicket.
+     * @param {WidthExceptionTicketUpdateArgs} args - Arguments to update one WidthExceptionTicket.
+     * @example
+     * // Update one WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WidthExceptionTicketUpdateArgs>(args: SelectSubset<T, WidthExceptionTicketUpdateArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WidthExceptionTickets.
+     * @param {WidthExceptionTicketDeleteManyArgs} args - Arguments to filter WidthExceptionTickets to delete.
+     * @example
+     * // Delete a few WidthExceptionTickets
+     * const { count } = await prisma.widthExceptionTicket.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WidthExceptionTicketDeleteManyArgs>(args?: SelectSubset<T, WidthExceptionTicketDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WidthExceptionTickets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WidthExceptionTickets
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WidthExceptionTicketUpdateManyArgs>(args: SelectSubset<T, WidthExceptionTicketUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WidthExceptionTickets and returns the data updated in the database.
+     * @param {WidthExceptionTicketUpdateManyAndReturnArgs} args - Arguments to update many WidthExceptionTickets.
+     * @example
+     * // Update many WidthExceptionTickets
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WidthExceptionTickets and only return the `id`
+     * const widthExceptionTicketWithIdOnly = await prisma.widthExceptionTicket.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WidthExceptionTicketUpdateManyAndReturnArgs>(args: SelectSubset<T, WidthExceptionTicketUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WidthExceptionTicket.
+     * @param {WidthExceptionTicketUpsertArgs} args - Arguments to update or create a WidthExceptionTicket.
+     * @example
+     * // Update or create a WidthExceptionTicket
+     * const widthExceptionTicket = await prisma.widthExceptionTicket.upsert({
+     *   create: {
+     *     // ... data to create a WidthExceptionTicket
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WidthExceptionTicket we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WidthExceptionTicketUpsertArgs>(args: SelectSubset<T, WidthExceptionTicketUpsertArgs<ExtArgs>>): Prisma__WidthExceptionTicketClient<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WidthExceptionTickets.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketCountArgs} args - Arguments to filter WidthExceptionTickets to count.
+     * @example
+     * // Count the number of WidthExceptionTickets
+     * const count = await prisma.widthExceptionTicket.count({
+     *   where: {
+     *     // ... the filter for the WidthExceptionTickets we want to count
+     *   }
+     * })
+    **/
+    count<T extends WidthExceptionTicketCountArgs>(
+      args?: Subset<T, WidthExceptionTicketCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WidthExceptionTicketCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WidthExceptionTicket.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WidthExceptionTicketAggregateArgs>(args: Subset<T, WidthExceptionTicketAggregateArgs>): Prisma.PrismaPromise<GetWidthExceptionTicketAggregateType<T>>
+
+    /**
+     * Group by WidthExceptionTicket.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WidthExceptionTicketGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WidthExceptionTicketGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WidthExceptionTicketGroupByArgs['orderBy'] }
+        : { orderBy?: WidthExceptionTicketGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WidthExceptionTicketGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWidthExceptionTicketGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WidthExceptionTicket model
+   */
+  readonly fields: WidthExceptionTicketFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WidthExceptionTicket.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WidthExceptionTicketClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    raisedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    resolvedBy<T extends WidthExceptionTicket$resolvedByArgs<ExtArgs> = {}>(args?: Subset<T, WidthExceptionTicket$resolvedByArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WidthExceptionTicket model
+   */
+  interface WidthExceptionTicketFieldRefs {
+    readonly id: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly workItemId: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly requestedWidthCm: FieldRef<"WidthExceptionTicket", 'Decimal'>
+    readonly maxWidthCm: FieldRef<"WidthExceptionTicket", 'Decimal'>
+    readonly reason: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly status: FieldRef<"WidthExceptionTicket", 'WidthExceptionStatus'>
+    readonly raisedById: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly resolvedById: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly resolutionNote: FieldRef<"WidthExceptionTicket", 'String'>
+    readonly resolvedAt: FieldRef<"WidthExceptionTicket", 'DateTime'>
+    readonly createdAt: FieldRef<"WidthExceptionTicket", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WidthExceptionTicket findUnique
+   */
+  export type WidthExceptionTicketFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter, which WidthExceptionTicket to fetch.
+     */
+    where: WidthExceptionTicketWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket findUniqueOrThrow
+   */
+  export type WidthExceptionTicketFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter, which WidthExceptionTicket to fetch.
+     */
+    where: WidthExceptionTicketWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket findFirst
+   */
+  export type WidthExceptionTicketFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter, which WidthExceptionTicket to fetch.
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WidthExceptionTickets to fetch.
+     */
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WidthExceptionTickets.
+     */
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WidthExceptionTickets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WidthExceptionTickets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WidthExceptionTickets.
+     */
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket findFirstOrThrow
+   */
+  export type WidthExceptionTicketFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter, which WidthExceptionTicket to fetch.
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WidthExceptionTickets to fetch.
+     */
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WidthExceptionTickets.
+     */
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WidthExceptionTickets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WidthExceptionTickets.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WidthExceptionTickets.
+     */
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket findMany
+   */
+  export type WidthExceptionTicketFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter, which WidthExceptionTickets to fetch.
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WidthExceptionTickets to fetch.
+     */
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WidthExceptionTickets.
+     */
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WidthExceptionTickets from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WidthExceptionTickets.
+     */
+    skip?: number
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket create
+   */
+  export type WidthExceptionTicketCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WidthExceptionTicket.
+     */
+    data: XOR<WidthExceptionTicketCreateInput, WidthExceptionTicketUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket createMany
+   */
+  export type WidthExceptionTicketCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WidthExceptionTickets.
+     */
+    data: WidthExceptionTicketCreateManyInput | WidthExceptionTicketCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WidthExceptionTicket createManyAndReturn
+   */
+  export type WidthExceptionTicketCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * The data used to create many WidthExceptionTickets.
+     */
+    data: WidthExceptionTicketCreateManyInput | WidthExceptionTicketCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WidthExceptionTicket update
+   */
+  export type WidthExceptionTicketUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WidthExceptionTicket.
+     */
+    data: XOR<WidthExceptionTicketUpdateInput, WidthExceptionTicketUncheckedUpdateInput>
+    /**
+     * Choose, which WidthExceptionTicket to update.
+     */
+    where: WidthExceptionTicketWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket updateMany
+   */
+  export type WidthExceptionTicketUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WidthExceptionTickets.
+     */
+    data: XOR<WidthExceptionTicketUpdateManyMutationInput, WidthExceptionTicketUncheckedUpdateManyInput>
+    /**
+     * Filter which WidthExceptionTickets to update
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * Limit how many WidthExceptionTickets to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WidthExceptionTicket updateManyAndReturn
+   */
+  export type WidthExceptionTicketUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * The data used to update WidthExceptionTickets.
+     */
+    data: XOR<WidthExceptionTicketUpdateManyMutationInput, WidthExceptionTicketUncheckedUpdateManyInput>
+    /**
+     * Filter which WidthExceptionTickets to update
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * Limit how many WidthExceptionTickets to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WidthExceptionTicket upsert
+   */
+  export type WidthExceptionTicketUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WidthExceptionTicket to update in case it exists.
+     */
+    where: WidthExceptionTicketWhereUniqueInput
+    /**
+     * In case the WidthExceptionTicket found by the `where` argument doesn't exist, create a new WidthExceptionTicket with this data.
+     */
+    create: XOR<WidthExceptionTicketCreateInput, WidthExceptionTicketUncheckedCreateInput>
+    /**
+     * In case the WidthExceptionTicket was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WidthExceptionTicketUpdateInput, WidthExceptionTicketUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket delete
+   */
+  export type WidthExceptionTicketDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    /**
+     * Filter which WidthExceptionTicket to delete.
+     */
+    where: WidthExceptionTicketWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WidthExceptionTicket deleteMany
+   */
+  export type WidthExceptionTicketDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WidthExceptionTickets to delete
+     */
+    where?: WidthExceptionTicketWhereInput
+    /**
+     * Limit how many WidthExceptionTickets to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WidthExceptionTicket.resolvedBy
+   */
+  export type WidthExceptionTicket$resolvedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * WidthExceptionTicket without action
+   */
+  export type WidthExceptionTicketDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model AccountingApproval
+   */
+
+  export type AggregateAccountingApproval = {
+    _count: AccountingApprovalCountAggregateOutputType | null
+    _avg: AccountingApprovalAvgAggregateOutputType | null
+    _sum: AccountingApprovalSumAggregateOutputType | null
+    _min: AccountingApprovalMinAggregateOutputType | null
+    _max: AccountingApprovalMaxAggregateOutputType | null
+  }
+
+  export type AccountingApprovalAvgAggregateOutputType = {
+    totalAmount: Decimal | null
+  }
+
+  export type AccountingApprovalSumAggregateOutputType = {
+    totalAmount: Decimal | null
+  }
+
+  export type AccountingApprovalMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    approvedById: string | null
+    priceId: string | null
+    totalAmount: Decimal | null
+    note: string | null
+    approvedAt: Date | null
+  }
+
+  export type AccountingApprovalMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    approvedById: string | null
+    priceId: string | null
+    totalAmount: Decimal | null
+    note: string | null
+    approvedAt: Date | null
+  }
+
+  export type AccountingApprovalCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    approvedById: number
+    priceId: number
+    totalAmount: number
+    note: number
+    approvedAt: number
+    _all: number
+  }
+
+
+  export type AccountingApprovalAvgAggregateInputType = {
+    totalAmount?: true
+  }
+
+  export type AccountingApprovalSumAggregateInputType = {
+    totalAmount?: true
+  }
+
+  export type AccountingApprovalMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    approvedById?: true
+    priceId?: true
+    totalAmount?: true
+    note?: true
+    approvedAt?: true
+  }
+
+  export type AccountingApprovalMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    approvedById?: true
+    priceId?: true
+    totalAmount?: true
+    note?: true
+    approvedAt?: true
+  }
+
+  export type AccountingApprovalCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    approvedById?: true
+    priceId?: true
+    totalAmount?: true
+    note?: true
+    approvedAt?: true
+    _all?: true
+  }
+
+  export type AccountingApprovalAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AccountingApproval to aggregate.
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AccountingApprovals to fetch.
+     */
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AccountingApprovalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AccountingApprovals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AccountingApprovals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned AccountingApprovals
+    **/
+    _count?: true | AccountingApprovalCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: AccountingApprovalAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AccountingApprovalSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AccountingApprovalMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AccountingApprovalMaxAggregateInputType
+  }
+
+  export type GetAccountingApprovalAggregateType<T extends AccountingApprovalAggregateArgs> = {
+        [P in keyof T & keyof AggregateAccountingApproval]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAccountingApproval[P]>
+      : GetScalarType<T[P], AggregateAccountingApproval[P]>
+  }
+
+
+
+
+  export type AccountingApprovalGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AccountingApprovalWhereInput
+    orderBy?: AccountingApprovalOrderByWithAggregationInput | AccountingApprovalOrderByWithAggregationInput[]
+    by: AccountingApprovalScalarFieldEnum[] | AccountingApprovalScalarFieldEnum
+    having?: AccountingApprovalScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AccountingApprovalCountAggregateInputType | true
+    _avg?: AccountingApprovalAvgAggregateInputType
+    _sum?: AccountingApprovalSumAggregateInputType
+    _min?: AccountingApprovalMinAggregateInputType
+    _max?: AccountingApprovalMaxAggregateInputType
+  }
+
+  export type AccountingApprovalGroupByOutputType = {
+    id: string
+    workItemId: string
+    approvedById: string
+    priceId: string | null
+    totalAmount: Decimal
+    note: string | null
+    approvedAt: Date
+    _count: AccountingApprovalCountAggregateOutputType | null
+    _avg: AccountingApprovalAvgAggregateOutputType | null
+    _sum: AccountingApprovalSumAggregateOutputType | null
+    _min: AccountingApprovalMinAggregateOutputType | null
+    _max: AccountingApprovalMaxAggregateOutputType | null
+  }
+
+  type GetAccountingApprovalGroupByPayload<T extends AccountingApprovalGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AccountingApprovalGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AccountingApprovalGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AccountingApprovalGroupByOutputType[P]>
+            : GetScalarType<T[P], AccountingApprovalGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AccountingApprovalSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    approvedById?: boolean
+    priceId?: boolean
+    totalAmount?: boolean
+    note?: boolean
+    approvedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["accountingApproval"]>
+
+  export type AccountingApprovalSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    approvedById?: boolean
+    priceId?: boolean
+    totalAmount?: boolean
+    note?: boolean
+    approvedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["accountingApproval"]>
+
+  export type AccountingApprovalSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    approvedById?: boolean
+    priceId?: boolean
+    totalAmount?: boolean
+    note?: boolean
+    approvedAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["accountingApproval"]>
+
+  export type AccountingApprovalSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    approvedById?: boolean
+    priceId?: boolean
+    totalAmount?: boolean
+    note?: boolean
+    approvedAt?: boolean
+  }
+
+  export type AccountingApprovalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "approvedById" | "priceId" | "totalAmount" | "note" | "approvedAt", ExtArgs["result"]["accountingApproval"]>
+  export type AccountingApprovalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AccountingApprovalIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AccountingApprovalIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    approvedBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $AccountingApprovalPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "AccountingApproval"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      approvedBy: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      approvedById: string
+      /**
+       * The frozen `WorkItemPrice` the accountant signed off, when one exists.
+       */
+      priceId: string | null
+      /**
+       * EGP total at approval time — a copy, not a lookup, so the approval keeps
+       * its meaning even if the price is later superseded (FR-007, SC-006).
+       */
+      totalAmount: Prisma.Decimal
+      note: string | null
+      approvedAt: Date
+    }, ExtArgs["result"]["accountingApproval"]>
+    composites: {}
+  }
+
+  type AccountingApprovalGetPayload<S extends boolean | null | undefined | AccountingApprovalDefaultArgs> = $Result.GetResult<Prisma.$AccountingApprovalPayload, S>
+
+  type AccountingApprovalCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AccountingApprovalFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: AccountingApprovalCountAggregateInputType | true
+    }
+
+  export interface AccountingApprovalDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['AccountingApproval'], meta: { name: 'AccountingApproval' } }
+    /**
+     * Find zero or one AccountingApproval that matches the filter.
+     * @param {AccountingApprovalFindUniqueArgs} args - Arguments to find a AccountingApproval
+     * @example
+     * // Get one AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AccountingApprovalFindUniqueArgs>(args: SelectSubset<T, AccountingApprovalFindUniqueArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one AccountingApproval that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AccountingApprovalFindUniqueOrThrowArgs} args - Arguments to find a AccountingApproval
+     * @example
+     * // Get one AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AccountingApprovalFindUniqueOrThrowArgs>(args: SelectSubset<T, AccountingApprovalFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AccountingApproval that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalFindFirstArgs} args - Arguments to find a AccountingApproval
+     * @example
+     * // Get one AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AccountingApprovalFindFirstArgs>(args?: SelectSubset<T, AccountingApprovalFindFirstArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first AccountingApproval that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalFindFirstOrThrowArgs} args - Arguments to find a AccountingApproval
+     * @example
+     * // Get one AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AccountingApprovalFindFirstOrThrowArgs>(args?: SelectSubset<T, AccountingApprovalFindFirstOrThrowArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more AccountingApprovals that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all AccountingApprovals
+     * const accountingApprovals = await prisma.accountingApproval.findMany()
+     * 
+     * // Get first 10 AccountingApprovals
+     * const accountingApprovals = await prisma.accountingApproval.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const accountingApprovalWithIdOnly = await prisma.accountingApproval.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AccountingApprovalFindManyArgs>(args?: SelectSubset<T, AccountingApprovalFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a AccountingApproval.
+     * @param {AccountingApprovalCreateArgs} args - Arguments to create a AccountingApproval.
+     * @example
+     * // Create one AccountingApproval
+     * const AccountingApproval = await prisma.accountingApproval.create({
+     *   data: {
+     *     // ... data to create a AccountingApproval
+     *   }
+     * })
+     * 
+     */
+    create<T extends AccountingApprovalCreateArgs>(args: SelectSubset<T, AccountingApprovalCreateArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many AccountingApprovals.
+     * @param {AccountingApprovalCreateManyArgs} args - Arguments to create many AccountingApprovals.
+     * @example
+     * // Create many AccountingApprovals
+     * const accountingApproval = await prisma.accountingApproval.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AccountingApprovalCreateManyArgs>(args?: SelectSubset<T, AccountingApprovalCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many AccountingApprovals and returns the data saved in the database.
+     * @param {AccountingApprovalCreateManyAndReturnArgs} args - Arguments to create many AccountingApprovals.
+     * @example
+     * // Create many AccountingApprovals
+     * const accountingApproval = await prisma.accountingApproval.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many AccountingApprovals and only return the `id`
+     * const accountingApprovalWithIdOnly = await prisma.accountingApproval.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AccountingApprovalCreateManyAndReturnArgs>(args?: SelectSubset<T, AccountingApprovalCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a AccountingApproval.
+     * @param {AccountingApprovalDeleteArgs} args - Arguments to delete one AccountingApproval.
+     * @example
+     * // Delete one AccountingApproval
+     * const AccountingApproval = await prisma.accountingApproval.delete({
+     *   where: {
+     *     // ... filter to delete one AccountingApproval
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AccountingApprovalDeleteArgs>(args: SelectSubset<T, AccountingApprovalDeleteArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one AccountingApproval.
+     * @param {AccountingApprovalUpdateArgs} args - Arguments to update one AccountingApproval.
+     * @example
+     * // Update one AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AccountingApprovalUpdateArgs>(args: SelectSubset<T, AccountingApprovalUpdateArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more AccountingApprovals.
+     * @param {AccountingApprovalDeleteManyArgs} args - Arguments to filter AccountingApprovals to delete.
+     * @example
+     * // Delete a few AccountingApprovals
+     * const { count } = await prisma.accountingApproval.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AccountingApprovalDeleteManyArgs>(args?: SelectSubset<T, AccountingApprovalDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AccountingApprovals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many AccountingApprovals
+     * const accountingApproval = await prisma.accountingApproval.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AccountingApprovalUpdateManyArgs>(args: SelectSubset<T, AccountingApprovalUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more AccountingApprovals and returns the data updated in the database.
+     * @param {AccountingApprovalUpdateManyAndReturnArgs} args - Arguments to update many AccountingApprovals.
+     * @example
+     * // Update many AccountingApprovals
+     * const accountingApproval = await prisma.accountingApproval.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more AccountingApprovals and only return the `id`
+     * const accountingApprovalWithIdOnly = await prisma.accountingApproval.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AccountingApprovalUpdateManyAndReturnArgs>(args: SelectSubset<T, AccountingApprovalUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one AccountingApproval.
+     * @param {AccountingApprovalUpsertArgs} args - Arguments to update or create a AccountingApproval.
+     * @example
+     * // Update or create a AccountingApproval
+     * const accountingApproval = await prisma.accountingApproval.upsert({
+     *   create: {
+     *     // ... data to create a AccountingApproval
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the AccountingApproval we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AccountingApprovalUpsertArgs>(args: SelectSubset<T, AccountingApprovalUpsertArgs<ExtArgs>>): Prisma__AccountingApprovalClient<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of AccountingApprovals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalCountArgs} args - Arguments to filter AccountingApprovals to count.
+     * @example
+     * // Count the number of AccountingApprovals
+     * const count = await prisma.accountingApproval.count({
+     *   where: {
+     *     // ... the filter for the AccountingApprovals we want to count
+     *   }
+     * })
+    **/
+    count<T extends AccountingApprovalCountArgs>(
+      args?: Subset<T, AccountingApprovalCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AccountingApprovalCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a AccountingApproval.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AccountingApprovalAggregateArgs>(args: Subset<T, AccountingApprovalAggregateArgs>): Prisma.PrismaPromise<GetAccountingApprovalAggregateType<T>>
+
+    /**
+     * Group by AccountingApproval.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AccountingApprovalGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AccountingApprovalGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AccountingApprovalGroupByArgs['orderBy'] }
+        : { orderBy?: AccountingApprovalGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AccountingApprovalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAccountingApprovalGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the AccountingApproval model
+   */
+  readonly fields: AccountingApprovalFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for AccountingApproval.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AccountingApprovalClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    approvedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the AccountingApproval model
+   */
+  interface AccountingApprovalFieldRefs {
+    readonly id: FieldRef<"AccountingApproval", 'String'>
+    readonly workItemId: FieldRef<"AccountingApproval", 'String'>
+    readonly approvedById: FieldRef<"AccountingApproval", 'String'>
+    readonly priceId: FieldRef<"AccountingApproval", 'String'>
+    readonly totalAmount: FieldRef<"AccountingApproval", 'Decimal'>
+    readonly note: FieldRef<"AccountingApproval", 'String'>
+    readonly approvedAt: FieldRef<"AccountingApproval", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * AccountingApproval findUnique
+   */
+  export type AccountingApprovalFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter, which AccountingApproval to fetch.
+     */
+    where: AccountingApprovalWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval findUniqueOrThrow
+   */
+  export type AccountingApprovalFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter, which AccountingApproval to fetch.
+     */
+    where: AccountingApprovalWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval findFirst
+   */
+  export type AccountingApprovalFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter, which AccountingApproval to fetch.
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AccountingApprovals to fetch.
+     */
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AccountingApprovals.
+     */
+    cursor?: AccountingApprovalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AccountingApprovals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AccountingApprovals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AccountingApprovals.
+     */
+    distinct?: AccountingApprovalScalarFieldEnum | AccountingApprovalScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval findFirstOrThrow
+   */
+  export type AccountingApprovalFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter, which AccountingApproval to fetch.
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AccountingApprovals to fetch.
+     */
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for AccountingApprovals.
+     */
+    cursor?: AccountingApprovalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AccountingApprovals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AccountingApprovals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of AccountingApprovals.
+     */
+    distinct?: AccountingApprovalScalarFieldEnum | AccountingApprovalScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval findMany
+   */
+  export type AccountingApprovalFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter, which AccountingApprovals to fetch.
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of AccountingApprovals to fetch.
+     */
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing AccountingApprovals.
+     */
+    cursor?: AccountingApprovalWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` AccountingApprovals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` AccountingApprovals.
+     */
+    skip?: number
+    distinct?: AccountingApprovalScalarFieldEnum | AccountingApprovalScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval create
+   */
+  export type AccountingApprovalCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * The data needed to create a AccountingApproval.
+     */
+    data: XOR<AccountingApprovalCreateInput, AccountingApprovalUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval createMany
+   */
+  export type AccountingApprovalCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many AccountingApprovals.
+     */
+    data: AccountingApprovalCreateManyInput | AccountingApprovalCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * AccountingApproval createManyAndReturn
+   */
+  export type AccountingApprovalCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * The data used to create many AccountingApprovals.
+     */
+    data: AccountingApprovalCreateManyInput | AccountingApprovalCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AccountingApproval update
+   */
+  export type AccountingApprovalUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * The data needed to update a AccountingApproval.
+     */
+    data: XOR<AccountingApprovalUpdateInput, AccountingApprovalUncheckedUpdateInput>
+    /**
+     * Choose, which AccountingApproval to update.
+     */
+    where: AccountingApprovalWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval updateMany
+   */
+  export type AccountingApprovalUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update AccountingApprovals.
+     */
+    data: XOR<AccountingApprovalUpdateManyMutationInput, AccountingApprovalUncheckedUpdateManyInput>
+    /**
+     * Filter which AccountingApprovals to update
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * Limit how many AccountingApprovals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * AccountingApproval updateManyAndReturn
+   */
+  export type AccountingApprovalUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * The data used to update AccountingApprovals.
+     */
+    data: XOR<AccountingApprovalUpdateManyMutationInput, AccountingApprovalUncheckedUpdateManyInput>
+    /**
+     * Filter which AccountingApprovals to update
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * Limit how many AccountingApprovals to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * AccountingApproval upsert
+   */
+  export type AccountingApprovalUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * The filter to search for the AccountingApproval to update in case it exists.
+     */
+    where: AccountingApprovalWhereUniqueInput
+    /**
+     * In case the AccountingApproval found by the `where` argument doesn't exist, create a new AccountingApproval with this data.
+     */
+    create: XOR<AccountingApprovalCreateInput, AccountingApprovalUncheckedCreateInput>
+    /**
+     * In case the AccountingApproval was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AccountingApprovalUpdateInput, AccountingApprovalUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval delete
+   */
+  export type AccountingApprovalDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    /**
+     * Filter which AccountingApproval to delete.
+     */
+    where: AccountingApprovalWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * AccountingApproval deleteMany
+   */
+  export type AccountingApprovalDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which AccountingApprovals to delete
+     */
+    where?: AccountingApprovalWhereInput
+    /**
+     * Limit how many AccountingApprovals to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * AccountingApproval without action
+   */
+  export type AccountingApprovalDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
   }
 
 
@@ -45949,6 +50404,11 @@ export namespace Prisma {
     changeRequestsDecided?: boolean | User$changeRequestsDecidedArgs<ExtArgs>
     changeRequestsAcknowledged?: boolean | User$changeRequestsAcknowledgedArgs<ExtArgs>
     lateCancellations?: boolean | User$lateCancellationsArgs<ExtArgs>
+    widthRulesUpdated?: boolean | User$widthRulesUpdatedArgs<ExtArgs>
+    widthExceptionsRaised?: boolean | User$widthExceptionsRaisedArgs<ExtArgs>
+    widthExceptionsResolved?: boolean | User$widthExceptionsResolvedArgs<ExtArgs>
+    accountingApprovalsGiven?: boolean | User$accountingApprovalsGivenArgs<ExtArgs>
+    finishingServicesCreated?: boolean | User$finishingServicesCreatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -46039,6 +50499,11 @@ export namespace Prisma {
     changeRequestsDecided?: boolean | User$changeRequestsDecidedArgs<ExtArgs>
     changeRequestsAcknowledged?: boolean | User$changeRequestsAcknowledgedArgs<ExtArgs>
     lateCancellations?: boolean | User$lateCancellationsArgs<ExtArgs>
+    widthRulesUpdated?: boolean | User$widthRulesUpdatedArgs<ExtArgs>
+    widthExceptionsRaised?: boolean | User$widthExceptionsRaisedArgs<ExtArgs>
+    widthExceptionsResolved?: boolean | User$widthExceptionsResolvedArgs<ExtArgs>
+    accountingApprovalsGiven?: boolean | User$accountingApprovalsGivenArgs<ExtArgs>
+    finishingServicesCreated?: boolean | User$finishingServicesCreatedArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -46087,6 +50552,11 @@ export namespace Prisma {
       changeRequestsDecided: Prisma.$ChangeRequestPayload<ExtArgs>[]
       changeRequestsAcknowledged: Prisma.$ChangeRequestPayload<ExtArgs>[]
       lateCancellations: Prisma.$LateCancellationPayload<ExtArgs>[]
+      widthRulesUpdated: Prisma.$ProductionWidthRulePayload<ExtArgs>[]
+      widthExceptionsRaised: Prisma.$WidthExceptionTicketPayload<ExtArgs>[]
+      widthExceptionsResolved: Prisma.$WidthExceptionTicketPayload<ExtArgs>[]
+      accountingApprovalsGiven: Prisma.$AccountingApprovalPayload<ExtArgs>[]
+      finishingServicesCreated: Prisma.$FinishingServicePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -46535,6 +51005,11 @@ export namespace Prisma {
     changeRequestsDecided<T extends User$changeRequestsDecidedArgs<ExtArgs> = {}>(args?: Subset<T, User$changeRequestsDecidedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     changeRequestsAcknowledged<T extends User$changeRequestsAcknowledgedArgs<ExtArgs> = {}>(args?: Subset<T, User$changeRequestsAcknowledgedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ChangeRequestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     lateCancellations<T extends User$lateCancellationsArgs<ExtArgs> = {}>(args?: Subset<T, User$lateCancellationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$LateCancellationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    widthRulesUpdated<T extends User$widthRulesUpdatedArgs<ExtArgs> = {}>(args?: Subset<T, User$widthRulesUpdatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProductionWidthRulePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    widthExceptionsRaised<T extends User$widthExceptionsRaisedArgs<ExtArgs> = {}>(args?: Subset<T, User$widthExceptionsRaisedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    widthExceptionsResolved<T extends User$widthExceptionsResolvedArgs<ExtArgs> = {}>(args?: Subset<T, User$widthExceptionsResolvedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WidthExceptionTicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    accountingApprovalsGiven<T extends User$accountingApprovalsGivenArgs<ExtArgs> = {}>(args?: Subset<T, User$accountingApprovalsGivenArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AccountingApprovalPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    finishingServicesCreated<T extends User$finishingServicesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, User$finishingServicesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -47930,6 +52405,126 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: LateCancellationScalarFieldEnum | LateCancellationScalarFieldEnum[]
+  }
+
+  /**
+   * User.widthRulesUpdated
+   */
+  export type User$widthRulesUpdatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProductionWidthRule
+     */
+    select?: ProductionWidthRuleSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProductionWidthRule
+     */
+    omit?: ProductionWidthRuleOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ProductionWidthRuleInclude<ExtArgs> | null
+    where?: ProductionWidthRuleWhereInput
+    orderBy?: ProductionWidthRuleOrderByWithRelationInput | ProductionWidthRuleOrderByWithRelationInput[]
+    cursor?: ProductionWidthRuleWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ProductionWidthRuleScalarFieldEnum | ProductionWidthRuleScalarFieldEnum[]
+  }
+
+  /**
+   * User.widthExceptionsRaised
+   */
+  export type User$widthExceptionsRaisedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    where?: WidthExceptionTicketWhereInput
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+  }
+
+  /**
+   * User.widthExceptionsResolved
+   */
+  export type User$widthExceptionsResolvedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WidthExceptionTicket
+     */
+    select?: WidthExceptionTicketSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WidthExceptionTicket
+     */
+    omit?: WidthExceptionTicketOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WidthExceptionTicketInclude<ExtArgs> | null
+    where?: WidthExceptionTicketWhereInput
+    orderBy?: WidthExceptionTicketOrderByWithRelationInput | WidthExceptionTicketOrderByWithRelationInput[]
+    cursor?: WidthExceptionTicketWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WidthExceptionTicketScalarFieldEnum | WidthExceptionTicketScalarFieldEnum[]
+  }
+
+  /**
+   * User.accountingApprovalsGiven
+   */
+  export type User$accountingApprovalsGivenArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the AccountingApproval
+     */
+    select?: AccountingApprovalSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the AccountingApproval
+     */
+    omit?: AccountingApprovalOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AccountingApprovalInclude<ExtArgs> | null
+    where?: AccountingApprovalWhereInput
+    orderBy?: AccountingApprovalOrderByWithRelationInput | AccountingApprovalOrderByWithRelationInput[]
+    cursor?: AccountingApprovalWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AccountingApprovalScalarFieldEnum | AccountingApprovalScalarFieldEnum[]
+  }
+
+  /**
+   * User.finishingServicesCreated
+   */
+  export type User$finishingServicesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    where?: FinishingServiceWhereInput
+    orderBy?: FinishingServiceOrderByWithRelationInput | FinishingServiceOrderByWithRelationInput[]
+    cursor?: FinishingServiceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: FinishingServiceScalarFieldEnum | FinishingServiceScalarFieldEnum[]
   }
 
   /**
@@ -71380,6 +75975,2369 @@ export namespace Prisma {
 
 
   /**
+   * Model FinishingService
+   */
+
+  export type AggregateFinishingService = {
+    _count: FinishingServiceCountAggregateOutputType | null
+    _avg: FinishingServiceAvgAggregateOutputType | null
+    _sum: FinishingServiceSumAggregateOutputType | null
+    _min: FinishingServiceMinAggregateOutputType | null
+    _max: FinishingServiceMaxAggregateOutputType | null
+  }
+
+  export type FinishingServiceAvgAggregateOutputType = {
+    ratePerSqm: Decimal | null
+  }
+
+  export type FinishingServiceSumAggregateOutputType = {
+    ratePerSqm: Decimal | null
+  }
+
+  export type FinishingServiceMinAggregateOutputType = {
+    id: string | null
+    code: string | null
+    labelAr: string | null
+    ratePerSqm: Decimal | null
+    effectiveFrom: Date | null
+    effectiveTo: Date | null
+    status: $Enums.PriceConfigStatus | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type FinishingServiceMaxAggregateOutputType = {
+    id: string | null
+    code: string | null
+    labelAr: string | null
+    ratePerSqm: Decimal | null
+    effectiveFrom: Date | null
+    effectiveTo: Date | null
+    status: $Enums.PriceConfigStatus | null
+    createdById: string | null
+    createdAt: Date | null
+  }
+
+  export type FinishingServiceCountAggregateOutputType = {
+    id: number
+    code: number
+    labelAr: number
+    ratePerSqm: number
+    effectiveFrom: number
+    effectiveTo: number
+    status: number
+    createdById: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type FinishingServiceAvgAggregateInputType = {
+    ratePerSqm?: true
+  }
+
+  export type FinishingServiceSumAggregateInputType = {
+    ratePerSqm?: true
+  }
+
+  export type FinishingServiceMinAggregateInputType = {
+    id?: true
+    code?: true
+    labelAr?: true
+    ratePerSqm?: true
+    effectiveFrom?: true
+    effectiveTo?: true
+    status?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type FinishingServiceMaxAggregateInputType = {
+    id?: true
+    code?: true
+    labelAr?: true
+    ratePerSqm?: true
+    effectiveFrom?: true
+    effectiveTo?: true
+    status?: true
+    createdById?: true
+    createdAt?: true
+  }
+
+  export type FinishingServiceCountAggregateInputType = {
+    id?: true
+    code?: true
+    labelAr?: true
+    ratePerSqm?: true
+    effectiveFrom?: true
+    effectiveTo?: true
+    status?: true
+    createdById?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type FinishingServiceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinishingService to aggregate.
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinishingServices to fetch.
+     */
+    orderBy?: FinishingServiceOrderByWithRelationInput | FinishingServiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: FinishingServiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinishingServices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinishingServices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned FinishingServices
+    **/
+    _count?: true | FinishingServiceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: FinishingServiceAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: FinishingServiceSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: FinishingServiceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: FinishingServiceMaxAggregateInputType
+  }
+
+  export type GetFinishingServiceAggregateType<T extends FinishingServiceAggregateArgs> = {
+        [P in keyof T & keyof AggregateFinishingService]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateFinishingService[P]>
+      : GetScalarType<T[P], AggregateFinishingService[P]>
+  }
+
+
+
+
+  export type FinishingServiceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: FinishingServiceWhereInput
+    orderBy?: FinishingServiceOrderByWithAggregationInput | FinishingServiceOrderByWithAggregationInput[]
+    by: FinishingServiceScalarFieldEnum[] | FinishingServiceScalarFieldEnum
+    having?: FinishingServiceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: FinishingServiceCountAggregateInputType | true
+    _avg?: FinishingServiceAvgAggregateInputType
+    _sum?: FinishingServiceSumAggregateInputType
+    _min?: FinishingServiceMinAggregateInputType
+    _max?: FinishingServiceMaxAggregateInputType
+  }
+
+  export type FinishingServiceGroupByOutputType = {
+    id: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal
+    effectiveFrom: Date
+    effectiveTo: Date | null
+    status: $Enums.PriceConfigStatus
+    createdById: string
+    createdAt: Date
+    _count: FinishingServiceCountAggregateOutputType | null
+    _avg: FinishingServiceAvgAggregateOutputType | null
+    _sum: FinishingServiceSumAggregateOutputType | null
+    _min: FinishingServiceMinAggregateOutputType | null
+    _max: FinishingServiceMaxAggregateOutputType | null
+  }
+
+  type GetFinishingServiceGroupByPayload<T extends FinishingServiceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<FinishingServiceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof FinishingServiceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], FinishingServiceGroupByOutputType[P]>
+            : GetScalarType<T[P], FinishingServiceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type FinishingServiceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    labelAr?: boolean
+    ratePerSqm?: boolean
+    effectiveFrom?: boolean
+    effectiveTo?: boolean
+    status?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+    selections?: boolean | FinishingService$selectionsArgs<ExtArgs>
+    _count?: boolean | FinishingServiceCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["finishingService"]>
+
+  export type FinishingServiceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    labelAr?: boolean
+    ratePerSqm?: boolean
+    effectiveFrom?: boolean
+    effectiveTo?: boolean
+    status?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["finishingService"]>
+
+  export type FinishingServiceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    code?: boolean
+    labelAr?: boolean
+    ratePerSqm?: boolean
+    effectiveFrom?: boolean
+    effectiveTo?: boolean
+    status?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["finishingService"]>
+
+  export type FinishingServiceSelectScalar = {
+    id?: boolean
+    code?: boolean
+    labelAr?: boolean
+    ratePerSqm?: boolean
+    effectiveFrom?: boolean
+    effectiveTo?: boolean
+    status?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+  }
+
+  export type FinishingServiceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "code" | "labelAr" | "ratePerSqm" | "effectiveFrom" | "effectiveTo" | "status" | "createdById" | "createdAt", ExtArgs["result"]["finishingService"]>
+  export type FinishingServiceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+    selections?: boolean | FinishingService$selectionsArgs<ExtArgs>
+    _count?: boolean | FinishingServiceCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type FinishingServiceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type FinishingServiceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    createdBy?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $FinishingServicePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "FinishingService"
+    objects: {
+      createdBy: Prisma.$UserPayload<ExtArgs>
+      selections: Prisma.$WorkItemFinishingPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      code: string
+      /**
+       * Arabic-first display label (constitution IX); stored, never derived.
+       */
+      labelAr: string
+      ratePerSqm: Prisma.Decimal
+      effectiveFrom: Date
+      effectiveTo: Date | null
+      status: $Enums.PriceConfigStatus
+      createdById: string
+      createdAt: Date
+    }, ExtArgs["result"]["finishingService"]>
+    composites: {}
+  }
+
+  type FinishingServiceGetPayload<S extends boolean | null | undefined | FinishingServiceDefaultArgs> = $Result.GetResult<Prisma.$FinishingServicePayload, S>
+
+  type FinishingServiceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<FinishingServiceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: FinishingServiceCountAggregateInputType | true
+    }
+
+  export interface FinishingServiceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['FinishingService'], meta: { name: 'FinishingService' } }
+    /**
+     * Find zero or one FinishingService that matches the filter.
+     * @param {FinishingServiceFindUniqueArgs} args - Arguments to find a FinishingService
+     * @example
+     * // Get one FinishingService
+     * const finishingService = await prisma.finishingService.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends FinishingServiceFindUniqueArgs>(args: SelectSubset<T, FinishingServiceFindUniqueArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one FinishingService that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {FinishingServiceFindUniqueOrThrowArgs} args - Arguments to find a FinishingService
+     * @example
+     * // Get one FinishingService
+     * const finishingService = await prisma.finishingService.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends FinishingServiceFindUniqueOrThrowArgs>(args: SelectSubset<T, FinishingServiceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinishingService that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceFindFirstArgs} args - Arguments to find a FinishingService
+     * @example
+     * // Get one FinishingService
+     * const finishingService = await prisma.finishingService.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends FinishingServiceFindFirstArgs>(args?: SelectSubset<T, FinishingServiceFindFirstArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first FinishingService that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceFindFirstOrThrowArgs} args - Arguments to find a FinishingService
+     * @example
+     * // Get one FinishingService
+     * const finishingService = await prisma.finishingService.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends FinishingServiceFindFirstOrThrowArgs>(args?: SelectSubset<T, FinishingServiceFindFirstOrThrowArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more FinishingServices that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all FinishingServices
+     * const finishingServices = await prisma.finishingService.findMany()
+     * 
+     * // Get first 10 FinishingServices
+     * const finishingServices = await prisma.finishingService.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const finishingServiceWithIdOnly = await prisma.finishingService.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends FinishingServiceFindManyArgs>(args?: SelectSubset<T, FinishingServiceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a FinishingService.
+     * @param {FinishingServiceCreateArgs} args - Arguments to create a FinishingService.
+     * @example
+     * // Create one FinishingService
+     * const FinishingService = await prisma.finishingService.create({
+     *   data: {
+     *     // ... data to create a FinishingService
+     *   }
+     * })
+     * 
+     */
+    create<T extends FinishingServiceCreateArgs>(args: SelectSubset<T, FinishingServiceCreateArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many FinishingServices.
+     * @param {FinishingServiceCreateManyArgs} args - Arguments to create many FinishingServices.
+     * @example
+     * // Create many FinishingServices
+     * const finishingService = await prisma.finishingService.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends FinishingServiceCreateManyArgs>(args?: SelectSubset<T, FinishingServiceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many FinishingServices and returns the data saved in the database.
+     * @param {FinishingServiceCreateManyAndReturnArgs} args - Arguments to create many FinishingServices.
+     * @example
+     * // Create many FinishingServices
+     * const finishingService = await prisma.finishingService.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many FinishingServices and only return the `id`
+     * const finishingServiceWithIdOnly = await prisma.finishingService.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends FinishingServiceCreateManyAndReturnArgs>(args?: SelectSubset<T, FinishingServiceCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a FinishingService.
+     * @param {FinishingServiceDeleteArgs} args - Arguments to delete one FinishingService.
+     * @example
+     * // Delete one FinishingService
+     * const FinishingService = await prisma.finishingService.delete({
+     *   where: {
+     *     // ... filter to delete one FinishingService
+     *   }
+     * })
+     * 
+     */
+    delete<T extends FinishingServiceDeleteArgs>(args: SelectSubset<T, FinishingServiceDeleteArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one FinishingService.
+     * @param {FinishingServiceUpdateArgs} args - Arguments to update one FinishingService.
+     * @example
+     * // Update one FinishingService
+     * const finishingService = await prisma.finishingService.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends FinishingServiceUpdateArgs>(args: SelectSubset<T, FinishingServiceUpdateArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more FinishingServices.
+     * @param {FinishingServiceDeleteManyArgs} args - Arguments to filter FinishingServices to delete.
+     * @example
+     * // Delete a few FinishingServices
+     * const { count } = await prisma.finishingService.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends FinishingServiceDeleteManyArgs>(args?: SelectSubset<T, FinishingServiceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinishingServices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many FinishingServices
+     * const finishingService = await prisma.finishingService.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends FinishingServiceUpdateManyArgs>(args: SelectSubset<T, FinishingServiceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more FinishingServices and returns the data updated in the database.
+     * @param {FinishingServiceUpdateManyAndReturnArgs} args - Arguments to update many FinishingServices.
+     * @example
+     * // Update many FinishingServices
+     * const finishingService = await prisma.finishingService.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more FinishingServices and only return the `id`
+     * const finishingServiceWithIdOnly = await prisma.finishingService.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends FinishingServiceUpdateManyAndReturnArgs>(args: SelectSubset<T, FinishingServiceUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one FinishingService.
+     * @param {FinishingServiceUpsertArgs} args - Arguments to update or create a FinishingService.
+     * @example
+     * // Update or create a FinishingService
+     * const finishingService = await prisma.finishingService.upsert({
+     *   create: {
+     *     // ... data to create a FinishingService
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the FinishingService we want to update
+     *   }
+     * })
+     */
+    upsert<T extends FinishingServiceUpsertArgs>(args: SelectSubset<T, FinishingServiceUpsertArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of FinishingServices.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceCountArgs} args - Arguments to filter FinishingServices to count.
+     * @example
+     * // Count the number of FinishingServices
+     * const count = await prisma.finishingService.count({
+     *   where: {
+     *     // ... the filter for the FinishingServices we want to count
+     *   }
+     * })
+    **/
+    count<T extends FinishingServiceCountArgs>(
+      args?: Subset<T, FinishingServiceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], FinishingServiceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a FinishingService.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends FinishingServiceAggregateArgs>(args: Subset<T, FinishingServiceAggregateArgs>): Prisma.PrismaPromise<GetFinishingServiceAggregateType<T>>
+
+    /**
+     * Group by FinishingService.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {FinishingServiceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends FinishingServiceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: FinishingServiceGroupByArgs['orderBy'] }
+        : { orderBy?: FinishingServiceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, FinishingServiceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetFinishingServiceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the FinishingService model
+   */
+  readonly fields: FinishingServiceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for FinishingService.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__FinishingServiceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    createdBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    selections<T extends FinishingService$selectionsArgs<ExtArgs> = {}>(args?: Subset<T, FinishingService$selectionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the FinishingService model
+   */
+  interface FinishingServiceFieldRefs {
+    readonly id: FieldRef<"FinishingService", 'String'>
+    readonly code: FieldRef<"FinishingService", 'String'>
+    readonly labelAr: FieldRef<"FinishingService", 'String'>
+    readonly ratePerSqm: FieldRef<"FinishingService", 'Decimal'>
+    readonly effectiveFrom: FieldRef<"FinishingService", 'DateTime'>
+    readonly effectiveTo: FieldRef<"FinishingService", 'DateTime'>
+    readonly status: FieldRef<"FinishingService", 'PriceConfigStatus'>
+    readonly createdById: FieldRef<"FinishingService", 'String'>
+    readonly createdAt: FieldRef<"FinishingService", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * FinishingService findUnique
+   */
+  export type FinishingServiceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter, which FinishingService to fetch.
+     */
+    where: FinishingServiceWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService findUniqueOrThrow
+   */
+  export type FinishingServiceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter, which FinishingService to fetch.
+     */
+    where: FinishingServiceWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService findFirst
+   */
+  export type FinishingServiceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter, which FinishingService to fetch.
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinishingServices to fetch.
+     */
+    orderBy?: FinishingServiceOrderByWithRelationInput | FinishingServiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinishingServices.
+     */
+    cursor?: FinishingServiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinishingServices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinishingServices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinishingServices.
+     */
+    distinct?: FinishingServiceScalarFieldEnum | FinishingServiceScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService findFirstOrThrow
+   */
+  export type FinishingServiceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter, which FinishingService to fetch.
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinishingServices to fetch.
+     */
+    orderBy?: FinishingServiceOrderByWithRelationInput | FinishingServiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for FinishingServices.
+     */
+    cursor?: FinishingServiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinishingServices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinishingServices.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of FinishingServices.
+     */
+    distinct?: FinishingServiceScalarFieldEnum | FinishingServiceScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService findMany
+   */
+  export type FinishingServiceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter, which FinishingServices to fetch.
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of FinishingServices to fetch.
+     */
+    orderBy?: FinishingServiceOrderByWithRelationInput | FinishingServiceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing FinishingServices.
+     */
+    cursor?: FinishingServiceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` FinishingServices from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` FinishingServices.
+     */
+    skip?: number
+    distinct?: FinishingServiceScalarFieldEnum | FinishingServiceScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService create
+   */
+  export type FinishingServiceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * The data needed to create a FinishingService.
+     */
+    data: XOR<FinishingServiceCreateInput, FinishingServiceUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService createMany
+   */
+  export type FinishingServiceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many FinishingServices.
+     */
+    data: FinishingServiceCreateManyInput | FinishingServiceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * FinishingService createManyAndReturn
+   */
+  export type FinishingServiceCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * The data used to create many FinishingServices.
+     */
+    data: FinishingServiceCreateManyInput | FinishingServiceCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FinishingService update
+   */
+  export type FinishingServiceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * The data needed to update a FinishingService.
+     */
+    data: XOR<FinishingServiceUpdateInput, FinishingServiceUncheckedUpdateInput>
+    /**
+     * Choose, which FinishingService to update.
+     */
+    where: FinishingServiceWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService updateMany
+   */
+  export type FinishingServiceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update FinishingServices.
+     */
+    data: XOR<FinishingServiceUpdateManyMutationInput, FinishingServiceUncheckedUpdateManyInput>
+    /**
+     * Filter which FinishingServices to update
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * Limit how many FinishingServices to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinishingService updateManyAndReturn
+   */
+  export type FinishingServiceUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * The data used to update FinishingServices.
+     */
+    data: XOR<FinishingServiceUpdateManyMutationInput, FinishingServiceUncheckedUpdateManyInput>
+    /**
+     * Filter which FinishingServices to update
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * Limit how many FinishingServices to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * FinishingService upsert
+   */
+  export type FinishingServiceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * The filter to search for the FinishingService to update in case it exists.
+     */
+    where: FinishingServiceWhereUniqueInput
+    /**
+     * In case the FinishingService found by the `where` argument doesn't exist, create a new FinishingService with this data.
+     */
+    create: XOR<FinishingServiceCreateInput, FinishingServiceUncheckedCreateInput>
+    /**
+     * In case the FinishingService was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<FinishingServiceUpdateInput, FinishingServiceUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService delete
+   */
+  export type FinishingServiceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+    /**
+     * Filter which FinishingService to delete.
+     */
+    where: FinishingServiceWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * FinishingService deleteMany
+   */
+  export type FinishingServiceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which FinishingServices to delete
+     */
+    where?: FinishingServiceWhereInput
+    /**
+     * Limit how many FinishingServices to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * FinishingService.selections
+   */
+  export type FinishingService$selectionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    where?: WorkItemFinishingWhereInput
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    cursor?: WorkItemFinishingWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WorkItemFinishingScalarFieldEnum | WorkItemFinishingScalarFieldEnum[]
+  }
+
+  /**
+   * FinishingService without action
+   */
+  export type FinishingServiceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the FinishingService
+     */
+    select?: FinishingServiceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the FinishingService
+     */
+    omit?: FinishingServiceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: FinishingServiceInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WorkItemFinishing
+   */
+
+  export type AggregateWorkItemFinishing = {
+    _count: WorkItemFinishingCountAggregateOutputType | null
+    _avg: WorkItemFinishingAvgAggregateOutputType | null
+    _sum: WorkItemFinishingSumAggregateOutputType | null
+    _min: WorkItemFinishingMinAggregateOutputType | null
+    _max: WorkItemFinishingMaxAggregateOutputType | null
+  }
+
+  export type WorkItemFinishingAvgAggregateOutputType = {
+    generation: number | null
+    rateSnapshot: Decimal | null
+    totalAmount: Decimal | null
+  }
+
+  export type WorkItemFinishingSumAggregateOutputType = {
+    generation: number | null
+    rateSnapshot: Decimal | null
+    totalAmount: Decimal | null
+  }
+
+  export type WorkItemFinishingMinAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    finishingServiceId: string | null
+    generation: number | null
+    quotedAt: Date | null
+    labelSnapshot: string | null
+    rateSnapshot: Decimal | null
+    totalAmount: Decimal | null
+    createdAt: Date | null
+  }
+
+  export type WorkItemFinishingMaxAggregateOutputType = {
+    id: string | null
+    workItemId: string | null
+    finishingServiceId: string | null
+    generation: number | null
+    quotedAt: Date | null
+    labelSnapshot: string | null
+    rateSnapshot: Decimal | null
+    totalAmount: Decimal | null
+    createdAt: Date | null
+  }
+
+  export type WorkItemFinishingCountAggregateOutputType = {
+    id: number
+    workItemId: number
+    finishingServiceId: number
+    generation: number
+    quotedAt: number
+    labelSnapshot: number
+    rateSnapshot: number
+    totalAmount: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type WorkItemFinishingAvgAggregateInputType = {
+    generation?: true
+    rateSnapshot?: true
+    totalAmount?: true
+  }
+
+  export type WorkItemFinishingSumAggregateInputType = {
+    generation?: true
+    rateSnapshot?: true
+    totalAmount?: true
+  }
+
+  export type WorkItemFinishingMinAggregateInputType = {
+    id?: true
+    workItemId?: true
+    finishingServiceId?: true
+    generation?: true
+    quotedAt?: true
+    labelSnapshot?: true
+    rateSnapshot?: true
+    totalAmount?: true
+    createdAt?: true
+  }
+
+  export type WorkItemFinishingMaxAggregateInputType = {
+    id?: true
+    workItemId?: true
+    finishingServiceId?: true
+    generation?: true
+    quotedAt?: true
+    labelSnapshot?: true
+    rateSnapshot?: true
+    totalAmount?: true
+    createdAt?: true
+  }
+
+  export type WorkItemFinishingCountAggregateInputType = {
+    id?: true
+    workItemId?: true
+    finishingServiceId?: true
+    generation?: true
+    quotedAt?: true
+    labelSnapshot?: true
+    rateSnapshot?: true
+    totalAmount?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type WorkItemFinishingAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkItemFinishing to aggregate.
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkItemFinishings to fetch.
+     */
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WorkItemFinishingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkItemFinishings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkItemFinishings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WorkItemFinishings
+    **/
+    _count?: true | WorkItemFinishingCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: WorkItemFinishingAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: WorkItemFinishingSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WorkItemFinishingMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WorkItemFinishingMaxAggregateInputType
+  }
+
+  export type GetWorkItemFinishingAggregateType<T extends WorkItemFinishingAggregateArgs> = {
+        [P in keyof T & keyof AggregateWorkItemFinishing]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWorkItemFinishing[P]>
+      : GetScalarType<T[P], AggregateWorkItemFinishing[P]>
+  }
+
+
+
+
+  export type WorkItemFinishingGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WorkItemFinishingWhereInput
+    orderBy?: WorkItemFinishingOrderByWithAggregationInput | WorkItemFinishingOrderByWithAggregationInput[]
+    by: WorkItemFinishingScalarFieldEnum[] | WorkItemFinishingScalarFieldEnum
+    having?: WorkItemFinishingScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WorkItemFinishingCountAggregateInputType | true
+    _avg?: WorkItemFinishingAvgAggregateInputType
+    _sum?: WorkItemFinishingSumAggregateInputType
+    _min?: WorkItemFinishingMinAggregateInputType
+    _max?: WorkItemFinishingMaxAggregateInputType
+  }
+
+  export type WorkItemFinishingGroupByOutputType = {
+    id: string
+    workItemId: string
+    finishingServiceId: string
+    generation: number
+    quotedAt: Date
+    labelSnapshot: string
+    rateSnapshot: Decimal
+    totalAmount: Decimal
+    createdAt: Date
+    _count: WorkItemFinishingCountAggregateOutputType | null
+    _avg: WorkItemFinishingAvgAggregateOutputType | null
+    _sum: WorkItemFinishingSumAggregateOutputType | null
+    _min: WorkItemFinishingMinAggregateOutputType | null
+    _max: WorkItemFinishingMaxAggregateOutputType | null
+  }
+
+  type GetWorkItemFinishingGroupByPayload<T extends WorkItemFinishingGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WorkItemFinishingGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WorkItemFinishingGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WorkItemFinishingGroupByOutputType[P]>
+            : GetScalarType<T[P], WorkItemFinishingGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WorkItemFinishingSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    finishingServiceId?: boolean
+    generation?: boolean
+    quotedAt?: boolean
+    labelSnapshot?: boolean
+    rateSnapshot?: boolean
+    totalAmount?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workItemFinishing"]>
+
+  export type WorkItemFinishingSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    finishingServiceId?: boolean
+    generation?: boolean
+    quotedAt?: boolean
+    labelSnapshot?: boolean
+    rateSnapshot?: boolean
+    totalAmount?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workItemFinishing"]>
+
+  export type WorkItemFinishingSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    workItemId?: boolean
+    finishingServiceId?: boolean
+    generation?: boolean
+    quotedAt?: boolean
+    labelSnapshot?: boolean
+    rateSnapshot?: boolean
+    totalAmount?: boolean
+    createdAt?: boolean
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["workItemFinishing"]>
+
+  export type WorkItemFinishingSelectScalar = {
+    id?: boolean
+    workItemId?: boolean
+    finishingServiceId?: boolean
+    generation?: boolean
+    quotedAt?: boolean
+    labelSnapshot?: boolean
+    rateSnapshot?: boolean
+    totalAmount?: boolean
+    createdAt?: boolean
+  }
+
+  export type WorkItemFinishingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workItemId" | "finishingServiceId" | "generation" | "quotedAt" | "labelSnapshot" | "rateSnapshot" | "totalAmount" | "createdAt", ExtArgs["result"]["workItemFinishing"]>
+  export type WorkItemFinishingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }
+  export type WorkItemFinishingIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }
+  export type WorkItemFinishingIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    workItem?: boolean | WorkItemDefaultArgs<ExtArgs>
+    finishingService?: boolean | FinishingServiceDefaultArgs<ExtArgs>
+  }
+
+  export type $WorkItemFinishingPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WorkItemFinishing"
+    objects: {
+      workItem: Prisma.$WorkItemPayload<ExtArgs>
+      finishingService: Prisma.$FinishingServicePayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      workItemId: string
+      finishingServiceId: string
+      /**
+       * Which quote generation this row belongs to. `quotedAt` is the ordering
+       * key; the generation number is carried for display and for pairing rows
+       * written in the same transaction.
+       */
+      generation: number
+      quotedAt: Date
+      labelSnapshot: string
+      rateSnapshot: Prisma.Decimal
+      /**
+       * `productionAreaSqm × rateSnapshot`, to 2 dp (FR-010).
+       */
+      totalAmount: Prisma.Decimal
+      createdAt: Date
+    }, ExtArgs["result"]["workItemFinishing"]>
+    composites: {}
+  }
+
+  type WorkItemFinishingGetPayload<S extends boolean | null | undefined | WorkItemFinishingDefaultArgs> = $Result.GetResult<Prisma.$WorkItemFinishingPayload, S>
+
+  type WorkItemFinishingCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WorkItemFinishingFindManyArgs, 'select' | 'include' | 'distinct' | 'omit' | 'relationLoadStrategy'> & {
+      select?: WorkItemFinishingCountAggregateInputType | true
+    }
+
+  export interface WorkItemFinishingDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WorkItemFinishing'], meta: { name: 'WorkItemFinishing' } }
+    /**
+     * Find zero or one WorkItemFinishing that matches the filter.
+     * @param {WorkItemFinishingFindUniqueArgs} args - Arguments to find a WorkItemFinishing
+     * @example
+     * // Get one WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WorkItemFinishingFindUniqueArgs>(args: SelectSubset<T, WorkItemFinishingFindUniqueArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WorkItemFinishing that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WorkItemFinishingFindUniqueOrThrowArgs} args - Arguments to find a WorkItemFinishing
+     * @example
+     * // Get one WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WorkItemFinishingFindUniqueOrThrowArgs>(args: SelectSubset<T, WorkItemFinishingFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WorkItemFinishing that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingFindFirstArgs} args - Arguments to find a WorkItemFinishing
+     * @example
+     * // Get one WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WorkItemFinishingFindFirstArgs>(args?: SelectSubset<T, WorkItemFinishingFindFirstArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WorkItemFinishing that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingFindFirstOrThrowArgs} args - Arguments to find a WorkItemFinishing
+     * @example
+     * // Get one WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WorkItemFinishingFindFirstOrThrowArgs>(args?: SelectSubset<T, WorkItemFinishingFindFirstOrThrowArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WorkItemFinishings that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WorkItemFinishings
+     * const workItemFinishings = await prisma.workItemFinishing.findMany()
+     * 
+     * // Get first 10 WorkItemFinishings
+     * const workItemFinishings = await prisma.workItemFinishing.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const workItemFinishingWithIdOnly = await prisma.workItemFinishing.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WorkItemFinishingFindManyArgs>(args?: SelectSubset<T, WorkItemFinishingFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WorkItemFinishing.
+     * @param {WorkItemFinishingCreateArgs} args - Arguments to create a WorkItemFinishing.
+     * @example
+     * // Create one WorkItemFinishing
+     * const WorkItemFinishing = await prisma.workItemFinishing.create({
+     *   data: {
+     *     // ... data to create a WorkItemFinishing
+     *   }
+     * })
+     * 
+     */
+    create<T extends WorkItemFinishingCreateArgs>(args: SelectSubset<T, WorkItemFinishingCreateArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WorkItemFinishings.
+     * @param {WorkItemFinishingCreateManyArgs} args - Arguments to create many WorkItemFinishings.
+     * @example
+     * // Create many WorkItemFinishings
+     * const workItemFinishing = await prisma.workItemFinishing.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WorkItemFinishingCreateManyArgs>(args?: SelectSubset<T, WorkItemFinishingCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WorkItemFinishings and returns the data saved in the database.
+     * @param {WorkItemFinishingCreateManyAndReturnArgs} args - Arguments to create many WorkItemFinishings.
+     * @example
+     * // Create many WorkItemFinishings
+     * const workItemFinishing = await prisma.workItemFinishing.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WorkItemFinishings and only return the `id`
+     * const workItemFinishingWithIdOnly = await prisma.workItemFinishing.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WorkItemFinishingCreateManyAndReturnArgs>(args?: SelectSubset<T, WorkItemFinishingCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WorkItemFinishing.
+     * @param {WorkItemFinishingDeleteArgs} args - Arguments to delete one WorkItemFinishing.
+     * @example
+     * // Delete one WorkItemFinishing
+     * const WorkItemFinishing = await prisma.workItemFinishing.delete({
+     *   where: {
+     *     // ... filter to delete one WorkItemFinishing
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WorkItemFinishingDeleteArgs>(args: SelectSubset<T, WorkItemFinishingDeleteArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WorkItemFinishing.
+     * @param {WorkItemFinishingUpdateArgs} args - Arguments to update one WorkItemFinishing.
+     * @example
+     * // Update one WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WorkItemFinishingUpdateArgs>(args: SelectSubset<T, WorkItemFinishingUpdateArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WorkItemFinishings.
+     * @param {WorkItemFinishingDeleteManyArgs} args - Arguments to filter WorkItemFinishings to delete.
+     * @example
+     * // Delete a few WorkItemFinishings
+     * const { count } = await prisma.workItemFinishing.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WorkItemFinishingDeleteManyArgs>(args?: SelectSubset<T, WorkItemFinishingDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WorkItemFinishings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WorkItemFinishings
+     * const workItemFinishing = await prisma.workItemFinishing.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WorkItemFinishingUpdateManyArgs>(args: SelectSubset<T, WorkItemFinishingUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WorkItemFinishings and returns the data updated in the database.
+     * @param {WorkItemFinishingUpdateManyAndReturnArgs} args - Arguments to update many WorkItemFinishings.
+     * @example
+     * // Update many WorkItemFinishings
+     * const workItemFinishing = await prisma.workItemFinishing.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WorkItemFinishings and only return the `id`
+     * const workItemFinishingWithIdOnly = await prisma.workItemFinishing.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WorkItemFinishingUpdateManyAndReturnArgs>(args: SelectSubset<T, WorkItemFinishingUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WorkItemFinishing.
+     * @param {WorkItemFinishingUpsertArgs} args - Arguments to update or create a WorkItemFinishing.
+     * @example
+     * // Update or create a WorkItemFinishing
+     * const workItemFinishing = await prisma.workItemFinishing.upsert({
+     *   create: {
+     *     // ... data to create a WorkItemFinishing
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WorkItemFinishing we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WorkItemFinishingUpsertArgs>(args: SelectSubset<T, WorkItemFinishingUpsertArgs<ExtArgs>>): Prisma__WorkItemFinishingClient<$Result.GetResult<Prisma.$WorkItemFinishingPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WorkItemFinishings.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingCountArgs} args - Arguments to filter WorkItemFinishings to count.
+     * @example
+     * // Count the number of WorkItemFinishings
+     * const count = await prisma.workItemFinishing.count({
+     *   where: {
+     *     // ... the filter for the WorkItemFinishings we want to count
+     *   }
+     * })
+    **/
+    count<T extends WorkItemFinishingCountArgs>(
+      args?: Subset<T, WorkItemFinishingCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WorkItemFinishingCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WorkItemFinishing.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WorkItemFinishingAggregateArgs>(args: Subset<T, WorkItemFinishingAggregateArgs>): Prisma.PrismaPromise<GetWorkItemFinishingAggregateType<T>>
+
+    /**
+     * Group by WorkItemFinishing.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WorkItemFinishingGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WorkItemFinishingGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WorkItemFinishingGroupByArgs['orderBy'] }
+        : { orderBy?: WorkItemFinishingGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WorkItemFinishingGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWorkItemFinishingGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WorkItemFinishing model
+   */
+  readonly fields: WorkItemFinishingFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WorkItemFinishing.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WorkItemFinishingClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    workItem<T extends WorkItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, WorkItemDefaultArgs<ExtArgs>>): Prisma__WorkItemClient<$Result.GetResult<Prisma.$WorkItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    finishingService<T extends FinishingServiceDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FinishingServiceDefaultArgs<ExtArgs>>): Prisma__FinishingServiceClient<$Result.GetResult<Prisma.$FinishingServicePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WorkItemFinishing model
+   */
+  interface WorkItemFinishingFieldRefs {
+    readonly id: FieldRef<"WorkItemFinishing", 'String'>
+    readonly workItemId: FieldRef<"WorkItemFinishing", 'String'>
+    readonly finishingServiceId: FieldRef<"WorkItemFinishing", 'String'>
+    readonly generation: FieldRef<"WorkItemFinishing", 'Int'>
+    readonly quotedAt: FieldRef<"WorkItemFinishing", 'DateTime'>
+    readonly labelSnapshot: FieldRef<"WorkItemFinishing", 'String'>
+    readonly rateSnapshot: FieldRef<"WorkItemFinishing", 'Decimal'>
+    readonly totalAmount: FieldRef<"WorkItemFinishing", 'Decimal'>
+    readonly createdAt: FieldRef<"WorkItemFinishing", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WorkItemFinishing findUnique
+   */
+  export type WorkItemFinishingFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkItemFinishing to fetch.
+     */
+    where: WorkItemFinishingWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing findUniqueOrThrow
+   */
+  export type WorkItemFinishingFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkItemFinishing to fetch.
+     */
+    where: WorkItemFinishingWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing findFirst
+   */
+  export type WorkItemFinishingFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkItemFinishing to fetch.
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkItemFinishings to fetch.
+     */
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkItemFinishings.
+     */
+    cursor?: WorkItemFinishingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkItemFinishings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkItemFinishings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkItemFinishings.
+     */
+    distinct?: WorkItemFinishingScalarFieldEnum | WorkItemFinishingScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing findFirstOrThrow
+   */
+  export type WorkItemFinishingFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkItemFinishing to fetch.
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkItemFinishings to fetch.
+     */
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WorkItemFinishings.
+     */
+    cursor?: WorkItemFinishingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkItemFinishings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkItemFinishings.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WorkItemFinishings.
+     */
+    distinct?: WorkItemFinishingScalarFieldEnum | WorkItemFinishingScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing findMany
+   */
+  export type WorkItemFinishingFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter, which WorkItemFinishings to fetch.
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WorkItemFinishings to fetch.
+     */
+    orderBy?: WorkItemFinishingOrderByWithRelationInput | WorkItemFinishingOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WorkItemFinishings.
+     */
+    cursor?: WorkItemFinishingWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WorkItemFinishings from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WorkItemFinishings.
+     */
+    skip?: number
+    distinct?: WorkItemFinishingScalarFieldEnum | WorkItemFinishingScalarFieldEnum[]
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing create
+   */
+  export type WorkItemFinishingCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * The data needed to create a WorkItemFinishing.
+     */
+    data: XOR<WorkItemFinishingCreateInput, WorkItemFinishingUncheckedCreateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing createMany
+   */
+  export type WorkItemFinishingCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WorkItemFinishings.
+     */
+    data: WorkItemFinishingCreateManyInput | WorkItemFinishingCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WorkItemFinishing createManyAndReturn
+   */
+  export type WorkItemFinishingCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * The data used to create many WorkItemFinishings.
+     */
+    data: WorkItemFinishingCreateManyInput | WorkItemFinishingCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WorkItemFinishing update
+   */
+  export type WorkItemFinishingUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * The data needed to update a WorkItemFinishing.
+     */
+    data: XOR<WorkItemFinishingUpdateInput, WorkItemFinishingUncheckedUpdateInput>
+    /**
+     * Choose, which WorkItemFinishing to update.
+     */
+    where: WorkItemFinishingWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing updateMany
+   */
+  export type WorkItemFinishingUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WorkItemFinishings.
+     */
+    data: XOR<WorkItemFinishingUpdateManyMutationInput, WorkItemFinishingUncheckedUpdateManyInput>
+    /**
+     * Filter which WorkItemFinishings to update
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * Limit how many WorkItemFinishings to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WorkItemFinishing updateManyAndReturn
+   */
+  export type WorkItemFinishingUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * The data used to update WorkItemFinishings.
+     */
+    data: XOR<WorkItemFinishingUpdateManyMutationInput, WorkItemFinishingUncheckedUpdateManyInput>
+    /**
+     * Filter which WorkItemFinishings to update
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * Limit how many WorkItemFinishings to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * WorkItemFinishing upsert
+   */
+  export type WorkItemFinishingUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * The filter to search for the WorkItemFinishing to update in case it exists.
+     */
+    where: WorkItemFinishingWhereUniqueInput
+    /**
+     * In case the WorkItemFinishing found by the `where` argument doesn't exist, create a new WorkItemFinishing with this data.
+     */
+    create: XOR<WorkItemFinishingCreateInput, WorkItemFinishingUncheckedCreateInput>
+    /**
+     * In case the WorkItemFinishing was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WorkItemFinishingUpdateInput, WorkItemFinishingUncheckedUpdateInput>
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing delete
+   */
+  export type WorkItemFinishingDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+    /**
+     * Filter which WorkItemFinishing to delete.
+     */
+    where: WorkItemFinishingWhereUniqueInput
+    relationLoadStrategy?: RelationLoadStrategy
+  }
+
+  /**
+   * WorkItemFinishing deleteMany
+   */
+  export type WorkItemFinishingDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WorkItemFinishings to delete
+     */
+    where?: WorkItemFinishingWhereInput
+    /**
+     * Limit how many WorkItemFinishings to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WorkItemFinishing without action
+   */
+  export type WorkItemFinishingDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WorkItemFinishing
+     */
+    select?: WorkItemFinishingSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WorkItemFinishing
+     */
+    omit?: WorkItemFinishingOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WorkItemFinishingInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -71525,6 +78483,16 @@ export namespace Prisma {
     producedQuantity: 'producedQuantity',
     productionNotes: 'productionNotes',
     pendingFileRevisionAt: 'pendingFileRevisionAt',
+    customerWidthCm: 'customerWidthCm',
+    productionWidthCm: 'productionWidthCm',
+    productionHeightM: 'productionHeightM',
+    quantitySnapshot: 'quantitySnapshot',
+    productionAreaSqm: 'productionAreaSqm',
+    baseRatePerSqm: 'baseRatePerSqm',
+    baseTotal: 'baseTotal',
+    finishingTotal: 'finishingTotal',
+    productionTotal: 'productionTotal',
+    productionSpecAt: 'productionSpecAt',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     currentSpecVersionId: 'currentSpecVersionId'
@@ -71545,6 +78513,51 @@ export namespace Prisma {
   };
 
   export type ProductTypeScalarFieldEnum = (typeof ProductTypeScalarFieldEnum)[keyof typeof ProductTypeScalarFieldEnum]
+
+
+  export const ProductionWidthRuleScalarFieldEnum: {
+    id: 'id',
+    productTypeId: 'productTypeId',
+    ladderCm: 'ladderCm',
+    maxHeightM: 'maxHeightM',
+    minRatePerSqm: 'minRatePerSqm',
+    maxRatePerSqm: 'maxRatePerSqm',
+    updatedById: 'updatedById',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type ProductionWidthRuleScalarFieldEnum = (typeof ProductionWidthRuleScalarFieldEnum)[keyof typeof ProductionWidthRuleScalarFieldEnum]
+
+
+  export const WidthExceptionTicketScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    requestedWidthCm: 'requestedWidthCm',
+    maxWidthCm: 'maxWidthCm',
+    reason: 'reason',
+    status: 'status',
+    raisedById: 'raisedById',
+    resolvedById: 'resolvedById',
+    resolutionNote: 'resolutionNote',
+    resolvedAt: 'resolvedAt',
+    createdAt: 'createdAt'
+  };
+
+  export type WidthExceptionTicketScalarFieldEnum = (typeof WidthExceptionTicketScalarFieldEnum)[keyof typeof WidthExceptionTicketScalarFieldEnum]
+
+
+  export const AccountingApprovalScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    approvedById: 'approvedById',
+    priceId: 'priceId',
+    totalAmount: 'totalAmount',
+    note: 'note',
+    approvedAt: 'approvedAt'
+  };
+
+  export type AccountingApprovalScalarFieldEnum = (typeof AccountingApprovalScalarFieldEnum)[keyof typeof AccountingApprovalScalarFieldEnum]
 
 
   export const WorkItemTransitionScalarFieldEnum: {
@@ -72187,6 +79200,36 @@ export namespace Prisma {
   export type PricingStatusScalarFieldEnum = (typeof PricingStatusScalarFieldEnum)[keyof typeof PricingStatusScalarFieldEnum]
 
 
+  export const FinishingServiceScalarFieldEnum: {
+    id: 'id',
+    code: 'code',
+    labelAr: 'labelAr',
+    ratePerSqm: 'ratePerSqm',
+    effectiveFrom: 'effectiveFrom',
+    effectiveTo: 'effectiveTo',
+    status: 'status',
+    createdById: 'createdById',
+    createdAt: 'createdAt'
+  };
+
+  export type FinishingServiceScalarFieldEnum = (typeof FinishingServiceScalarFieldEnum)[keyof typeof FinishingServiceScalarFieldEnum]
+
+
+  export const WorkItemFinishingScalarFieldEnum: {
+    id: 'id',
+    workItemId: 'workItemId',
+    finishingServiceId: 'finishingServiceId',
+    generation: 'generation',
+    quotedAt: 'quotedAt',
+    labelSnapshot: 'labelSnapshot',
+    rateSnapshot: 'rateSnapshot',
+    totalAmount: 'totalAmount',
+    createdAt: 'createdAt'
+  };
+
+  export type WorkItemFinishingScalarFieldEnum = (typeof WorkItemFinishingScalarFieldEnum)[keyof typeof WorkItemFinishingScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -72426,6 +79469,20 @@ export namespace Prisma {
    * Reference to a field of type 'OrderMode[]'
    */
   export type ListEnumOrderModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderMode[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'WidthExceptionStatus'
+   */
+  export type EnumWidthExceptionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WidthExceptionStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'WidthExceptionStatus[]'
+   */
+  export type ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WidthExceptionStatus[]'>
     
 
 
@@ -73360,6 +80417,16 @@ export namespace Prisma {
     producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
     productionNotes?: StringNullableFilter<"WorkItem"> | string | null
     pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    customerWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: IntNullableFilter<"WorkItem"> | number | null
+    productionAreaSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
     currentSpecVersionId?: StringNullableFilter<"WorkItem"> | string | null
@@ -73382,6 +80449,9 @@ export namespace Prisma {
     expenses?: ExpenseListRelationFilter
     directCosts?: DirectCostListRelationFilter
     delayBreaches?: DelayBreachListRelationFilter
+    finishings?: WorkItemFinishingListRelationFilter
+    widthExceptions?: WidthExceptionTicketListRelationFilter
+    accountingApprovals?: AccountingApprovalListRelationFilter
   }
 
   export type WorkItemOrderByWithRelationInput = {
@@ -73404,6 +80474,16 @@ export namespace Prisma {
     producedQuantity?: SortOrderInput | SortOrder
     productionNotes?: SortOrderInput | SortOrder
     pendingFileRevisionAt?: SortOrderInput | SortOrder
+    customerWidthCm?: SortOrderInput | SortOrder
+    productionWidthCm?: SortOrderInput | SortOrder
+    productionHeightM?: SortOrderInput | SortOrder
+    quantitySnapshot?: SortOrderInput | SortOrder
+    productionAreaSqm?: SortOrderInput | SortOrder
+    baseRatePerSqm?: SortOrderInput | SortOrder
+    baseTotal?: SortOrderInput | SortOrder
+    finishingTotal?: SortOrderInput | SortOrder
+    productionTotal?: SortOrderInput | SortOrder
+    productionSpecAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     currentSpecVersionId?: SortOrderInput | SortOrder
@@ -73426,6 +80506,9 @@ export namespace Prisma {
     expenses?: ExpenseOrderByRelationAggregateInput
     directCosts?: DirectCostOrderByRelationAggregateInput
     delayBreaches?: DelayBreachOrderByRelationAggregateInput
+    finishings?: WorkItemFinishingOrderByRelationAggregateInput
+    widthExceptions?: WidthExceptionTicketOrderByRelationAggregateInput
+    accountingApprovals?: AccountingApprovalOrderByRelationAggregateInput
   }
 
   export type WorkItemWhereUniqueInput = Prisma.AtLeast<{
@@ -73452,6 +80535,16 @@ export namespace Prisma {
     producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
     productionNotes?: StringNullableFilter<"WorkItem"> | string | null
     pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    customerWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: IntNullableFilter<"WorkItem"> | number | null
+    productionAreaSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
@@ -73473,6 +80566,9 @@ export namespace Prisma {
     expenses?: ExpenseListRelationFilter
     directCosts?: DirectCostListRelationFilter
     delayBreaches?: DelayBreachListRelationFilter
+    finishings?: WorkItemFinishingListRelationFilter
+    widthExceptions?: WidthExceptionTicketListRelationFilter
+    accountingApprovals?: AccountingApprovalListRelationFilter
   }, "id" | "currentSpecVersionId">
 
   export type WorkItemOrderByWithAggregationInput = {
@@ -73495,6 +80591,16 @@ export namespace Prisma {
     producedQuantity?: SortOrderInput | SortOrder
     productionNotes?: SortOrderInput | SortOrder
     pendingFileRevisionAt?: SortOrderInput | SortOrder
+    customerWidthCm?: SortOrderInput | SortOrder
+    productionWidthCm?: SortOrderInput | SortOrder
+    productionHeightM?: SortOrderInput | SortOrder
+    quantitySnapshot?: SortOrderInput | SortOrder
+    productionAreaSqm?: SortOrderInput | SortOrder
+    baseRatePerSqm?: SortOrderInput | SortOrder
+    baseTotal?: SortOrderInput | SortOrder
+    finishingTotal?: SortOrderInput | SortOrder
+    productionTotal?: SortOrderInput | SortOrder
+    productionSpecAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     currentSpecVersionId?: SortOrderInput | SortOrder
@@ -73528,6 +80634,16 @@ export namespace Prisma {
     producedQuantity?: IntNullableWithAggregatesFilter<"WorkItem"> | number | null
     productionNotes?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
     pendingFileRevisionAt?: DateTimeNullableWithAggregatesFilter<"WorkItem"> | Date | string | null
+    customerWidthCm?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: IntNullableWithAggregatesFilter<"WorkItem"> | number | null
+    productionAreaSqm?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: DecimalNullableWithAggregatesFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: DateTimeNullableWithAggregatesFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"WorkItem"> | Date | string
     currentSpecVersionId?: StringNullableWithAggregatesFilter<"WorkItem"> | string | null
@@ -73551,6 +80667,7 @@ export namespace Prisma {
     pricingPolicy?: XOR<ProductPricingPolicyNullableScalarRelationFilter, ProductPricingPolicyWhereInput> | null
     priceLists?: PriceListListRelationFilter
     customerPricingRules?: CustomerPricingRuleListRelationFilter
+    widthRule?: XOR<ProductionWidthRuleNullableScalarRelationFilter, ProductionWidthRuleWhereInput> | null
   }
 
   export type ProductTypeOrderByWithRelationInput = {
@@ -73568,6 +80685,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyOrderByWithRelationInput
     priceLists?: PriceListOrderByRelationAggregateInput
     customerPricingRules?: CustomerPricingRuleOrderByRelationAggregateInput
+    widthRule?: ProductionWidthRuleOrderByWithRelationInput
   }
 
   export type ProductTypeWhereUniqueInput = Prisma.AtLeast<{
@@ -73588,6 +80706,7 @@ export namespace Prisma {
     pricingPolicy?: XOR<ProductPricingPolicyNullableScalarRelationFilter, ProductPricingPolicyWhereInput> | null
     priceLists?: PriceListListRelationFilter
     customerPricingRules?: CustomerPricingRuleListRelationFilter
+    widthRule?: XOR<ProductionWidthRuleNullableScalarRelationFilter, ProductionWidthRuleWhereInput> | null
   }, "id" | "name">
 
   export type ProductTypeOrderByWithAggregationInput = {
@@ -73616,6 +80735,249 @@ export namespace Prisma {
     pricingModeHint?: StringNullableWithAggregatesFilter<"ProductType"> | string | null
     isActive?: BoolWithAggregatesFilter<"ProductType"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"ProductType"> | Date | string
+  }
+
+  export type ProductionWidthRuleWhereInput = {
+    AND?: ProductionWidthRuleWhereInput | ProductionWidthRuleWhereInput[]
+    OR?: ProductionWidthRuleWhereInput[]
+    NOT?: ProductionWidthRuleWhereInput | ProductionWidthRuleWhereInput[]
+    id?: StringFilter<"ProductionWidthRule"> | string
+    productTypeId?: StringFilter<"ProductionWidthRule"> | string
+    ladderCm?: IntNullableListFilter<"ProductionWidthRule">
+    maxHeightM?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFilter<"ProductionWidthRule"> | string
+    createdAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+    updatedAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+    productType?: XOR<ProductTypeScalarRelationFilter, ProductTypeWhereInput>
+    updatedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type ProductionWidthRuleOrderByWithRelationInput = {
+    id?: SortOrder
+    productTypeId?: SortOrder
+    ladderCm?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+    updatedById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    productType?: ProductTypeOrderByWithRelationInput
+    updatedBy?: UserOrderByWithRelationInput
+  }
+
+  export type ProductionWidthRuleWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    productTypeId?: string
+    AND?: ProductionWidthRuleWhereInput | ProductionWidthRuleWhereInput[]
+    OR?: ProductionWidthRuleWhereInput[]
+    NOT?: ProductionWidthRuleWhereInput | ProductionWidthRuleWhereInput[]
+    ladderCm?: IntNullableListFilter<"ProductionWidthRule">
+    maxHeightM?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFilter<"ProductionWidthRule"> | string
+    createdAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+    updatedAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+    productType?: XOR<ProductTypeScalarRelationFilter, ProductTypeWhereInput>
+    updatedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "productTypeId">
+
+  export type ProductionWidthRuleOrderByWithAggregationInput = {
+    id?: SortOrder
+    productTypeId?: SortOrder
+    ladderCm?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+    updatedById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: ProductionWidthRuleCountOrderByAggregateInput
+    _avg?: ProductionWidthRuleAvgOrderByAggregateInput
+    _max?: ProductionWidthRuleMaxOrderByAggregateInput
+    _min?: ProductionWidthRuleMinOrderByAggregateInput
+    _sum?: ProductionWidthRuleSumOrderByAggregateInput
+  }
+
+  export type ProductionWidthRuleScalarWhereWithAggregatesInput = {
+    AND?: ProductionWidthRuleScalarWhereWithAggregatesInput | ProductionWidthRuleScalarWhereWithAggregatesInput[]
+    OR?: ProductionWidthRuleScalarWhereWithAggregatesInput[]
+    NOT?: ProductionWidthRuleScalarWhereWithAggregatesInput | ProductionWidthRuleScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ProductionWidthRule"> | string
+    productTypeId?: StringWithAggregatesFilter<"ProductionWidthRule"> | string
+    ladderCm?: IntNullableListFilter<"ProductionWidthRule">
+    maxHeightM?: DecimalWithAggregatesFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalWithAggregatesFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalWithAggregatesFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    updatedById?: StringWithAggregatesFilter<"ProductionWidthRule"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"ProductionWidthRule"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"ProductionWidthRule"> | Date | string
+  }
+
+  export type WidthExceptionTicketWhereInput = {
+    AND?: WidthExceptionTicketWhereInput | WidthExceptionTicketWhereInput[]
+    OR?: WidthExceptionTicketWhereInput[]
+    NOT?: WidthExceptionTicketWhereInput | WidthExceptionTicketWhereInput[]
+    id?: StringFilter<"WidthExceptionTicket"> | string
+    workItemId?: StringFilter<"WidthExceptionTicket"> | string
+    requestedWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"WidthExceptionTicket"> | string
+    status?: EnumWidthExceptionStatusFilter<"WidthExceptionTicket"> | $Enums.WidthExceptionStatus
+    raisedById?: StringFilter<"WidthExceptionTicket"> | string
+    resolvedById?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolutionNote?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolvedAt?: DateTimeNullableFilter<"WidthExceptionTicket"> | Date | string | null
+    createdAt?: DateTimeFilter<"WidthExceptionTicket"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    raisedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    resolvedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }
+
+  export type WidthExceptionTicketOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    raisedById?: SortOrder
+    resolvedById?: SortOrderInput | SortOrder
+    resolutionNote?: SortOrderInput | SortOrder
+    resolvedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    raisedBy?: UserOrderByWithRelationInput
+    resolvedBy?: UserOrderByWithRelationInput
+  }
+
+  export type WidthExceptionTicketWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WidthExceptionTicketWhereInput | WidthExceptionTicketWhereInput[]
+    OR?: WidthExceptionTicketWhereInput[]
+    NOT?: WidthExceptionTicketWhereInput | WidthExceptionTicketWhereInput[]
+    workItemId?: StringFilter<"WidthExceptionTicket"> | string
+    requestedWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"WidthExceptionTicket"> | string
+    status?: EnumWidthExceptionStatusFilter<"WidthExceptionTicket"> | $Enums.WidthExceptionStatus
+    raisedById?: StringFilter<"WidthExceptionTicket"> | string
+    resolvedById?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolutionNote?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolvedAt?: DateTimeNullableFilter<"WidthExceptionTicket"> | Date | string | null
+    createdAt?: DateTimeFilter<"WidthExceptionTicket"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    raisedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    resolvedBy?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+  }, "id">
+
+  export type WidthExceptionTicketOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    raisedById?: SortOrder
+    resolvedById?: SortOrderInput | SortOrder
+    resolutionNote?: SortOrderInput | SortOrder
+    resolvedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: WidthExceptionTicketCountOrderByAggregateInput
+    _avg?: WidthExceptionTicketAvgOrderByAggregateInput
+    _max?: WidthExceptionTicketMaxOrderByAggregateInput
+    _min?: WidthExceptionTicketMinOrderByAggregateInput
+    _sum?: WidthExceptionTicketSumOrderByAggregateInput
+  }
+
+  export type WidthExceptionTicketScalarWhereWithAggregatesInput = {
+    AND?: WidthExceptionTicketScalarWhereWithAggregatesInput | WidthExceptionTicketScalarWhereWithAggregatesInput[]
+    OR?: WidthExceptionTicketScalarWhereWithAggregatesInput[]
+    NOT?: WidthExceptionTicketScalarWhereWithAggregatesInput | WidthExceptionTicketScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WidthExceptionTicket"> | string
+    workItemId?: StringWithAggregatesFilter<"WidthExceptionTicket"> | string
+    requestedWidthCm?: DecimalWithAggregatesFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalWithAggregatesFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    reason?: StringWithAggregatesFilter<"WidthExceptionTicket"> | string
+    status?: EnumWidthExceptionStatusWithAggregatesFilter<"WidthExceptionTicket"> | $Enums.WidthExceptionStatus
+    raisedById?: StringWithAggregatesFilter<"WidthExceptionTicket"> | string
+    resolvedById?: StringNullableWithAggregatesFilter<"WidthExceptionTicket"> | string | null
+    resolutionNote?: StringNullableWithAggregatesFilter<"WidthExceptionTicket"> | string | null
+    resolvedAt?: DateTimeNullableWithAggregatesFilter<"WidthExceptionTicket"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"WidthExceptionTicket"> | Date | string
+  }
+
+  export type AccountingApprovalWhereInput = {
+    AND?: AccountingApprovalWhereInput | AccountingApprovalWhereInput[]
+    OR?: AccountingApprovalWhereInput[]
+    NOT?: AccountingApprovalWhereInput | AccountingApprovalWhereInput[]
+    id?: StringFilter<"AccountingApproval"> | string
+    workItemId?: StringFilter<"AccountingApproval"> | string
+    approvedById?: StringFilter<"AccountingApproval"> | string
+    priceId?: StringNullableFilter<"AccountingApproval"> | string | null
+    totalAmount?: DecimalFilter<"AccountingApproval"> | Decimal | DecimalJsLike | number | string
+    note?: StringNullableFilter<"AccountingApproval"> | string | null
+    approvedAt?: DateTimeFilter<"AccountingApproval"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type AccountingApprovalOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    approvedById?: SortOrder
+    priceId?: SortOrderInput | SortOrder
+    totalAmount?: SortOrder
+    note?: SortOrderInput | SortOrder
+    approvedAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    approvedBy?: UserOrderByWithRelationInput
+  }
+
+  export type AccountingApprovalWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: AccountingApprovalWhereInput | AccountingApprovalWhereInput[]
+    OR?: AccountingApprovalWhereInput[]
+    NOT?: AccountingApprovalWhereInput | AccountingApprovalWhereInput[]
+    workItemId?: StringFilter<"AccountingApproval"> | string
+    approvedById?: StringFilter<"AccountingApproval"> | string
+    priceId?: StringNullableFilter<"AccountingApproval"> | string | null
+    totalAmount?: DecimalFilter<"AccountingApproval"> | Decimal | DecimalJsLike | number | string
+    note?: StringNullableFilter<"AccountingApproval"> | string | null
+    approvedAt?: DateTimeFilter<"AccountingApproval"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    approvedBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type AccountingApprovalOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    approvedById?: SortOrder
+    priceId?: SortOrderInput | SortOrder
+    totalAmount?: SortOrder
+    note?: SortOrderInput | SortOrder
+    approvedAt?: SortOrder
+    _count?: AccountingApprovalCountOrderByAggregateInput
+    _avg?: AccountingApprovalAvgOrderByAggregateInput
+    _max?: AccountingApprovalMaxOrderByAggregateInput
+    _min?: AccountingApprovalMinOrderByAggregateInput
+    _sum?: AccountingApprovalSumOrderByAggregateInput
+  }
+
+  export type AccountingApprovalScalarWhereWithAggregatesInput = {
+    AND?: AccountingApprovalScalarWhereWithAggregatesInput | AccountingApprovalScalarWhereWithAggregatesInput[]
+    OR?: AccountingApprovalScalarWhereWithAggregatesInput[]
+    NOT?: AccountingApprovalScalarWhereWithAggregatesInput | AccountingApprovalScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"AccountingApproval"> | string
+    workItemId?: StringWithAggregatesFilter<"AccountingApproval"> | string
+    approvedById?: StringWithAggregatesFilter<"AccountingApproval"> | string
+    priceId?: StringNullableWithAggregatesFilter<"AccountingApproval"> | string | null
+    totalAmount?: DecimalWithAggregatesFilter<"AccountingApproval"> | Decimal | DecimalJsLike | number | string
+    note?: StringNullableWithAggregatesFilter<"AccountingApproval"> | string | null
+    approvedAt?: DateTimeWithAggregatesFilter<"AccountingApproval"> | Date | string
   }
 
   export type WorkItemTransitionWhereInput = {
@@ -75471,6 +82833,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestListRelationFilter
     changeRequestsAcknowledged?: ChangeRequestListRelationFilter
     lateCancellations?: LateCancellationListRelationFilter
+    widthRulesUpdated?: ProductionWidthRuleListRelationFilter
+    widthExceptionsRaised?: WidthExceptionTicketListRelationFilter
+    widthExceptionsResolved?: WidthExceptionTicketListRelationFilter
+    accountingApprovalsGiven?: AccountingApprovalListRelationFilter
+    finishingServicesCreated?: FinishingServiceListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -75526,6 +82893,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestOrderByRelationAggregateInput
     changeRequestsAcknowledged?: ChangeRequestOrderByRelationAggregateInput
     lateCancellations?: LateCancellationOrderByRelationAggregateInput
+    widthRulesUpdated?: ProductionWidthRuleOrderByRelationAggregateInput
+    widthExceptionsRaised?: WidthExceptionTicketOrderByRelationAggregateInput
+    widthExceptionsResolved?: WidthExceptionTicketOrderByRelationAggregateInput
+    accountingApprovalsGiven?: AccountingApprovalOrderByRelationAggregateInput
+    finishingServicesCreated?: FinishingServiceOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -75584,6 +82956,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestListRelationFilter
     changeRequestsAcknowledged?: ChangeRequestListRelationFilter
     lateCancellations?: LateCancellationListRelationFilter
+    widthRulesUpdated?: ProductionWidthRuleListRelationFilter
+    widthExceptionsRaised?: WidthExceptionTicketListRelationFilter
+    widthExceptionsResolved?: WidthExceptionTicketListRelationFilter
+    accountingApprovalsGiven?: AccountingApprovalListRelationFilter
+    finishingServicesCreated?: FinishingServiceListRelationFilter
   }, "id" | "username" | "email">
 
   export type UserOrderByWithAggregationInput = {
@@ -77089,6 +84466,166 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"PricingStatus"> | Date | string
   }
 
+  export type FinishingServiceWhereInput = {
+    AND?: FinishingServiceWhereInput | FinishingServiceWhereInput[]
+    OR?: FinishingServiceWhereInput[]
+    NOT?: FinishingServiceWhereInput | FinishingServiceWhereInput[]
+    id?: StringFilter<"FinishingService"> | string
+    code?: StringFilter<"FinishingService"> | string
+    labelAr?: StringFilter<"FinishingService"> | string
+    ratePerSqm?: DecimalFilter<"FinishingService"> | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFilter<"FinishingService"> | Date | string
+    effectiveTo?: DateTimeNullableFilter<"FinishingService"> | Date | string | null
+    status?: EnumPriceConfigStatusFilter<"FinishingService"> | $Enums.PriceConfigStatus
+    createdById?: StringFilter<"FinishingService"> | string
+    createdAt?: DateTimeFilter<"FinishingService"> | Date | string
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    selections?: WorkItemFinishingListRelationFilter
+  }
+
+  export type FinishingServiceOrderByWithRelationInput = {
+    id?: SortOrder
+    code?: SortOrder
+    labelAr?: SortOrder
+    ratePerSqm?: SortOrder
+    effectiveFrom?: SortOrder
+    effectiveTo?: SortOrderInput | SortOrder
+    status?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    createdBy?: UserOrderByWithRelationInput
+    selections?: WorkItemFinishingOrderByRelationAggregateInput
+  }
+
+  export type FinishingServiceWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    code?: string
+    AND?: FinishingServiceWhereInput | FinishingServiceWhereInput[]
+    OR?: FinishingServiceWhereInput[]
+    NOT?: FinishingServiceWhereInput | FinishingServiceWhereInput[]
+    labelAr?: StringFilter<"FinishingService"> | string
+    ratePerSqm?: DecimalFilter<"FinishingService"> | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFilter<"FinishingService"> | Date | string
+    effectiveTo?: DateTimeNullableFilter<"FinishingService"> | Date | string | null
+    status?: EnumPriceConfigStatusFilter<"FinishingService"> | $Enums.PriceConfigStatus
+    createdById?: StringFilter<"FinishingService"> | string
+    createdAt?: DateTimeFilter<"FinishingService"> | Date | string
+    createdBy?: XOR<UserScalarRelationFilter, UserWhereInput>
+    selections?: WorkItemFinishingListRelationFilter
+  }, "id" | "code">
+
+  export type FinishingServiceOrderByWithAggregationInput = {
+    id?: SortOrder
+    code?: SortOrder
+    labelAr?: SortOrder
+    ratePerSqm?: SortOrder
+    effectiveFrom?: SortOrder
+    effectiveTo?: SortOrderInput | SortOrder
+    status?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    _count?: FinishingServiceCountOrderByAggregateInput
+    _avg?: FinishingServiceAvgOrderByAggregateInput
+    _max?: FinishingServiceMaxOrderByAggregateInput
+    _min?: FinishingServiceMinOrderByAggregateInput
+    _sum?: FinishingServiceSumOrderByAggregateInput
+  }
+
+  export type FinishingServiceScalarWhereWithAggregatesInput = {
+    AND?: FinishingServiceScalarWhereWithAggregatesInput | FinishingServiceScalarWhereWithAggregatesInput[]
+    OR?: FinishingServiceScalarWhereWithAggregatesInput[]
+    NOT?: FinishingServiceScalarWhereWithAggregatesInput | FinishingServiceScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"FinishingService"> | string
+    code?: StringWithAggregatesFilter<"FinishingService"> | string
+    labelAr?: StringWithAggregatesFilter<"FinishingService"> | string
+    ratePerSqm?: DecimalWithAggregatesFilter<"FinishingService"> | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeWithAggregatesFilter<"FinishingService"> | Date | string
+    effectiveTo?: DateTimeNullableWithAggregatesFilter<"FinishingService"> | Date | string | null
+    status?: EnumPriceConfigStatusWithAggregatesFilter<"FinishingService"> | $Enums.PriceConfigStatus
+    createdById?: StringWithAggregatesFilter<"FinishingService"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"FinishingService"> | Date | string
+  }
+
+  export type WorkItemFinishingWhereInput = {
+    AND?: WorkItemFinishingWhereInput | WorkItemFinishingWhereInput[]
+    OR?: WorkItemFinishingWhereInput[]
+    NOT?: WorkItemFinishingWhereInput | WorkItemFinishingWhereInput[]
+    id?: StringFilter<"WorkItemFinishing"> | string
+    workItemId?: StringFilter<"WorkItemFinishing"> | string
+    finishingServiceId?: StringFilter<"WorkItemFinishing"> | string
+    generation?: IntFilter<"WorkItemFinishing"> | number
+    quotedAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+    labelSnapshot?: StringFilter<"WorkItemFinishing"> | string
+    rateSnapshot?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    finishingService?: XOR<FinishingServiceScalarRelationFilter, FinishingServiceWhereInput>
+  }
+
+  export type WorkItemFinishingOrderByWithRelationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    finishingServiceId?: SortOrder
+    generation?: SortOrder
+    quotedAt?: SortOrder
+    labelSnapshot?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+    createdAt?: SortOrder
+    workItem?: WorkItemOrderByWithRelationInput
+    finishingService?: FinishingServiceOrderByWithRelationInput
+  }
+
+  export type WorkItemFinishingWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: WorkItemFinishingWhereInput | WorkItemFinishingWhereInput[]
+    OR?: WorkItemFinishingWhereInput[]
+    NOT?: WorkItemFinishingWhereInput | WorkItemFinishingWhereInput[]
+    workItemId?: StringFilter<"WorkItemFinishing"> | string
+    finishingServiceId?: StringFilter<"WorkItemFinishing"> | string
+    generation?: IntFilter<"WorkItemFinishing"> | number
+    quotedAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+    labelSnapshot?: StringFilter<"WorkItemFinishing"> | string
+    rateSnapshot?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+    workItem?: XOR<WorkItemScalarRelationFilter, WorkItemWhereInput>
+    finishingService?: XOR<FinishingServiceScalarRelationFilter, FinishingServiceWhereInput>
+  }, "id">
+
+  export type WorkItemFinishingOrderByWithAggregationInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    finishingServiceId?: SortOrder
+    generation?: SortOrder
+    quotedAt?: SortOrder
+    labelSnapshot?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+    createdAt?: SortOrder
+    _count?: WorkItemFinishingCountOrderByAggregateInput
+    _avg?: WorkItemFinishingAvgOrderByAggregateInput
+    _max?: WorkItemFinishingMaxOrderByAggregateInput
+    _min?: WorkItemFinishingMinOrderByAggregateInput
+    _sum?: WorkItemFinishingSumOrderByAggregateInput
+  }
+
+  export type WorkItemFinishingScalarWhereWithAggregatesInput = {
+    AND?: WorkItemFinishingScalarWhereWithAggregatesInput | WorkItemFinishingScalarWhereWithAggregatesInput[]
+    OR?: WorkItemFinishingScalarWhereWithAggregatesInput[]
+    NOT?: WorkItemFinishingScalarWhereWithAggregatesInput | WorkItemFinishingScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WorkItemFinishing"> | string
+    workItemId?: StringWithAggregatesFilter<"WorkItemFinishing"> | string
+    finishingServiceId?: StringWithAggregatesFilter<"WorkItemFinishing"> | string
+    generation?: IntWithAggregatesFilter<"WorkItemFinishing"> | number
+    quotedAt?: DateTimeWithAggregatesFilter<"WorkItemFinishing"> | Date | string
+    labelSnapshot?: StringWithAggregatesFilter<"WorkItemFinishing"> | string
+    rateSnapshot?: DecimalWithAggregatesFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalWithAggregatesFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeWithAggregatesFilter<"WorkItemFinishing"> | Date | string
+  }
+
   export type SpecVersionCreateInput = {
     id?: string
     version: number
@@ -77766,6 +85303,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -77787,6 +85334,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateInput = {
@@ -77809,6 +85359,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -77826,6 +85386,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUpdateInput = {
@@ -77844,6 +85407,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -77865,6 +85438,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateInput = {
@@ -77887,6 +85463,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -77904,6 +85490,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemCreateManyInput = {
@@ -77926,6 +85515,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -77947,6 +85546,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -77971,6 +85580,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -77990,6 +85609,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateInput = {
@@ -78006,6 +85626,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUpdateInput = {
@@ -78022,6 +85643,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateInput = {
@@ -78038,6 +85660,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeCreateManyInput = {
@@ -78070,6 +85693,251 @@ export namespace Prisma {
     pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProductionWidthRuleCreateInput = {
+    id?: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    productType: ProductTypeCreateNestedOneWithoutWidthRuleInput
+    updatedBy: UserCreateNestedOneWithoutWidthRulesUpdatedInput
+  }
+
+  export type ProductionWidthRuleUncheckedCreateInput = {
+    id?: string
+    productTypeId: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    updatedById: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProductionWidthRuleUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    productType?: ProductTypeUpdateOneRequiredWithoutWidthRuleNestedInput
+    updatedBy?: UserUpdateOneRequiredWithoutWidthRulesUpdatedNestedInput
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productTypeId?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProductionWidthRuleCreateManyInput = {
+    id?: string
+    productTypeId: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    updatedById: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProductionWidthRuleUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productTypeId?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketCreateInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutWidthExceptionsInput
+    raisedBy: UserCreateNestedOneWithoutWidthExceptionsRaisedInput
+    resolvedBy?: UserCreateNestedOneWithoutWidthExceptionsResolvedInput
+  }
+
+  export type WidthExceptionTicketUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutWidthExceptionsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutWidthExceptionsRaisedNestedInput
+    resolvedBy?: UserUpdateOneWithoutWidthExceptionsResolvedNestedInput
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketCreateManyInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalCreateInput = {
+    id?: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutAccountingApprovalsInput
+    approvedBy: UserCreateNestedOneWithoutAccountingApprovalsGivenInput
+  }
+
+  export type AccountingApprovalUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    approvedById: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+  }
+
+  export type AccountingApprovalUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutAccountingApprovalsNestedInput
+    approvedBy?: UserUpdateOneRequiredWithoutAccountingApprovalsGivenNestedInput
+  }
+
+  export type AccountingApprovalUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalCreateManyInput = {
+    id?: string
+    workItemId: string
+    approvedById: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+  }
+
+  export type AccountingApprovalUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type WorkItemTransitionCreateInput = {
@@ -79979,6 +87847,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -80034,6 +87907,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUpdateInput = {
@@ -80089,6 +87967,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -80144,6 +88027,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -81723,6 +89611,175 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type FinishingServiceCreateInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutFinishingServicesCreatedInput
+    selections?: WorkItemFinishingCreateNestedManyWithoutFinishingServiceInput
+  }
+
+  export type FinishingServiceUncheckedCreateInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdById: string
+    createdAt?: Date | string
+    selections?: WorkItemFinishingUncheckedCreateNestedManyWithoutFinishingServiceInput
+  }
+
+  export type FinishingServiceUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutFinishingServicesCreatedNestedInput
+    selections?: WorkItemFinishingUpdateManyWithoutFinishingServiceNestedInput
+  }
+
+  export type FinishingServiceUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    selections?: WorkItemFinishingUncheckedUpdateManyWithoutFinishingServiceNestedInput
+  }
+
+  export type FinishingServiceCreateManyInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type FinishingServiceUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinishingServiceUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemFinishingCreateInput = {
+    id?: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutFinishingsInput
+    finishingService: FinishingServiceCreateNestedOneWithoutSelectionsInput
+  }
+
+  export type WorkItemFinishingUncheckedCreateInput = {
+    id?: string
+    workItemId: string
+    finishingServiceId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WorkItemFinishingUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutFinishingsNestedInput
+    finishingService?: FinishingServiceUpdateOneRequiredWithoutSelectionsNestedInput
+  }
+
+  export type WorkItemFinishingUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    finishingServiceId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemFinishingCreateManyInput = {
+    id?: string
+    workItemId: string
+    finishingServiceId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WorkItemFinishingUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemFinishingUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    finishingServiceId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -82701,6 +90758,24 @@ export namespace Prisma {
     none?: DelayBreachWhereInput
   }
 
+  export type WorkItemFinishingListRelationFilter = {
+    every?: WorkItemFinishingWhereInput
+    some?: WorkItemFinishingWhereInput
+    none?: WorkItemFinishingWhereInput
+  }
+
+  export type WidthExceptionTicketListRelationFilter = {
+    every?: WidthExceptionTicketWhereInput
+    some?: WidthExceptionTicketWhereInput
+    none?: WidthExceptionTicketWhereInput
+  }
+
+  export type AccountingApprovalListRelationFilter = {
+    every?: AccountingApprovalWhereInput
+    some?: AccountingApprovalWhereInput
+    none?: AccountingApprovalWhereInput
+  }
+
   export type SpecVersionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -82733,6 +90808,18 @@ export namespace Prisma {
     _count?: SortOrder
   }
 
+  export type WorkItemFinishingOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WidthExceptionTicketOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type AccountingApprovalOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type WorkItemCountOrderByAggregateInput = {
     id?: SortOrder
     orderId?: SortOrder
@@ -82753,6 +90840,16 @@ export namespace Prisma {
     producedQuantity?: SortOrder
     productionNotes?: SortOrder
     pendingFileRevisionAt?: SortOrder
+    customerWidthCm?: SortOrder
+    productionWidthCm?: SortOrder
+    productionHeightM?: SortOrder
+    quantitySnapshot?: SortOrder
+    productionAreaSqm?: SortOrder
+    baseRatePerSqm?: SortOrder
+    baseTotal?: SortOrder
+    finishingTotal?: SortOrder
+    productionTotal?: SortOrder
+    productionSpecAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     currentSpecVersionId?: SortOrder
@@ -82763,6 +90860,15 @@ export namespace Prisma {
     widthValue?: SortOrder
     heightValue?: SortOrder
     producedQuantity?: SortOrder
+    customerWidthCm?: SortOrder
+    productionWidthCm?: SortOrder
+    productionHeightM?: SortOrder
+    quantitySnapshot?: SortOrder
+    productionAreaSqm?: SortOrder
+    baseRatePerSqm?: SortOrder
+    baseTotal?: SortOrder
+    finishingTotal?: SortOrder
+    productionTotal?: SortOrder
   }
 
   export type WorkItemMaxOrderByAggregateInput = {
@@ -82785,6 +90891,16 @@ export namespace Prisma {
     producedQuantity?: SortOrder
     productionNotes?: SortOrder
     pendingFileRevisionAt?: SortOrder
+    customerWidthCm?: SortOrder
+    productionWidthCm?: SortOrder
+    productionHeightM?: SortOrder
+    quantitySnapshot?: SortOrder
+    productionAreaSqm?: SortOrder
+    baseRatePerSqm?: SortOrder
+    baseTotal?: SortOrder
+    finishingTotal?: SortOrder
+    productionTotal?: SortOrder
+    productionSpecAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     currentSpecVersionId?: SortOrder
@@ -82810,6 +90926,16 @@ export namespace Prisma {
     producedQuantity?: SortOrder
     productionNotes?: SortOrder
     pendingFileRevisionAt?: SortOrder
+    customerWidthCm?: SortOrder
+    productionWidthCm?: SortOrder
+    productionHeightM?: SortOrder
+    quantitySnapshot?: SortOrder
+    productionAreaSqm?: SortOrder
+    baseRatePerSqm?: SortOrder
+    baseTotal?: SortOrder
+    finishingTotal?: SortOrder
+    productionTotal?: SortOrder
+    productionSpecAt?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     currentSpecVersionId?: SortOrder
@@ -82820,6 +90946,15 @@ export namespace Prisma {
     widthValue?: SortOrder
     heightValue?: SortOrder
     producedQuantity?: SortOrder
+    customerWidthCm?: SortOrder
+    productionWidthCm?: SortOrder
+    productionHeightM?: SortOrder
+    quantitySnapshot?: SortOrder
+    productionAreaSqm?: SortOrder
+    baseRatePerSqm?: SortOrder
+    baseTotal?: SortOrder
+    finishingTotal?: SortOrder
+    productionTotal?: SortOrder
   }
 
   export type ProductPricingPolicyNullableScalarRelationFilter = {
@@ -82831,6 +90966,11 @@ export namespace Prisma {
     every?: PriceListWhereInput
     some?: PriceListWhereInput
     none?: PriceListWhereInput
+  }
+
+  export type ProductionWidthRuleNullableScalarRelationFilter = {
+    is?: ProductionWidthRuleWhereInput | null
+    isNot?: ProductionWidthRuleWhereInput | null
   }
 
   export type PriceListOrderByRelationAggregateInput = {
@@ -82868,6 +91008,174 @@ export namespace Prisma {
     pricingModeHint?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
+  }
+
+  export type IntNullableListFilter<$PrismaModel = never> = {
+    equals?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    has?: number | IntFieldRefInput<$PrismaModel> | null
+    hasEvery?: number[] | ListIntFieldRefInput<$PrismaModel>
+    hasSome?: number[] | ListIntFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
+  export type ProductTypeScalarRelationFilter = {
+    is?: ProductTypeWhereInput
+    isNot?: ProductTypeWhereInput
+  }
+
+  export type ProductionWidthRuleCountOrderByAggregateInput = {
+    id?: SortOrder
+    productTypeId?: SortOrder
+    ladderCm?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+    updatedById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ProductionWidthRuleAvgOrderByAggregateInput = {
+    ladderCm?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+  }
+
+  export type ProductionWidthRuleMaxOrderByAggregateInput = {
+    id?: SortOrder
+    productTypeId?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+    updatedById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ProductionWidthRuleMinOrderByAggregateInput = {
+    id?: SortOrder
+    productTypeId?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+    updatedById?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ProductionWidthRuleSumOrderByAggregateInput = {
+    ladderCm?: SortOrder
+    maxHeightM?: SortOrder
+    minRatePerSqm?: SortOrder
+    maxRatePerSqm?: SortOrder
+  }
+
+  export type EnumWidthExceptionStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.WidthExceptionStatus | EnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumWidthExceptionStatusFilter<$PrismaModel> | $Enums.WidthExceptionStatus
+  }
+
+  export type WidthExceptionTicketCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    raisedById?: SortOrder
+    resolvedById?: SortOrder
+    resolutionNote?: SortOrder
+    resolvedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WidthExceptionTicketAvgOrderByAggregateInput = {
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+  }
+
+  export type WidthExceptionTicketMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    raisedById?: SortOrder
+    resolvedById?: SortOrder
+    resolutionNote?: SortOrder
+    resolvedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WidthExceptionTicketMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+    reason?: SortOrder
+    status?: SortOrder
+    raisedById?: SortOrder
+    resolvedById?: SortOrder
+    resolutionNote?: SortOrder
+    resolvedAt?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WidthExceptionTicketSumOrderByAggregateInput = {
+    requestedWidthCm?: SortOrder
+    maxWidthCm?: SortOrder
+  }
+
+  export type EnumWidthExceptionStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WidthExceptionStatus | EnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumWidthExceptionStatusWithAggregatesFilter<$PrismaModel> | $Enums.WidthExceptionStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumWidthExceptionStatusFilter<$PrismaModel>
+    _max?: NestedEnumWidthExceptionStatusFilter<$PrismaModel>
+  }
+
+  export type AccountingApprovalCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    approvedById?: SortOrder
+    priceId?: SortOrder
+    totalAmount?: SortOrder
+    note?: SortOrder
+    approvedAt?: SortOrder
+  }
+
+  export type AccountingApprovalAvgOrderByAggregateInput = {
+    totalAmount?: SortOrder
+  }
+
+  export type AccountingApprovalMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    approvedById?: SortOrder
+    priceId?: SortOrder
+    totalAmount?: SortOrder
+    note?: SortOrder
+    approvedAt?: SortOrder
+  }
+
+  export type AccountingApprovalMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    approvedById?: SortOrder
+    priceId?: SortOrder
+    totalAmount?: SortOrder
+    note?: SortOrder
+    approvedAt?: SortOrder
+  }
+
+  export type AccountingApprovalSumOrderByAggregateInput = {
+    totalAmount?: SortOrder
   }
 
   export type EnumRejectionCategoryNullableFilter<$PrismaModel = never> = {
@@ -84212,6 +92520,18 @@ export namespace Prisma {
     none?: LateCancellationWhereInput
   }
 
+  export type ProductionWidthRuleListRelationFilter = {
+    every?: ProductionWidthRuleWhereInput
+    some?: ProductionWidthRuleWhereInput
+    none?: ProductionWidthRuleWhereInput
+  }
+
+  export type FinishingServiceListRelationFilter = {
+    every?: FinishingServiceWhereInput
+    some?: FinishingServiceWhereInput
+    none?: FinishingServiceWhereInput
+  }
+
   export type SessionOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
@@ -84273,6 +92593,14 @@ export namespace Prisma {
   }
 
   export type LateCancellationOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type ProductionWidthRuleOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type FinishingServiceOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -84917,11 +93245,6 @@ export namespace Prisma {
     not?: NestedEnumPricingModeFilter<$PrismaModel> | $Enums.PricingMode
   }
 
-  export type ProductTypeScalarRelationFilter = {
-    is?: ProductTypeWhereInput
-    isNot?: ProductTypeWhereInput
-  }
-
   export type ProductPricingPolicyCountOrderByAggregateInput = {
     id?: SortOrder
     productTypeId?: SortOrder
@@ -85256,6 +93579,103 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumPricingStatusValueFilter<$PrismaModel>
     _max?: NestedEnumPricingStatusValueFilter<$PrismaModel>
+  }
+
+  export type FinishingServiceCountOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    labelAr?: SortOrder
+    ratePerSqm?: SortOrder
+    effectiveFrom?: SortOrder
+    effectiveTo?: SortOrder
+    status?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FinishingServiceAvgOrderByAggregateInput = {
+    ratePerSqm?: SortOrder
+  }
+
+  export type FinishingServiceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    labelAr?: SortOrder
+    ratePerSqm?: SortOrder
+    effectiveFrom?: SortOrder
+    effectiveTo?: SortOrder
+    status?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FinishingServiceMinOrderByAggregateInput = {
+    id?: SortOrder
+    code?: SortOrder
+    labelAr?: SortOrder
+    ratePerSqm?: SortOrder
+    effectiveFrom?: SortOrder
+    effectiveTo?: SortOrder
+    status?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type FinishingServiceSumOrderByAggregateInput = {
+    ratePerSqm?: SortOrder
+  }
+
+  export type FinishingServiceScalarRelationFilter = {
+    is?: FinishingServiceWhereInput
+    isNot?: FinishingServiceWhereInput
+  }
+
+  export type WorkItemFinishingCountOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    finishingServiceId?: SortOrder
+    generation?: SortOrder
+    quotedAt?: SortOrder
+    labelSnapshot?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkItemFinishingAvgOrderByAggregateInput = {
+    generation?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+  }
+
+  export type WorkItemFinishingMaxOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    finishingServiceId?: SortOrder
+    generation?: SortOrder
+    quotedAt?: SortOrder
+    labelSnapshot?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkItemFinishingMinOrderByAggregateInput = {
+    id?: SortOrder
+    workItemId?: SortOrder
+    finishingServiceId?: SortOrder
+    generation?: SortOrder
+    quotedAt?: SortOrder
+    labelSnapshot?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type WorkItemFinishingSumOrderByAggregateInput = {
+    generation?: SortOrder
+    rateSnapshot?: SortOrder
+    totalAmount?: SortOrder
   }
 
   export type WorkItemCreateNestedOneWithoutSpecVersionsInput = {
@@ -86460,6 +94880,27 @@ export namespace Prisma {
     connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
   }
 
+  export type WorkItemFinishingCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput> | WorkItemFinishingCreateWithoutWorkItemInput[] | WorkItemFinishingUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutWorkItemInput | WorkItemFinishingCreateOrConnectWithoutWorkItemInput[]
+    createMany?: WorkItemFinishingCreateManyWorkItemInputEnvelope
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput> | WidthExceptionTicketCreateWithoutWorkItemInput[] | WidthExceptionTicketUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutWorkItemInput | WidthExceptionTicketCreateOrConnectWithoutWorkItemInput[]
+    createMany?: WidthExceptionTicketCreateManyWorkItemInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type AccountingApprovalCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput> | AccountingApprovalCreateWithoutWorkItemInput[] | AccountingApprovalUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutWorkItemInput | AccountingApprovalCreateOrConnectWithoutWorkItemInput[]
+    createMany?: AccountingApprovalCreateManyWorkItemInputEnvelope
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+  }
+
   export type SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput = {
     create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
@@ -86554,6 +94995,27 @@ export namespace Prisma {
     connectOrCreate?: DelayBreachCreateOrConnectWithoutWorkItemInput | DelayBreachCreateOrConnectWithoutWorkItemInput[]
     createMany?: DelayBreachCreateManyWorkItemInputEnvelope
     connect?: DelayBreachWhereUniqueInput | DelayBreachWhereUniqueInput[]
+  }
+
+  export type WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput> | WorkItemFinishingCreateWithoutWorkItemInput[] | WorkItemFinishingUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutWorkItemInput | WorkItemFinishingCreateOrConnectWithoutWorkItemInput[]
+    createMany?: WorkItemFinishingCreateManyWorkItemInputEnvelope
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput> | WidthExceptionTicketCreateWithoutWorkItemInput[] | WidthExceptionTicketUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutWorkItemInput | WidthExceptionTicketCreateOrConnectWithoutWorkItemInput[]
+    createMany?: WidthExceptionTicketCreateManyWorkItemInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput = {
+    create?: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput> | AccountingApprovalCreateWithoutWorkItemInput[] | AccountingApprovalUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutWorkItemInput | AccountingApprovalCreateOrConnectWithoutWorkItemInput[]
+    createMany?: AccountingApprovalCreateManyWorkItemInputEnvelope
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
   }
 
   export type OrderUpdateOneRequiredWithoutWorkItemsNestedInput = {
@@ -86792,6 +95254,48 @@ export namespace Prisma {
     deleteMany?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
   }
 
+  export type WorkItemFinishingUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput> | WorkItemFinishingCreateWithoutWorkItemInput[] | WorkItemFinishingUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutWorkItemInput | WorkItemFinishingCreateOrConnectWithoutWorkItemInput[]
+    upsert?: WorkItemFinishingUpsertWithWhereUniqueWithoutWorkItemInput | WorkItemFinishingUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: WorkItemFinishingCreateManyWorkItemInputEnvelope
+    set?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    disconnect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    delete?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    update?: WorkItemFinishingUpdateWithWhereUniqueWithoutWorkItemInput | WorkItemFinishingUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: WorkItemFinishingUpdateManyWithWhereWithoutWorkItemInput | WorkItemFinishingUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput> | WidthExceptionTicketCreateWithoutWorkItemInput[] | WidthExceptionTicketUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutWorkItemInput | WidthExceptionTicketCreateOrConnectWithoutWorkItemInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutWorkItemInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: WidthExceptionTicketCreateManyWorkItemInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutWorkItemInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutWorkItemInput | WidthExceptionTicketUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type AccountingApprovalUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput> | AccountingApprovalCreateWithoutWorkItemInput[] | AccountingApprovalUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutWorkItemInput | AccountingApprovalCreateOrConnectWithoutWorkItemInput[]
+    upsert?: AccountingApprovalUpsertWithWhereUniqueWithoutWorkItemInput | AccountingApprovalUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: AccountingApprovalCreateManyWorkItemInputEnvelope
+    set?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    disconnect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    delete?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    update?: AccountingApprovalUpdateWithWhereUniqueWithoutWorkItemInput | AccountingApprovalUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: AccountingApprovalUpdateManyWithWhereWithoutWorkItemInput | AccountingApprovalUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+  }
+
   export type SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput = {
     create?: XOR<SpecVersionCreateWithoutWorkItemInput, SpecVersionUncheckedCreateWithoutWorkItemInput> | SpecVersionCreateWithoutWorkItemInput[] | SpecVersionUncheckedCreateWithoutWorkItemInput[]
     connectOrCreate?: SpecVersionCreateOrConnectWithoutWorkItemInput | SpecVersionCreateOrConnectWithoutWorkItemInput[]
@@ -86980,6 +95484,48 @@ export namespace Prisma {
     deleteMany?: DelayBreachScalarWhereInput | DelayBreachScalarWhereInput[]
   }
 
+  export type WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput> | WorkItemFinishingCreateWithoutWorkItemInput[] | WorkItemFinishingUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutWorkItemInput | WorkItemFinishingCreateOrConnectWithoutWorkItemInput[]
+    upsert?: WorkItemFinishingUpsertWithWhereUniqueWithoutWorkItemInput | WorkItemFinishingUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: WorkItemFinishingCreateManyWorkItemInputEnvelope
+    set?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    disconnect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    delete?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    update?: WorkItemFinishingUpdateWithWhereUniqueWithoutWorkItemInput | WorkItemFinishingUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: WorkItemFinishingUpdateManyWithWhereWithoutWorkItemInput | WorkItemFinishingUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput> | WidthExceptionTicketCreateWithoutWorkItemInput[] | WidthExceptionTicketUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutWorkItemInput | WidthExceptionTicketCreateOrConnectWithoutWorkItemInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutWorkItemInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: WidthExceptionTicketCreateManyWorkItemInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutWorkItemInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutWorkItemInput | WidthExceptionTicketUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput = {
+    create?: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput> | AccountingApprovalCreateWithoutWorkItemInput[] | AccountingApprovalUncheckedCreateWithoutWorkItemInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutWorkItemInput | AccountingApprovalCreateOrConnectWithoutWorkItemInput[]
+    upsert?: AccountingApprovalUpsertWithWhereUniqueWithoutWorkItemInput | AccountingApprovalUpsertWithWhereUniqueWithoutWorkItemInput[]
+    createMany?: AccountingApprovalCreateManyWorkItemInputEnvelope
+    set?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    disconnect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    delete?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    update?: AccountingApprovalUpdateWithWhereUniqueWithoutWorkItemInput | AccountingApprovalUpdateWithWhereUniqueWithoutWorkItemInput[]
+    updateMany?: AccountingApprovalUpdateManyWithWhereWithoutWorkItemInput | AccountingApprovalUpdateManyWithWhereWithoutWorkItemInput[]
+    deleteMany?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+  }
+
   export type DepartmentCreateNestedOneWithoutProductTypesInput = {
     create?: XOR<DepartmentCreateWithoutProductTypesInput, DepartmentUncheckedCreateWithoutProductTypesInput>
     connectOrCreate?: DepartmentCreateOrConnectWithoutProductTypesInput
@@ -87020,6 +95566,12 @@ export namespace Prisma {
     connect?: CustomerPricingRuleWhereUniqueInput | CustomerPricingRuleWhereUniqueInput[]
   }
 
+  export type ProductionWidthRuleCreateNestedOneWithoutProductTypeInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutProductTypeInput
+    connect?: ProductionWidthRuleWhereUniqueInput
+  }
+
   export type WorkItemUncheckedCreateNestedManyWithoutProductTypeInput = {
     create?: XOR<WorkItemCreateWithoutProductTypeInput, WorkItemUncheckedCreateWithoutProductTypeInput> | WorkItemCreateWithoutProductTypeInput[] | WorkItemUncheckedCreateWithoutProductTypeInput[]
     connectOrCreate?: WorkItemCreateOrConnectWithoutProductTypeInput | WorkItemCreateOrConnectWithoutProductTypeInput[]
@@ -87052,6 +95604,12 @@ export namespace Prisma {
     connectOrCreate?: CustomerPricingRuleCreateOrConnectWithoutProductTypeInput | CustomerPricingRuleCreateOrConnectWithoutProductTypeInput[]
     createMany?: CustomerPricingRuleCreateManyProductTypeInputEnvelope
     connect?: CustomerPricingRuleWhereUniqueInput | CustomerPricingRuleWhereUniqueInput[]
+  }
+
+  export type ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutProductTypeInput
+    connect?: ProductionWidthRuleWhereUniqueInput
   }
 
   export type DepartmentUpdateOneWithoutProductTypesNestedInput = {
@@ -87130,6 +95688,16 @@ export namespace Prisma {
     deleteMany?: CustomerPricingRuleScalarWhereInput | CustomerPricingRuleScalarWhereInput[]
   }
 
+  export type ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutProductTypeInput
+    upsert?: ProductionWidthRuleUpsertWithoutProductTypeInput
+    disconnect?: ProductionWidthRuleWhereInput | boolean
+    delete?: ProductionWidthRuleWhereInput | boolean
+    connect?: ProductionWidthRuleWhereUniqueInput
+    update?: XOR<XOR<ProductionWidthRuleUpdateToOneWithWhereWithoutProductTypeInput, ProductionWidthRuleUpdateWithoutProductTypeInput>, ProductionWidthRuleUncheckedUpdateWithoutProductTypeInput>
+  }
+
   export type WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput = {
     create?: XOR<WorkItemCreateWithoutProductTypeInput, WorkItemUncheckedCreateWithoutProductTypeInput> | WorkItemCreateWithoutProductTypeInput[] | WorkItemUncheckedCreateWithoutProductTypeInput[]
     connectOrCreate?: WorkItemCreateOrConnectWithoutProductTypeInput | WorkItemCreateOrConnectWithoutProductTypeInput[]
@@ -87194,6 +95762,129 @@ export namespace Prisma {
     update?: CustomerPricingRuleUpdateWithWhereUniqueWithoutProductTypeInput | CustomerPricingRuleUpdateWithWhereUniqueWithoutProductTypeInput[]
     updateMany?: CustomerPricingRuleUpdateManyWithWhereWithoutProductTypeInput | CustomerPricingRuleUpdateManyWithWhereWithoutProductTypeInput[]
     deleteMany?: CustomerPricingRuleScalarWhereInput | CustomerPricingRuleScalarWhereInput[]
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutProductTypeInput
+    upsert?: ProductionWidthRuleUpsertWithoutProductTypeInput
+    disconnect?: ProductionWidthRuleWhereInput | boolean
+    delete?: ProductionWidthRuleWhereInput | boolean
+    connect?: ProductionWidthRuleWhereUniqueInput
+    update?: XOR<XOR<ProductionWidthRuleUpdateToOneWithWhereWithoutProductTypeInput, ProductionWidthRuleUpdateWithoutProductTypeInput>, ProductionWidthRuleUncheckedUpdateWithoutProductTypeInput>
+  }
+
+  export type ProductionWidthRuleCreateladderCmInput = {
+    set: number[]
+  }
+
+  export type ProductTypeCreateNestedOneWithoutWidthRuleInput = {
+    create?: XOR<ProductTypeCreateWithoutWidthRuleInput, ProductTypeUncheckedCreateWithoutWidthRuleInput>
+    connectOrCreate?: ProductTypeCreateOrConnectWithoutWidthRuleInput
+    connect?: ProductTypeWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutWidthRulesUpdatedInput = {
+    create?: XOR<UserCreateWithoutWidthRulesUpdatedInput, UserUncheckedCreateWithoutWidthRulesUpdatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthRulesUpdatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type ProductionWidthRuleUpdateladderCmInput = {
+    set?: number[]
+    push?: number | number[]
+  }
+
+  export type ProductTypeUpdateOneRequiredWithoutWidthRuleNestedInput = {
+    create?: XOR<ProductTypeCreateWithoutWidthRuleInput, ProductTypeUncheckedCreateWithoutWidthRuleInput>
+    connectOrCreate?: ProductTypeCreateOrConnectWithoutWidthRuleInput
+    upsert?: ProductTypeUpsertWithoutWidthRuleInput
+    connect?: ProductTypeWhereUniqueInput
+    update?: XOR<XOR<ProductTypeUpdateToOneWithWhereWithoutWidthRuleInput, ProductTypeUpdateWithoutWidthRuleInput>, ProductTypeUncheckedUpdateWithoutWidthRuleInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutWidthRulesUpdatedNestedInput = {
+    create?: XOR<UserCreateWithoutWidthRulesUpdatedInput, UserUncheckedCreateWithoutWidthRulesUpdatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthRulesUpdatedInput
+    upsert?: UserUpsertWithoutWidthRulesUpdatedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWidthRulesUpdatedInput, UserUpdateWithoutWidthRulesUpdatedInput>, UserUncheckedUpdateWithoutWidthRulesUpdatedInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutWidthExceptionsInput = {
+    create?: XOR<WorkItemCreateWithoutWidthExceptionsInput, WorkItemUncheckedCreateWithoutWidthExceptionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutWidthExceptionsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutWidthExceptionsRaisedInput = {
+    create?: XOR<UserCreateWithoutWidthExceptionsRaisedInput, UserUncheckedCreateWithoutWidthExceptionsRaisedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthExceptionsRaisedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutWidthExceptionsResolvedInput = {
+    create?: XOR<UserCreateWithoutWidthExceptionsResolvedInput, UserUncheckedCreateWithoutWidthExceptionsResolvedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthExceptionsResolvedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumWidthExceptionStatusFieldUpdateOperationsInput = {
+    set?: $Enums.WidthExceptionStatus
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutWidthExceptionsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutWidthExceptionsInput, WorkItemUncheckedCreateWithoutWidthExceptionsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutWidthExceptionsInput
+    upsert?: WorkItemUpsertWithoutWidthExceptionsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutWidthExceptionsInput, WorkItemUpdateWithoutWidthExceptionsInput>, WorkItemUncheckedUpdateWithoutWidthExceptionsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutWidthExceptionsRaisedNestedInput = {
+    create?: XOR<UserCreateWithoutWidthExceptionsRaisedInput, UserUncheckedCreateWithoutWidthExceptionsRaisedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthExceptionsRaisedInput
+    upsert?: UserUpsertWithoutWidthExceptionsRaisedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWidthExceptionsRaisedInput, UserUpdateWithoutWidthExceptionsRaisedInput>, UserUncheckedUpdateWithoutWidthExceptionsRaisedInput>
+  }
+
+  export type UserUpdateOneWithoutWidthExceptionsResolvedNestedInput = {
+    create?: XOR<UserCreateWithoutWidthExceptionsResolvedInput, UserUncheckedCreateWithoutWidthExceptionsResolvedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutWidthExceptionsResolvedInput
+    upsert?: UserUpsertWithoutWidthExceptionsResolvedInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutWidthExceptionsResolvedInput, UserUpdateWithoutWidthExceptionsResolvedInput>, UserUncheckedUpdateWithoutWidthExceptionsResolvedInput>
+  }
+
+  export type WorkItemCreateNestedOneWithoutAccountingApprovalsInput = {
+    create?: XOR<WorkItemCreateWithoutAccountingApprovalsInput, WorkItemUncheckedCreateWithoutAccountingApprovalsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutAccountingApprovalsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutAccountingApprovalsGivenInput = {
+    create?: XOR<UserCreateWithoutAccountingApprovalsGivenInput, UserUncheckedCreateWithoutAccountingApprovalsGivenInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAccountingApprovalsGivenInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutAccountingApprovalsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutAccountingApprovalsInput, WorkItemUncheckedCreateWithoutAccountingApprovalsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutAccountingApprovalsInput
+    upsert?: WorkItemUpsertWithoutAccountingApprovalsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutAccountingApprovalsInput, WorkItemUpdateWithoutAccountingApprovalsInput>, WorkItemUncheckedUpdateWithoutAccountingApprovalsInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutAccountingApprovalsGivenNestedInput = {
+    create?: XOR<UserCreateWithoutAccountingApprovalsGivenInput, UserUncheckedCreateWithoutAccountingApprovalsGivenInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAccountingApprovalsGivenInput
+    upsert?: UserUpsertWithoutAccountingApprovalsGivenInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAccountingApprovalsGivenInput, UserUpdateWithoutAccountingApprovalsGivenInput>, UserUncheckedUpdateWithoutAccountingApprovalsGivenInput>
   }
 
   export type WorkItemCreateNestedOneWithoutTransitionsInput = {
@@ -88522,6 +97213,41 @@ export namespace Prisma {
     connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
   }
 
+  export type ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput> | ProductionWidthRuleCreateWithoutUpdatedByInput[] | ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput | ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: ProductionWidthRuleCreateManyUpdatedByInputEnvelope
+    connect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketCreateNestedManyWithoutRaisedByInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput> | WidthExceptionTicketCreateWithoutRaisedByInput[] | WidthExceptionTicketUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutRaisedByInput | WidthExceptionTicketCreateOrConnectWithoutRaisedByInput[]
+    createMany?: WidthExceptionTicketCreateManyRaisedByInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketCreateNestedManyWithoutResolvedByInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput> | WidthExceptionTicketCreateWithoutResolvedByInput[] | WidthExceptionTicketUncheckedCreateWithoutResolvedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutResolvedByInput | WidthExceptionTicketCreateOrConnectWithoutResolvedByInput[]
+    createMany?: WidthExceptionTicketCreateManyResolvedByInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type AccountingApprovalCreateNestedManyWithoutApprovedByInput = {
+    create?: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput> | AccountingApprovalCreateWithoutApprovedByInput[] | AccountingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutApprovedByInput | AccountingApprovalCreateOrConnectWithoutApprovedByInput[]
+    createMany?: AccountingApprovalCreateManyApprovedByInputEnvelope
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+  }
+
+  export type FinishingServiceCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput> | FinishingServiceCreateWithoutCreatedByInput[] | FinishingServiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutCreatedByInput | FinishingServiceCreateOrConnectWithoutCreatedByInput[]
+    createMany?: FinishingServiceCreateManyCreatedByInputEnvelope
+    connect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+  }
+
   export type SessionUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -88800,6 +97526,41 @@ export namespace Prisma {
     connectOrCreate?: LateCancellationCreateOrConnectWithoutCreatedByInput | LateCancellationCreateOrConnectWithoutCreatedByInput[]
     createMany?: LateCancellationCreateManyCreatedByInputEnvelope
     connect?: LateCancellationWhereUniqueInput | LateCancellationWhereUniqueInput[]
+  }
+
+  export type ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput> | ProductionWidthRuleCreateWithoutUpdatedByInput[] | ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput | ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput[]
+    createMany?: ProductionWidthRuleCreateManyUpdatedByInputEnvelope
+    connect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput> | WidthExceptionTicketCreateWithoutRaisedByInput[] | WidthExceptionTicketUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutRaisedByInput | WidthExceptionTicketCreateOrConnectWithoutRaisedByInput[]
+    createMany?: WidthExceptionTicketCreateManyRaisedByInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput> | WidthExceptionTicketCreateWithoutResolvedByInput[] | WidthExceptionTicketUncheckedCreateWithoutResolvedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutResolvedByInput | WidthExceptionTicketCreateOrConnectWithoutResolvedByInput[]
+    createMany?: WidthExceptionTicketCreateManyResolvedByInputEnvelope
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+  }
+
+  export type AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput = {
+    create?: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput> | AccountingApprovalCreateWithoutApprovedByInput[] | AccountingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutApprovedByInput | AccountingApprovalCreateOrConnectWithoutApprovedByInput[]
+    createMany?: AccountingApprovalCreateManyApprovedByInputEnvelope
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+  }
+
+  export type FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput> | FinishingServiceCreateWithoutCreatedByInput[] | FinishingServiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutCreatedByInput | FinishingServiceCreateOrConnectWithoutCreatedByInput[]
+    createMany?: FinishingServiceCreateManyCreatedByInputEnvelope
+    connect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
   }
 
   export type SessionUpdateManyWithoutUserNestedInput = {
@@ -89362,6 +98123,76 @@ export namespace Prisma {
     deleteMany?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
   }
 
+  export type ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput> | ProductionWidthRuleCreateWithoutUpdatedByInput[] | ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput | ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: ProductionWidthRuleUpsertWithWhereUniqueWithoutUpdatedByInput | ProductionWidthRuleUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: ProductionWidthRuleCreateManyUpdatedByInputEnvelope
+    set?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    disconnect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    delete?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    connect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    update?: ProductionWidthRuleUpdateWithWhereUniqueWithoutUpdatedByInput | ProductionWidthRuleUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: ProductionWidthRuleUpdateManyWithWhereWithoutUpdatedByInput | ProductionWidthRuleUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: ProductionWidthRuleScalarWhereInput | ProductionWidthRuleScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput> | WidthExceptionTicketCreateWithoutRaisedByInput[] | WidthExceptionTicketUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutRaisedByInput | WidthExceptionTicketCreateOrConnectWithoutRaisedByInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutRaisedByInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutRaisedByInput[]
+    createMany?: WidthExceptionTicketCreateManyRaisedByInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutRaisedByInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutRaisedByInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutRaisedByInput | WidthExceptionTicketUpdateManyWithWhereWithoutRaisedByInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput> | WidthExceptionTicketCreateWithoutResolvedByInput[] | WidthExceptionTicketUncheckedCreateWithoutResolvedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutResolvedByInput | WidthExceptionTicketCreateOrConnectWithoutResolvedByInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutResolvedByInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutResolvedByInput[]
+    createMany?: WidthExceptionTicketCreateManyResolvedByInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutResolvedByInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutResolvedByInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutResolvedByInput | WidthExceptionTicketUpdateManyWithWhereWithoutResolvedByInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type AccountingApprovalUpdateManyWithoutApprovedByNestedInput = {
+    create?: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput> | AccountingApprovalCreateWithoutApprovedByInput[] | AccountingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutApprovedByInput | AccountingApprovalCreateOrConnectWithoutApprovedByInput[]
+    upsert?: AccountingApprovalUpsertWithWhereUniqueWithoutApprovedByInput | AccountingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
+    createMany?: AccountingApprovalCreateManyApprovedByInputEnvelope
+    set?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    disconnect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    delete?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    update?: AccountingApprovalUpdateWithWhereUniqueWithoutApprovedByInput | AccountingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?: AccountingApprovalUpdateManyWithWhereWithoutApprovedByInput | AccountingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+  }
+
+  export type FinishingServiceUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput> | FinishingServiceCreateWithoutCreatedByInput[] | FinishingServiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutCreatedByInput | FinishingServiceCreateOrConnectWithoutCreatedByInput[]
+    upsert?: FinishingServiceUpsertWithWhereUniqueWithoutCreatedByInput | FinishingServiceUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: FinishingServiceCreateManyCreatedByInputEnvelope
+    set?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    disconnect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    delete?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    connect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    update?: FinishingServiceUpdateWithWhereUniqueWithoutCreatedByInput | FinishingServiceUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: FinishingServiceUpdateManyWithWhereWithoutCreatedByInput | FinishingServiceUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: FinishingServiceScalarWhereInput | FinishingServiceScalarWhereInput[]
+  }
+
   export type SessionUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<SessionCreateWithoutUserInput, SessionUncheckedCreateWithoutUserInput> | SessionCreateWithoutUserInput[] | SessionUncheckedCreateWithoutUserInput[]
     connectOrCreate?: SessionCreateOrConnectWithoutUserInput | SessionCreateOrConnectWithoutUserInput[]
@@ -89920,6 +98751,76 @@ export namespace Prisma {
     update?: LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput | LateCancellationUpdateWithWhereUniqueWithoutCreatedByInput[]
     updateMany?: LateCancellationUpdateManyWithWhereWithoutCreatedByInput | LateCancellationUpdateManyWithWhereWithoutCreatedByInput[]
     deleteMany?: LateCancellationScalarWhereInput | LateCancellationScalarWhereInput[]
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput = {
+    create?: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput> | ProductionWidthRuleCreateWithoutUpdatedByInput[] | ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput[]
+    connectOrCreate?: ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput | ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput[]
+    upsert?: ProductionWidthRuleUpsertWithWhereUniqueWithoutUpdatedByInput | ProductionWidthRuleUpsertWithWhereUniqueWithoutUpdatedByInput[]
+    createMany?: ProductionWidthRuleCreateManyUpdatedByInputEnvelope
+    set?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    disconnect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    delete?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    connect?: ProductionWidthRuleWhereUniqueInput | ProductionWidthRuleWhereUniqueInput[]
+    update?: ProductionWidthRuleUpdateWithWhereUniqueWithoutUpdatedByInput | ProductionWidthRuleUpdateWithWhereUniqueWithoutUpdatedByInput[]
+    updateMany?: ProductionWidthRuleUpdateManyWithWhereWithoutUpdatedByInput | ProductionWidthRuleUpdateManyWithWhereWithoutUpdatedByInput[]
+    deleteMany?: ProductionWidthRuleScalarWhereInput | ProductionWidthRuleScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput> | WidthExceptionTicketCreateWithoutRaisedByInput[] | WidthExceptionTicketUncheckedCreateWithoutRaisedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutRaisedByInput | WidthExceptionTicketCreateOrConnectWithoutRaisedByInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutRaisedByInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutRaisedByInput[]
+    createMany?: WidthExceptionTicketCreateManyRaisedByInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutRaisedByInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutRaisedByInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutRaisedByInput | WidthExceptionTicketUpdateManyWithWhereWithoutRaisedByInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput = {
+    create?: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput> | WidthExceptionTicketCreateWithoutResolvedByInput[] | WidthExceptionTicketUncheckedCreateWithoutResolvedByInput[]
+    connectOrCreate?: WidthExceptionTicketCreateOrConnectWithoutResolvedByInput | WidthExceptionTicketCreateOrConnectWithoutResolvedByInput[]
+    upsert?: WidthExceptionTicketUpsertWithWhereUniqueWithoutResolvedByInput | WidthExceptionTicketUpsertWithWhereUniqueWithoutResolvedByInput[]
+    createMany?: WidthExceptionTicketCreateManyResolvedByInputEnvelope
+    set?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    disconnect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    delete?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    connect?: WidthExceptionTicketWhereUniqueInput | WidthExceptionTicketWhereUniqueInput[]
+    update?: WidthExceptionTicketUpdateWithWhereUniqueWithoutResolvedByInput | WidthExceptionTicketUpdateWithWhereUniqueWithoutResolvedByInput[]
+    updateMany?: WidthExceptionTicketUpdateManyWithWhereWithoutResolvedByInput | WidthExceptionTicketUpdateManyWithWhereWithoutResolvedByInput[]
+    deleteMany?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+  }
+
+  export type AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput = {
+    create?: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput> | AccountingApprovalCreateWithoutApprovedByInput[] | AccountingApprovalUncheckedCreateWithoutApprovedByInput[]
+    connectOrCreate?: AccountingApprovalCreateOrConnectWithoutApprovedByInput | AccountingApprovalCreateOrConnectWithoutApprovedByInput[]
+    upsert?: AccountingApprovalUpsertWithWhereUniqueWithoutApprovedByInput | AccountingApprovalUpsertWithWhereUniqueWithoutApprovedByInput[]
+    createMany?: AccountingApprovalCreateManyApprovedByInputEnvelope
+    set?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    disconnect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    delete?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    connect?: AccountingApprovalWhereUniqueInput | AccountingApprovalWhereUniqueInput[]
+    update?: AccountingApprovalUpdateWithWhereUniqueWithoutApprovedByInput | AccountingApprovalUpdateWithWhereUniqueWithoutApprovedByInput[]
+    updateMany?: AccountingApprovalUpdateManyWithWhereWithoutApprovedByInput | AccountingApprovalUpdateManyWithWhereWithoutApprovedByInput[]
+    deleteMany?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+  }
+
+  export type FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput> | FinishingServiceCreateWithoutCreatedByInput[] | FinishingServiceUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutCreatedByInput | FinishingServiceCreateOrConnectWithoutCreatedByInput[]
+    upsert?: FinishingServiceUpsertWithWhereUniqueWithoutCreatedByInput | FinishingServiceUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: FinishingServiceCreateManyCreatedByInputEnvelope
+    set?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    disconnect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    delete?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    connect?: FinishingServiceWhereUniqueInput | FinishingServiceWhereUniqueInput[]
+    update?: FinishingServiceUpdateWithWhereUniqueWithoutCreatedByInput | FinishingServiceUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: FinishingServiceUpdateManyWithWhereWithoutCreatedByInput | FinishingServiceUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: FinishingServiceScalarWhereInput | FinishingServiceScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutSessionsInput = {
@@ -90542,6 +99443,90 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutPricingStatusesUpdatedInput, UserUpdateWithoutPricingStatusesUpdatedInput>, UserUncheckedUpdateWithoutPricingStatusesUpdatedInput>
   }
 
+  export type UserCreateNestedOneWithoutFinishingServicesCreatedInput = {
+    create?: XOR<UserCreateWithoutFinishingServicesCreatedInput, UserUncheckedCreateWithoutFinishingServicesCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFinishingServicesCreatedInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type WorkItemFinishingCreateNestedManyWithoutFinishingServiceInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput> | WorkItemFinishingCreateWithoutFinishingServiceInput[] | WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput | WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput[]
+    createMany?: WorkItemFinishingCreateManyFinishingServiceInputEnvelope
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+  }
+
+  export type WorkItemFinishingUncheckedCreateNestedManyWithoutFinishingServiceInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput> | WorkItemFinishingCreateWithoutFinishingServiceInput[] | WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput | WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput[]
+    createMany?: WorkItemFinishingCreateManyFinishingServiceInputEnvelope
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+  }
+
+  export type UserUpdateOneRequiredWithoutFinishingServicesCreatedNestedInput = {
+    create?: XOR<UserCreateWithoutFinishingServicesCreatedInput, UserUncheckedCreateWithoutFinishingServicesCreatedInput>
+    connectOrCreate?: UserCreateOrConnectWithoutFinishingServicesCreatedInput
+    upsert?: UserUpsertWithoutFinishingServicesCreatedInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutFinishingServicesCreatedInput, UserUpdateWithoutFinishingServicesCreatedInput>, UserUncheckedUpdateWithoutFinishingServicesCreatedInput>
+  }
+
+  export type WorkItemFinishingUpdateManyWithoutFinishingServiceNestedInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput> | WorkItemFinishingCreateWithoutFinishingServiceInput[] | WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput | WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput[]
+    upsert?: WorkItemFinishingUpsertWithWhereUniqueWithoutFinishingServiceInput | WorkItemFinishingUpsertWithWhereUniqueWithoutFinishingServiceInput[]
+    createMany?: WorkItemFinishingCreateManyFinishingServiceInputEnvelope
+    set?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    disconnect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    delete?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    update?: WorkItemFinishingUpdateWithWhereUniqueWithoutFinishingServiceInput | WorkItemFinishingUpdateWithWhereUniqueWithoutFinishingServiceInput[]
+    updateMany?: WorkItemFinishingUpdateManyWithWhereWithoutFinishingServiceInput | WorkItemFinishingUpdateManyWithWhereWithoutFinishingServiceInput[]
+    deleteMany?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+  }
+
+  export type WorkItemFinishingUncheckedUpdateManyWithoutFinishingServiceNestedInput = {
+    create?: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput> | WorkItemFinishingCreateWithoutFinishingServiceInput[] | WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput[]
+    connectOrCreate?: WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput | WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput[]
+    upsert?: WorkItemFinishingUpsertWithWhereUniqueWithoutFinishingServiceInput | WorkItemFinishingUpsertWithWhereUniqueWithoutFinishingServiceInput[]
+    createMany?: WorkItemFinishingCreateManyFinishingServiceInputEnvelope
+    set?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    disconnect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    delete?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    connect?: WorkItemFinishingWhereUniqueInput | WorkItemFinishingWhereUniqueInput[]
+    update?: WorkItemFinishingUpdateWithWhereUniqueWithoutFinishingServiceInput | WorkItemFinishingUpdateWithWhereUniqueWithoutFinishingServiceInput[]
+    updateMany?: WorkItemFinishingUpdateManyWithWhereWithoutFinishingServiceInput | WorkItemFinishingUpdateManyWithWhereWithoutFinishingServiceInput[]
+    deleteMany?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+  }
+
+  export type WorkItemCreateNestedOneWithoutFinishingsInput = {
+    create?: XOR<WorkItemCreateWithoutFinishingsInput, WorkItemUncheckedCreateWithoutFinishingsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutFinishingsInput
+    connect?: WorkItemWhereUniqueInput
+  }
+
+  export type FinishingServiceCreateNestedOneWithoutSelectionsInput = {
+    create?: XOR<FinishingServiceCreateWithoutSelectionsInput, FinishingServiceUncheckedCreateWithoutSelectionsInput>
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutSelectionsInput
+    connect?: FinishingServiceWhereUniqueInput
+  }
+
+  export type WorkItemUpdateOneRequiredWithoutFinishingsNestedInput = {
+    create?: XOR<WorkItemCreateWithoutFinishingsInput, WorkItemUncheckedCreateWithoutFinishingsInput>
+    connectOrCreate?: WorkItemCreateOrConnectWithoutFinishingsInput
+    upsert?: WorkItemUpsertWithoutFinishingsInput
+    connect?: WorkItemWhereUniqueInput
+    update?: XOR<XOR<WorkItemUpdateToOneWithWhereWithoutFinishingsInput, WorkItemUpdateWithoutFinishingsInput>, WorkItemUncheckedUpdateWithoutFinishingsInput>
+  }
+
+  export type FinishingServiceUpdateOneRequiredWithoutSelectionsNestedInput = {
+    create?: XOR<FinishingServiceCreateWithoutSelectionsInput, FinishingServiceUncheckedCreateWithoutSelectionsInput>
+    connectOrCreate?: FinishingServiceCreateOrConnectWithoutSelectionsInput
+    upsert?: FinishingServiceUpsertWithoutSelectionsInput
+    connect?: FinishingServiceWhereUniqueInput
+    update?: XOR<XOR<FinishingServiceUpdateToOneWithWhereWithoutSelectionsInput, FinishingServiceUpdateWithoutSelectionsInput>, FinishingServiceUncheckedUpdateWithoutSelectionsInput>
+  }
+
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -90956,6 +99941,23 @@ export namespace Prisma {
     _max?: NestedEnumOrderModeFilter<$PrismaModel>
   }
 
+  export type NestedEnumWidthExceptionStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.WidthExceptionStatus | EnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumWidthExceptionStatusFilter<$PrismaModel> | $Enums.WidthExceptionStatus
+  }
+
+  export type NestedEnumWidthExceptionStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.WidthExceptionStatus | EnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.WidthExceptionStatus[] | ListEnumWidthExceptionStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumWidthExceptionStatusWithAggregatesFilter<$PrismaModel> | $Enums.WidthExceptionStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumWidthExceptionStatusFilter<$PrismaModel>
+    _max?: NestedEnumWidthExceptionStatusFilter<$PrismaModel>
+  }
+
   export type NestedEnumRejectionCategoryNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.RejectionCategory | EnumRejectionCategoryFieldRefInput<$PrismaModel> | null
     in?: $Enums.RejectionCategory[] | ListEnumRejectionCategoryFieldRefInput<$PrismaModel> | null
@@ -91362,6 +100364,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -91382,6 +100394,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutSpecVersionsInput = {
@@ -91404,6 +100419,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -91420,6 +100445,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutSpecVersionsInput = {
@@ -91440,6 +100468,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutSpecVersionsInput = {
@@ -91455,6 +100484,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutSpecVersionsInput = {
@@ -91514,6 +100544,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutSpecVersionsCreatedInput = {
@@ -91568,6 +100603,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutSpecVersionsCreatedInput = {
@@ -91591,6 +100631,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -91611,6 +100661,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutCurrentSpecVersionInput = {
@@ -91633,6 +100686,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
@@ -91649,6 +100712,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutCurrentSpecVersionInput = {
@@ -91778,6 +100844,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -91798,6 +100874,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutSpecVersionsInput = {
@@ -91820,6 +100899,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -91836,6 +100925,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type ProductTypeUpsertWithoutSpecVersionsInput = {
@@ -91862,6 +100954,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutSpecVersionsInput = {
@@ -91877,6 +100970,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type UserUpsertWithoutSpecVersionsCreatedInput = {
@@ -91942,6 +101036,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSpecVersionsCreatedInput = {
@@ -91996,6 +101095,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemUpsertWithoutCurrentSpecVersionInput = {
@@ -92025,6 +101129,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -92045,6 +101159,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutCurrentSpecVersionInput = {
@@ -92067,6 +101184,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
@@ -92083,6 +101210,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type ChangeRequestUpsertWithWhereUniqueWithoutBaseSpecVersionInput = {
@@ -92192,6 +101322,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -92212,6 +101352,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutChangeRequestsInput = {
@@ -92234,6 +101377,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -92250,6 +101403,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutChangeRequestsInput = {
@@ -92356,6 +101512,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutChangeRequestsRequestedInput = {
@@ -92410,6 +101571,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutChangeRequestsRequestedInput = {
@@ -92469,6 +101635,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutChangeRequestsDecidedInput = {
@@ -92523,6 +101694,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutChangeRequestsDecidedInput = {
@@ -92662,6 +101838,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutChangeRequestsAcknowledgedInput = {
@@ -92716,6 +101897,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutChangeRequestsAcknowledgedInput = {
@@ -92750,6 +101936,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -92770,6 +101966,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutChangeRequestsInput = {
@@ -92792,6 +101991,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -92808,6 +102017,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type SpecVersionUpsertWithoutBaseOfChangeRequestsInput = {
@@ -92926,6 +102138,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChangeRequestsRequestedInput = {
@@ -92980,6 +102197,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutChangeRequestsDecidedInput = {
@@ -93045,6 +102267,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChangeRequestsDecidedInput = {
@@ -93099,6 +102326,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type SpecVersionUpsertWithoutResultOfChangeRequestInput = {
@@ -93256,6 +102488,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutChangeRequestsAcknowledgedInput = {
@@ -93310,6 +102547,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutLateCancellationInput = {
@@ -93328,6 +102570,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -93348,6 +102600,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutLateCancellationInput = {
@@ -93370,6 +102625,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -93386,6 +102651,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutLateCancellationInput = {
@@ -93445,6 +102713,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutLateCancellationsInput = {
@@ -93499,6 +102772,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutLateCancellationsInput = {
@@ -93533,6 +102811,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -93553,6 +102841,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutLateCancellationInput = {
@@ -93575,6 +102866,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -93591,6 +102892,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutLateCancellationsInput = {
@@ -93656,6 +102960,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutLateCancellationsInput = {
@@ -93710,6 +103019,11 @@ export namespace Prisma {
     changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDepartmentInput = {
@@ -93728,6 +103042,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -93748,6 +103072,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDepartmentInput = {
@@ -93769,6 +103096,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -93786,6 +103123,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDepartmentInput = {
@@ -93869,6 +103209,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutDefaultDepartmentInput = {
@@ -93884,6 +103225,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutDefaultDepartmentInput = {
@@ -93935,6 +103277,16 @@ export namespace Prisma {
     producedQuantity?: IntNullableFilter<"WorkItem"> | number | null
     productionNotes?: StringNullableFilter<"WorkItem"> | string | null
     pendingFileRevisionAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
+    customerWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: IntNullableFilter<"WorkItem"> | number | null
+    productionAreaSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: DecimalNullableFilter<"WorkItem"> | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: DateTimeNullableFilter<"WorkItem"> | Date | string | null
     createdAt?: DateTimeFilter<"WorkItem"> | Date | string
     updatedAt?: DateTimeFilter<"WorkItem"> | Date | string
     currentSpecVersionId?: StringNullableFilter<"WorkItem"> | string | null
@@ -94653,6 +104005,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreatedOrdersInput = {
@@ -94707,6 +104064,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreatedOrdersInput = {
@@ -94730,6 +104092,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
@@ -94750,6 +104122,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutOrderInput = {
@@ -94771,6 +104146,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -94788,6 +104173,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutOrderInput = {
@@ -95018,6 +104406,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreatedOrdersInput = {
@@ -95072,6 +104465,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemUpsertWithWhereUniqueWithoutOrderInput = {
@@ -95216,6 +104614,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutWorkItemsInput = {
@@ -95231,6 +104630,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutWorkItemsInput = {
@@ -95317,6 +104717,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAssignedWorkItemsInput = {
@@ -95371,6 +104776,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAssignedWorkItemsInput = {
@@ -95907,6 +105317,102 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type WorkItemFinishingCreateWithoutWorkItemInput = {
+    id?: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    finishingService: FinishingServiceCreateNestedOneWithoutSelectionsInput
+  }
+
+  export type WorkItemFinishingUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    finishingServiceId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WorkItemFinishingCreateOrConnectWithoutWorkItemInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    create: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type WorkItemFinishingCreateManyWorkItemInputEnvelope = {
+    data: WorkItemFinishingCreateManyWorkItemInput | WorkItemFinishingCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WidthExceptionTicketCreateWithoutWorkItemInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+    raisedBy: UserCreateNestedOneWithoutWidthExceptionsRaisedInput
+    resolvedBy?: UserCreateNestedOneWithoutWidthExceptionsResolvedInput
+  }
+
+  export type WidthExceptionTicketUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateOrConnectWithoutWorkItemInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    create: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type WidthExceptionTicketCreateManyWorkItemInputEnvelope = {
+    data: WidthExceptionTicketCreateManyWorkItemInput | WidthExceptionTicketCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AccountingApprovalCreateWithoutWorkItemInput = {
+    id?: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+    approvedBy: UserCreateNestedOneWithoutAccountingApprovalsGivenInput
+  }
+
+  export type AccountingApprovalUncheckedCreateWithoutWorkItemInput = {
+    id?: string
+    approvedById: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+  }
+
+  export type AccountingApprovalCreateOrConnectWithoutWorkItemInput = {
+    where: AccountingApprovalWhereUniqueInput
+    create: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type AccountingApprovalCreateManyWorkItemInputEnvelope = {
+    data: AccountingApprovalCreateManyWorkItemInput | AccountingApprovalCreateManyWorkItemInput[]
+    skipDuplicates?: boolean
+  }
+
   export type OrderUpsertWithoutWorkItemsInput = {
     update: XOR<OrderUpdateWithoutWorkItemsInput, OrderUncheckedUpdateWithoutWorkItemsInput>
     create: XOR<OrderCreateWithoutWorkItemsInput, OrderUncheckedCreateWithoutWorkItemsInput>
@@ -95971,6 +105477,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutWorkItemsInput = {
@@ -95986,6 +105493,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type DepartmentUpsertWithoutWorkItemsInput = {
@@ -96084,6 +105592,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAssignedWorkItemsInput = {
@@ -96138,6 +105651,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type SpecVersionUpsertWithoutCurrentForInput = {
@@ -96574,6 +106092,99 @@ export namespace Prisma {
     detectedAt?: DateTimeFilter<"DelayBreach"> | Date | string
   }
 
+  export type WorkItemFinishingUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    update: XOR<WorkItemFinishingUpdateWithoutWorkItemInput, WorkItemFinishingUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<WorkItemFinishingCreateWithoutWorkItemInput, WorkItemFinishingUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type WorkItemFinishingUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    data: XOR<WorkItemFinishingUpdateWithoutWorkItemInput, WorkItemFinishingUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type WorkItemFinishingUpdateManyWithWhereWithoutWorkItemInput = {
+    where: WorkItemFinishingScalarWhereInput
+    data: XOR<WorkItemFinishingUpdateManyMutationInput, WorkItemFinishingUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type WorkItemFinishingScalarWhereInput = {
+    AND?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+    OR?: WorkItemFinishingScalarWhereInput[]
+    NOT?: WorkItemFinishingScalarWhereInput | WorkItemFinishingScalarWhereInput[]
+    id?: StringFilter<"WorkItemFinishing"> | string
+    workItemId?: StringFilter<"WorkItemFinishing"> | string
+    finishingServiceId?: StringFilter<"WorkItemFinishing"> | string
+    generation?: IntFilter<"WorkItemFinishing"> | number
+    quotedAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+    labelSnapshot?: StringFilter<"WorkItemFinishing"> | string
+    rateSnapshot?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFilter<"WorkItemFinishing"> | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFilter<"WorkItemFinishing"> | Date | string
+  }
+
+  export type WidthExceptionTicketUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    update: XOR<WidthExceptionTicketUpdateWithoutWorkItemInput, WidthExceptionTicketUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<WidthExceptionTicketCreateWithoutWorkItemInput, WidthExceptionTicketUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type WidthExceptionTicketUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    data: XOR<WidthExceptionTicketUpdateWithoutWorkItemInput, WidthExceptionTicketUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type WidthExceptionTicketUpdateManyWithWhereWithoutWorkItemInput = {
+    where: WidthExceptionTicketScalarWhereInput
+    data: XOR<WidthExceptionTicketUpdateManyMutationInput, WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type WidthExceptionTicketScalarWhereInput = {
+    AND?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+    OR?: WidthExceptionTicketScalarWhereInput[]
+    NOT?: WidthExceptionTicketScalarWhereInput | WidthExceptionTicketScalarWhereInput[]
+    id?: StringFilter<"WidthExceptionTicket"> | string
+    workItemId?: StringFilter<"WidthExceptionTicket"> | string
+    requestedWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFilter<"WidthExceptionTicket"> | Decimal | DecimalJsLike | number | string
+    reason?: StringFilter<"WidthExceptionTicket"> | string
+    status?: EnumWidthExceptionStatusFilter<"WidthExceptionTicket"> | $Enums.WidthExceptionStatus
+    raisedById?: StringFilter<"WidthExceptionTicket"> | string
+    resolvedById?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolutionNote?: StringNullableFilter<"WidthExceptionTicket"> | string | null
+    resolvedAt?: DateTimeNullableFilter<"WidthExceptionTicket"> | Date | string | null
+    createdAt?: DateTimeFilter<"WidthExceptionTicket"> | Date | string
+  }
+
+  export type AccountingApprovalUpsertWithWhereUniqueWithoutWorkItemInput = {
+    where: AccountingApprovalWhereUniqueInput
+    update: XOR<AccountingApprovalUpdateWithoutWorkItemInput, AccountingApprovalUncheckedUpdateWithoutWorkItemInput>
+    create: XOR<AccountingApprovalCreateWithoutWorkItemInput, AccountingApprovalUncheckedCreateWithoutWorkItemInput>
+  }
+
+  export type AccountingApprovalUpdateWithWhereUniqueWithoutWorkItemInput = {
+    where: AccountingApprovalWhereUniqueInput
+    data: XOR<AccountingApprovalUpdateWithoutWorkItemInput, AccountingApprovalUncheckedUpdateWithoutWorkItemInput>
+  }
+
+  export type AccountingApprovalUpdateManyWithWhereWithoutWorkItemInput = {
+    where: AccountingApprovalScalarWhereInput
+    data: XOR<AccountingApprovalUpdateManyMutationInput, AccountingApprovalUncheckedUpdateManyWithoutWorkItemInput>
+  }
+
+  export type AccountingApprovalScalarWhereInput = {
+    AND?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+    OR?: AccountingApprovalScalarWhereInput[]
+    NOT?: AccountingApprovalScalarWhereInput | AccountingApprovalScalarWhereInput[]
+    id?: StringFilter<"AccountingApproval"> | string
+    workItemId?: StringFilter<"AccountingApproval"> | string
+    approvedById?: StringFilter<"AccountingApproval"> | string
+    priceId?: StringNullableFilter<"AccountingApproval"> | string | null
+    totalAmount?: DecimalFilter<"AccountingApproval"> | Decimal | DecimalJsLike | number | string
+    note?: StringNullableFilter<"AccountingApproval"> | string | null
+    approvedAt?: DateTimeFilter<"AccountingApproval"> | Date | string
+  }
+
   export type DepartmentCreateWithoutProductTypesInput = {
     id?: string
     name: string
@@ -96617,6 +106228,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -96637,6 +106258,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutProductTypeInput = {
@@ -96658,6 +106282,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -96675,6 +106309,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutProductTypeInput = {
@@ -96828,6 +106465,33 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ProductionWidthRuleCreateWithoutProductTypeInput = {
+    id?: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    updatedBy: UserCreateNestedOneWithoutWidthRulesUpdatedInput
+  }
+
+  export type ProductionWidthRuleUncheckedCreateWithoutProductTypeInput = {
+    id?: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    updatedById: string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProductionWidthRuleCreateOrConnectWithoutProductTypeInput = {
+    where: ProductionWidthRuleWhereUniqueInput
+    create: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+  }
+
   export type DepartmentUpsertWithoutProductTypesInput = {
     update: XOR<DepartmentUpdateWithoutProductTypesInput, DepartmentUncheckedUpdateWithoutProductTypesInput>
     create: XOR<DepartmentCreateWithoutProductTypesInput, DepartmentUncheckedCreateWithoutProductTypesInput>
@@ -96964,6 +106628,1567 @@ export namespace Prisma {
     data: XOR<CustomerPricingRuleUpdateManyMutationInput, CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeInput>
   }
 
+  export type ProductionWidthRuleUpsertWithoutProductTypeInput = {
+    update: XOR<ProductionWidthRuleUpdateWithoutProductTypeInput, ProductionWidthRuleUncheckedUpdateWithoutProductTypeInput>
+    create: XOR<ProductionWidthRuleCreateWithoutProductTypeInput, ProductionWidthRuleUncheckedCreateWithoutProductTypeInput>
+    where?: ProductionWidthRuleWhereInput
+  }
+
+  export type ProductionWidthRuleUpdateToOneWithWhereWithoutProductTypeInput = {
+    where?: ProductionWidthRuleWhereInput
+    data: XOR<ProductionWidthRuleUpdateWithoutProductTypeInput, ProductionWidthRuleUncheckedUpdateWithoutProductTypeInput>
+  }
+
+  export type ProductionWidthRuleUpdateWithoutProductTypeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedBy?: UserUpdateOneRequiredWithoutWidthRulesUpdatedNestedInput
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateWithoutProductTypeInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProductTypeCreateWithoutWidthRuleInput = {
+    id?: string
+    name: string
+    defaultRequiresDesign?: boolean
+    defaultRequiresReview?: boolean
+    pricingModeHint?: string | null
+    isActive?: boolean
+    createdAt?: Date | string
+    defaultDepartment?: DepartmentCreateNestedOneWithoutProductTypesInput
+    workItems?: WorkItemCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
+    pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
+    priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
+    customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+  }
+
+  export type ProductTypeUncheckedCreateWithoutWidthRuleInput = {
+    id?: string
+    name: string
+    defaultDepartmentId?: string | null
+    defaultRequiresDesign?: boolean
+    defaultRequiresReview?: boolean
+    pricingModeHint?: string | null
+    isActive?: boolean
+    createdAt?: Date | string
+    workItems?: WorkItemUncheckedCreateNestedManyWithoutProductTypeInput
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
+    pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
+    priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
+    customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+  }
+
+  export type ProductTypeCreateOrConnectWithoutWidthRuleInput = {
+    where: ProductTypeWhereUniqueInput
+    create: XOR<ProductTypeCreateWithoutWidthRuleInput, ProductTypeUncheckedCreateWithoutWidthRuleInput>
+  }
+
+  export type UserCreateWithoutWidthRulesUpdatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutWidthRulesUpdatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutWidthRulesUpdatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWidthRulesUpdatedInput, UserUncheckedCreateWithoutWidthRulesUpdatedInput>
+  }
+
+  export type ProductTypeUpsertWithoutWidthRuleInput = {
+    update: XOR<ProductTypeUpdateWithoutWidthRuleInput, ProductTypeUncheckedUpdateWithoutWidthRuleInput>
+    create: XOR<ProductTypeCreateWithoutWidthRuleInput, ProductTypeUncheckedCreateWithoutWidthRuleInput>
+    where?: ProductTypeWhereInput
+  }
+
+  export type ProductTypeUpdateToOneWithWhereWithoutWidthRuleInput = {
+    where?: ProductTypeWhereInput
+    data: XOR<ProductTypeUpdateWithoutWidthRuleInput, ProductTypeUncheckedUpdateWithoutWidthRuleInput>
+  }
+
+  export type ProductTypeUpdateWithoutWidthRuleInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    defaultRequiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    defaultRequiresReview?: BoolFieldUpdateOperationsInput | boolean
+    pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    defaultDepartment?: DepartmentUpdateOneWithoutProductTypesNestedInput
+    workItems?: WorkItemUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
+    pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
+    priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
+    customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+  }
+
+  export type ProductTypeUncheckedUpdateWithoutWidthRuleInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    defaultDepartmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    defaultRequiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    defaultRequiresReview?: BoolFieldUpdateOperationsInput | boolean
+    pricingModeHint?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItems?: WorkItemUncheckedUpdateManyWithoutProductTypeNestedInput
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
+    pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
+    priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
+    customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+  }
+
+  export type UserUpsertWithoutWidthRulesUpdatedInput = {
+    update: XOR<UserUpdateWithoutWidthRulesUpdatedInput, UserUncheckedUpdateWithoutWidthRulesUpdatedInput>
+    create: XOR<UserCreateWithoutWidthRulesUpdatedInput, UserUncheckedCreateWithoutWidthRulesUpdatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWidthRulesUpdatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWidthRulesUpdatedInput, UserUncheckedUpdateWithoutWidthRulesUpdatedInput>
+  }
+
+  export type UserUpdateWithoutWidthRulesUpdatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWidthRulesUpdatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type WorkItemCreateWithoutWidthExceptionsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutWidthExceptionsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutWidthExceptionsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutWidthExceptionsInput, WorkItemUncheckedCreateWithoutWidthExceptionsInput>
+  }
+
+  export type UserCreateWithoutWidthExceptionsRaisedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutWidthExceptionsRaisedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutWidthExceptionsRaisedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWidthExceptionsRaisedInput, UserUncheckedCreateWithoutWidthExceptionsRaisedInput>
+  }
+
+  export type UserCreateWithoutWidthExceptionsResolvedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutWidthExceptionsResolvedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutWidthExceptionsResolvedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutWidthExceptionsResolvedInput, UserUncheckedCreateWithoutWidthExceptionsResolvedInput>
+  }
+
+  export type WorkItemUpsertWithoutWidthExceptionsInput = {
+    update: XOR<WorkItemUpdateWithoutWidthExceptionsInput, WorkItemUncheckedUpdateWithoutWidthExceptionsInput>
+    create: XOR<WorkItemCreateWithoutWidthExceptionsInput, WorkItemUncheckedCreateWithoutWidthExceptionsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutWidthExceptionsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutWidthExceptionsInput, WorkItemUncheckedUpdateWithoutWidthExceptionsInput>
+  }
+
+  export type WorkItemUpdateWithoutWidthExceptionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutWidthExceptionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutWidthExceptionsRaisedInput = {
+    update: XOR<UserUpdateWithoutWidthExceptionsRaisedInput, UserUncheckedUpdateWithoutWidthExceptionsRaisedInput>
+    create: XOR<UserCreateWithoutWidthExceptionsRaisedInput, UserUncheckedCreateWithoutWidthExceptionsRaisedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWidthExceptionsRaisedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWidthExceptionsRaisedInput, UserUncheckedUpdateWithoutWidthExceptionsRaisedInput>
+  }
+
+  export type UserUpdateWithoutWidthExceptionsRaisedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWidthExceptionsRaisedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUpsertWithoutWidthExceptionsResolvedInput = {
+    update: XOR<UserUpdateWithoutWidthExceptionsResolvedInput, UserUncheckedUpdateWithoutWidthExceptionsResolvedInput>
+    create: XOR<UserCreateWithoutWidthExceptionsResolvedInput, UserUncheckedCreateWithoutWidthExceptionsResolvedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutWidthExceptionsResolvedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutWidthExceptionsResolvedInput, UserUncheckedUpdateWithoutWidthExceptionsResolvedInput>
+  }
+
+  export type UserUpdateWithoutWidthExceptionsResolvedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutWidthExceptionsResolvedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type WorkItemCreateWithoutAccountingApprovalsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutAccountingApprovalsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutAccountingApprovalsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutAccountingApprovalsInput, WorkItemUncheckedCreateWithoutAccountingApprovalsInput>
+  }
+
+  export type UserCreateWithoutAccountingApprovalsGivenInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserUncheckedCreateWithoutAccountingApprovalsGivenInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
+  }
+
+  export type UserCreateOrConnectWithoutAccountingApprovalsGivenInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAccountingApprovalsGivenInput, UserUncheckedCreateWithoutAccountingApprovalsGivenInput>
+  }
+
+  export type WorkItemUpsertWithoutAccountingApprovalsInput = {
+    update: XOR<WorkItemUpdateWithoutAccountingApprovalsInput, WorkItemUncheckedUpdateWithoutAccountingApprovalsInput>
+    create: XOR<WorkItemCreateWithoutAccountingApprovalsInput, WorkItemUncheckedCreateWithoutAccountingApprovalsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutAccountingApprovalsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutAccountingApprovalsInput, WorkItemUncheckedUpdateWithoutAccountingApprovalsInput>
+  }
+
+  export type WorkItemUpdateWithoutAccountingApprovalsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutAccountingApprovalsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type UserUpsertWithoutAccountingApprovalsGivenInput = {
+    update: XOR<UserUpdateWithoutAccountingApprovalsGivenInput, UserUncheckedUpdateWithoutAccountingApprovalsGivenInput>
+    create: XOR<UserCreateWithoutAccountingApprovalsGivenInput, UserUncheckedCreateWithoutAccountingApprovalsGivenInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAccountingApprovalsGivenInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAccountingApprovalsGivenInput, UserUncheckedUpdateWithoutAccountingApprovalsGivenInput>
+  }
+
+  export type UserUpdateWithoutAccountingApprovalsGivenInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAccountingApprovalsGivenInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
   export type WorkItemCreateWithoutTransitionsInput = {
     id?: string
     state: $Enums.WorkItemState
@@ -96980,6 +108205,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -97000,6 +108235,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutTransitionsInput = {
@@ -97022,6 +108260,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -97038,6 +108286,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutTransitionsInput = {
@@ -97097,6 +108348,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemTransitionsInput = {
@@ -97151,6 +108407,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemTransitionsInput = {
@@ -97185,6 +108446,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -97205,6 +108476,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutTransitionsInput = {
@@ -97227,6 +108501,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -97243,6 +108527,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemTransitionsInput = {
@@ -97308,6 +108595,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemTransitionsInput = {
@@ -97362,6 +108654,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPhaseTimingsInput = {
@@ -97380,6 +108677,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -97400,6 +108707,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPhaseTimingsInput = {
@@ -97422,6 +108732,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -97438,6 +108758,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPhaseTimingsInput = {
@@ -97497,6 +108820,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPhaseTimingsInput = {
@@ -97551,6 +108879,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPhaseTimingsInput = {
@@ -97585,6 +108918,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -97605,6 +108948,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -97627,6 +108973,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -97643,6 +108999,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPhaseTimingsInput = {
@@ -97708,6 +109067,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPhaseTimingsInput = {
@@ -97762,6 +109126,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDesignVersionsInput = {
@@ -97780,6 +109149,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -97800,6 +109179,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDesignVersionsInput = {
@@ -97822,6 +109204,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -97838,6 +109230,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDesignVersionsInput = {
@@ -97897,6 +109292,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsUploadedInput = {
@@ -97951,6 +109351,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsUploadedInput = {
@@ -98010,6 +109415,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDesignVersionsApprovedInput = {
@@ -98064,6 +109474,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDesignVersionsApprovedInput = {
@@ -98136,6 +109551,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -98156,6 +109581,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDesignVersionsInput = {
@@ -98178,6 +109606,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -98194,6 +109632,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsUploadedInput = {
@@ -98259,6 +109700,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsUploadedInput = {
@@ -98313,6 +109759,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutDesignVersionsApprovedInput = {
@@ -98378,6 +109829,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDesignVersionsApprovedInput = {
@@ -98432,6 +109888,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ReturnUpsertWithWhereUniqueWithoutDesignVersionInput = {
@@ -98466,6 +109927,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -98486,6 +109957,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutReturnsInput = {
@@ -98508,6 +109982,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -98524,6 +110008,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutReturnsInput = {
@@ -98583,6 +110070,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsRaisedInput = {
@@ -98637,6 +110129,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsRaisedInput = {
@@ -98723,6 +110220,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutReturnsAssignedToMeInput = {
@@ -98777,6 +110279,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutReturnsAssignedToMeInput = {
@@ -98923,6 +110430,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -98943,6 +110460,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutReturnsInput = {
@@ -98965,6 +110485,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -98981,6 +110511,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutReturnsRaisedInput = {
@@ -99046,6 +110579,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsRaisedInput = {
@@ -99100,6 +110638,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutReturnsInput = {
@@ -99198,6 +110741,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutReturnsAssignedToMeInput = {
@@ -99252,6 +110800,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DesignVersionUpsertWithoutReturnsInput = {
@@ -99466,6 +111019,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -99486,6 +111049,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutVendorProductionRecordsInput = {
@@ -99508,6 +111074,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -99524,6 +111100,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutVendorProductionRecordsInput = {
@@ -99583,6 +111162,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutVendorProductionRecordsCreatedInput = {
@@ -99637,6 +111221,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutVendorProductionRecordsCreatedInput = {
@@ -99671,6 +111260,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -99691,6 +111290,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutVendorProductionRecordsInput = {
@@ -99713,6 +111315,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -99729,6 +111341,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutVendorProductionRecordsCreatedInput = {
@@ -99794,6 +111409,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutVendorProductionRecordsCreatedInput = {
@@ -99848,6 +111468,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type NotificationCreateWithoutSourceEventInput = {
@@ -100536,6 +112161,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -100556,6 +112191,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutFileAssetsInput = {
@@ -100578,6 +112216,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -100594,6 +112242,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutFileAssetsInput = {
@@ -100662,6 +112313,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -100682,6 +112343,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutFileAssetsInput = {
@@ -100704,6 +112368,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -100720,6 +112394,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type FileVersionUpsertWithWhereUniqueWithoutFileAssetInput = {
@@ -100838,6 +112515,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileVersionsUploadedInput = {
@@ -100892,6 +112574,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileVersionsUploadedInput = {
@@ -101022,6 +112709,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileVersionsUploadedInput = {
@@ -101076,6 +112768,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type FileObjectCreateWithoutAttachmentsInput = {
@@ -101155,6 +112852,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAttachmentsInput = {
@@ -101209,6 +112911,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAttachmentsInput = {
@@ -101310,6 +113017,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAttachmentsInput = {
@@ -101364,6 +113076,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFileAuditEventsInput = {
@@ -101418,6 +113135,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileAuditEventsInput = {
@@ -101472,6 +113194,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileAuditEventsInput = {
@@ -101542,6 +113269,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileAuditEventsInput = {
@@ -101596,6 +113328,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFileConfigsUpdatedInput = {
@@ -101650,6 +113387,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFileConfigsUpdatedInput = {
@@ -101704,6 +113446,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFileConfigsUpdatedInput = {
@@ -101774,6 +113521,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFileConfigsUpdatedInput = {
@@ -101828,6 +113580,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutPaymentsInput = {
@@ -101962,6 +113719,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPaymentsRecordedInput = {
@@ -102016,6 +113778,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPaymentsRecordedInput = {
@@ -102177,6 +113944,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPaymentsRecordedInput = {
@@ -102231,6 +114003,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceVoidedInput = {
@@ -102285,6 +114062,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceVoidedInput = {
@@ -102339,6 +114121,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceVoidedInput = {
@@ -102409,6 +114196,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceVoidedInput = {
@@ -102463,6 +114255,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutExpensesInput = {
@@ -102516,6 +114313,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -102536,6 +114343,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutExpensesInput = {
@@ -102558,6 +114368,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -102574,6 +114394,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutExpensesInput = {
@@ -102633,6 +114456,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesCreatedInput = {
@@ -102687,6 +114515,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesCreatedInput = {
@@ -102776,6 +114609,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -102796,6 +114639,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutExpensesInput = {
@@ -102818,6 +114664,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -102834,6 +114690,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutExpensesCreatedInput = {
@@ -102899,6 +114758,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesCreatedInput = {
@@ -102953,6 +114817,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ExpenseApprovalUpsertWithoutExpenseInput = {
@@ -103059,6 +114928,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExpensesApprovedInput = {
@@ -103113,6 +114987,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExpensesApprovedInput = {
@@ -103220,6 +115099,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExpensesApprovedInput = {
@@ -103274,6 +115158,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type OrderCreateWithoutDirectCostsInput = {
@@ -103327,6 +115216,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -103347,6 +115246,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDirectCostsInput = {
@@ -103369,6 +115271,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -103385,6 +115297,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDirectCostsInput = {
@@ -103444,6 +115359,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDirectCostsCreatedInput = {
@@ -103498,6 +115418,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDirectCostsCreatedInput = {
@@ -103572,6 +115497,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -103592,6 +115527,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDirectCostsInput = {
@@ -103614,6 +115552,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -103630,6 +115578,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutDirectCostsCreatedInput = {
@@ -103695,6 +115646,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDirectCostsCreatedInput = {
@@ -103749,6 +115705,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type CustomerCreateWithoutCustomerCreditInput = {
@@ -103848,6 +115809,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutCreditsUpdatedInput = {
@@ -103902,6 +115868,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutCreditsUpdatedInput = {
@@ -104023,6 +115994,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutCreditsUpdatedInput = {
@@ -104077,6 +116053,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutFinanceConfigUpdatesInput = {
@@ -104131,6 +116112,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutFinanceConfigUpdatesInput = {
@@ -104185,6 +116171,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutFinanceConfigUpdatesInput = {
@@ -104255,6 +116246,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutFinanceConfigUpdatesInput = {
@@ -104309,6 +116305,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type SessionCreateWithoutUserInput = {
@@ -104563,6 +116564,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -104583,6 +116594,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutAssigneeInput = {
@@ -104604,6 +116618,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -104621,6 +116645,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutAssigneeInput = {
@@ -105705,6 +117732,172 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type ProductionWidthRuleCreateWithoutUpdatedByInput = {
+    id?: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    productType: ProductTypeCreateNestedOneWithoutWidthRuleInput
+  }
+
+  export type ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput = {
+    id?: string
+    productTypeId: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type ProductionWidthRuleCreateOrConnectWithoutUpdatedByInput = {
+    where: ProductionWidthRuleWhereUniqueInput
+    create: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type ProductionWidthRuleCreateManyUpdatedByInputEnvelope = {
+    data: ProductionWidthRuleCreateManyUpdatedByInput | ProductionWidthRuleCreateManyUpdatedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WidthExceptionTicketCreateWithoutRaisedByInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutWidthExceptionsInput
+    resolvedBy?: UserCreateNestedOneWithoutWidthExceptionsResolvedInput
+  }
+
+  export type WidthExceptionTicketUncheckedCreateWithoutRaisedByInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateOrConnectWithoutRaisedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    create: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput>
+  }
+
+  export type WidthExceptionTicketCreateManyRaisedByInputEnvelope = {
+    data: WidthExceptionTicketCreateManyRaisedByInput | WidthExceptionTicketCreateManyRaisedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WidthExceptionTicketCreateWithoutResolvedByInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutWidthExceptionsInput
+    raisedBy: UserCreateNestedOneWithoutWidthExceptionsRaisedInput
+  }
+
+  export type WidthExceptionTicketUncheckedCreateWithoutResolvedByInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateOrConnectWithoutResolvedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    create: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput>
+  }
+
+  export type WidthExceptionTicketCreateManyResolvedByInputEnvelope = {
+    data: WidthExceptionTicketCreateManyResolvedByInput | WidthExceptionTicketCreateManyResolvedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AccountingApprovalCreateWithoutApprovedByInput = {
+    id?: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutAccountingApprovalsInput
+  }
+
+  export type AccountingApprovalUncheckedCreateWithoutApprovedByInput = {
+    id?: string
+    workItemId: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+  }
+
+  export type AccountingApprovalCreateOrConnectWithoutApprovedByInput = {
+    where: AccountingApprovalWhereUniqueInput
+    create: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type AccountingApprovalCreateManyApprovedByInputEnvelope = {
+    data: AccountingApprovalCreateManyApprovedByInput | AccountingApprovalCreateManyApprovedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type FinishingServiceCreateWithoutCreatedByInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdAt?: Date | string
+    selections?: WorkItemFinishingCreateNestedManyWithoutFinishingServiceInput
+  }
+
+  export type FinishingServiceUncheckedCreateWithoutCreatedByInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdAt?: Date | string
+    selections?: WorkItemFinishingUncheckedCreateNestedManyWithoutFinishingServiceInput
+  }
+
+  export type FinishingServiceCreateOrConnectWithoutCreatedByInput = {
+    where: FinishingServiceWhereUniqueInput
+    create: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type FinishingServiceCreateManyCreatedByInputEnvelope = {
+    data: FinishingServiceCreateManyCreatedByInput | FinishingServiceCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
   export type SessionUpsertWithWhereUniqueWithoutUserInput = {
     where: SessionWhereUniqueInput
     update: XOR<SessionUpdateWithoutUserInput, SessionUncheckedUpdateWithoutUserInput>
@@ -106559,6 +118752,116 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"LateCancellation"> | Date | string
   }
 
+  export type ProductionWidthRuleUpsertWithWhereUniqueWithoutUpdatedByInput = {
+    where: ProductionWidthRuleWhereUniqueInput
+    update: XOR<ProductionWidthRuleUpdateWithoutUpdatedByInput, ProductionWidthRuleUncheckedUpdateWithoutUpdatedByInput>
+    create: XOR<ProductionWidthRuleCreateWithoutUpdatedByInput, ProductionWidthRuleUncheckedCreateWithoutUpdatedByInput>
+  }
+
+  export type ProductionWidthRuleUpdateWithWhereUniqueWithoutUpdatedByInput = {
+    where: ProductionWidthRuleWhereUniqueInput
+    data: XOR<ProductionWidthRuleUpdateWithoutUpdatedByInput, ProductionWidthRuleUncheckedUpdateWithoutUpdatedByInput>
+  }
+
+  export type ProductionWidthRuleUpdateManyWithWhereWithoutUpdatedByInput = {
+    where: ProductionWidthRuleScalarWhereInput
+    data: XOR<ProductionWidthRuleUpdateManyMutationInput, ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByInput>
+  }
+
+  export type ProductionWidthRuleScalarWhereInput = {
+    AND?: ProductionWidthRuleScalarWhereInput | ProductionWidthRuleScalarWhereInput[]
+    OR?: ProductionWidthRuleScalarWhereInput[]
+    NOT?: ProductionWidthRuleScalarWhereInput | ProductionWidthRuleScalarWhereInput[]
+    id?: StringFilter<"ProductionWidthRule"> | string
+    productTypeId?: StringFilter<"ProductionWidthRule"> | string
+    ladderCm?: IntNullableListFilter<"ProductionWidthRule">
+    maxHeightM?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFilter<"ProductionWidthRule"> | Decimal | DecimalJsLike | number | string
+    updatedById?: StringFilter<"ProductionWidthRule"> | string
+    createdAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+    updatedAt?: DateTimeFilter<"ProductionWidthRule"> | Date | string
+  }
+
+  export type WidthExceptionTicketUpsertWithWhereUniqueWithoutRaisedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    update: XOR<WidthExceptionTicketUpdateWithoutRaisedByInput, WidthExceptionTicketUncheckedUpdateWithoutRaisedByInput>
+    create: XOR<WidthExceptionTicketCreateWithoutRaisedByInput, WidthExceptionTicketUncheckedCreateWithoutRaisedByInput>
+  }
+
+  export type WidthExceptionTicketUpdateWithWhereUniqueWithoutRaisedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    data: XOR<WidthExceptionTicketUpdateWithoutRaisedByInput, WidthExceptionTicketUncheckedUpdateWithoutRaisedByInput>
+  }
+
+  export type WidthExceptionTicketUpdateManyWithWhereWithoutRaisedByInput = {
+    where: WidthExceptionTicketScalarWhereInput
+    data: XOR<WidthExceptionTicketUpdateManyMutationInput, WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByInput>
+  }
+
+  export type WidthExceptionTicketUpsertWithWhereUniqueWithoutResolvedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    update: XOR<WidthExceptionTicketUpdateWithoutResolvedByInput, WidthExceptionTicketUncheckedUpdateWithoutResolvedByInput>
+    create: XOR<WidthExceptionTicketCreateWithoutResolvedByInput, WidthExceptionTicketUncheckedCreateWithoutResolvedByInput>
+  }
+
+  export type WidthExceptionTicketUpdateWithWhereUniqueWithoutResolvedByInput = {
+    where: WidthExceptionTicketWhereUniqueInput
+    data: XOR<WidthExceptionTicketUpdateWithoutResolvedByInput, WidthExceptionTicketUncheckedUpdateWithoutResolvedByInput>
+  }
+
+  export type WidthExceptionTicketUpdateManyWithWhereWithoutResolvedByInput = {
+    where: WidthExceptionTicketScalarWhereInput
+    data: XOR<WidthExceptionTicketUpdateManyMutationInput, WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByInput>
+  }
+
+  export type AccountingApprovalUpsertWithWhereUniqueWithoutApprovedByInput = {
+    where: AccountingApprovalWhereUniqueInput
+    update: XOR<AccountingApprovalUpdateWithoutApprovedByInput, AccountingApprovalUncheckedUpdateWithoutApprovedByInput>
+    create: XOR<AccountingApprovalCreateWithoutApprovedByInput, AccountingApprovalUncheckedCreateWithoutApprovedByInput>
+  }
+
+  export type AccountingApprovalUpdateWithWhereUniqueWithoutApprovedByInput = {
+    where: AccountingApprovalWhereUniqueInput
+    data: XOR<AccountingApprovalUpdateWithoutApprovedByInput, AccountingApprovalUncheckedUpdateWithoutApprovedByInput>
+  }
+
+  export type AccountingApprovalUpdateManyWithWhereWithoutApprovedByInput = {
+    where: AccountingApprovalScalarWhereInput
+    data: XOR<AccountingApprovalUpdateManyMutationInput, AccountingApprovalUncheckedUpdateManyWithoutApprovedByInput>
+  }
+
+  export type FinishingServiceUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: FinishingServiceWhereUniqueInput
+    update: XOR<FinishingServiceUpdateWithoutCreatedByInput, FinishingServiceUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<FinishingServiceCreateWithoutCreatedByInput, FinishingServiceUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type FinishingServiceUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: FinishingServiceWhereUniqueInput
+    data: XOR<FinishingServiceUpdateWithoutCreatedByInput, FinishingServiceUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type FinishingServiceUpdateManyWithWhereWithoutCreatedByInput = {
+    where: FinishingServiceScalarWhereInput
+    data: XOR<FinishingServiceUpdateManyMutationInput, FinishingServiceUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type FinishingServiceScalarWhereInput = {
+    AND?: FinishingServiceScalarWhereInput | FinishingServiceScalarWhereInput[]
+    OR?: FinishingServiceScalarWhereInput[]
+    NOT?: FinishingServiceScalarWhereInput | FinishingServiceScalarWhereInput[]
+    id?: StringFilter<"FinishingService"> | string
+    code?: StringFilter<"FinishingService"> | string
+    labelAr?: StringFilter<"FinishingService"> | string
+    ratePerSqm?: DecimalFilter<"FinishingService"> | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFilter<"FinishingService"> | Date | string
+    effectiveTo?: DateTimeNullableFilter<"FinishingService"> | Date | string | null
+    status?: EnumPriceConfigStatusFilter<"FinishingService"> | $Enums.PriceConfigStatus
+    createdById?: StringFilter<"FinishingService"> | string
+    createdAt?: DateTimeFilter<"FinishingService"> | Date | string
+  }
+
   export type UserCreateWithoutSessionsInput = {
     id: string
     name: string
@@ -106611,6 +118914,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -106665,6 +118973,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -106735,6 +119048,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -106789,6 +119107,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutAccountsInput = {
@@ -106843,6 +119166,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -106897,6 +119225,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -106967,6 +119300,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -107021,6 +119359,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RolePermissionCreateWithoutRoleInput = {
@@ -107204,6 +119547,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutRolesInput = {
@@ -107258,6 +119606,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutRolesInput = {
@@ -107349,6 +119702,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRolesInput = {
@@ -107403,6 +119761,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type RoleUpsertWithoutUserRolesInput = {
@@ -107484,6 +119847,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutExtraPermissionsInput = {
@@ -107538,6 +119906,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutExtraPermissionsInput = {
@@ -107597,6 +119970,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutGrantedPermissionsInput = {
@@ -107651,6 +120029,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutGrantedPermissionsInput = {
@@ -107721,6 +120104,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutExtraPermissionsInput = {
@@ -107775,6 +120163,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUpsertWithoutGrantedPermissionsInput = {
@@ -107840,6 +120233,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutGrantedPermissionsInput = {
@@ -107894,6 +120292,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutDepartmentsInput = {
@@ -107948,6 +120351,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutDepartmentsInput = {
@@ -108002,6 +120410,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutDepartmentsInput = {
@@ -108099,6 +120512,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutDepartmentsInput = {
@@ -108153,6 +120571,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type DepartmentUpsertWithoutUserDepartmentsInput = {
@@ -108240,6 +120663,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutAuditEventsInput = {
@@ -108294,6 +120722,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutAuditEventsInput = {
@@ -108364,6 +120797,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditEventsInput = {
@@ -108418,6 +120856,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutNotificationsInput = {
@@ -108472,6 +120915,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutNotificationsInput = {
@@ -108526,6 +120974,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutNotificationsInput = {
@@ -108637,6 +121090,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutNotificationsInput = {
@@ -108691,6 +121149,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type NotificationEventUpsertWithoutNotificationsInput = {
@@ -108792,6 +121255,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutRecipientOverrideUpdatesInput = {
@@ -108846,6 +121314,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutRecipientOverrideUpdatesInput = {
@@ -108916,6 +121389,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRecipientOverrideUpdatesInput = {
@@ -108970,6 +121448,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserCreateWithoutThresholdUpdatesInput = {
@@ -109024,6 +121507,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutThresholdUpdatesInput = {
@@ -109078,6 +121566,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutThresholdUpdatesInput = {
@@ -109148,6 +121641,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutThresholdUpdatesInput = {
@@ -109202,6 +121700,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutDelayBreachesInput = {
@@ -109220,6 +121723,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -109240,6 +121753,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutDelayBreachesInput = {
@@ -109262,6 +121778,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -109278,6 +121804,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutDelayBreachesInput = {
@@ -109312,6 +121841,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -109332,6 +121871,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDelayBreachesInput = {
@@ -109354,6 +121896,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -109370,6 +121922,9 @@ export namespace Prisma {
     pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type ProductTypeCreateWithoutPricingPolicyInput = {
@@ -109385,6 +121940,7 @@ export namespace Prisma {
     specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutPricingPolicyInput = {
@@ -109400,6 +121956,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutPricingPolicyInput = {
@@ -109459,6 +122016,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingPoliciesUpdatedInput = {
@@ -109513,6 +122075,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingPoliciesUpdatedInput = {
@@ -109544,6 +122111,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutPricingPolicyInput = {
@@ -109559,6 +122127,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type UserUpsertWithoutPricingPoliciesUpdatedInput = {
@@ -109624,6 +122193,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingPoliciesUpdatedInput = {
@@ -109678,6 +122252,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type ProductTypeCreateWithoutPriceListsInput = {
@@ -109693,6 +122272,7 @@ export namespace Prisma {
     specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutPriceListsInput = {
@@ -109708,6 +122288,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     customerPricingRules?: CustomerPricingRuleUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutPriceListsInput = {
@@ -109767,6 +122348,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPriceListsCreatedInput = {
@@ -109821,6 +122407,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPriceListsCreatedInput = {
@@ -109876,6 +122467,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutPriceListsInput = {
@@ -109891,6 +122483,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type UserUpsertWithoutPriceListsCreatedInput = {
@@ -109956,6 +122549,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPriceListsCreatedInput = {
@@ -110010,6 +122608,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type PriceTierUpsertWithWhereUniqueWithoutPriceListInput = {
@@ -110157,6 +122760,7 @@ export namespace Prisma {
     specVersions?: SpecVersionCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeUncheckedCreateWithoutCustomerPricingRulesInput = {
@@ -110172,6 +122776,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedCreateNestedManyWithoutProductTypeInput
     pricingPolicy?: ProductPricingPolicyUncheckedCreateNestedOneWithoutProductTypeInput
     priceLists?: PriceListUncheckedCreateNestedManyWithoutProductTypeInput
+    widthRule?: ProductionWidthRuleUncheckedCreateNestedOneWithoutProductTypeInput
   }
 
   export type ProductTypeCreateOrConnectWithoutCustomerPricingRulesInput = {
@@ -110231,6 +122836,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingRulesCreatedInput = {
@@ -110285,6 +122895,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingRulesCreatedInput = {
@@ -110367,6 +122982,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutCustomerPricingRulesInput = {
@@ -110382,6 +122998,7 @@ export namespace Prisma {
     specVersions?: SpecVersionUncheckedUpdateManyWithoutProductTypeNestedInput
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type UserUpsertWithoutPricingRulesCreatedInput = {
@@ -110447,6 +123064,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingRulesCreatedInput = {
@@ -110501,6 +123123,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricesInput = {
@@ -110519,6 +123146,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -110539,6 +123176,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPricesInput = {
@@ -110561,6 +123201,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -110577,6 +123227,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPricesInput = {
@@ -110636,6 +123289,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutWorkItemPricesSetInput = {
@@ -110690,6 +123348,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutWorkItemPricesSetInput = {
@@ -110724,6 +123387,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -110744,6 +123417,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPricesInput = {
@@ -110766,6 +123442,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -110782,6 +123468,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutWorkItemPricesSetInput = {
@@ -110847,6 +123536,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutWorkItemPricesSetInput = {
@@ -110901,6 +123595,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
   }
 
   export type WorkItemCreateWithoutPricingStatusInput = {
@@ -110919,6 +123618,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutWorkItemsInput
@@ -110939,6 +123648,9 @@ export namespace Prisma {
     expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemUncheckedCreateWithoutPricingStatusInput = {
@@ -110961,6 +123673,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -110977,6 +123699,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
     directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
     delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    finishings?: WorkItemFinishingUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
   }
 
   export type WorkItemCreateOrConnectWithoutPricingStatusInput = {
@@ -111036,6 +123761,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserUncheckedCreateWithoutPricingStatusesUpdatedInput = {
@@ -111090,6 +123820,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
     lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    finishingServicesCreated?: FinishingServiceUncheckedCreateNestedManyWithoutCreatedByInput
   }
 
   export type UserCreateOrConnectWithoutPricingStatusesUpdatedInput = {
@@ -111124,6 +123859,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -111144,6 +123889,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutPricingStatusInput = {
@@ -111166,6 +123914,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -111182,6 +123940,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type UserUpsertWithoutPricingStatusesUpdatedInput = {
@@ -111247,6 +124008,11 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUpdateManyWithoutCreatedByNestedInput
   }
 
   export type UserUncheckedUpdateWithoutPricingStatusesUpdatedInput = {
@@ -111301,6 +124067,595 @@ export namespace Prisma {
     changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
     changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
     lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    finishingServicesCreated?: FinishingServiceUncheckedUpdateManyWithoutCreatedByNestedInput
+  }
+
+  export type UserCreateWithoutFinishingServicesCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    roles?: UserRoleCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalCreateNestedManyWithoutApprovedByInput
+  }
+
+  export type UserUncheckedCreateWithoutFinishingServicesCreatedInput = {
+    id: string
+    name: string
+    email: string
+    emailVerified?: boolean
+    image?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    username: string
+    displayUsername?: string | null
+    isActive?: boolean
+    failedLoginAttempts?: number
+    lockedUntil?: Date | string | null
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    roles?: UserRoleUncheckedCreateNestedManyWithoutUserInput
+    extraPermissions?: UserPermissionUncheckedCreateNestedManyWithoutUserInput
+    departments?: UserDepartmentUncheckedCreateNestedManyWithoutUserInput
+    auditEvents?: AuditEventUncheckedCreateNestedManyWithoutActorInput
+    grantedPermissions?: UserPermissionUncheckedCreateNestedManyWithoutGrantedByInput
+    createdOrders?: OrderUncheckedCreateNestedManyWithoutCreatedByInput
+    assignedWorkItems?: WorkItemUncheckedCreateNestedManyWithoutAssigneeInput
+    workItemTransitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutActorInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutUserInput
+    designVersionsUploaded?: DesignVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    designVersionsApproved?: DesignVersionUncheckedCreateNestedManyWithoutApprovedByInput
+    returnsRaised?: ReturnUncheckedCreateNestedManyWithoutRaisedByInput
+    returnsAssignedToMe?: ReturnUncheckedCreateNestedManyWithoutAssignedToInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedCreateNestedManyWithoutCreatedByInput
+    fileVersionsUploaded?: FileVersionUncheckedCreateNestedManyWithoutUploadedByInput
+    attachments?: AttachmentUncheckedCreateNestedManyWithoutCreatedByInput
+    fileAuditEvents?: FileAuditEventUncheckedCreateNestedManyWithoutActorInput
+    fileConfigsUpdated?: FileConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedCreateNestedManyWithoutUpdatedByInput
+    priceListsCreated?: PriceListUncheckedCreateNestedManyWithoutCreatedByInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedCreateNestedManyWithoutCreatedByInput
+    workItemPricesSet?: WorkItemPriceUncheckedCreateNestedManyWithoutSetByInput
+    pricingStatusesUpdated?: PricingStatusUncheckedCreateNestedManyWithoutUpdatedByInput
+    paymentsRecorded?: PaymentUncheckedCreateNestedManyWithoutRecordedByInput
+    financeVoided?: FinanceVoidUncheckedCreateNestedManyWithoutVoidedByInput
+    expensesCreated?: ExpenseUncheckedCreateNestedManyWithoutCreatedByInput
+    expensesApproved?: ExpenseApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+    directCostsCreated?: DirectCostUncheckedCreateNestedManyWithoutCreatedByInput
+    creditsUpdated?: CustomerCreditUncheckedCreateNestedManyWithoutUpdatedByInput
+    financeConfigUpdates?: FinanceConfigUncheckedCreateNestedManyWithoutUpdatedByInput
+    notifications?: NotificationUncheckedCreateNestedManyWithoutUserInput
+    thresholdUpdates?: DelayThresholdUncheckedCreateNestedManyWithoutUpdatedByInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedCreateNestedManyWithoutUpdatedByInput
+    specVersionsCreated?: SpecVersionUncheckedCreateNestedManyWithoutCreatedByInput
+    changeRequestsRequested?: ChangeRequestUncheckedCreateNestedManyWithoutRequestedByInput
+    changeRequestsDecided?: ChangeRequestUncheckedCreateNestedManyWithoutDecidedByInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedCreateNestedManyWithoutProductionAcknowledgedByInput
+    lateCancellations?: LateCancellationUncheckedCreateNestedManyWithoutCreatedByInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedCreateNestedManyWithoutUpdatedByInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedCreateNestedManyWithoutRaisedByInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedCreateNestedManyWithoutResolvedByInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedCreateNestedManyWithoutApprovedByInput
+  }
+
+  export type UserCreateOrConnectWithoutFinishingServicesCreatedInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutFinishingServicesCreatedInput, UserUncheckedCreateWithoutFinishingServicesCreatedInput>
+  }
+
+  export type WorkItemFinishingCreateWithoutFinishingServiceInput = {
+    id?: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    workItem: WorkItemCreateNestedOneWithoutFinishingsInput
+  }
+
+  export type WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput = {
+    id?: string
+    workItemId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WorkItemFinishingCreateOrConnectWithoutFinishingServiceInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    create: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput>
+  }
+
+  export type WorkItemFinishingCreateManyFinishingServiceInputEnvelope = {
+    data: WorkItemFinishingCreateManyFinishingServiceInput | WorkItemFinishingCreateManyFinishingServiceInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserUpsertWithoutFinishingServicesCreatedInput = {
+    update: XOR<UserUpdateWithoutFinishingServicesCreatedInput, UserUncheckedUpdateWithoutFinishingServicesCreatedInput>
+    create: XOR<UserCreateWithoutFinishingServicesCreatedInput, UserUncheckedCreateWithoutFinishingServicesCreatedInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutFinishingServicesCreatedInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutFinishingServicesCreatedInput, UserUncheckedUpdateWithoutFinishingServicesCreatedInput>
+  }
+
+  export type UserUpdateWithoutFinishingServicesCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUpdateManyWithoutApprovedByNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutFinishingServicesCreatedInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    emailVerified?: BoolFieldUpdateOperationsInput | boolean
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    username?: StringFieldUpdateOperationsInput | string
+    displayUsername?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    failedLoginAttempts?: IntFieldUpdateOperationsInput | number
+    lockedUntil?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    roles?: UserRoleUncheckedUpdateManyWithoutUserNestedInput
+    extraPermissions?: UserPermissionUncheckedUpdateManyWithoutUserNestedInput
+    departments?: UserDepartmentUncheckedUpdateManyWithoutUserNestedInput
+    auditEvents?: AuditEventUncheckedUpdateManyWithoutActorNestedInput
+    grantedPermissions?: UserPermissionUncheckedUpdateManyWithoutGrantedByNestedInput
+    createdOrders?: OrderUncheckedUpdateManyWithoutCreatedByNestedInput
+    assignedWorkItems?: WorkItemUncheckedUpdateManyWithoutAssigneeNestedInput
+    workItemTransitions?: WorkItemTransitionUncheckedUpdateManyWithoutActorNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutUserNestedInput
+    designVersionsUploaded?: DesignVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    designVersionsApproved?: DesignVersionUncheckedUpdateManyWithoutApprovedByNestedInput
+    returnsRaised?: ReturnUncheckedUpdateManyWithoutRaisedByNestedInput
+    returnsAssignedToMe?: ReturnUncheckedUpdateManyWithoutAssignedToNestedInput
+    vendorProductionRecordsCreated?: VendorProductionRecordUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileVersionsUploaded?: FileVersionUncheckedUpdateManyWithoutUploadedByNestedInput
+    attachments?: AttachmentUncheckedUpdateManyWithoutCreatedByNestedInput
+    fileAuditEvents?: FileAuditEventUncheckedUpdateManyWithoutActorNestedInput
+    fileConfigsUpdated?: FileConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    pricingPoliciesUpdated?: ProductPricingPolicyUncheckedUpdateManyWithoutUpdatedByNestedInput
+    priceListsCreated?: PriceListUncheckedUpdateManyWithoutCreatedByNestedInput
+    pricingRulesCreated?: CustomerPricingRuleUncheckedUpdateManyWithoutCreatedByNestedInput
+    workItemPricesSet?: WorkItemPriceUncheckedUpdateManyWithoutSetByNestedInput
+    pricingStatusesUpdated?: PricingStatusUncheckedUpdateManyWithoutUpdatedByNestedInput
+    paymentsRecorded?: PaymentUncheckedUpdateManyWithoutRecordedByNestedInput
+    financeVoided?: FinanceVoidUncheckedUpdateManyWithoutVoidedByNestedInput
+    expensesCreated?: ExpenseUncheckedUpdateManyWithoutCreatedByNestedInput
+    expensesApproved?: ExpenseApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+    directCostsCreated?: DirectCostUncheckedUpdateManyWithoutCreatedByNestedInput
+    creditsUpdated?: CustomerCreditUncheckedUpdateManyWithoutUpdatedByNestedInput
+    financeConfigUpdates?: FinanceConfigUncheckedUpdateManyWithoutUpdatedByNestedInput
+    notifications?: NotificationUncheckedUpdateManyWithoutUserNestedInput
+    thresholdUpdates?: DelayThresholdUncheckedUpdateManyWithoutUpdatedByNestedInput
+    recipientOverrideUpdates?: NotificationTypeOverrideUncheckedUpdateManyWithoutUpdatedByNestedInput
+    specVersionsCreated?: SpecVersionUncheckedUpdateManyWithoutCreatedByNestedInput
+    changeRequestsRequested?: ChangeRequestUncheckedUpdateManyWithoutRequestedByNestedInput
+    changeRequestsDecided?: ChangeRequestUncheckedUpdateManyWithoutDecidedByNestedInput
+    changeRequestsAcknowledged?: ChangeRequestUncheckedUpdateManyWithoutProductionAcknowledgedByNestedInput
+    lateCancellations?: LateCancellationUncheckedUpdateManyWithoutCreatedByNestedInput
+    widthRulesUpdated?: ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByNestedInput
+    widthExceptionsRaised?: WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByNestedInput
+    widthExceptionsResolved?: WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByNestedInput
+    accountingApprovalsGiven?: AccountingApprovalUncheckedUpdateManyWithoutApprovedByNestedInput
+  }
+
+  export type WorkItemFinishingUpsertWithWhereUniqueWithoutFinishingServiceInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    update: XOR<WorkItemFinishingUpdateWithoutFinishingServiceInput, WorkItemFinishingUncheckedUpdateWithoutFinishingServiceInput>
+    create: XOR<WorkItemFinishingCreateWithoutFinishingServiceInput, WorkItemFinishingUncheckedCreateWithoutFinishingServiceInput>
+  }
+
+  export type WorkItemFinishingUpdateWithWhereUniqueWithoutFinishingServiceInput = {
+    where: WorkItemFinishingWhereUniqueInput
+    data: XOR<WorkItemFinishingUpdateWithoutFinishingServiceInput, WorkItemFinishingUncheckedUpdateWithoutFinishingServiceInput>
+  }
+
+  export type WorkItemFinishingUpdateManyWithWhereWithoutFinishingServiceInput = {
+    where: WorkItemFinishingScalarWhereInput
+    data: XOR<WorkItemFinishingUpdateManyMutationInput, WorkItemFinishingUncheckedUpdateManyWithoutFinishingServiceInput>
+  }
+
+  export type WorkItemCreateWithoutFinishingsInput = {
+    id?: string
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    order: OrderCreateNestedOneWithoutWorkItemsInput
+    productType?: ProductTypeCreateNestedOneWithoutWorkItemsInput
+    department?: DepartmentCreateNestedOneWithoutWorkItemsInput
+    assignee?: UserCreateNestedOneWithoutAssignedWorkItemsInput
+    currentSpecVersion?: SpecVersionCreateNestedOneWithoutCurrentForInput
+    specVersions?: SpecVersionCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemUncheckedCreateWithoutFinishingsInput = {
+    id?: string
+    orderId: string
+    productTypeId?: string | null
+    departmentId?: string | null
+    state: $Enums.WorkItemState
+    requiresDesign?: boolean
+    requiresReview?: boolean
+    assigneeId?: string | null
+    description?: string | null
+    quantity?: number | null
+    widthValue?: Decimal | DecimalJsLike | number | string | null
+    heightValue?: Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: $Enums.WorkItemDimensionUnit | null
+    material?: string | null
+    finishNotes?: string | null
+    dueDate?: Date | string | null
+    producedQuantity?: number | null
+    productionNotes?: string | null
+    pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    currentSpecVersionId?: string | null
+    specVersions?: SpecVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    changeRequests?: ChangeRequestUncheckedCreateNestedManyWithoutWorkItemInput
+    lateCancellation?: LateCancellationUncheckedCreateNestedOneWithoutWorkItemInput
+    transitions?: WorkItemTransitionUncheckedCreateNestedManyWithoutWorkItemInput
+    phaseTimings?: PhaseTimingUncheckedCreateNestedManyWithoutWorkItemInput
+    designVersions?: DesignVersionUncheckedCreateNestedManyWithoutWorkItemInput
+    returns?: ReturnUncheckedCreateNestedManyWithoutWorkItemInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedCreateNestedManyWithoutWorkItemInput
+    fileAssets?: FileAssetUncheckedCreateNestedManyWithoutWorkItemInput
+    prices?: WorkItemPriceUncheckedCreateNestedManyWithoutWorkItemInput
+    pricingStatus?: PricingStatusUncheckedCreateNestedOneWithoutWorkItemInput
+    expenses?: ExpenseUncheckedCreateNestedManyWithoutWorkItemInput
+    directCosts?: DirectCostUncheckedCreateNestedManyWithoutWorkItemInput
+    delayBreaches?: DelayBreachUncheckedCreateNestedManyWithoutWorkItemInput
+    widthExceptions?: WidthExceptionTicketUncheckedCreateNestedManyWithoutWorkItemInput
+    accountingApprovals?: AccountingApprovalUncheckedCreateNestedManyWithoutWorkItemInput
+  }
+
+  export type WorkItemCreateOrConnectWithoutFinishingsInput = {
+    where: WorkItemWhereUniqueInput
+    create: XOR<WorkItemCreateWithoutFinishingsInput, WorkItemUncheckedCreateWithoutFinishingsInput>
+  }
+
+  export type FinishingServiceCreateWithoutSelectionsInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdAt?: Date | string
+    createdBy: UserCreateNestedOneWithoutFinishingServicesCreatedInput
+  }
+
+  export type FinishingServiceUncheckedCreateWithoutSelectionsInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdById: string
+    createdAt?: Date | string
+  }
+
+  export type FinishingServiceCreateOrConnectWithoutSelectionsInput = {
+    where: FinishingServiceWhereUniqueInput
+    create: XOR<FinishingServiceCreateWithoutSelectionsInput, FinishingServiceUncheckedCreateWithoutSelectionsInput>
+  }
+
+  export type WorkItemUpsertWithoutFinishingsInput = {
+    update: XOR<WorkItemUpdateWithoutFinishingsInput, WorkItemUncheckedUpdateWithoutFinishingsInput>
+    create: XOR<WorkItemCreateWithoutFinishingsInput, WorkItemUncheckedCreateWithoutFinishingsInput>
+    where?: WorkItemWhereInput
+  }
+
+  export type WorkItemUpdateToOneWithWhereWithoutFinishingsInput = {
+    where?: WorkItemWhereInput
+    data: XOR<WorkItemUpdateWithoutFinishingsInput, WorkItemUncheckedUpdateWithoutFinishingsInput>
+  }
+
+  export type WorkItemUpdateWithoutFinishingsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
+    productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
+    department?: DepartmentUpdateOneWithoutWorkItemsNestedInput
+    assignee?: UserUpdateOneWithoutAssignedWorkItemsNestedInput
+    currentSpecVersion?: SpecVersionUpdateOneWithoutCurrentForNestedInput
+    specVersions?: SpecVersionUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type WorkItemUncheckedUpdateWithoutFinishingsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    productTypeId?: NullableStringFieldUpdateOperationsInput | string | null
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: EnumWorkItemStateFieldUpdateOperationsInput | $Enums.WorkItemState
+    requiresDesign?: BoolFieldUpdateOperationsInput | boolean
+    requiresReview?: BoolFieldUpdateOperationsInput | boolean
+    assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    quantity?: NullableIntFieldUpdateOperationsInput | number | null
+    widthValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    heightValue?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    dimensionUnit?: NullableEnumWorkItemDimensionUnitFieldUpdateOperationsInput | $Enums.WorkItemDimensionUnit | null
+    material?: NullableStringFieldUpdateOperationsInput | string | null
+    finishNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
+    productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
+    pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
+    specVersions?: SpecVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    changeRequests?: ChangeRequestUncheckedUpdateManyWithoutWorkItemNestedInput
+    lateCancellation?: LateCancellationUncheckedUpdateOneWithoutWorkItemNestedInput
+    transitions?: WorkItemTransitionUncheckedUpdateManyWithoutWorkItemNestedInput
+    phaseTimings?: PhaseTimingUncheckedUpdateManyWithoutWorkItemNestedInput
+    designVersions?: DesignVersionUncheckedUpdateManyWithoutWorkItemNestedInput
+    returns?: ReturnUncheckedUpdateManyWithoutWorkItemNestedInput
+    vendorProductionRecords?: VendorProductionRecordUncheckedUpdateManyWithoutWorkItemNestedInput
+    fileAssets?: FileAssetUncheckedUpdateManyWithoutWorkItemNestedInput
+    prices?: WorkItemPriceUncheckedUpdateManyWithoutWorkItemNestedInput
+    pricingStatus?: PricingStatusUncheckedUpdateOneWithoutWorkItemNestedInput
+    expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
+    directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
+    delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
+  }
+
+  export type FinishingServiceUpsertWithoutSelectionsInput = {
+    update: XOR<FinishingServiceUpdateWithoutSelectionsInput, FinishingServiceUncheckedUpdateWithoutSelectionsInput>
+    create: XOR<FinishingServiceCreateWithoutSelectionsInput, FinishingServiceUncheckedCreateWithoutSelectionsInput>
+    where?: FinishingServiceWhereInput
+  }
+
+  export type FinishingServiceUpdateToOneWithWhereWithoutSelectionsInput = {
+    where?: FinishingServiceWhereInput
+    data: XOR<FinishingServiceUpdateWithoutSelectionsInput, FinishingServiceUncheckedUpdateWithoutSelectionsInput>
+  }
+
+  export type FinishingServiceUpdateWithoutSelectionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    createdBy?: UserUpdateOneRequiredWithoutFinishingServicesCreatedNestedInput
+  }
+
+  export type FinishingServiceUncheckedUpdateWithoutSelectionsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdById?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type ChangeRequestCreateManyBaseSpecVersionInput = {
@@ -111402,6 +124757,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -111450,6 +124815,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -111470,6 +124845,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutDepartmentInput = {
@@ -111491,6 +124869,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -111508,6 +124896,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutDepartmentInput = {
@@ -111529,6 +124920,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -111602,6 +125003,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateWithoutDefaultDepartmentInput = {
@@ -111617,6 +125019,7 @@ export namespace Prisma {
     pricingPolicy?: ProductPricingPolicyUncheckedUpdateOneWithoutProductTypeNestedInput
     priceLists?: PriceListUncheckedUpdateManyWithoutProductTypeNestedInput
     customerPricingRules?: CustomerPricingRuleUncheckedUpdateManyWithoutProductTypeNestedInput
+    widthRule?: ProductionWidthRuleUncheckedUpdateOneWithoutProductTypeNestedInput
   }
 
   export type ProductTypeUncheckedUpdateManyWithoutDefaultDepartmentInput = {
@@ -111966,6 +125369,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -112023,6 +125436,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     productType?: ProductTypeUpdateOneWithoutWorkItemsNestedInput
@@ -112043,6 +125466,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutOrderInput = {
@@ -112064,6 +125490,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -112081,6 +125517,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutOrderInput = {
@@ -112102,6 +125541,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -112361,6 +125810,39 @@ export namespace Prisma {
     escalatedAt?: Date | string | null
     notifiedAt?: Date | string | null
     detectedAt?: Date | string
+  }
+
+  export type WorkItemFinishingCreateManyWorkItemInput = {
+    id?: string
+    finishingServiceId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateManyWorkItemInput = {
+    id?: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type AccountingApprovalCreateManyWorkItemInput = {
+    id?: string
+    approvedById: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
   }
 
   export type SpecVersionUpdateWithoutWorkItemInput = {
@@ -112820,6 +126302,105 @@ export namespace Prisma {
     detectedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type WorkItemFinishingUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    finishingService?: FinishingServiceUpdateOneRequiredWithoutSelectionsNestedInput
+  }
+
+  export type WorkItemFinishingUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    finishingServiceId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemFinishingUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    finishingServiceId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    raisedBy?: UserUpdateOneRequiredWithoutWidthExceptionsRaisedNestedInput
+    resolvedBy?: UserUpdateOneWithoutWidthExceptionsResolvedNestedInput
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    approvedBy?: UserUpdateOneRequiredWithoutAccountingApprovalsGivenNestedInput
+  }
+
+  export type AccountingApprovalUncheckedUpdateWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalUncheckedUpdateManyWithoutWorkItemInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    approvedById?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type WorkItemCreateManyProductTypeInput = {
     id?: string
     orderId: string
@@ -112839,6 +126420,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -112902,6 +126493,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -112922,6 +126523,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutProductTypeInput = {
@@ -112943,6 +126547,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -112960,6 +126574,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutProductTypeInput = {
@@ -112981,6 +126598,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -113569,6 +127196,16 @@ export namespace Prisma {
     producedQuantity?: number | null
     productionNotes?: string | null
     pendingFileRevisionAt?: Date | string | null
+    customerWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: number | null
+    productionAreaSqm?: Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: Decimal | DecimalJsLike | number | string | null
+    baseTotal?: Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: Decimal | DecimalJsLike | number | string | null
+    productionTotal?: Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     currentSpecVersionId?: string | null
@@ -113944,6 +127581,63 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type ProductionWidthRuleCreateManyUpdatedByInput = {
+    id?: string
+    productTypeId: string
+    ladderCm?: ProductionWidthRuleCreateladderCmInput | number[]
+    maxHeightM: Decimal | DecimalJsLike | number | string
+    minRatePerSqm: Decimal | DecimalJsLike | number | string
+    maxRatePerSqm: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateManyRaisedByInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    resolvedById?: string | null
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type WidthExceptionTicketCreateManyResolvedByInput = {
+    id?: string
+    workItemId: string
+    requestedWidthCm: Decimal | DecimalJsLike | number | string
+    maxWidthCm: Decimal | DecimalJsLike | number | string
+    reason: string
+    status?: $Enums.WidthExceptionStatus
+    raisedById: string
+    resolutionNote?: string | null
+    resolvedAt?: Date | string | null
+    createdAt?: Date | string
+  }
+
+  export type AccountingApprovalCreateManyApprovedByInput = {
+    id?: string
+    workItemId: string
+    priceId?: string | null
+    totalAmount: Decimal | DecimalJsLike | number | string
+    note?: string | null
+    approvedAt?: Date | string
+  }
+
+  export type FinishingServiceCreateManyCreatedByInput = {
+    id?: string
+    code: string
+    labelAr: string
+    ratePerSqm: Decimal | DecimalJsLike | number | string
+    effectiveFrom?: Date | string
+    effectiveTo?: Date | string | null
+    status?: $Enums.PriceConfigStatus
+    createdAt?: Date | string
+  }
+
   export type SessionUpdateWithoutUserInput = {
     id?: StringFieldUpdateOperationsInput | string
     expiresAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -114189,6 +127883,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutWorkItemsNestedInput
@@ -114209,6 +127913,9 @@ export namespace Prisma {
     expenses?: ExpenseUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateWithoutAssigneeInput = {
@@ -114230,6 +127937,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -114247,6 +127964,9 @@ export namespace Prisma {
     expenses?: ExpenseUncheckedUpdateManyWithoutWorkItemNestedInput
     directCosts?: DirectCostUncheckedUpdateManyWithoutWorkItemNestedInput
     delayBreaches?: DelayBreachUncheckedUpdateManyWithoutWorkItemNestedInput
+    finishings?: WorkItemFinishingUncheckedUpdateManyWithoutWorkItemNestedInput
+    widthExceptions?: WidthExceptionTicketUncheckedUpdateManyWithoutWorkItemNestedInput
+    accountingApprovals?: AccountingApprovalUncheckedUpdateManyWithoutWorkItemNestedInput
   }
 
   export type WorkItemUncheckedUpdateManyWithoutAssigneeInput = {
@@ -114268,6 +127988,16 @@ export namespace Prisma {
     producedQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     productionNotes?: NullableStringFieldUpdateOperationsInput | string | null
     pendingFileRevisionAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    customerWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionWidthCm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionHeightM?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    quantitySnapshot?: NullableIntFieldUpdateOperationsInput | number | null
+    productionAreaSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseRatePerSqm?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    baseTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    finishingTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionTotal?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    productionSpecAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     currentSpecVersionId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -115404,6 +129134,179 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type ProductionWidthRuleUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    productType?: ProductTypeUpdateOneRequiredWithoutWidthRuleNestedInput
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productTypeId?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProductionWidthRuleUncheckedUpdateManyWithoutUpdatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productTypeId?: StringFieldUpdateOperationsInput | string
+    ladderCm?: ProductionWidthRuleUpdateladderCmInput | number[]
+    maxHeightM?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    minRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxRatePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUpdateWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutWidthExceptionsNestedInput
+    resolvedBy?: UserUpdateOneWithoutWidthExceptionsResolvedNestedInput
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutRaisedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolvedById?: NullableStringFieldUpdateOperationsInput | string | null
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUpdateWithoutResolvedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutWidthExceptionsNestedInput
+    raisedBy?: UserUpdateOneRequiredWithoutWidthExceptionsRaisedNestedInput
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateWithoutResolvedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WidthExceptionTicketUncheckedUpdateManyWithoutResolvedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    requestedWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    maxWidthCm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    reason?: StringFieldUpdateOperationsInput | string
+    status?: EnumWidthExceptionStatusFieldUpdateOperationsInput | $Enums.WidthExceptionStatus
+    raisedById?: StringFieldUpdateOperationsInput | string
+    resolutionNote?: NullableStringFieldUpdateOperationsInput | string | null
+    resolvedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutAccountingApprovalsNestedInput
+  }
+
+  export type AccountingApprovalUncheckedUpdateWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type AccountingApprovalUncheckedUpdateManyWithoutApprovedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    priceId?: NullableStringFieldUpdateOperationsInput | string | null
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    note?: NullableStringFieldUpdateOperationsInput | string | null
+    approvedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type FinishingServiceUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    selections?: WorkItemFinishingUpdateManyWithoutFinishingServiceNestedInput
+  }
+
+  export type FinishingServiceUncheckedUpdateWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    selections?: WorkItemFinishingUncheckedUpdateManyWithoutFinishingServiceNestedInput
+  }
+
+  export type FinishingServiceUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    labelAr?: StringFieldUpdateOperationsInput | string
+    ratePerSqm?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    effectiveFrom?: DateTimeFieldUpdateOperationsInput | Date | string
+    effectiveTo?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumPriceConfigStatusFieldUpdateOperationsInput | $Enums.PriceConfigStatus
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type RolePermissionCreateManyRoleInput = {
     id?: string
     permission: string
@@ -115470,6 +129373,50 @@ export namespace Prisma {
     minimumQuantity?: IntFieldUpdateOperationsInput | number
     maximumQuantity?: NullableIntFieldUpdateOperationsInput | number | null
     basePrice?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+  }
+
+  export type WorkItemFinishingCreateManyFinishingServiceInput = {
+    id?: string
+    workItemId: string
+    generation: number
+    quotedAt?: Date | string
+    labelSnapshot: string
+    rateSnapshot: Decimal | DecimalJsLike | number | string
+    totalAmount: Decimal | DecimalJsLike | number | string
+    createdAt?: Date | string
+  }
+
+  export type WorkItemFinishingUpdateWithoutFinishingServiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    workItem?: WorkItemUpdateOneRequiredWithoutFinishingsNestedInput
+  }
+
+  export type WorkItemFinishingUncheckedUpdateWithoutFinishingServiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WorkItemFinishingUncheckedUpdateManyWithoutFinishingServiceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    workItemId?: StringFieldUpdateOperationsInput | string
+    generation?: IntFieldUpdateOperationsInput | number
+    quotedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    labelSnapshot?: StringFieldUpdateOperationsInput | string
+    rateSnapshot?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    totalAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
 

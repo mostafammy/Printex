@@ -232,6 +232,16 @@ exports.Prisma.WorkItemScalarFieldEnum = {
   producedQuantity: 'producedQuantity',
   productionNotes: 'productionNotes',
   pendingFileRevisionAt: 'pendingFileRevisionAt',
+  customerWidthCm: 'customerWidthCm',
+  productionWidthCm: 'productionWidthCm',
+  productionHeightM: 'productionHeightM',
+  quantitySnapshot: 'quantitySnapshot',
+  productionAreaSqm: 'productionAreaSqm',
+  baseRatePerSqm: 'baseRatePerSqm',
+  baseTotal: 'baseTotal',
+  finishingTotal: 'finishingTotal',
+  productionTotal: 'productionTotal',
+  productionSpecAt: 'productionSpecAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   currentSpecVersionId: 'currentSpecVersionId'
@@ -246,6 +256,42 @@ exports.Prisma.ProductTypeScalarFieldEnum = {
   pricingModeHint: 'pricingModeHint',
   isActive: 'isActive',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.ProductionWidthRuleScalarFieldEnum = {
+  id: 'id',
+  productTypeId: 'productTypeId',
+  ladderCm: 'ladderCm',
+  maxHeightM: 'maxHeightM',
+  minRatePerSqm: 'minRatePerSqm',
+  maxRatePerSqm: 'maxRatePerSqm',
+  updatedById: 'updatedById',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.WidthExceptionTicketScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  requestedWidthCm: 'requestedWidthCm',
+  maxWidthCm: 'maxWidthCm',
+  reason: 'reason',
+  status: 'status',
+  raisedById: 'raisedById',
+  resolvedById: 'resolvedById',
+  resolutionNote: 'resolutionNote',
+  resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AccountingApprovalScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  approvedById: 'approvedById',
+  priceId: 'priceId',
+  totalAmount: 'totalAmount',
+  note: 'note',
+  approvedAt: 'approvedAt'
 };
 
 exports.Prisma.WorkItemTransitionScalarFieldEnum = {
@@ -750,6 +796,30 @@ exports.Prisma.PricingStatusScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.FinishingServiceScalarFieldEnum = {
+  id: 'id',
+  code: 'code',
+  labelAr: 'labelAr',
+  ratePerSqm: 'ratePerSqm',
+  effectiveFrom: 'effectiveFrom',
+  effectiveTo: 'effectiveTo',
+  status: 'status',
+  createdById: 'createdById',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WorkItemFinishingScalarFieldEnum = {
+  id: 'id',
+  workItemId: 'workItemId',
+  finishingServiceId: 'finishingServiceId',
+  generation: 'generation',
+  quotedAt: 'quotedAt',
+  labelSnapshot: 'labelSnapshot',
+  rateSnapshot: 'rateSnapshot',
+  totalAmount: 'totalAmount',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -841,6 +911,12 @@ exports.OrderPriority = exports.$Enums.OrderPriority = {
 exports.OrderMode = exports.$Enums.OrderMode = {
   GROUPED: 'GROUPED',
   SEPARATE: 'SEPARATE'
+};
+
+exports.WidthExceptionStatus = exports.$Enums.WidthExceptionStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
 };
 
 exports.RejectionCategory = exports.$Enums.RejectionCategory = {
@@ -982,6 +1058,9 @@ exports.Prisma.ModelName = {
   Order: 'Order',
   WorkItem: 'WorkItem',
   ProductType: 'ProductType',
+  ProductionWidthRule: 'ProductionWidthRule',
+  WidthExceptionTicket: 'WidthExceptionTicket',
+  AccountingApproval: 'AccountingApproval',
   WorkItemTransition: 'WorkItemTransition',
   PhaseTiming: 'PhaseTiming',
   DesignVersion: 'DesignVersion',
@@ -1027,7 +1106,9 @@ exports.Prisma.ModelName = {
   PriceTier: 'PriceTier',
   CustomerPricingRule: 'CustomerPricingRule',
   WorkItemPrice: 'WorkItemPrice',
-  PricingStatus: 'PricingStatus'
+  PricingStatus: 'PricingStatus',
+  FinishingService: 'FinishingService',
+  WorkItemFinishing: 'WorkItemFinishing'
 };
 
 /**

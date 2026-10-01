@@ -12,7 +12,7 @@ import { registerGuard } from "~/server/core";
 import type { GuardResult } from "~/server/core";
 import { isSelfReview } from "./selfReview";
 
-registerGuard({ to: "APPROVED" }, async (ctx): Promise<GuardResult> => {
+registerGuard({ from: "WAITING_REVIEW", to: "APPROVED" }, async (ctx): Promise<GuardResult> => {
   const currentVersion = await db.designVersion.findFirst({
     where: { workItemId: ctx.workItem.id },
     orderBy: { version: "desc" },

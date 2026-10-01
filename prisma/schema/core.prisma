@@ -70,6 +70,16 @@ enum ReturnAttachmentKind {
   FILE
 }
 
+/// 093-order-production-workflow. Lifecycle of a width above the configured
+/// production maximum (FR-003). An over-maximum width is NEVER clamped — it
+/// is refused and, when a manager still wants the job, recorded here as an
+/// explicit, audited exception (constitution II: no silent bypass).
+enum WidthExceptionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // --- Models ------------------------------------------------------------
 
 /// Admin-configured production department (constitution VI: data, not an enum).
@@ -188,6 +198,34 @@ model WorkItem {
   pendingFileRevisionAt DateTime?
   /// --- end 014-production fields -------------------------------------------
 
+  /// --- 093-order-production-workflow: frozen production specification -----
+  /// Everything below is an immutable SNAPSHOT taken by
+  /// `production-spec.setProductionSpec` at reception time (FR-001…FR-010,
+  /// FR-024). It is deliberately denormalized onto WorkItem — the same
+  /// pattern 014 used for `producedQuantity`/`productionNotes` — because the
+  /// audit requirement is "a later price-list or width-table change must
+  /// never rewrite what a customer was quoted" (SC-006). Recomputing these
+  /// columns from mutable configuration is a defect, not a feature.
+  ///
+  /// Canonical units (FR-005): widths cm, heights m, area m².
+  /// `customerWidthCm` is what the customer asked for and is NEVER
+  /// overwritten by rounding; `productionWidthCm` is the rounded-up width
+  /// that production actually consumes and the ONLY width that feeds area.
+  customerWidthCm   Decimal? @db.Decimal(10, 2)
+  productionWidthCm Decimal? @db.Decimal(10, 2)
+  productionHeightM Decimal? @db.Decimal(10, 2)
+  quantitySnapshot  Int?
+  productionAreaSqm Decimal? @db.Decimal(12, 4)
+  /// EGP per m² chosen at quote time; frozen so history never moves (FR-007).
+  baseRatePerSqm    Decimal? @db.Decimal(12, 2)
+  baseTotal         Decimal? @db.Decimal(12, 2)
+  finishingTotal    Decimal? @db.Decimal(12, 2)
+  /// `baseTotal + finishingTotal`, whole-EGP rounded once at the end (FR-008).
+  productionTotal   Decimal? @db.Decimal(12, 2)
+  /// When the snapshot above was written. Null = never priced.
+  productionSpecAt  DateTime?
+  /// --- end 093-order-production-workflow fields ---------------------------
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -215,6 +253,10 @@ model WorkItem {
   directCosts             DirectCost[]
   // --- 053-notifications reverse relation ---
   delayBreaches           DelayBreach[]
+  // --- 093-order-production-workflow reverse relations ---
+  finishings              WorkItemFinishing[]
+  widthExceptions         WidthExceptionTicket[]
+  accountingApprovals     AccountingApproval[]
 
   @@index([orderId, state])
   // Review queue (getReviewQueue) filters on `state` alone; My Queue /
@@ -245,6 +287,99 @@ model ProductType {
   pricingPolicy        ProductPricingPolicy?
   priceLists           PriceList[]
   customerPricingRules CustomerPricingRule[]
+  // --- 093-order-production-workflow -------------------------------------
+  /// Non-null exactly when this ProductType is governed by the production
+  /// specification (width ladder, height cap, base-rate band). This is the
+  /// configuration switch the pipeline guards read: a Work Item whose
+  /// ProductType has no rule keeps 011/014's pre-existing behaviour, and a
+  /// governed one cannot skip the width/area/price/file/accountant gates.
+  widthRule            ProductionWidthRule?
+}
+
+/// 093-order-production-workflow. Per-ProductType production constraints —
+/// DATA, not code branches (constitution VI). Owns the ordered width ladder
+/// that `production-spec/widths.resolveProductionWidth` rounds against, the
+/// height ceiling, and the permitted EGP/m² band for the base rate.
+///
+/// The ladder is a scalar list rather than a child table on purpose: it is
+/// an ordered, small, all-or-nothing set that is replaced wholesale by
+/// `configureWidthRule` inside one audited transaction. A child table would
+/// need a delete-and-reinsert (a hard delete, which constitution III
+/// forbids) or a versioning scheme that buys nothing for eight numbers.
+model ProductionWidthRule {
+  id            String      @id @default(cuid())
+  productTypeId String      @unique
+  productType   ProductType @relation(fields: [productTypeId], references: [id])
+  /// Ascending, strictly increasing, whole centimetres. The last element is
+  /// the maximum production width: anything above it raises a
+  /// `WidthExceptionTicket` rather than clamping (FR-003).
+  ladderCm      Int[]
+  /// Maximum production height in metres (50 m for the seeded roll class).
+  maxHeightM    Decimal     @db.Decimal(10, 2)
+  /// Inclusive EGP/m² band the base rate must fall inside (80–120 seeded).
+  minRatePerSqm Decimal     @db.Decimal(12, 2)
+  maxRatePerSqm Decimal     @db.Decimal(12, 2)
+  updatedById   String
+  updatedBy     User        @relation("WidthRuleUpdatedBy", fields: [updatedById], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([productTypeId])
+}
+
+/// 093-order-production-workflow. An audited request to produce a banner
+/// wider than the configured maximum. Raising one is how reception records
+/// "the customer insists"; resolving one is how a manager authorises it.
+///
+/// Append-only in spirit: the row is created once and only its
+/// status/resolution fields are ever written, each by an explicit, audited
+/// action. It is never deleted (constitution III).
+model WidthExceptionTicket {
+  id               String               @id @default(cuid())
+  workItemId       String
+  workItem         WorkItem             @relation(fields: [workItemId], references: [id])
+  /// The width the customer asked for, in cm — preserved exactly as entered.
+  requestedWidthCm Decimal              @db.Decimal(10, 2)
+  /// The ceiling that was exceeded, snapshotted so the ticket still reads
+  /// correctly after the ladder is reconfigured.
+  maxWidthCm       Decimal              @db.Decimal(10, 2)
+  reason           String
+  status           WidthExceptionStatus @default(PENDING)
+  raisedById       String
+  raisedBy         User                 @relation("WidthExceptionRaisedBy", fields: [raisedById], references: [id])
+  resolvedById     String?
+  resolvedBy       User?                @relation("WidthExceptionResolvedBy", fields: [resolvedById], references: [id])
+  resolutionNote   String?
+  resolvedAt       DateTime?
+  createdAt        DateTime             @default(now())
+
+  @@index([status, createdAt])
+  @@index([workItemId, createdAt])
+}
+
+/// 093-order-production-workflow. The accountant's sign-off. Its existence is
+/// what the `-> READY_FOR_PRODUCTION` guard checks, which is how "only an
+/// accountant can put work in front of the printer" is enforced in the one
+/// authoritative transition function rather than in UI code (FR-014/FR-015,
+/// SC-003).
+///
+/// Append-only (constitution III): a corrected approval is a new row, never
+/// an update. Revoking an approval is a `Return`/rework, not a delete.
+model AccountingApproval {
+  id           String   @id @default(cuid())
+  workItemId   String
+  workItem     WorkItem @relation(fields: [workItemId], references: [id])
+  approvedById String
+  approvedBy   User     @relation("AccountingApprovalApprovedBy", fields: [approvedById], references: [id])
+  /// The frozen `WorkItemPrice` the accountant signed off, when one exists.
+  priceId      String?
+  /// EGP total at approval time — a copy, not a lookup, so the approval keeps
+  /// its meaning even if the price is later superseded (FR-007, SC-006).
+  totalAmount  Decimal  @db.Decimal(12, 2)
+  note         String?
+  approvedAt   DateTime @default(now())
+
+  @@index([workItemId, approvedAt])
 }
 
 /// Immutable — application code never updates or deletes a row here (constitution III).

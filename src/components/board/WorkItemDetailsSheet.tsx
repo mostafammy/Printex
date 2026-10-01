@@ -9,15 +9,17 @@
 
 import React, { useState } from "react";
 import type { BoardCard, WorkItemFullDetail } from "~/lib/board/types";
-import { STATE_AR_LABELS, STATE_PLACEMENT } from "~/lib/board/stations";
-import { DetailsHeader } from "./details/DetailsHeader";
+import { STATE_PLACEMENT } from "~/lib/board/stations";
 import type { DetailTabKey } from "./details/DetailsTabBar";
-import { ModalShell, ModalBody } from "./details/DetailsModalParts";
+import {
+  ModalShell,
+  ModalHeader,
+  ModalBody,
+} from "./details/DetailsModalParts";
 import {
   defaultFetchDetail,
   useWorkItemDetail,
   useEscapeKey,
-  getStationHref,
 } from "./details/sheetHooks";
 import { useCardModalMorph } from "./details/useCardModalMorph";
 
@@ -26,7 +28,9 @@ export interface WorkItemDetailsSheetProps {
   readonly isOpen: boolean;
   readonly onClose: () => void;
   readonly onOpenMoveMenu?: (card: BoardCard) => void;
-  readonly fetchDetail?: (workItemId: string) => Promise<WorkItemFullDetail | null>;
+  readonly fetchDetail?: (
+    workItemId: string,
+  ) => Promise<WorkItemFullDetail | null>;
 }
 
 interface ModalProps {
@@ -37,14 +41,25 @@ interface ModalProps {
   readonly setActiveTab: (tab: DetailTabKey) => void;
   readonly onClose: () => void;
   readonly onOpenMoveMenu?: (card: BoardCard) => void;
+  readonly onRefreshFiles: () => Promise<void>;
   readonly backdropRef: React.RefObject<HTMLDivElement | null>;
   readonly dialogRef: React.RefObject<HTMLDivElement | null>;
 }
 
 function WorkItemDetailsModal(props: ModalProps) {
-  const { card, detail, loading, activeTab, setActiveTab, onClose, onOpenMoveMenu, backdropRef, dialogRef } = props;
+  const {
+    card,
+    detail,
+    loading,
+    activeTab,
+    setActiveTab,
+    onClose,
+    onOpenMoveMenu,
+  } = props;
+  const { onRefreshFiles, backdropRef, dialogRef } = props;
   const placement = STATE_PLACEMENT[card.state];
-  const stationKey = placement === "OFF_BOARD" ? "reception" : placement.station;
+  const stationKey =
+    placement === "OFF_BOARD" ? "reception" : placement.station;
 
   return (
     <ModalShell
@@ -54,11 +69,9 @@ function WorkItemDetailsModal(props: ModalProps) {
       backdropRef={backdropRef}
       dialogRef={dialogRef}
     >
-      <DetailsHeader
+      <ModalHeader
         card={card}
         detail={detail}
-        stateLabel={STATE_AR_LABELS[card.state] ?? card.state}
-        stationPageHref={getStationHref(card.id, card.state)}
         onClose={onClose}
         onOpenMoveMenu={onOpenMoveMenu}
       />
@@ -69,6 +82,7 @@ function WorkItemDetailsModal(props: ModalProps) {
         detail={detail}
         loading={loading}
         onClose={onClose}
+        onRefreshFiles={onRefreshFiles}
       />
     </ModalShell>
   );
@@ -81,9 +95,17 @@ export function WorkItemDetailsSheet({
   onOpenMoveMenu,
   fetchDetail = defaultFetchDetail,
 }: WorkItemDetailsSheetProps) {
-  const { detail, loading } = useWorkItemDetail(card?.id, isOpen, fetchDetail);
+  const { detail, loading, refresh } = useWorkItemDetail(
+    card?.id,
+    isOpen,
+    fetchDetail,
+  );
   const [activeTab, setActiveTab] = useState<DetailTabKey>("specs");
-  const { backdropRef, dialogRef, handleClose } = useCardModalMorph(card?.id, isOpen, onClose);
+  const { backdropRef, dialogRef, handleClose } = useCardModalMorph(
+    card?.id,
+    isOpen,
+    onClose,
+  );
   useEscapeKey(isOpen, handleClose);
 
   if (!isOpen || !card) return null;
@@ -97,6 +119,7 @@ export function WorkItemDetailsSheet({
       setActiveTab={setActiveTab}
       onClose={handleClose}
       onOpenMoveMenu={onOpenMoveMenu}
+      onRefreshFiles={refresh}
       backdropRef={backdropRef}
       dialogRef={dialogRef}
     />

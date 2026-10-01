@@ -16,7 +16,8 @@
 //       specs/001-identity-access-audit/contracts/auth.md §Actor
 
 /**
- * All 23 permission keys supported by this application (spec FR-010, PRD §26/§48; 016 FR-013).
+ * All 24 permission keys supported by this application (spec FR-010, PRD §26/§48;
+ * 016 FR-013; 093 FR-014 `workitem.approve_production`).
  *
  * Every server action's authorization call must use one of these keys:
  *   authorize(actor, "order.create")  // compile-time typo-safe
@@ -34,6 +35,14 @@ export type Permission =
   // Work item routing
   | "workitem.assign_designer"
   | "workitem.send_to_production"
+  // 093-order-production-workflow FR-014: the accountant's sign-off that puts
+  // work in front of the printer. A DISTINCT key rather than a reuse of
+  // `workitem.send_to_production` on purpose: RECEPTION holds
+  // `workitem.send_to_production`, so reusing it would let reception approve
+  // its own jobs and collapse the accountant stage the spec requires. Adding
+  // a key is a code change by design (see the file header) — this one buys a
+  // real, separately auditable capability.
+  | "workitem.approve_production"
   // Design
   | "design.work"
   | "design.review"
@@ -86,7 +95,7 @@ export type RoleKey =
   | "ADMIN_OWNER";
 
 /**
- * All 23 Permission keys as a runtime array, matching the type above exactly.
+ * All 24 Permission keys as a runtime array, matching the type above exactly.
  * Used by seed.ts and contract tests to iterate over the full permission set
  * without hardcoding the list a second time.
  *
@@ -101,6 +110,7 @@ export const ALL_PERMISSIONS: readonly Permission[] = [
   "customer.manage",
   "workitem.assign_designer",
   "workitem.send_to_production",
+  "workitem.approve_production",
   "design.work",
   "design.review",
   "change.approve",

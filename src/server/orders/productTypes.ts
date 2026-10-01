@@ -13,6 +13,14 @@ export interface ActiveProductType {
   id: string;
   name: string;
   defaultDepartmentId: string | null;
+  /**
+   * Name of `defaultDepartmentId`, resolved in the same query. A work item's
+   * department IS its product type's department (reception offers no second
+   * picker), so a form that has to tell the user where the item will route
+   * needs the name — not the whole Department catalog plus a client-side
+   * lookup table. `null` when the type has no department configured.
+   */
+  defaultDepartmentName: string | null;
   defaultRequiresDesign: boolean;
   defaultRequiresReview: boolean;
 }
@@ -23,17 +31,23 @@ export interface ActiveProductType {
  * types never appear here (contracts/product-types.md).
  */
 export async function listActiveProductTypes(_actor: Actor): Promise<ActiveProductType[]> {
-  return db.productType.findMany({
+  const rows = await db.productType.findMany({
     where: { isActive: true },
     select: {
       id: true,
       name: true,
       defaultDepartmentId: true,
+      defaultDepartment: { select: { name: true } },
       defaultRequiresDesign: true,
       defaultRequiresReview: true,
     },
     orderBy: { name: "asc" },
   });
+
+  return rows.map(({ defaultDepartment, ...row }) => ({
+    ...row,
+    defaultDepartmentName: defaultDepartment?.name ?? null,
+  }));
 }
 
 // ── Admin CRUD (contracts/product-types.md) ────────────────────────────────

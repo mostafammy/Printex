@@ -44,6 +44,10 @@ export interface DetailFileVersion {
   readonly sizeBytes: number;
   readonly note: string | null;
   readonly approved: boolean;
+  /// 050's lifecycle status. Carried so a VOID or ARCHIVED version can be shown
+  /// as retired instead of reading as the live file — the popup is where someone
+  /// decides which file to send to the printer.
+  readonly status: string;
   readonly createdAt: string;
   readonly uploadedByName: string;
 }
@@ -78,7 +82,11 @@ export interface WorkItemFullDetail {
   readonly title: string;
   readonly description: string | null;
   readonly productType: { readonly id: string; readonly name: string } | null;
-  readonly department: { readonly id: string; readonly name: string; readonly isExternalProduction: boolean } | null;
+  readonly department: {
+    readonly id: string;
+    readonly name: string;
+    readonly isExternalProduction: boolean;
+  } | null;
   readonly state: WorkItemState;
   readonly quantity: number | null;
   readonly producedQuantity: number | null;
@@ -93,7 +101,11 @@ export interface WorkItemFullDetail {
   readonly createdAt: string;
   readonly updatedAt: string;
   readonly dueDate: string | null;
-  readonly assignee: { readonly id: string; readonly name: string; readonly email?: string | null } | null;
+  readonly assignee: {
+    readonly id: string;
+    readonly name: string;
+    readonly email?: string | null;
+  } | null;
   readonly pricingStatus: {
     readonly status: "PENDING" | "PRICED" | "DISPUTED" | "NOT_REQUIRED";
     readonly disputeReason: string | null;

@@ -143,7 +143,46 @@ export async function getReviewDetail(actor: Actor, workItemId: string): Promise
   };
 }
 
-// ── shared load/guard helper (approveDesign + rejectDesign) ─────────────
+/**
+ * If the WorkItem has no DesignVersion but does have an active FileVersion,
+ * create a bridging DesignVersion from that file. Called BEFORE any
+ * transaction opens — a designVersion.create inside an interactive tx poisons
+ * the tx object on any error (even caught ones), breaking every subsequent
+ * tx query ("Transaction not found").
+ */
+async function bridgeDesignVersionIfNeeded(workItemId: string): Promise<void> {
+  const existing = await db.designVersion.count({ where: { workItemId } });
+  if (existing > 0) return;
+
+  const activeFileVersion = await db.fileVersion.findFirst({
+    where: {
+      fileAsset: { workItemId },
+      status: "ACTIVE",
+    },
+    include: { fileObject: true },
+    orderBy: { versionNumber: "desc" },
+  });
+  if (!activeFileVersion) return;
+
+  try {
+    const nextVer = 1 + (await db.designVersion.count({ where: { workItemId } }));
+    await db.designVersion.create({
+      data: {
+        workItemId,
+        version: nextVer,
+        storageKey: activeFileVersion.fileObject.storageKey,
+        fileName: activeFileVersion.originalName,
+        mimeType: activeFileVersion.fileObject.mimeType,
+        sizeBytes: Number(activeFileVersion.fileObject.sizeBytes),
+        sha256: activeFileVersion.fileObject.sha256,
+        note: activeFileVersion.note,
+        uploadedById: activeFileVersion.uploadedById,
+      },
+    });
+  } catch {
+    // Concurrent call already created the row — that's fine.
+  }
+}
 
 async function loadReviewableCurrentVersion(
   tx: Prisma.TransactionClient,
@@ -179,6 +218,12 @@ async function loadReviewableCurrentVersion(
 
 export async function approveDesign(actor: Actor, workItemId: string): Promise<void> {
   authorize(actor, "design.review");
+
+  // Bridge any FileVersion → DesignVersion BEFORE opening the transaction.
+  // A designVersion.create inside a Prisma interactive tx poisons the entire
+  // tx object on any failure (even caught), causing subsequent tx queries to
+  // throw "Transaction not found". Running this here, outside the tx, is safe.
+  await bridgeDesignVersionIfNeeded(workItemId);
 
   await db.$transaction(async (tx: Prisma.TransactionClient) => {
     // 014 US7 (research.md §4, FR-013): a revised DesignVersion approved
@@ -256,6 +301,16 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
       actorId: actor.userId,
       after: { designVersionId: currentVersion.id },
     });
+
+    // Auto-route approved work item to Accountant board (WAITING_PRICING)
+    const toPricing = await transitionWorkItem(tx, {
+      workItemId: asWorkItemId(workItemId),
+      to: "WAITING_PRICING",
+      actor: toCoreActor(actor),
+    });
+    if (!toPricing.ok) {
+      throw new WorkItemTransitionError(toPricing.error);
+    }
   });
 }
 
@@ -326,6 +381,9 @@ export async function rejectDesign(
   // Attachment bytes are written before the transaction's metadata commit
   // (same ordering `uploadDesignVersion` uses — research.md §3, returns.ts).
   const uploadedAttachments = await uploadReturnAttachments(workItemId, validated.attachments);
+
+  // Bridge any FileVersion → DesignVersion BEFORE opening the transaction.
+  await bridgeDesignVersionIfNeeded(workItemId);
 
   let returnId!: string;
 

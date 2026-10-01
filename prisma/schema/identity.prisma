@@ -89,6 +89,13 @@ model User {
   changeRequestsAcknowledged ChangeRequest[]    @relation("ChangeRequestAcknowledgedBy")
   lateCancellations          LateCancellation[] @relation("LateCancellationCreatedBy")
 
+  // --- Reverse relations added by 093-order-production-workflow -----------
+  widthRulesUpdated          ProductionWidthRule[] @relation("WidthRuleUpdatedBy")
+  widthExceptionsRaised      WidthExceptionTicket[] @relation("WidthExceptionRaisedBy")
+  widthExceptionsResolved    WidthExceptionTicket[] @relation("WidthExceptionResolvedBy")
+  accountingApprovalsGiven   AccountingApproval[]  @relation("AccountingApprovalApprovedBy")
+  finishingServicesCreated   FinishingService[]    @relation("FinishingServiceCreatedBy")
+
   @@unique([email])
   @@map("user")
 }

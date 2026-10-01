@@ -53,10 +53,21 @@ export async function uploadDesignVersion(
   file: UploadDesignVersionFile,
   note?: string,
 ): Promise<{ designVersionId: string; version: number }> {
-  authorize(actor, "design.work");
+  if (
+    !actor.permissions.has("design.work") &&
+    !actor.permissions.has("admin.override") &&
+    !actor.roles.includes("ADMIN_OWNER")
+  ) {
+    authorize(actor, "design.work");
+  }
 
   const workItem = await db.workItem.findUniqueOrThrow({ where: { id: workItemId } });
-  if (workItem.assigneeId !== actor.userId) {
+  const isAuthorizedAssignee =
+    workItem.assigneeId === actor.userId ||
+    actor.roles.includes("ADMIN_OWNER") ||
+    actor.permissions.has("admin.override");
+
+  if (!isAuthorizedAssignee) {
     throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may upload a design version.");
   }
   if (workItem.state !== "IN_DESIGN") {
@@ -117,12 +128,63 @@ export async function uploadDesignVersion(
  * rows `transitionWorkItem` writes are this call's audit trail.
  */
 export async function markDesignComplete(actor: Actor, workItemId: string): Promise<void> {
-  authorize(actor, "design.work");
+  if (
+    !actor.permissions.has("design.work") &&
+    !actor.permissions.has("admin.override") &&
+    !actor.roles.includes("ADMIN_OWNER")
+  ) {
+    authorize(actor, "design.work");
+  }
+
+  // Auto-bridge: if no DesignVersion exists yet but an active FileVersion does,
+  // create a DesignVersion from it BEFORE the transaction opens.
+  // This MUST happen outside the transaction — a failure inside a Prisma
+  // interactive transaction poisons the tx object even when caught, so any
+  // subsequent tx.phaseTiming / tx.workItem call would throw
+  // "Transaction not found" (same root cause as the FileService fix).
+  const existingDesignCount = await db.designVersion.count({ where: { workItemId } });
+  if (existingDesignCount === 0) {
+    const activeFileVersion = await db.fileVersion.findFirst({
+      where: {
+        fileAsset: { workItemId },
+        status: "ACTIVE",
+      },
+      include: { fileObject: true },
+      orderBy: { versionNumber: "desc" },
+    });
+
+    if (activeFileVersion) {
+      try {
+        const nextVer = 1 + (await db.designVersion.count({ where: { workItemId } }));
+        await db.designVersion.create({
+          data: {
+            workItemId,
+            version: nextVer,
+            storageKey: activeFileVersion.fileObject.storageKey,
+            fileName: activeFileVersion.originalName,
+            mimeType: activeFileVersion.fileObject.mimeType,
+            sizeBytes: Number(activeFileVersion.fileObject.sizeBytes),
+            sha256: activeFileVersion.fileObject.sha256,
+            note: activeFileVersion.note,
+            uploadedById: activeFileVersion.uploadedById,
+          },
+        });
+      } catch {
+        // Concurrent call may have already created the row — that's fine,
+        // the transaction below will count it and proceed.
+      }
+    }
+  }
 
   await db.$transaction(async (tx: Prisma.TransactionClient) => {
     const workItem = await tx.workItem.findUniqueOrThrow({ where: { id: workItemId } });
 
-    if (workItem.assigneeId !== actor.userId) {
+    const isAuthorizedAssignee =
+      workItem.assigneeId === actor.userId ||
+      actor.roles.includes("ADMIN_OWNER") ||
+      actor.permissions.has("admin.override");
+
+    if (!isAuthorizedAssignee) {
       throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may mark design complete.");
     }
     if (workItem.state !== "IN_DESIGN") {
@@ -157,6 +219,17 @@ export async function markDesignComplete(actor: Actor, workItemId: string): Prom
     });
     if (!second.ok) {
       throw new WorkItemDesignTransitionError(second.error);
+    }
+
+    if (!workItem.requiresReview) {
+      const third = await transitionWorkItem(tx, {
+        workItemId: asWorkItemId(workItemId),
+        to: "WAITING_PRICING",
+        actor: coreActor,
+      });
+      if (!third.ok) {
+        throw new WorkItemDesignTransitionError(third.error);
+      }
     }
   });
 }

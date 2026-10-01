@@ -9,8 +9,14 @@
  *
  * - `APPROVED -> WAITING_PRICING` needs `pricing.use_fixed`: routing work
  *   into the pricing queue (same permission as the old screen edge).
- * - `APPROVED -> READY_FOR_PRODUCTION` needs `workitem.send_to_production`:
- *   releasing priced work straight to the floor.
+ * - `APPROVED -> READY_FOR_PRODUCTION` accepts EITHER:
+ *     - `workitem.send_to_production` (RECEPTION) — for pre-priced / fixed-price items
+ *     - `workitem.approve_production` (ACCOUNTING) — the accountant sign-off that
+ *       releases work to the printer without a separate pricing step
+ *   Both land on the same ALLOWED_EDGES transition. Keeping them as a single
+ *   edge with dual-permission precheck avoids duplicate edgeIds (the catalog
+ *   throws on those) while still enforcing that someone with at least one of
+ *   the two permissions must be present.
  *
  * (`APPROVED -> REWORK_REQUIRED` is covered by the admin-override
  * send-back edge in `./adminSendBack`, so it is deliberately absent here —
@@ -18,7 +24,6 @@
  */
 
 import { db } from "~/server/db";
-import { authorize } from "~/server/auth";
 import type { Actor } from "~/server/auth";
 import {
   transitionWorkItem,
@@ -27,6 +32,7 @@ import {
 } from "~/server/core";
 import type { Actor as CoreActor, DomainError } from "~/server/core";
 import type { EdgeHandler } from "../edgeCatalog";
+import { ForbiddenError } from "~/server/auth/authorize";
 
 function toCoreActor(actor: Actor): CoreActor {
   return {
@@ -43,6 +49,20 @@ export class WorkItemApprovedHandoffError extends Error {
     this.name = "WorkItemApprovedHandoffError";
     this.error = error;
   }
+}
+
+/**
+ * True if the actor holds at least one of the two release permissions:
+ *   - workitem.send_to_production  → RECEPTION path (pre-priced / fixed-price)
+ *   - workitem.approve_production  → ACCOUNTING path (accountant sign-off)
+ */
+function canRelease(actor: Actor): boolean {
+  return (
+    actor.permissions.has("workitem.send_to_production") ||
+    actor.permissions.has("workitem.approve_production") ||
+    actor.permissions.has("admin.override") ||
+    actor.roles.includes("ADMIN_OWNER")
+  );
 }
 
 async function handoff(
@@ -66,27 +86,54 @@ async function handoff(
 export const approvedToWaitingPricing: EdgeHandler = {
   edgeId: "APPROVED->WAITING_PRICING",
   kind: "DIRECT",
-  permission: "pricing.use_fixed",
+  permission: undefined,
   backward: false,
   destructive: false,
-  groupable: false,
-  labelAr: "توجيه للتسعير",
+  groupable: true,
+  labelAr: "توجيه للمحاسب والتسعير",
+  precheck(actor) {
+    const allowed =
+      actor.permissions.has("pricing.use_fixed") ||
+      actor.permissions.has("design.review") ||
+      actor.permissions.has("admin.override") ||
+      actor.roles.includes("ADMIN_OWNER") ||
+      actor.roles.includes("HEAD_DESIGNER") ||
+      actor.roles.includes("ACCOUNTING");
+    if (!allowed) {
+      return { ok: false, hintAr: "غير مصرح لك بنقل هذا العنصر للتسعير" };
+    }
+    return { ok: true };
+  },
   async execute(actor, card) {
-    authorize(actor, "pricing.use_fixed");
     await handoff(actor, card.id, "WAITING_PRICING");
   },
 };
 
+/**
+ * Dual-permission release edge: both RECEPTION (workitem.send_to_production)
+ * and ACCOUNTING (workitem.approve_production) can move an APPROVED card
+ * to READY_FOR_PRODUCTION. The `permission` field is left undefined so the
+ * catalog's single-permission filter is bypassed — access is enforced in
+ * `precheck` and again in `execute`.
+ */
 export const approvedToReadyForProduction: EdgeHandler = {
   edgeId: "APPROVED->READY_FOR_PRODUCTION",
   kind: "DIRECT",
-  permission: "workitem.send_to_production",
+  permission: undefined,
   backward: false,
   destructive: false,
-  groupable: false,
+  groupable: true,
   labelAr: "إرسال للإنتاج",
+  precheck(actor) {
+    if (!canRelease(actor)) {
+      return { ok: false, hintAr: "يجب أن تملك صلاحية إرسال للإنتاج أو موافقة المحاسب" };
+    }
+    return { ok: true };
+  },
   async execute(actor, card) {
-    authorize(actor, "workitem.send_to_production");
+    if (!canRelease(actor)) {
+      throw new ForbiddenError("workitem.send_to_production");
+    }
     await handoff(actor, card.id, "READY_FOR_PRODUCTION");
   },
 };

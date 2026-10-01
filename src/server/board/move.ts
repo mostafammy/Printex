@@ -71,10 +71,14 @@ function checkStaticEligibility(handler: EdgeHandler, card: BoardCard): MoveResu
 }
 
 function checkPermissions(handler: EdgeHandler, actor: Actor, card: BoardCard): MoveResult | null {
-  if (handler.permission && !actor.permissions.has(handler.permission)) {
+  const hasAdminOverride =
+    actor.permissions.has("admin.override") ||
+    actor.roles.includes("ADMIN_OWNER");
+
+  if (handler.permission && !actor.permissions.has(handler.permission) && !hasAdminOverride) {
     return { ok: false, code: "FORBIDDEN", messageAr: getRefusalMessageAr("FORBIDDEN"), card };
   }
-  if (handler.departmentScoped && card.departmentId && !actor.departmentIds.includes(card.departmentId)) {
+  if (handler.departmentScoped && card.departmentId && !actor.departmentIds.includes(card.departmentId) && !hasAdminOverride) {
     return { ok: false, code: "FORBIDDEN", messageAr: getRefusalMessageAr("FORBIDDEN"), card };
   }
   return null;

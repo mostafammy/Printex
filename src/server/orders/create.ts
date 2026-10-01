@@ -2,6 +2,7 @@
 // contracts/order-entry.md, plan.md §5.3.
 
 import { z } from "zod";
+import type { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
@@ -135,9 +136,25 @@ export async function createOrder(
     });
 
     const workItemIds: string[] = [];
+    // A work item's department comes from its product type: reception picks the
+    // product and nothing else, and every other read path already falls back to
+    // `productType.defaultDepartmentId` (production/department.ts,
+    // board/projection.ts). Resolving it HERE rather than in the form means the
+    // column is still written, so `isOrderComplete` and the order page's
+    // "missing fields" list keep meaning what they say — an explicit
+    // `departmentId` from a programmatic caller still wins.
+    const departmentByProductType = await resolveDefaultDepartmentsInTx(
+      tx,
+      parsed.workItems.map((item) => item.productTypeId),
+    );
+
     for (const item of parsed.workItems) {
+      const departmentId =
+        item.departmentId ??
+        (item.productTypeId ? departmentByProductType.get(item.productTypeId) : undefined);
+
       const workItem = await tx.workItem.create({
-        data: { orderId: order.id, state: "NEW", ...item },
+        data: { orderId: order.id, state: "NEW", ...item, departmentId },
       });
       workItemIds.push(workItem.id);
 
@@ -151,10 +168,33 @@ export async function createOrder(
         entityType: "WorkItem",
         entityId: workItem.id,
         actorId: actor.userId,
-        after: { ...item, dueDate: item.dueDate?.toISOString(), orderId: order.id },
+        after: {
+          ...item,
+          departmentId,
+          dueDate: item.dueDate?.toISOString(),
+          orderId: order.id,
+        },
       });
     }
 
     return { orderId: order.id, orderNumber: order.number, workItemIds };
   });
+}
+
+/** `productTypeId -> defaultDepartmentId`, skipping unconfigured types. */
+async function resolveDefaultDepartmentsInTx(
+  tx: Prisma.TransactionClient,
+  productTypeIds: ReadonlyArray<string | undefined>,
+): Promise<ReadonlyMap<string, string>> {
+  const ids = [...new Set(productTypeIds.filter((id): id is string => typeof id === "string" && id !== ""))];
+  if (ids.length === 0) return new Map();
+
+  const rows = await tx.productType.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, defaultDepartmentId: true },
+  });
+
+  return new Map(
+    rows.flatMap((row) => (row.defaultDepartmentId ? [[row.id, row.defaultDepartmentId] as const] : [])),
+  );
 }

@@ -3,8 +3,13 @@
 
 import { getActor } from "~/server/auth";
 import { fileService } from "~/server/files";
-import { validateUploadInput, FileError, FileErrorCode } from "~/server/files/schemas";
+import {
+  validateUploadInput,
+  FileError,
+  FileErrorCode,
+} from "~/server/files/schemas";
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes (max allowed on Vercel Hobby plan)
@@ -27,7 +32,7 @@ export async function POST(request: Request) {
     if (!workItemId || !category || !file) {
       return NextResponse.json(
         { error: "Missing required fields: workItemId, category, file" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
         actorId: actor.id,
       },
       fileSize,
-      mimeType
+      mimeType,
     );
 
     // Convert File to ReadableStream
@@ -62,18 +67,40 @@ export async function POST(request: Request) {
       actor: actor,
     });
 
-    return NextResponse.json({
-      id: fileVersion.id,
-      fileAssetId: fileVersion.fileAssetId,
-      fileObjectId: fileVersion.fileObjectId,
-      versionNumber: fileVersion.versionNumber,
-      originalName: fileVersion.originalName,
-      status: fileVersion.status,
-      approved: fileVersion.approved,
-      createdAt: fileVersion.createdAt,
-    }, { status: 201 });
-
+    return NextResponse.json(
+      {
+        id: fileVersion.id,
+        fileAssetId: fileVersion.fileAssetId,
+        fileObjectId: fileVersion.fileObjectId,
+        versionNumber: fileVersion.versionNumber,
+        originalName: fileVersion.originalName,
+        status: fileVersion.status,
+        approved: fileVersion.approved,
+        createdAt: fileVersion.createdAt,
+      },
+      { status: 201 },
+    );
   } catch (error) {
+    // A schema violation is the caller's mistake, not a server fault. Without
+    // this branch every bad category, traversal-prone filename and over-long note
+    // fell through to the generic 500 below — so the caller could not tell "you
+    // sent something invalid" from "the server is broken", and the
+    // VALIDATION_ERROR → 400 entry already declared in `statusMap` was
+    // unreachable. Only the `error` code and the offending field paths are
+    // returned; the raw Zod message is not, because it is developer-facing.
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        {
+          error: FileErrorCode.VALIDATION_ERROR,
+          message: "Invalid upload input",
+          details: {
+            fields: error.issues.map((issue) => issue.path.join(".")),
+          },
+        },
+        { status: 400 },
+      );
+    }
+
     if (error instanceof FileError) {
       const statusMap: Record<string, number> = {
         [FileErrorCode.VALIDATION_ERROR]: 400,
@@ -85,7 +112,7 @@ export async function POST(request: Request) {
       };
       return NextResponse.json(
         { error: error.code, message: error.message, details: error.details },
-        { status: statusMap[error.code] ?? 500 }
+        { status: statusMap[error.code] ?? 500 },
       );
     }
 
@@ -93,19 +120,22 @@ export async function POST(request: Request) {
       if (error.message.includes("exceeds maximum")) {
         return NextResponse.json(
           { error: "SIZE_EXCEEDED", message: error.message },
-          { status: 413 }
+          { status: 413 },
         );
       }
       if (error.message.includes("not in allowlist")) {
         return NextResponse.json(
           { error: "MIME_UNSUPPORTED", message: error.message },
-          { status: 415 }
+          { status: 415 },
         );
       }
       if (error.message.includes("CONCURRENT_VERSION_CONFLICT")) {
         return NextResponse.json(
-          { error: "CONCURRENT_VERSION_CONFLICT", message: "Concurrent version conflict, please retry" },
-          { status: 409 }
+          {
+            error: "CONCURRENT_VERSION_CONFLICT",
+            message: "Concurrent version conflict, please retry",
+          },
+          { status: 409 },
         );
       }
     }
@@ -113,7 +143,7 @@ export async function POST(request: Request) {
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: "INTERNAL_ERROR", message: "Upload failed" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

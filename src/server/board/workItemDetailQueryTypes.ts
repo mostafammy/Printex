@@ -25,7 +25,11 @@ export interface WorkItemDetailQueryRow {
   };
   readonly description: string | null;
   readonly productType: { readonly id: string; readonly name: string } | null;
-  readonly department: { readonly id: string; readonly name: string; readonly isExternalProduction: boolean } | null;
+  readonly department: {
+    readonly id: string;
+    readonly name: string;
+    readonly isExternalProduction: boolean;
+  } | null;
   readonly state: WorkItemState;
   readonly quantity: number | null;
   readonly producedQuantity: number | null;
@@ -40,7 +44,11 @@ export interface WorkItemDetailQueryRow {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly dueDate: Date | null;
-  readonly assignee: { readonly id: string; readonly name: string; readonly email?: string | null } | null;
+  readonly assignee: {
+    readonly id: string;
+    readonly name: string;
+    readonly email?: string | null;
+  } | null;
   readonly pricingStatus: {
     readonly status: "PENDING" | "PRICED" | "DISPUTED";
     readonly disputeReason: string | null;
@@ -82,9 +90,14 @@ export interface WorkItemDetailQueryRow {
       readonly id: string;
       readonly versionNumber: number;
       readonly originalName: string;
-      readonly fileObject: { readonly mimeType: string; readonly sizeBytes: bigint | number };
+      readonly fileObject: {
+        readonly mimeType: string;
+        readonly sizeBytes: bigint | number;
+      };
       readonly note: string | null;
       readonly approved: boolean;
+      /// 050's lifecycle status, so the popup can mark retired versions.
+      readonly status: string;
       readonly createdAt: Date;
       readonly uploadedBy: { readonly name: string };
     }[];

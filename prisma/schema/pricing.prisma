@@ -126,3 +126,64 @@ model PricingStatus {
 
   @@index([status, waitingSince])
 }
+
+// ---------------------------------------------------------------------------
+// 093-order-production-workflow — extensible finishing / add-on services.
+//
+// Modelled as configured DATA with the same shape as the rest of 051
+// (PriceList / CustomerPricingRule: effective dates + ACTIVE|RETIRED), not as
+// a `switch (code)` anywhere in the pricing path (FR-009). Adding "SULFAN",
+// "EYELET", "HEMMING" or a service nobody has thought of yet is a row, not a
+// deploy.
+// ---------------------------------------------------------------------------
+
+/// An add-on charged per square metre of PRODUCTION area. `SULFAN` ships at
+/// 90 EGP/m² as seed data; the code is a business key, not a branch.
+model FinishingService {
+  id            String            @id @default(cuid())
+  code          String            @unique
+  /// Arabic-first display label (constitution IX); stored, never derived.
+  labelAr       String
+  ratePerSqm    Decimal           @db.Decimal(12, 2)
+  effectiveFrom DateTime          @default(now())
+  effectiveTo   DateTime?
+  status        PriceConfigStatus @default(ACTIVE)
+  createdById   String
+  createdBy     User              @relation("FinishingServiceCreatedBy", fields: [createdById], references: [id])
+  createdAt     DateTime          @default(now())
+
+  selections WorkItemFinishing[]
+
+  @@index([status, effectiveFrom, effectiveTo])
+}
+
+/// One finishing selected on one Work Item, with the rate and label FROZEN at
+/// selection time. The snapshots are the whole point: a later rate change
+/// must not retroactively alter what this job cost (FR-007, FR-010, SC-006).
+///
+/// Strictly append-only (constitution III): a re-price inserts a NEW
+/// generation and leaves every earlier row untouched, so the composition of
+/// each quote ever given to a customer remains reconstructible. That is why
+/// there is deliberately no unique constraint on (workItemId,
+/// finishingServiceId) — duplicates across generations are the point, and
+/// duplicates WITHIN one quote are already impossible (`resolveFinishingRates`
+/// de-duplicates the requested codes).
+model WorkItemFinishing {
+  id                 String           @id @default(cuid())
+  workItemId         String
+  workItem           WorkItem         @relation(fields: [workItemId], references: [id])
+  finishingServiceId String
+  finishingService   FinishingService @relation(fields: [finishingServiceId], references: [id])
+  /// Which quote generation this row belongs to. `quotedAt` is the ordering
+  /// key; the generation number is carried for display and for pairing rows
+  /// written in the same transaction.
+  generation         Int
+  quotedAt           DateTime         @default(now())
+  labelSnapshot      String
+  rateSnapshot       Decimal          @db.Decimal(12, 2)
+  /// `productionAreaSqm × rateSnapshot`, to 2 dp (FR-010).
+  totalAmount        Decimal          @db.Decimal(12, 2)
+  createdAt          DateTime         @default(now())
+
+  @@index([workItemId, quotedAt])
+}
