@@ -24,6 +24,8 @@
     "test:db": "node scripts/test-db.mjs",
     "test:db:reset": "node scripts/test-db.mjs --reset",
     "test:watch": "vitest",
+    "db:seed:demo": "node scripts/demo-cleanup-and-seed.mjs && node scripts/seed-timeline-transitions.mjs",
+    "db:seed:timeline": "node scripts/seed-timeline-transitions.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

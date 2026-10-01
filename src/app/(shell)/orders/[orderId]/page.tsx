@@ -1247,24 +1247,41 @@ export default async function OrderDetailPage({
           <p className="py-4 text-center text-xs text-muted-foreground">{S.timelineEmpty}</p>
         ) : (
           <div className="relative ps-4 ms-2 space-y-4 border-s-2 border-primary/25">
-            {detail.timeline.map((entry, i) => (
-              <div key={i} className="relative group">
-                <span className="absolute -start-[21px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary ring-4 ring-card" />
-                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
-                  <span className="font-bold text-foreground">
-                    {entry.from ? `${entry.from} ← ${entry.to}` : entry.to}
-                  </span>
-                  <span className="font-mono text-2xs text-muted-foreground">
-                    {new Date(entry.at).toLocaleString("ar-EG")}
-                  </span>
+            {detail.timeline.map((entry, i) => {
+              const stateLabels: Record<string, string> = ar.workItemStates;
+              const fromLabel = entry.from ? (stateLabels[entry.from] ?? entry.from) : null;
+              const toLabel = stateLabels[entry.to] ?? entry.to;
+
+              return (
+                <div key={i} className="relative group">
+                  <span className="absolute -start-[21px] top-1 flex h-3 w-3 items-center justify-center rounded-full bg-primary ring-4 ring-card" />
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1.5 font-bold text-foreground">
+                      {fromLabel && (
+                        <>
+                          <span className="text-muted-foreground">{fromLabel}</span>
+                          <span className="text-muted-foreground/60 font-normal">←</span>
+                        </>
+                      )}
+                      <span className="text-primary font-semibold">{toLabel}</span>
+                    </div>
+                    <span className="font-mono text-2xs text-muted-foreground">
+                      {new Date(entry.at).toLocaleString("ar-EG")}
+                    </span>
+                  </div>
+                  {entry.actorName && (
+                    <div className="text-2xs text-muted-foreground mt-0.5">
+                      بواسطة: <span className="font-medium text-foreground/80">{entry.actorName}</span>
+                    </div>
+                  )}
+                  {entry.reason && (
+                    <p className="mt-1 text-2xs text-muted-foreground bg-muted/30 rounded-lg p-1.5 border border-border/40 inline-block">
+                      {entry.reason}
+                    </p>
+                  )}
                 </div>
-                {entry.reason && (
-                  <p className="mt-1 text-2xs text-muted-foreground bg-muted/30 rounded-lg p-1.5 border border-border/40 inline-block">
-                    {entry.reason}
-                  </p>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

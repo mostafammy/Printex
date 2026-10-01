@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Package, Ruler, User as UserIcon, Building2, Calendar, Clock } from "lucide-react";
+import { Package, Ruler, User as UserIcon, Building2, Calendar, Clock, ArrowRight, Sparkles } from "lucide-react";
 import type { BoardCard, MoveOption, WorkItemFullDetail } from "~/lib/board/types";
 import { useBoardController } from "../hooks/useBoardController";
 import { SpecsPricingCard, SpecsMaterialCard } from "./SpecsCards";
@@ -33,19 +33,24 @@ function formatDate(iso: string | null | undefined): string {
 
 function MoveButton({ move, onClick }: { readonly move: MoveOption; readonly onClick: () => void }) {
   const cls = move.destructive
-    ? "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20"
+    ? "border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 hover:border-destructive/50"
     : move.backward
-      ? "border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
-      : "border-primary/40 bg-primary/10 text-primary hover:bg-primary/20";
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:border-amber-500/50 dark:text-amber-400"
+      : "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/50";
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors ${cls}`}
+      className={`group inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold shadow-2xs transition-all active:scale-95 ${cls}`}
     >
       <span>{move.labelAr}</span>
-      {move.kind !== "DIRECT" && (
-        <span className="text-2xs opacity-75">{move.kind === "SHEET" ? "(بيانات إضافية)" : "(فتح شاشة)"}</span>
+      {move.kind !== "DIRECT" ? (
+        <span className="text-[10px] font-medium opacity-70">
+          {move.kind === "SHEET" ? "(بيانات إضافية)" : "(فتح شاشة)"}
+        </span>
+      ) : (
+        <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
       )}
     </button>
   );
@@ -57,25 +62,43 @@ function SpecsTile({
   value,
   subtext,
   mono,
+  accentColor = "text-primary bg-primary/10",
 }: {
   readonly icon: React.ComponentType<{ readonly className?: string }>;
   readonly label: string;
   readonly value: string;
   readonly subtext?: string | null;
   readonly mono?: boolean;
+  readonly accentColor?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        <span>{label}</span>
+    <div className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-xs transition-all hover:border-border/90 hover:shadow-sm">
+      <div className="flex items-center gap-2.5">
+        <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${accentColor}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
-      <div className={`mt-1 truncate font-bold text-foreground ${mono ? "font-mono text-sm" : "text-sm"}`}>
-        {value}
+      <div className="mt-3">
+        <div className={`truncate font-black text-foreground ${mono ? "font-mono text-base sm:text-lg" : "text-base sm:text-lg"}`}>
+          {value}
+        </div>
+        {subtext && (
+          <div className="mt-1 flex items-center gap-1 text-2xs font-bold text-emerald-600 dark:text-emerald-400">
+            <Sparkles className="h-3 w-3" />
+            <span>{subtext}</span>
+          </div>
+        )}
       </div>
-      {subtext && <div className="mt-0.5 text-2xs text-emerald-600">{subtext}</div>}
     </div>
   );
+}
+
+function getProducedSubtext(detail: WorkItemFullDetail | null): string | null {
+  if (typeof detail?.producedQuantity === "number") {
+    return `تم إنتاج: ${detail.producedQuantity} نسخة`;
+  }
+  return null;
 }
 
 function getAssigneeName(card: BoardCard, detail: WorkItemFullDetail | null): string {
@@ -90,13 +113,6 @@ function getDeptName(detail: WorkItemFullDetail | null): string {
   return "عام";
 }
 
-function getProducedSubtext(detail: WorkItemFullDetail | null): string | null {
-  if (typeof detail?.producedQuantity === "number") {
-    return `تم إنتاج: ${detail.producedQuantity} نسخة`;
-  }
-  return null;
-}
-
 function SpecsInfoGrid({
   card,
   detail,
@@ -108,36 +124,37 @@ function SpecsInfoGrid({
 }) {
   const qtySub = getProducedSubtext(detail);
   const qty = card.quantity ? `${card.quantity} نسخة` : "—";
-  const assignee = getAssigneeName(card, detail);
-  const dept = getDeptName(detail);
   const due = formatDate(card.dueAt ?? detail?.dueDate);
   const entered = formatDate(card.enteredStationAt);
 
+  const tiles = [
+    { icon: Package, label: "الكمية المطلوبة", value: qty, subtext: qtySub, color: "text-blue-600 bg-blue-500/10 dark:text-blue-400" },
+    { icon: Ruler, label: "المقاس والأبعاد", value: dimensions, mono: true, color: "text-purple-600 bg-purple-500/10 dark:text-purple-400" },
+    { icon: UserIcon, label: "المسؤول المعين", value: getAssigneeName(card, detail), color: "text-amber-600 bg-amber-500/10 dark:text-amber-400" },
+    { icon: Building2, label: "القسم والنوع", value: getDeptName(detail), color: "text-teal-600 bg-teal-500/10 dark:text-teal-400" },
+    { icon: Calendar, label: "تاريخ التسليم المتوقع", value: due, color: "text-rose-600 bg-rose-500/10 dark:text-rose-400" },
+    { icon: Clock, label: "الوقت بالمحطة", value: entered, color: "text-indigo-600 bg-indigo-500/10 dark:text-indigo-400" },
+  ];
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-      <SpecsTile icon={Package} label="الكمية المطلوبة" value={qty} subtext={qtySub} />
-      <SpecsTile icon={Ruler} label="المقاس والأبعاد" value={dimensions} mono />
-      <SpecsTile icon={UserIcon} label="المسؤول المعين" value={assignee} />
-      <SpecsTile icon={Building2} label="القسم والنوع" value={dept} />
-      <SpecsTile icon={Calendar} label="تاريخ التسليم المتوقع" value={due} />
-      <SpecsTile icon={Clock} label="الوقت بالمحطة" value={entered} />
+      {tiles.map((t) => (
+        <SpecsTile key={t.label} icon={t.icon} label={t.label} value={t.value} subtext={t.subtext} mono={t.mono} accentColor={t.color} />
+      ))}
     </div>
   );
 }
 
-function SpecsMovesList({
-  card,
-  onExecuteMove,
-}: {
-  readonly card: BoardCard;
-  readonly onExecuteMove: (move: MoveOption) => void;
-}) {
+function SpecsMovesList({ card, onExecuteMove }: { readonly card: BoardCard; readonly onExecuteMove: (move: MoveOption) => void }) {
   const controller = useBoardController();
   if (!card.moves || card.moves.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/70 bg-muted/10 p-4">
-      <h3 className="mb-2 text-xs font-bold text-foreground">الوجهات المتاحة لهذا الصنف:</h3>
+    <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 sm:p-5 backdrop-blur-md">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-bold text-foreground">الوجهات المتاحة لهذا الصنف:</h3>
+        <span className="text-2xs text-muted-foreground">{card.moves.length} إجراء متاح</span>
+      </div>
       <div className="flex flex-wrap gap-2">
         {card.moves.map((move) => (
           <MoveButton
