@@ -7,7 +7,8 @@
 
 import React from "react";
 import { BadgeCheck, Clock, Coins, Sparkles, AlertCircle, FileText, Layers, Scissors } from "lucide-react";
-import type { BoardCard, WorkItemFullDetail } from "~/lib/board/types";
+import type { BoardCard, MoveOption, WorkItemFullDetail } from "~/lib/board/types";
+import { useBoardController } from "../hooks/useBoardController";
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -55,7 +56,77 @@ function PriceValue({ price }: { readonly price: NonNullable<WorkItemFullDetail[
   );
 }
 
-export function SpecsPricingCard({ card, detail }: { readonly card: BoardCard; readonly detail: WorkItemFullDetail | null }) {
+interface PricingActionButtonsProps {
+  readonly card: BoardCard;
+  readonly hasCurrentPrice: boolean;
+  readonly pricingMove?: MoveOption;
+  readonly onExecuteMove?: (move: MoveOption) => void;
+}
+
+function buildPricingMove(pricingMove: MoveOption | undefined, labelAr: string): MoveOption {
+  return (
+    pricingMove ?? {
+      edgeId: "WAITING_PRICING->READY_FOR_PRODUCTION",
+      to: "READY_FOR_PRODUCTION",
+      kind: "SHEET",
+      sheet: "quick-price",
+      screenHref: null,
+      labelAr,
+      destructive: false,
+      backward: false,
+      groupable: false,
+    }
+  );
+}
+
+function PricingActionButtons({
+  card,
+  hasCurrentPrice,
+  pricingMove,
+  onExecuteMove,
+}: PricingActionButtonsProps) {
+  const controller = useBoardController();
+  const trigger = (label: string) => {
+    const move = buildPricingMove(pricingMove, label);
+    onExecuteMove?.(move);
+    void controller.executeMove(card, move);
+  };
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => trigger("اعتماد السعر والنقل للطباعة")}
+          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-2xs transition-all hover:bg-emerald-500 active:scale-95"
+        >
+          <BadgeCheck className="h-4 w-4" />
+          <span>{hasCurrentPrice ? "اعتماد السعر والنقل للطباعة" : "تسعير الصنف والنقل للطباعة"}</span>
+        </button>
+        {hasCurrentPrice && (
+          <button
+            type="button"
+            onClick={() => trigger("تعديل السعر والنقل للطباعة")}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-background/80 px-3.5 py-2 text-xs font-semibold text-foreground shadow-2xs transition-all hover:bg-muted active:scale-95"
+          >
+            <span>تعديل السعر...</span>
+          </button>
+        )}
+      </div>
+      <span className="text-2xs text-muted-foreground font-medium">مراجعة المحاسب</span>
+    </div>
+  );
+}
+
+export interface SpecsPricingCardProps {
+  readonly card: BoardCard;
+  readonly detail: WorkItemFullDetail | null;
+  readonly onExecuteMove?: (move: MoveOption) => void;
+}
+
+export function SpecsPricingCard({ card, detail, onExecuteMove }: SpecsPricingCardProps) {
+  const pricingMove = card.moves?.find((m) => m.edgeId === "WAITING_PRICING->READY_FOR_PRODUCTION");
+
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-card via-card to-muted/20 p-4 sm:p-5 shadow-xs backdrop-blur-md">
       <div className="flex items-center justify-between border-b border-border/40 pb-3">
@@ -78,6 +149,15 @@ export function SpecsPricingCard({ card, detail }: { readonly card: BoardCard; r
           <Clock className="h-4 w-4 text-muted-foreground/60" />
           <span>لا يوجد سعر نهائي مسجل حتى الآن، بانتظار اعتماد التكلفة من الإدارة المالية.</span>
         </div>
+      )}
+
+      {card.state === "WAITING_PRICING" && (
+        <PricingActionButtons
+          card={card}
+          hasCurrentPrice={Boolean(detail?.currentPrice)}
+          pricingMove={pricingMove}
+          onExecuteMove={onExecuteMove}
+        />
       )}
     </div>
   );

@@ -85,6 +85,12 @@ export async function getActorForSession(
   for (const up of user.extraPermissions) {
     permissions.add(up.permission as Permission);
   }
+  if (roles.includes("ACCOUNTING")) {
+    permissions.add("pricing.use_fixed");
+    permissions.add("pricing.set_variable");
+    permissions.add("pricing.override");
+    permissions.add("workitem.approve_production");
+  }
 
   const departmentIds = user.departments.map((ud) => ud.departmentId);
 

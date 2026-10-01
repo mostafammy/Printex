@@ -94,7 +94,14 @@ export interface QuickPriceContext {
  */
 export async function getQuickPriceContextAction(workItemId: string): Promise<QuickPriceContext> {
   const actor = await getActor();
-  authorize(actor, "pricing.use_fixed");
+  const canPrice =
+    actor.permissions.has("pricing.use_fixed") ||
+    actor.permissions.has("workitem.approve_production") ||
+    actor.roles.includes("ACCOUNTING") ||
+    actor.roles.includes("ADMIN_OWNER");
+  if (!canPrice) {
+    authorize(actor, "pricing.use_fixed");
+  }
 
   const item = await db.workItem.findUniqueOrThrow({
     where: { id: workItemId },

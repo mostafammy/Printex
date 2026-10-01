@@ -61,7 +61,7 @@ export const SLICES: readonly SliceDefinition[] = [
   },
   {
     id: "accounting",
-    labelAr: "التسعير والمالية",
-    stations: ["pricing"],
+    labelAr: "لوحة المحاسب والتسعير",
+    stations: ["pricing", "production"],
   },
 ] as const;

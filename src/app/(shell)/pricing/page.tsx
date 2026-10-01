@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Tag, Sparkles, SlidersHorizontal, Flame, Clock } from "lucide-react";
+import { Tag, Sparkles, SlidersHorizontal, Flame, Clock, Kanban } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { getPricingQueue } from "~/server/pricing";
 import { PricingQueue } from "~/components/pricing/pricing-queue";
@@ -44,6 +44,15 @@ export default async function PricingQueuePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="default"
+              size="default"
+              render={<Link href="/board?slice=accounting" />}
+              className="bg-amber-600 hover:bg-amber-500 text-white font-bold shadow-sm"
+            >
+              <Kanban className="h-4 w-4" />
+              <span>لوحة تسعير المحاسب (Kanban)</span>
+            </Button>
             <Button
               variant="outline"
               size="default"

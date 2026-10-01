@@ -179,7 +179,7 @@ export function DetailsSpecsTab({ card, detail, onExecuteMove }: DetailsSpecsTab
   return (
     <div className="flex flex-col gap-4">
       <SpecsInfoGrid card={card} detail={detail} dimensions={dimensions} />
-      <SpecsPricingCard card={card} detail={detail} />
+      <SpecsPricingCard card={card} detail={detail} onExecuteMove={onExecuteMove} />
       <SpecsMaterialCard detail={detail} />
       <SpecsMovesList card={card} onExecuteMove={onExecuteMove} />
     </div>

@@ -114,6 +114,9 @@ const ROLE_SEED_DATA = [
       "expense.record",
       "finance.view",
       "workitem.approve_production",
+      "pricing.use_fixed",
+      "pricing.set_variable",
+      "pricing.override",
     ],
   },
   {

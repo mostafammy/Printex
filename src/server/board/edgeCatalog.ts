@@ -35,6 +35,16 @@ export interface EdgeHandler {
   ): Promise<Map<string, unknown>>;
 }
 
+function checkHandlerPermission(handler: EdgeHandler, actor: Actor, hasOverride: boolean): boolean {
+  if (!handler.permission || hasOverride || actor.permissions.has(handler.permission)) {
+    return true;
+  }
+  return (
+    handler.edgeId === "WAITING_PRICING->READY_FOR_PRODUCTION" &&
+    (actor.permissions.has("workitem.approve_production") || actor.roles.includes("ACCOUNTING"))
+  );
+}
+
 export class EdgeCatalog {
   private readonly handlers = new Map<string, EdgeHandler>();
 
@@ -75,12 +85,9 @@ export class EdgeCatalog {
   }
 
   private matchesPermissions(handler: EdgeHandler, actor: Actor, card: BoardCard): boolean {
-    const hasAdminOverride =
-      actor.permissions.has("admin.override") ||
-      actor.roles.includes("ADMIN_OWNER");
-
-    if (handler.permission && !actor.permissions.has(handler.permission) && !hasAdminOverride) return false;
-    if (handler.departmentScoped && card.departmentId && !hasAdminOverride) {
+    const hasOverride = actor.permissions.has("admin.override") || actor.roles.includes("ADMIN_OWNER");
+    if (!checkHandlerPermission(handler, actor, hasOverride)) return false;
+    if (handler.departmentScoped && card.departmentId && !hasOverride) {
       return actor.departmentIds.includes(card.departmentId);
     }
     return true;

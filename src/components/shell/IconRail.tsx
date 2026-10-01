@@ -9,6 +9,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Calculator,
   CheckCircle2,
   Clock,
   Kanban,
@@ -37,6 +38,13 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "لوحة أرضية المطبعة",
     icon: <Kanban className="h-5 w-5" />,
     inkToken: "var(--ink-cyan)",
+  },
+  {
+    id: "pricing",
+    href: "/pricing",
+    labelAr: "التسعير والمالية",
+    icon: <Calculator className="h-5 w-5" />,
+    inkToken: "var(--ink-yellow)",
   },
   {
     id: "my-queue",
