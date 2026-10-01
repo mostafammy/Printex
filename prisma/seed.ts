@@ -579,7 +579,12 @@ async function seedFinishingServices(createdById: string) {
   for (const finishing of FINISHING_SERVICE_SEED_DATA) {
     const seeded = await db.finishingService.upsert({
       where: { code: finishing.code },
-      update: { ratePerSqm: new Prisma.Decimal(finishing.ratePerSqm), labelAr: finishing.labelAr },
+      update: {
+        ratePerSqm: new Prisma.Decimal(finishing.ratePerSqm),
+        labelAr: finishing.labelAr,
+        // Re-activate if a previous cleanup retired the canonical services.
+        status: "ACTIVE",
+      },
       create: {
         code: finishing.code,
         labelAr: finishing.labelAr,
