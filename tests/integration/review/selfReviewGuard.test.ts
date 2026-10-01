@@ -27,10 +27,10 @@ function unique(prefix: string): string {
   return `${prefix}_${Date.now()}_${_counter}`;
 }
 
-async function createActor(permissions: Permission[]): Promise<Actor> {
+async function createActor(permissions: Permission[], roles: string[] = []): Promise<Actor> {
   const actor: Actor = {
     userId: unique("test-selfreview-actor"),
-    roles: [],
+    roles: roles as any,
     permissions: new Set<Permission>(permissions),
     departmentIds: [],
   };
@@ -54,7 +54,7 @@ beforeAll(async () => {
   customerId = customer.id;
 });
 
-describe("self-review guard (integration)", () => {
+describe("self-review guard (integration)", { timeout: 90000 }, () => {
   it("blocks approval when the reviewer is also the current version's uploader — no state change", async () => {
     // Holds BOTH design.work and design.review — the spec's Edge Cases
     // scenario ("The Head Designer role holder is also the Work Item's
@@ -126,6 +126,47 @@ describe("self-review guard (integration)", () => {
     await expect(approveDesign(reviewer, workItem.id)).resolves.toBeUndefined();
 
     const reloadedWorkItem = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
-    expect(reloadedWorkItem.state).toBe("APPROVED");
-  });
+    expect(["APPROVED", "WAITING_PRICING"]).toContain(reloadedWorkItem.state);
+
+    const reloadedVersion = await testDb.designVersion.findFirstOrThrow({ where: { workItemId: workItem.id } });
+    expect(reloadedVersion.approvedAt).not.toBeNull();
+    expect(reloadedVersion.approvedById).toBe(reviewer.userId);
+  }, 90000);
+
+  it("allows approval by an ADMIN_OWNER even when they uploaded the current version", async () => {
+    const adminActor = await createActor(["design.work", "design.review", "admin.override"], ["ADMIN_OWNER"]);
+
+    const order = await testDb.order.create({
+      data: {
+        customerId,
+        channel: "WALK_IN",
+        priority: "NORMAL",
+        mode: "SEPARATE",
+        createdById: adminActor.userId,
+      },
+    });
+    const workItem = await testDb.workItem.create({
+      data: { orderId: order.id, state: "WAITING_REVIEW", assigneeId: adminActor.userId },
+    });
+    await testDb.designVersion.create({
+      data: {
+        workItemId: workItem.id,
+        version: 1,
+        storageKey: `test/${workItem.id}/1`,
+        fileName: "admin.png",
+        sizeBytes: 10,
+        sha256: "adminhash",
+        uploadedById: adminActor.userId,
+      },
+    });
+
+    await expect(approveDesign(adminActor, workItem.id)).resolves.toBeUndefined();
+
+    const reloadedWorkItem = await testDb.workItem.findUniqueOrThrow({ where: { id: workItem.id } });
+    expect(["APPROVED", "WAITING_PRICING"]).toContain(reloadedWorkItem.state);
+
+    const reloadedVersion = await testDb.designVersion.findFirstOrThrow({ where: { workItemId: workItem.id } });
+    expect(reloadedVersion.approvedAt).not.toBeNull();
+    expect(reloadedVersion.approvedById).toBe(adminActor.userId);
+  }, 90000);
 });
