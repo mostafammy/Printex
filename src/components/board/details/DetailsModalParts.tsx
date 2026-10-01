@@ -54,21 +54,32 @@ export function ModalShell({
   );
 }
 
+export interface DetailsTabContentProps {
+  readonly activeTab: DetailTabKey;
+  readonly card: BoardCard;
+  readonly detail: WorkItemFullDetail | null;
+  readonly loading: boolean;
+  readonly onClose: () => void;
+  readonly onRefresh?: () => void | Promise<void>;
+}
+
 export function DetailsTabContent({
   activeTab,
   card,
   detail,
   loading,
   onClose,
-}: {
-  readonly activeTab: DetailTabKey;
-  readonly card: BoardCard;
-  readonly detail: WorkItemFullDetail | null;
-  readonly loading: boolean;
-  readonly onClose: () => void;
-}) {
+  onRefresh,
+}: DetailsTabContentProps) {
   if (activeTab === "files") {
-    return <DetailsFilesTab card={card} detail={detail} loading={loading} />;
+    return (
+      <DetailsFilesTab
+        card={card}
+        detail={detail}
+        loading={loading}
+        onRefresh={onRefresh}
+      />
+    );
   }
   if (activeTab === "rework") {
     return <DetailsReworkTab detail={detail} />;
@@ -117,6 +128,16 @@ export function DetailsFooter({ cardId, onClose }: { readonly cardId: string; re
   );
 }
 
+export interface ModalBodyProps {
+  readonly activeTab: DetailTabKey;
+  readonly setActiveTab: (tab: DetailTabKey) => void;
+  readonly card: BoardCard;
+  readonly detail: WorkItemFullDetail | null;
+  readonly loading: boolean;
+  readonly onClose: () => void;
+  readonly onRefresh?: () => void | Promise<void>;
+}
+
 export function ModalBody({
   activeTab,
   setActiveTab,
@@ -124,22 +145,19 @@ export function ModalBody({
   detail,
   loading,
   onClose,
-}: {
-  readonly activeTab: DetailTabKey;
-  readonly setActiveTab: (tab: DetailTabKey) => void;
-  readonly card: BoardCard;
-  readonly detail: WorkItemFullDetail | null;
-  readonly loading: boolean;
-  readonly onClose: () => void;
-}) {
+  onRefresh,
+}: ModalBodyProps) {
   const reworkCount = detail?.returns.length ?? card.reworkCount;
+  const filesCount =
+    (detail?.fileAssets?.reduce((sum, a) => sum + a.versions.length, 0) ?? 0) +
+    (detail?.designVersions.length ?? 0);
 
   return (
     <>
       <DetailsTabBar
         activeTab={activeTab}
         onChangeTab={setActiveTab}
-        filesCount={detail?.designVersions.length ?? 0}
+        filesCount={filesCount}
         reworkCount={reworkCount}
         showReworkTab={reworkCount > 0}
       />
@@ -150,6 +168,7 @@ export function ModalBody({
           detail={detail}
           loading={loading}
           onClose={onClose}
+          onRefresh={onRefresh}
         />
       </div>
       <DetailsFooter cardId={card.id} onClose={onClose} />
