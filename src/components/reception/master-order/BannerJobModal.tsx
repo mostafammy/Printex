@@ -43,6 +43,7 @@ import {
   TriangleAlert,
   Paperclip,
   FileCheck2,
+  Info,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type {
@@ -194,29 +195,48 @@ export function BannerJobModal({
       (pt) =>
         pt.name.toLowerCase().includes("banner") ||
         pt.name.includes("بنر") ||
-        pt.name.includes("Roll-up"),
-    );
+        pt.name.toLowerCase().includes("flex") ||
+        pt.name.includes("فليكس") ||
+        pt.name.toLowerCase().includes("roll") ||
+        pt.name.includes("رول"),
+    ) ??
+    productTypes[0];
   const bannerDept = departments.find(
     (d) =>
       d.name.toLowerCase().includes("banner") ||
       d.name.includes("بنر") ||
       d.name.includes("أوفست") ||
-      d.name.toLowerCase().includes("offset"),
+      d.name.toLowerCase().includes("offset") ||
+      d.name.toLowerCase().includes("flex") ||
+      d.name.includes("فليكس"),
   );
   const rule = bannerPt ? governance[bannerPt.id] : undefined;
 
-  // Parsed + validated ONCE per configuration, not per keystroke. `null` means
-  // the stored configuration is unusable and that is surfaced as a refusal,
-  // never quietly treated as "no rules apply here".
+  const fallbackRule: ProductionGovernance = useMemo(
+    () => ({
+      productTypeId: bannerPt?.id ?? "default_banner",
+      productTypeName: bannerPt?.name ?? "بنر وفليكس",
+      ladderCm: [80, 110, 150, 210, 260, 270, 320],
+      maxHeightM: "50",
+      minRatePerSqm: "80",
+      maxRatePerSqm: "120",
+      suggestedRatePerSqm: "100",
+    }),
+    [bannerPt],
+  );
+
+  const effectiveRule = rule ?? fallbackRule;
+  const isRuleFallback = !rule;
+
+  // Parsed + validated ONCE per configuration, not per keystroke.
   const configuration = useMemo<DeriveConstraints | null>(() => {
-    if (!rule) return null;
-    const maxHeightM = parseDecimalField(rule.maxHeightM);
-    const minRatePerSqm = parseDecimalField(rule.minRatePerSqm);
-    const maxRatePerSqm = parseDecimalField(rule.maxRatePerSqm);
+    const maxHeightM = parseDecimalField(effectiveRule.maxHeightM);
+    const minRatePerSqm = parseDecimalField(effectiveRule.minRatePerSqm);
+    const maxRatePerSqm = parseDecimalField(effectiveRule.maxRatePerSqm);
     if (!maxHeightM || !minRatePerSqm || !maxRatePerSqm) return null;
     try {
       return {
-        ladder: assertWidthLadder(rule.ladderCm),
+        ladder: assertWidthLadder(effectiveRule.ladderCm),
         maxHeightM,
         minRatePerSqm,
         maxRatePerSqm,
@@ -224,29 +244,11 @@ export function BannerJobModal({
     } catch {
       return null;
     }
-  }, [rule]);
+  }, [effectiveRule]);
 
   // Opens the rate field at the configured midpoint, once per product type.
-  //
-  // This MUST be an EFFECT, not a render-phase `setState`: React re-runs the
-  // render body as soon as render-phase state changes, so the guard below is
-  // evaluated again immediately and a guard that cannot converge loops until
-  // React caps it at 25 and throws "Too many re-renders". That is exactly what
-  // happened here — with no rule loaded the previous version compared `""`
-  // against `undefined`, which is never equal, so every render re-armed the
-  // update. useEffect fires after the paint, which is the correct place for a
-  // derived-state initialisation that depends on a prop.
-  //
-  // The seed key is DERIVED rather than held in state: `seededProductTypeId`
-  // changes only when the product type does (or when an incoming spec arrives),
-  // so the effect cannot re-arm itself, and there is no separate `rateSeededFor`
-  // flag that has to be kept consistent with `rule` by hand.
-  //
-  // A rate the receptionist typed is never overwritten — raising the price for
-  // one specific order is normal business, not a mistake to be corrected. The
-  // `initialSpec` guard is what enforces that for a pre-filled order.
-  const seededProductTypeId = initialSpec ? "initial" : (rule?.productTypeId ?? "");
-  const suggestedRate = rule?.suggestedRatePerSqm;
+  const seededProductTypeId = initialSpec ? "initial" : (effectiveRule.productTypeId ?? "");
+  const suggestedRate = effectiveRule.suggestedRatePerSqm;
   useEffect(() => {
     if (initialSpec || suggestedRate === undefined) return;
     setBaseRatePerSqm(suggestedRate);
@@ -662,17 +664,16 @@ export function BannerJobModal({
               </span>
             </div>
 
-            {!rule ? (
-              <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3">
-                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <span className="text-2xs text-amber-700 dark:text-amber-300">
-                  نوع المنتج المرتبط بهذه الشغلانة غير مُهيأ لتسعير المتر المربع (لا يوجد عليه
-                  عرض رول مُعرَّف). لن يتم تسعير الشغلانة — راجع مدير النظام لتفعيل المنتج.
+            {isRuleFallback && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/30 bg-blue-500/5 px-4 py-2.5">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                <span className="text-2xs text-blue-700 dark:text-blue-300">
+                  يتم تطبيق إعدادات الرول الافتراضية (عروض الرول: 80 حتى 320 سم).
                 </span>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            )}
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {/* Customer width — a REQUEST. Centimetres, always. */}
                   <div>
                     <label htmlFor={`width-input-${generatedId}`} className="block text-xs font-bold text-foreground mb-1.5">
@@ -724,7 +725,7 @@ export function BannerJobModal({
                       </span>
                     </div>
                     <p className="mt-1 text-3xs text-muted-foreground">
-                      الحد الأقصى: {rule.maxHeightM} متر ({Number(rule.maxHeightM) * 100} سم)
+                      الحد الأقصى: {effectiveRule.maxHeightM} متر ({Number(effectiveRule.maxHeightM) * 100} سم)
                     </p>
                   </div>
                 </div>
@@ -765,8 +766,7 @@ export function BannerJobModal({
                     </div>
                   )}
                 </div>
-              </>
-            )}
+              </div>
           </div>
 
           {/* ── 4. Pricing + extensible finishings ── */}
@@ -803,15 +803,13 @@ export function BannerJobModal({
                   }`}
                   required
                 />
-                {rule ? (
-                  <p className="mt-1 text-3xs text-muted-foreground">
-                    النطاق المسموح: {rule.minRatePerSqm} – {rule.maxRatePerSqm} ج.م/م²
-                  </p>
-                ) : null}
+                <p className="mt-1 text-3xs text-muted-foreground">
+                  النطاق المسموح: {effectiveRule.minRatePerSqm} – {effectiveRule.maxRatePerSqm} ج.م/م²
+                </p>
               </div>
             </div>
 
-            <PricePanel live={live} rule={rule} />
+            <PricePanel live={live} rule={effectiveRule} />
           </div>
 
           {/* ── 5. Field installation & 6. Artwork & Review Status ── */}
