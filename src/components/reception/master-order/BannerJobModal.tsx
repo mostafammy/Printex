@@ -31,7 +31,7 @@
 // receptionist is told to raise a width exception, because a clamp silently
 // bills and prints a smaller banner than the customer paid for.
 
-import React, { useMemo, useState, useId } from "react";
+import React, { useEffect, useMemo, useState, useId } from "react";
 import {
   X,
   Plus,
@@ -223,11 +223,18 @@ export function BannerJobModal({
   // Opens the rate field at the configured midpoint, once. A rate the
   // receptionist typed is never overwritten — raising the price for one
   // specific order is normal business, not a mistake to be corrected.
+  //
+  // MUST be a useEffect: calling setState directly in the render body causes
+  // React to immediately re-render, which runs the same check again →
+  // "Too many re-renders". useEffect fires after the paint, which is the
+  // correct place for a derived-state initialisation that depends on a prop.
   const [rateSeededFor, setRateSeededFor] = useState<string>(initialSpec ? "initial" : "");
-  if (rateSeededFor !== rule?.productTypeId) {
-    setRateSeededFor(rule?.productTypeId ?? "");
-    if (!initialSpec && rule) setBaseRatePerSqm(rule.suggestedRatePerSqm);
-  }
+  useEffect(() => {
+    if (rule && rateSeededFor !== rule.productTypeId) {
+      setRateSeededFor(rule.productTypeId);
+      if (!initialSpec) setBaseRatePerSqm(rule.suggestedRatePerSqm);
+    }
+  }, [rule, rateSeededFor, initialSpec]);
 
   // The width hint stands alone so an over-maximum request is called out the
   // moment it is typed, without waiting for a height and a rate. It IS the
