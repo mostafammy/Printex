@@ -318,28 +318,45 @@ async function purgeNonCanonicalUsers(client) {
   const staleIds = nonCanonicalRes.rows.map((r) => r.id);
   const stalePlaceholders = staleIds.map((_, i) => `$${i + 1}`).join(", ");
 
-  await client.query(`UPDATE "FinishingService" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "ProductionWidthRule" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "FileConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "ProductPricingPolicy" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "CustomerPricingRule" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "PriceList" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "FinanceConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "delay_threshold" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`UPDATE "notification_type_override" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  const IMMUTABLE_FINANCE_TABLES = [
+    `"Payment"`,
+    `"FinanceVoid"`,
+    `"Expense"`,
+    `"ExpenseApproval"`,
+    `"DirectCost"`,
+  ];
 
-  await client.query(`UPDATE "WorkItem" SET "assigneeId" = NULL WHERE "assigneeId" IN (${stalePlaceholders})`, staleIds);
+  try {
+    // Postgres referential integrity checks (FOR KEY SHARE) require UPDATE
+    // permission on referencing tables even when those tables are empty.
+    // Temporarily grant UPDATE and restore append-only REVOKE afterwards.
+    await client.query(`GRANT UPDATE ON ${IMMUTABLE_FINANCE_TABLES.join(", ")} TO CURRENT_USER;`);
 
-  await client.query(`DELETE FROM "user_role" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`DELETE FROM "user_permission" WHERE "userId" IN (${stalePlaceholders}) OR "grantedById" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`DELETE FROM "user_department" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`DELETE FROM "account" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`DELETE FROM "session" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
-  await client.query(`DELETE FROM "notification" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "FinishingService" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "ProductionWidthRule" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "FileConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "ProductPricingPolicy" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "CustomerPricingRule" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "PriceList" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "FinanceConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "delay_threshold" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`UPDATE "notification_type_override" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
 
-  const deleteRes = await client.query(`DELETE FROM "user" WHERE id IN (${stalePlaceholders})`, staleIds);
-  console.log(`✓ ${deleteRes.rowCount} non-canonical / test users purged.`);
-  return deleteRes.rowCount;
+    await client.query(`UPDATE "WorkItem" SET "assigneeId" = NULL WHERE "assigneeId" IN (${stalePlaceholders})`, staleIds);
+
+    await client.query(`DELETE FROM "user_role" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`DELETE FROM "user_permission" WHERE "userId" IN (${stalePlaceholders}) OR "grantedById" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`DELETE FROM "user_department" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`DELETE FROM "account" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`DELETE FROM "session" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+    await client.query(`DELETE FROM "notification" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+
+    const deleteRes = await client.query(`DELETE FROM "user" WHERE id IN (${stalePlaceholders})`, staleIds);
+    console.log(`✓ ${deleteRes.rowCount} non-canonical / test users purged.`);
+    return deleteRes.rowCount;
+  } finally {
+    await client.query(`REVOKE UPDATE, DELETE ON ${IMMUTABLE_FINANCE_TABLES.join(", ")} FROM CURRENT_USER;`);
+  }
 }
 
 async function main() {
