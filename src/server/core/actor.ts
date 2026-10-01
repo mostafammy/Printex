@@ -16,4 +16,5 @@ export interface Actor {
   readonly userId: UserId;
   readonly roles: readonly string[];
   readonly departmentIds: readonly string[];
+  readonly permissions?: ReadonlySet<string>;
 }
