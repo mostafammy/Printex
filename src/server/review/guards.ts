@@ -13,6 +13,14 @@ import type { GuardResult } from "~/server/core";
 import { isSelfReview } from "./selfReview";
 
 registerGuard({ from: "WAITING_REVIEW", to: "APPROVED" }, async (ctx): Promise<GuardResult> => {
+  const isAdmin =
+    ctx.actor.roles.includes("ADMIN_OWNER") ||
+    ctx.actor.permissions?.has("admin.override");
+
+  if (isAdmin) {
+    return { ok: true, value: true };
+  }
+
   const currentVersion = await db.designVersion.findFirst({
     where: { workItemId: ctx.workItem.id },
     orderBy: { version: "desc" },
