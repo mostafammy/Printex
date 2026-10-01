@@ -17,6 +17,7 @@ import {
   FileCheck,
   Sparkles,
   AlertCircle,
+  Ruler,
 } from "lucide-react";
 import { db } from "~/server/db";
 import { getActor } from "~/server/auth";
@@ -85,7 +86,31 @@ async function markDesignCompleteAction(formData: FormData) {
   revalidatePath(`/design/${workItemId}`);
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────
+function formatDimensions(
+  widthValue: unknown,
+  heightValue: unknown,
+  dimensionUnit: string | null,
+): string {
+  if (widthValue == null && heightValue == null) return "—";
+  const unitAr =
+    dimensionUnit === "CM"
+      ? "سم"
+      : dimensionUnit === "M"
+      ? "م"
+      : dimensionUnit === "MM"
+      ? "مم"
+      : dimensionUnit === "IN"
+      ? "بوصة"
+      : dimensionUnit ?? "سم";
+
+  const w = widthValue != null ? String(widthValue) : "";
+  const h = heightValue != null ? String(heightValue) : "";
+
+  if (w && h) return `${w} × ${h} ${unitAr}`;
+  if (w) return `${w} ${unitAr}`;
+  if (h) return `${h} ${unitAr}`;
+  return "—";
+}
 
 /** The page's phase-1 read — also the child section's prop type source (T051). */
 const loadWorkItem = (workItemId: string) =>
@@ -184,6 +209,21 @@ export default async function DesignWorkspacePage({
               <div>
                 <span className="text-2xs text-muted-foreground block">{S.productTypeLabel}</span>
                 <span className="font-bold">{workItem.productType?.name ?? S.productTypeNone}</span>
+              </div>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/25 bg-purple-500/10 px-3.5 py-2 text-foreground shadow-2xs">
+              <Ruler className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <div>
+                <span className="text-2xs text-muted-foreground block">الأبعاد والمقاس</span>
+                <span className="font-bold font-mono text-purple-700 dark:text-purple-300">
+                  {formatDimensions(workItem.widthValue, workItem.heightValue, workItem.dimensionUnit)}
+                </span>
+              </div>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-2xl border border-border/80 bg-card/90 px-3.5 py-2 text-foreground shadow-2xs">
+              <div>
+                <span className="text-2xs text-muted-foreground block">{S.quantityLabel}</span>
+                <span className="font-bold">{workItem.quantity ?? "—"} قطعة</span>
               </div>
             </div>
           </div>
