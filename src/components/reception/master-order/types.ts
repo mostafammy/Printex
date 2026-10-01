@@ -104,8 +104,9 @@ export interface BannerJobSpec {
   readonly total: number;
 
   readonly fieldInstallation: boolean;
-  readonly attachedFiles: readonly string[];
-  readonly artworkStatus: "RECEIVED" | "READY_TO_PRINT";
+  readonly requiresDesign?: boolean;
+  readonly attachedFiles?: readonly string[];
+  readonly artworkStatus?: "RECEIVED" | "READY_TO_PRINT";
 
   readonly departmentId?: string;
   readonly productTypeId?: string;
@@ -150,6 +151,7 @@ export interface MasterOrderItem {
   readonly totalCost: number;
   readonly departmentId?: string;
   readonly productTypeId?: string;
+  readonly requiresDesign?: boolean;
   readonly bannerSpec?: BannerJobSpec;
 }
 
