@@ -253,6 +253,15 @@ const WORKFLOW_USERS = [
     roleId: "seed_role_accounting",
     allDepartments: false,
   },
+  {
+    id: "seed_user_printer",
+    username: "printer",
+    displayUsername: "Printer",
+    name: "مسؤول الطباعة (Printer)",
+    email: "printer@local.invalid",
+    roleId: "seed_role_production_operator",
+    allDepartments: true,
+  },
 ];
 
 /**
@@ -286,6 +295,51 @@ async function snapshotCounts(client) {
  */
 function emitSummary(summary) {
   process.stdout.write(`${SUMMARY_SENTINEL}${JSON.stringify(summary)}\n`);
+}
+
+/**
+ * Remove any rogue / test users left behind by integration or smoke tests.
+ * Only canonical demo / system users are kept.
+ */
+async function purgeNonCanonicalUsers(client) {
+  const canonicalUserIds = WORKFLOW_USERS.map((u) => u.id);
+  const placeholders = canonicalUserIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  const nonCanonicalRes = await client.query(
+    `SELECT id FROM "user" WHERE id NOT IN (${placeholders})`,
+    canonicalUserIds,
+  );
+
+  if (nonCanonicalRes.rows.length === 0) {
+    return 0;
+  }
+
+  console.log(`Pruning ${nonCanonicalRes.rows.length} non-canonical / test users...`);
+  const staleIds = nonCanonicalRes.rows.map((r) => r.id);
+  const stalePlaceholders = staleIds.map((_, i) => `$${i + 1}`).join(", ");
+
+  await client.query(`UPDATE "FinishingService" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "ProductionWidthRule" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "FileConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "ProductPricingPolicy" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "CustomerPricingRule" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "PriceList" SET "createdById" = 'seed_admin_user' WHERE "createdById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "FinanceConfig" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "delay_threshold" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`UPDATE "notification_type_override" SET "updatedById" = 'seed_admin_user' WHERE "updatedById" IN (${stalePlaceholders})`, staleIds);
+
+  await client.query(`UPDATE "WorkItem" SET "assigneeId" = NULL WHERE "assigneeId" IN (${stalePlaceholders})`, staleIds);
+
+  await client.query(`DELETE FROM "user_role" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`DELETE FROM "user_permission" WHERE "userId" IN (${stalePlaceholders}) OR "grantedById" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`DELETE FROM "user_department" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`DELETE FROM "account" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`DELETE FROM "session" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+  await client.query(`DELETE FROM "notification" WHERE "userId" IN (${stalePlaceholders})`, staleIds);
+
+  const deleteRes = await client.query(`DELETE FROM "user" WHERE id IN (${stalePlaceholders})`, staleIds);
+  console.log(`✓ ${deleteRes.rowCount} non-canonical / test users purged.`);
+  return deleteRes.rowCount;
 }
 
 async function main() {
@@ -364,6 +418,9 @@ async function main() {
     } catch (e) {
       console.warn("  Sequence restart warning:", e.message);
     }
+
+    // 4. Purge any non-canonical / test users left over from test runs
+    await purgeNonCanonicalUsers(client);
 
     // ── purge-transactional stops here ──────────────────────────────────────
     // Placed immediately after the truncate, NOT at the end: the steps below
