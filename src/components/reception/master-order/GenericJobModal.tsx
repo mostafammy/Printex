@@ -273,7 +273,7 @@ export function GenericJobModal({
 
             <div>
               <label htmlFor={`height-${generatedId}`} className="block text-xs font-bold text-foreground mb-1">
-                الارتفاع
+                الطول
               </label>
               <input
                 id={`height-${generatedId}`}
