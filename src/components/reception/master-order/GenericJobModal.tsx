@@ -88,7 +88,7 @@ export function GenericJobModal({
   const [dimensionUnit, setDimensionUnit] = useState<"M" | "CM">("CM");
   const [unitPrice, setUnitPrice] = useState<number>(5);
   const [notes, setNotes] = useState("");
-  const [finishing, setFinishing] = useState("سلوفان مط + تكسير");
+  const [finishing, setFinishing] = useState("");
 
   if (!isOpen) return null;
 
@@ -250,7 +250,7 @@ export function GenericJobModal({
                 type="text"
                 value={finishing}
                 onChange={(e) => setFinishing(e.target.value)}
-                placeholder="مثال: سلوفان حراري، تكسير، بصمة..."
+                placeholder="مثال: ريجة، تكسير، بصمة..."
                 className="w-full rounded-xl border border-border/80 bg-background px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
               />
             </div>
