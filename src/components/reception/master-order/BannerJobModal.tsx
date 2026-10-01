@@ -36,14 +36,13 @@ import {
   X,
   Plus,
   Layers,
-  FileCheck2,
   Ruler,
   Check,
-  Paperclip,
   HardHat,
   Eye,
   TriangleAlert,
-  Sparkles,
+  Paperclip,
+  FileCheck2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type {
@@ -164,38 +163,45 @@ export function BannerJobModal({
   const [baseRatePerSqm, setBaseRatePerSqm] = useState(
     initialSpec ? String(initialSpec.baseRatePerSqm) : "",
   );
-  const [finishingCodes, setFinishingCodes] = useState<string[]>(
+  const [finishingCodes] = useState<string[]>(
     initialSpec ? [...initialSpec.finishingCodes] : [],
   );
 
-  // ── Other ────────────────────────────────────────────────────────────────
+  // ── Other (reception-only) ─────────────────────────────────────────────
+  // NOTE: design files + artwork approval live in the DESIGNER phase
+  // (DesignVersion + Supabase). Reception only records the spec + price and
+  // assigns WHO the designer is at order level. Previous artwork/file fields
+  // were removed here because they accepted fake filenames that were never
+  // persisted by createMasterOrderAction.
   const [fieldInstallation, setFieldInstallation] = useState<boolean>(
     initialSpec?.fieldInstallation ?? false,
   );
+  const [requiresDesign, setRequiresDesign] = useState<boolean>(
+    initialSpec?.requiresDesign ?? true,
+  );
   const [attachedFiles, setAttachedFiles] = useState<string[]>(
-    initialSpec ? [...initialSpec.attachedFiles] : [],
+    initialSpec?.attachedFiles ? [...initialSpec.attachedFiles] : [],
   );
-  const [artworkStatus, setArtworkStatus] = useState<"RECEIVED" | "READY_TO_PRINT">(
-    initialSpec?.artworkStatus ?? "RECEIVED",
-  );
+  const [newFileInput, setNewFileInput] = useState("");
 
   // ── Routing: which product type does this job price as? ──────────────────
-  // Resolved by name here for the same reason the original form did — the
-  // modal is a convenience entry point, not a routing authority. The AUTHORITY
-  // is still the server: `setProductionSpec` re-reads the product type's rule
-  // and re-derives, and a governed product with no rate is refused at commit.
+  // Prefer a product type that actually HAS governance. Name matching alone
+  // picks the wrong row when the catalog has several banner-like names.
+  const governedIds = useMemo(() => new Set(Object.keys(governance)), [governance]);
+  const bannerPt =
+    productTypes.find((pt) => governedIds.has(pt.id)) ??
+    productTypes.find(
+      (pt) =>
+        pt.name.toLowerCase().includes("banner") ||
+        pt.name.includes("بنر") ||
+        pt.name.includes("Roll-up"),
+    );
   const bannerDept = departments.find(
     (d) =>
       d.name.toLowerCase().includes("banner") ||
       d.name.includes("بنر") ||
       d.name.includes("أوفست") ||
       d.name.toLowerCase().includes("offset"),
-  );
-  const bannerPt = productTypes.find(
-    (pt) =>
-      pt.name.toLowerCase().includes("banner") ||
-      pt.name.includes("بنر") ||
-      pt.name.includes("Roll-up"),
   );
   const rule = bannerPt ? governance[bannerPt.id] : undefined;
 
@@ -341,14 +347,13 @@ export function BannerJobModal({
     setMaterialsDispensed((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const toggleFinishing = (code: string) => {
-    setFinishingCodes((prev) =>
-      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
-    );
-  };
-
   const handleAddFile = () => {
-    setAttachedFiles((prev) => [...prev, `artwork_${Date.now().toString().slice(-4)}.pdf`]);
+    const trimmed = newFileInput.trim();
+    if (!trimmed) return;
+    if (!attachedFiles.includes(trimmed)) {
+      setAttachedFiles((prev) => [...prev, trimmed]);
+    }
+    setNewFileInput("");
   };
 
   const handleRemoveFile = (index: number) => {
@@ -405,8 +410,9 @@ export function BannerJobModal({
       finishingTotal: Number(q.finishingTotal),
       total: Number(q.total),
       fieldInstallation,
+      requiresDesign,
       attachedFiles,
-      artworkStatus,
+      artworkStatus: requiresDesign ? "RECEIVED" : "READY_TO_PRINT",
       departmentId: bannerDept?.id,
       productTypeId: bannerPt?.id,
     };
@@ -805,53 +811,12 @@ export function BannerJobModal({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                خدمات إضافية (تُحسب على نفس المساحة)
-              </span>
-              {finishingServices.length === 0 ? (
-                <p className="text-3xs text-muted-foreground">لا توجد خدمات تشطيب مُعرَّفة بعد.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {finishingServices.map((service) => {
-                    const selected = finishingCodes.includes(service.code);
-                    return (
-                      <button
-                        key={service.code}
-                        type="button"
-                        onClick={() => toggleFinishing(service.code)}
-                        className={`flex items-center gap-2 rounded-xl border p-2.5 text-start text-xs transition-all ${
-                          selected
-                            ? "border-primary bg-primary/10 text-primary font-bold shadow-2xs"
-                            : "border-border/70 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
-                      >
-                        <span
-                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md border text-[10px] ${
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-muted-foreground/40 bg-background"
-                          }`}
-                        >
-                          {selected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
-                        </span>
-                        <span className="flex-1 truncate">{service.labelAr}</span>
-                        <span className="font-mono text-3xs text-muted-foreground">
-                          {service.ratePerSqm} ج.م/م²
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
             <PricePanel live={live} rule={rule} />
           </div>
 
-          {/* ── 5. Field installation & artwork ── */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* ── 5. Field installation & 6. Artwork & Review Status ── */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* ── 5. Field installation ── */}
             <div className="rounded-2xl border border-border/70 bg-background/50 p-5 space-y-3">
               <div className="border-b border-border/40 pb-2">
                 <span className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -887,43 +852,110 @@ export function BannerJobModal({
               </div>
             </div>
 
+            {/* ── 6. ملفات التصميم وحالة المراجعة ── */}
             <div className="rounded-2xl border border-border/70 bg-background/50 p-5 space-y-3">
-              <div className="border-b border-border/40 pb-2">
+              <div className="border-b border-border/40 pb-2 flex items-center justify-between">
                 <span className="text-sm font-bold text-foreground flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-primary text-xs font-bold">
                     6
                   </span>
                   ملفات التصميم وحالة المراجعة
                 </span>
+                <span
+                  className={`text-3xs font-bold px-2.5 py-0.5 rounded-full ${
+                    requiresDesign
+                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                      : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
+                  }`}
+                >
+                  {requiresDesign ? "المصمم سيعمل عليه" : "جاهز للطباعة"}
+                </span>
               </div>
 
-              <div className="flex flex-col gap-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-foreground">
-                      حالة اعتماد التصميم:
-                    </span>
-                    <select
-                      value={artworkStatus}
-                      onChange={(e) =>
-                        setArtworkStatus(e.target.value as "RECEIVED" | "READY_TO_PRINT")
-                      }
-                      className="rounded-lg border border-border bg-card px-2 py-1 text-xs font-bold text-foreground"
+              {/* Option If the Designer gonna Work on the Design Yet */}
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-foreground block">
+                  هل سيعمل المصمم على التصميم؟
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setRequiresDesign(true)}
+                    className={`flex items-start gap-2 rounded-xl border p-2.5 text-start transition-all ${
+                      requiresDesign
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
+                        : "border-border/70 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 mt-0.5 items-center justify-center rounded-full border text-[10px] ${
+                        requiresDesign
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground/40 bg-background"
+                      }`}
                     >
-                      <option value="RECEIVED">تم الاستلام (Received)</option>
-                      <option value="READY_TO_PRINT">جاهز للطباعة (Ready to Print)</option>
-                    </select>
-                  </div>
+                      {requiresDesign ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold">نعم — المصمم سيعمل عليه</span>
+                      <span className="text-3xs opacity-80 font-normal">يحتاج إعداد أو تعديل تصميم</span>
+                    </div>
+                  </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setRequiresDesign(false)}
+                    className={`flex items-start gap-2 rounded-xl border p-2.5 text-start transition-all ${
+                      !requiresDesign
+                        ? "border-emerald-600 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold shadow-xs"
+                        : "border-border/70 bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 mt-0.5 items-center justify-center rounded-full border text-[10px] ${
+                        !requiresDesign
+                          ? "border-emerald-600 bg-emerald-600 text-white"
+                          : "border-muted-foreground/40 bg-background"
+                      }`}
+                    >
+                      {!requiresDesign ? <Check className="h-2.5 w-2.5 stroke-[3]" /> : null}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold">لا — التصميم جاهز للطباعة</span>
+                      <span className="text-3xs opacity-80 font-normal">الملف معتمد وجاهز للماكينة</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Design file attachments */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-2xs font-semibold text-muted-foreground block">
+                  الملفات المرفقة أو روابط التصميم:
+                </span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newFileInput}
+                    onChange={(e) => setNewFileInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddFile();
+                      }
+                    }}
+                    placeholder="اسم الملف أو الرابط (مثال: banner_v1.pdf)..."
+                    className="flex-1 rounded-xl border border-border/80 bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none"
+                  />
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
                     onClick={handleAddFile}
-                    className="h-8 gap-1 rounded-xl text-xs"
+                    className="rounded-xl px-3 text-xs font-bold shrink-0 gap-1.5"
                   >
-                    <Paperclip className="h-3.5 w-3.5 text-primary" />
-                    <span>+ إضافة ملف</span>
+                    <Paperclip className="h-3.5 w-3.5" />
+                    <span>إرفاق</span>
                   </Button>
                 </div>
 
@@ -932,10 +964,10 @@ export function BannerJobModal({
                     {attachedFiles.map((file, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-2 py-1 text-3xs font-mono text-foreground"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/80 px-2.5 py-1 text-2xs font-mono text-foreground"
                       >
-                        <FileCheck2 className="h-3.5 w-3.5 text-emerald-500" />
-                        <span>{file}</span>
+                        <FileCheck2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span className="max-w-[200px] truncate">{file}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveFile(idx)}
@@ -947,7 +979,7 @@ export function BannerJobModal({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-3xs text-muted-foreground">لم يتم إرفاق ملفات بعد</p>
+                  <p className="text-3xs text-muted-foreground">لم يتم إضافة ملفات بعد (اختياري)</p>
                 )}
               </div>
             </div>
@@ -978,9 +1010,9 @@ export function BannerJobModal({
                 </span>
               </div>
               <div className="rounded-lg bg-muted/60 p-2.5">
-                <span className="text-3xs text-muted-foreground block">المساحة المحتسبة</span>
-                <span className="font-bold text-foreground font-mono block">
-                  {live?.ok ? `${live.quote.areaSqm} م²` : "—"}
+                <span className="text-3xs text-muted-foreground block">حالة التصميم</span>
+                <span className="font-bold text-foreground truncate block">
+                  {requiresDesign ? "المصمم سيعمل عليه" : "جاهز للطباعة مباشرة"}
                 </span>
               </div>
             </div>
@@ -1082,7 +1114,9 @@ function PricePanel({
         </span>
       </div>
       <p className="text-3xs text-muted-foreground">
-        الإجمالي = الطباعة {q.baseTotal} ج.م + التشطيب {q.finishingTotal} ج.م — محسوب بالنظام
+        {Number(q.finishingTotal) > 0
+          ? `الإجمالي = الطباعة ${q.baseTotal} ج.م + التشطيب ${q.finishingTotal} ج.م — محسوب بالنظام`
+          : `الإجمالي = الطباعة ${q.baseTotal} ج.م — محسوب بالنظام`}
       </p>
     </div>
   );
