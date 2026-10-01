@@ -10,9 +10,14 @@ function readStringArray(o: object, k: string): readonly string[] {
 }
 
 export function toCoreActor(a: { readonly userId: string }): CoreActor {
+  const permissions =
+    "permissions" in a && a.permissions instanceof Set
+      ? (a.permissions as ReadonlySet<string>)
+      : undefined;
   return {
     userId: asUserId(a.userId),
     roles: readStringArray(a, "roles"),
     departmentIds: readStringArray(a, "departmentIds"),
+    ...(permissions ? { permissions } : {}),
   };
 }
