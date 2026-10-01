@@ -238,6 +238,7 @@ export function MasterPrintOrderView({
       totalCost: bannerSpec.total,
       departmentId: bannerSpec.departmentId,
       productTypeId: bannerSpec.productTypeId,
+      requiresDesign: bannerSpec.requiresDesign,
       bannerSpec,
     };
 
@@ -751,6 +752,11 @@ export function MasterPrintOrderView({
                       ) : null}
                       {job.material ? <span>الخامة: {job.material}</span> : null}
                       {job.finishing ? <span>التشطيب: {job.finishing}</span> : null}
+                      {job.bannerSpec?.requiresDesign !== undefined ? (
+                        <span className={job.bannerSpec.requiresDesign ? "text-amber-600 dark:text-amber-400 font-semibold" : "text-emerald-600 dark:text-emerald-400 font-semibold"}>
+                          {job.bannerSpec.requiresDesign ? "المصمم سيعمل على التصميم" : "التصميم جاهز للطباعة"}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
