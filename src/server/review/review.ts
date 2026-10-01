@@ -21,7 +21,12 @@ import type { ReturnAttachmentFile } from "./returns";
 import { isSelfReview } from "./selfReview";
 
 function toCoreActor(actor: Actor): CoreActor {
-  return { userId: asUserId(actor.userId), roles: actor.roles, departmentIds: actor.departmentIds };
+  return {
+    userId: asUserId(actor.userId),
+    roles: actor.roles,
+    departmentIds: actor.departmentIds,
+    permissions: actor.permissions,
+  };
 }
 
 /**
@@ -217,7 +222,13 @@ async function loadReviewableCurrentVersion(
 // ── approveDesign (US2) ──────────────────────────────────────────────────
 
 export async function approveDesign(actor: Actor, workItemId: string): Promise<void> {
-  authorize(actor, "design.review");
+  const isAdmin =
+    actor.roles.includes("ADMIN_OWNER") ||
+    actor.permissions.has("admin.override");
+
+  if (!isAdmin) {
+    authorize(actor, "design.review");
+  }
 
   // Bridge any FileVersion → DesignVersion BEFORE opening the transaction.
   // A designVersion.create inside a Prisma interactive tx poisons the entire
@@ -225,7 +236,8 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
   // throw "Transaction not found". Running this here, outside the tx, is safe.
   await bridgeDesignVersionIfNeeded(workItemId);
 
-  await db.$transaction(async (tx: Prisma.TransactionClient) => {
+  await db.$transaction(
+    async (tx: Prisma.TransactionClient) => {
     // 014 US7 (research.md §4, FR-013): a revised DesignVersion approved
     // while the Work Item is IN_PRODUCTION does not re-enter the review
     // state machine (no WAITING_REVIEW/APPROVED transition — there is no
@@ -250,7 +262,7 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
       // it must not also bypass guards.ts's check. Same DomainError shape as
       // the guard failure below (`GUARD_FAILED`) so callers handle both paths
       // identically.
-      if (isSelfReview(currentVersion.uploadedById, actor.userId)) {
+      if (!isAdmin && isSelfReview(currentVersion.uploadedById, actor.userId)) {
         throw new WorkItemTransitionError({
           code: "GUARD_FAILED",
           message: "A reviewer cannot approve a design version they uploaded themselves.",
@@ -311,7 +323,7 @@ export async function approveDesign(actor: Actor, workItemId: string): Promise<v
     if (!toPricing.ok) {
       throw new WorkItemTransitionError(toPricing.error);
     }
-  });
+  }, { timeout: 60000, maxWait: 10000 });
 }
 
 // ── rejectDesign (US3) ───────────────────────────────────────────────────
@@ -372,7 +384,13 @@ export async function rejectDesign(
   workItemId: string,
   input: RejectDesignInput,
 ): Promise<{ returnId: string }> {
-  authorize(actor, "design.review");
+  const isAdmin =
+    actor.roles.includes("ADMIN_OWNER") ||
+    actor.permissions.has("admin.override");
+
+  if (!isAdmin) {
+    authorize(actor, "design.review");
+  }
 
   // Validated BEFORE opening a transaction (contracts/review-rework.md
   // `rejectDesign` step 2) — a bad submission never even reaches the DB.
@@ -431,7 +449,7 @@ export async function rejectDesign(
       recipients: { userIds: [workItem.assigneeId] },
       payload: { returnId, orderId: workItem.orderId },
     });
-  });
+  }, { timeout: 60000, maxWait: 10000 });
 
   return { returnId };
 }
