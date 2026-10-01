@@ -1,9 +1,10 @@
 // Admin Database Health page — single-glance snapshot of table volumes and
 // Postgres vitals, built for a customer demo: accurate, cheap to render, and
 // as simple as it can be while still looking like real engineering.
-// Read-only Server Component; the only mutation is the "Refresh" button,
-// which is a plain server action that busts the 60s cache (see
-// `~/server/admin/health`), not a database write.
+// Read-only Server Component apart from two things: the "Refresh" button, which
+// is a plain server action that busts the 60s cache (see `~/server/admin/health`)
+// and is not a database write; and <DemoControls />, the demo purge/reseed
+// buttons, which DO write and are gated on `admin.config` inside the service.
 // RTL: logical Tailwind properties only (ps-/pe-/ms-/me-/start-/end-/).
 
 import {
@@ -23,6 +24,7 @@ import {
   refreshDatabaseHealth,
 } from "~/server/admin/health";
 import { Button } from "~/components/ui/button";
+import DemoControls from "./demo-controls";
 import ar from "~/messages/ar.json";
 
 const S = ar.ui;
@@ -221,6 +223,11 @@ export default async function AdminHealthPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Demo Data Controls ── */}
+      {/* Client component (long-running actions + confirmation). Authorization
+          is enforced inside the service, not here. */}
+      <DemoControls />
 
       {/* ── Table Breakdown Card ── */}
       <div className="rounded-xl border border-border/70 bg-card shadow-xs overflow-hidden p-6 sm:p-7">
