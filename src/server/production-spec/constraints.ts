@@ -156,8 +156,14 @@ export function isRollProductTypeName(name: string): boolean {
     lower.includes("roll-up") ||
     lower.includes("rollup") ||
     lower.includes("banner") ||
+    lower.includes("flex") ||
+    lower.includes("vinyl") ||
+    lower.includes("sticker") ||
     name.includes("بنر") ||
-    name.includes("رول")
+    name.includes("فليكس") ||
+    name.includes("رول") ||
+    name.includes("فينيل") ||
+    name.includes("استيكر")
   );
 }
 
