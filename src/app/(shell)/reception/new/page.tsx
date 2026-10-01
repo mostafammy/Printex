@@ -8,7 +8,7 @@ import { getActor, authorize } from "~/server/auth";
 import { listActiveProductTypes } from "~/server/orders";
 import {
   listActiveFinishingServices,
-  loadProductionConstraints,
+  loadReceptionConstraints,
 } from "~/server/production-spec";
 import { MasterPrintOrderView } from "~/components/reception/master-order/MasterPrintOrderView";
 import type {
@@ -71,12 +71,15 @@ export default async function NewOrderPage() {
     ]);
 
   // 093 configuration, read through the ONE boundary that validates it
-  // (`loadProductionConstraints`). The reception form derives from this rather
+  // (`loadReceptionConstraints`). The reception form derives from this rather
   // than from a ladder literal, so the width ladder, the height ceiling and the
-  // EGP/m² band each come from `ProductionWidthRule` and cannot drift.
+  // EGP/m² band each come from `ProductionWidthRule` — or, where no rule row
+  // exists yet, from the canonical roll defaults declared beside that reader.
+  // The commit path calls the same function, so a preview and the stored spec
+  // can never be derived from different numbers.
   const governed = await Promise.all(
     productTypes.map(async (pt) => {
-      const constraints = await loadProductionConstraints(pt.id);
+      const constraints = await loadReceptionConstraints(pt.id, pt.name);
       if (!constraints) return null;
       const mid = constraints.minRatePerSqm.plus(constraints.maxRatePerSqm).div(2);
       return [

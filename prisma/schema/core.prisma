@@ -142,6 +142,21 @@ model Order {
   /// Optional default due date for any Work Item on this order that has no
   /// due date of its own set (011 spec FR-003a).
   dueDate     DateTime?
+  /// Order-level discount in whole EGP, agreed by reception. Never negative and
+  /// never larger than the order's own production subtotal — both are enforced
+  /// in `createMasterOrderAction`, not by a CHECK constraint, so the refusal
+  /// reaches the receptionist as a message instead of a 500.
+  discountAmount Decimal @default(0) @db.Decimal(12, 2)
+  /// Order-level tax in whole EGP, agreed by reception. Added AFTER the
+  /// discount, matching the sequence the receptionist sees on screen.
+  taxAmount      Decimal @default(0) @db.Decimal(12, 2)
+  /// How the discount was arrived at — a flat sum or a percentage of the
+  /// subtotal. Kept because the amount alone loses the shape of the deal:
+  /// "150.00" could be a flat 150 or 10% of 1500. `NULL` when no discount was
+  /// agreed. Built server-side from the kind, never free text.
+  discountNote   String?
+  /// Same as `discountNote`, for the tax.
+  taxNote        String?
   createdById String
   createdBy   User          @relation(fields: [createdById], references: [id])
   createdAt   DateTime      @default(now())

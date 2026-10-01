@@ -208,6 +208,10 @@ exports.Prisma.OrderScalarFieldEnum = {
   priority: 'priority',
   mode: 'mode',
   dueDate: 'dueDate',
+  discountAmount: 'discountAmount',
+  taxAmount: 'taxAmount',
+  discountNote: 'discountNote',
+  taxNote: 'taxNote',
   createdById: 'createdById',
   createdAt: 'createdAt'
 };

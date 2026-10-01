@@ -2,7 +2,7 @@
 // contracts/order-entry.md, plan.md §5.3.
 
 import { z } from "zod";
-import type { Prisma } from "../../../generated/prisma";
+import { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
 import { authorize, audit } from "~/server/auth";
 import type { Actor } from "~/server/auth";
@@ -96,6 +96,28 @@ const createOrderSchema = z.object({
   priority: z.enum(orderPriorityValues),
   mode: z.enum(orderModeValues),
   dueDate: z.date().optional(),
+  /**
+   * Order-level discount and tax agreed at the desk. Stored on the Order, not
+   * derived: the TOTAL is derived (from each work item's frozen
+   * `productionTotal` → `WorkItemPrice` → `computeOrderSummary`), but a discount
+   * the customer was given is a decision that has to outlive the conversation.
+   *
+   * Both are `>= 0` here. "Discount larger than the subtotal" is a *cross-field*
+   * rule and lives in the caller that can see the work items — refusing it with
+   * the subtotal in the message beats clamping it silently. `computeOrderSummary`
+   * clamps again at the floor, because by then the subtotal is the accountant's
+   * priced figure rather than the client's quote.
+   */
+  discountAmount: z.number().min(0).max(9_999_999.99).optional(),
+  taxAmount: z.number().min(0).max(9_999_999.99).optional(),
+  /**
+   * Whether each amount was entered flat or as a percentage. Free-form strings,
+   * not an enum, because this is a record of what was decided rather than a
+   * control that drives arithmetic — the arithmetic is already resolved into
+   * `discountAmount`/`taxAmount` by the caller.
+   */
+  discountNote: z.string().trim().max(120).optional(),
+  taxNote: z.string().trim().max(120).optional(),
   workItems: z.array(workItemCreateSchema).min(1),
 });
 
@@ -117,6 +139,10 @@ export async function createOrder(
         priority: parsed.priority,
         mode: parsed.mode,
         dueDate: parsed.dueDate,
+        discountAmount: new Prisma.Decimal(parsed.discountAmount ?? 0),
+        taxAmount: new Prisma.Decimal(parsed.taxAmount ?? 0),
+        discountNote: parsed.discountNote,
+        taxNote: parsed.taxNote,
         createdById: actor.userId,
       },
     });
@@ -131,6 +157,10 @@ export async function createOrder(
         channel: parsed.channel,
         priority: parsed.priority,
         mode: parsed.mode,
+        // Recorded because a discount is money given away: "who let them have
+        // 200 off, and when" is the first question anyone asks afterwards.
+        discountAmount: (parsed.discountAmount ?? 0).toFixed(2),
+        taxAmount: (parsed.taxAmount ?? 0).toFixed(2),
         source: "full_form",
       },
     });

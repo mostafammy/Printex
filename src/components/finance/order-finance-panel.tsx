@@ -103,6 +103,34 @@ export async function OrderFinancePanel({ orderId }: Props) {
         </div>
       </dl>
 
+      {/* Only shown when reception actually applied one — the common case is an
+          order with no discount and no tax, and three always-visible zero rows
+          would bury the three numbers that matter. */}
+      {(Number(summary.discount) !== 0 || Number(summary.tax) !== 0) && (
+        <dl className="mt-3 space-y-1.5 rounded-xl border border-border/60 bg-muted/20 px-4 py-3 text-xs">
+          <div className="flex items-center justify-between">
+            <dt className="text-muted-foreground">{S.subtotal}</dt>
+            <dd className="font-mono font-bold text-foreground">{money(summary.subtotal)}</dd>
+          </div>
+          {Number(summary.discount) !== 0 && (
+            <div className="flex items-center justify-between">
+              <dt className="text-rose-600 dark:text-rose-400">{S.discount}</dt>
+              <dd className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                − {money(summary.discount)}
+              </dd>
+            </div>
+          )}
+          {Number(summary.tax) !== 0 && (
+            <div className="flex items-center justify-between">
+              <dt className="text-blue-600 dark:text-blue-400">{S.tax}</dt>
+              <dd className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                + {money(summary.tax)}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
+
       {summary.pricingIncomplete && (
         <div className="mt-3 flex items-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs font-medium text-amber-700 dark:text-amber-400">
           <AlertTriangle className="h-4 w-4 shrink-0" />

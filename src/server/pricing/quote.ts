@@ -26,6 +26,18 @@ export type QuoteBreakdown = {
   readonly taxIncluded: true;
   readonly finalAmount: string;
   readonly rounding: "NEAREST_EGP";
+  /**
+   * Which pricing path produced this breakdown.
+   *
+   * `PRODUCTION_SPEC` means the frozen 093 specification on the work item is
+   * authoritative. `PRICE_LIST` means the 051 price list was used because the
+   * product is not roll-governed. The two must never be silently mixed: a job
+   * quoted one way and invoiced the other is how a shop loses the difference
+   * between a 145 cm and a 150 cm roll.
+   */
+  readonly source?: "PRODUCTION_SPEC" | "PRICE_LIST";
+  readonly finishingTotal?: string;
+  readonly customerWidthMeters?: string;
 };
 
 export type QuoteResult = {
@@ -98,6 +110,55 @@ export async function quote(input: QuoteInput): Promise<Result<QuoteResult, Doma
   const dimensionUnit = workItem.dimensionUnit === "CM" || workItem.dimensionUnit === "M"
     ? workItem.dimensionUnit
     : undefined;
+
+  // 093's frozen specification WINS whenever the work item has one.
+  //
+  // This is the reconciliation between the two pricing paths. Reception freezes
+  // `productionWidthCm` (the BILLING width, rounded up to a ladder step) and
+  // `productionTotal` (base + finishings) onto the work item, while
+  // `widthValue` deliberately carries the CUSTOMER's width because that is what
+  // the designer lays out and the printer cuts. Recomputing area from
+  // `widthValue` here would therefore re-derive the customer's 145 cm as 2.90 m²
+  // when the customer was quoted — and billed — on the 150 cm roll's 3.00 m²,
+  // and would silently drop the finishing lines entirely.
+  //
+  // So: if `productionSpecAt` is set, this function REPORTS the frozen numbers
+  // instead of re-deriving them. The 051 path remains for every product with no
+  // rule, which is what keeps this additive.
+  if (workItem.productionSpecAt && workItem.productionTotal) {
+    return ok({
+      amount: workItem.productionTotal.toString(),
+      currency: "EGP" as const,
+      breakdown: {
+        unit,
+        quantity: new Prisma.Decimal(workItem.quantity).toString(),
+        ...(workItem.productionWidthCm
+          ? { widthMeters: workItem.productionWidthCm.div(100).toString() }
+          : {}),
+        ...(workItem.productionHeightM
+          ? { heightMeters: workItem.productionHeightM.toString() }
+          : {}),
+        ...(workItem.productionAreaSqm
+          ? { totalArea: workItem.productionAreaSqm.toString() }
+          : {}),
+        ...(workItem.customerWidthCm && dimensionUnit
+          ? { customerWidthMeters: toMetersForBreakdown(workItem.customerWidthCm, dimensionUnit).toString() }
+          : {}),
+        tierId: tier.id,
+        priceListId: priceList.id,
+        baseAmount: workItem.baseTotal?.toString() ?? "0",
+        // The frozen specification carries no separate customer-adjustment
+        // figure: the receptionist's selected rate IS the agreed rate.
+        adjustmentAmount: "0",
+        ...(workItem.finishingTotal ? { finishingTotal: workItem.finishingTotal.toString() } : {}),
+        taxIncluded: true,
+        finalAmount: workItem.productionTotal.toString(),
+        rounding: "NEAREST_EGP",
+        source: "PRODUCTION_SPEC",
+      },
+    });
+  }
+
   const calculation = calculateQuote({
     unit,
     quantity: workItem.quantity,
@@ -127,6 +188,7 @@ export async function quote(input: QuoteInput): Promise<Result<QuoteResult, Doma
     taxIncluded: true,
     finalAmount: calculation.finalAmount.toString(),
     rounding: "NEAREST_EGP",
+    source: "PRICE_LIST",
   };
 
   return ok({ amount: calculation.finalAmount.toString(), currency: "EGP", breakdown });

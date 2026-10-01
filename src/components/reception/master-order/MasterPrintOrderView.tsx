@@ -101,6 +101,24 @@ const PRINT_CATEGORIES: readonly {
   },
 ];
 
+/**
+ * Two decimal places, without the float dust.
+ *
+ * `Math.round(x * 100) / 100` returns a double, and `toFixed(2)` on the result
+ * rounds *again* — so a displayed "570.00" could be carrying 569.9999999999999
+ * into the payload. Rounding at the point of display AND of submission is what
+ * keeps the two from disagreeing; the server re-rounds to `Decimal(12,2)` on the
+ * way in, which is the same rule.
+ *
+ * A non-finite input is treated as zero rather than propagated: `NaN` reaching
+ * the form would render as "NaN ج.م" and, if it were ever submitted, would fail
+ * the server's `toMoney` with a message the receptionist cannot act on.
+ */
+function toMoney2dp(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 export function MasterPrintOrderView({
   preGeneratedOrderNumber,
   defaultOrderDate,
@@ -147,6 +165,13 @@ export function MasterPrintOrderView({
   const [genericModalCategory, setGenericModalCategory] = useState<JobCategory | null>(null);
 
   // Section 5: Financials
+  //
+  // Discount and tax are STORED on the Order (`discountAmount` / `taxAmount`),
+  // so unlike the total they are real records, not a preview. The total itself
+  // stays derived server-side — `computeOrderSummary` combines the work items'
+  // prices with those two columns — and the arithmetic below deliberately
+  // mirrors `total = subtotal - discount + tax` there, so the number on screen
+  // is the number that gets stored.
   const [discountType, setDiscountType] = useState<"FIXED" | "PERCENT">("FIXED");
   const [discountValue, setDiscountValue] = useState<number>(0);
 
@@ -157,28 +182,23 @@ export function MasterPrintOrderView({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Subtotal
-  const subtotal = jobs.reduce((sum, j) => sum + j.totalCost, 0);
+  // The sum of the frozen production totals of every job on this order. Each one
+  // came out of `deriveProductionSpec` — production width, area, base + every
+  // finishing — so the add-ons are already in here.
+  const subtotal = toMoney2dp(jobs.reduce((sum, j) => sum + j.totalCost, 0));
 
-  // Discount calculation
-  const calculatedDiscount =
-    discountType === "FIXED"
-      ? Math.min(discountValue, subtotal)
-      : Math.round(((subtotal * discountValue) / 100) * 100) / 100;
-
-  const afterDiscount = Math.max(0, subtotal - calculatedDiscount);
-
-  // Tax calculation
-  const calculatedTax =
-    taxType === "FIXED"
-      ? taxValue
-      : Math.round(((afterDiscount * taxValue) / 100) * 100) / 100;
-
-  // Grand Total
-  const grandTotal = Math.round((afterDiscount + calculatedTax) * 100) / 100;
+  // Discount first, then tax on what is left. Taxing before discounting would
+  // charge tax on money that was then given away, and the order row would not
+  // add up.
+  const calculatedDiscount = toMoney2dp(
+    discountType === "FIXED" ? Math.min(discountValue, subtotal) : (subtotal * discountValue) / 100,
+  );
+  const afterDiscount = toMoney2dp(Math.max(0, subtotal - calculatedDiscount));
+  const calculatedTax = toMoney2dp(taxType === "FIXED" ? taxValue : (afterDiscount * taxValue) / 100);
+  const grandTotal = toMoney2dp(afterDiscount + calculatedTax);
 
   // Remaining Balance
-  const remainingBalance = Math.max(0, Math.round((grandTotal - paidAmount) * 100) / 100);
+  const remainingBalance = Math.max(0, toMoney2dp(grandTotal - paidAmount));
 
   // Payment Status
   let paymentStatus: "UNPAID" | "PARTIAL" | "PAID" = "UNPAID";
@@ -271,8 +291,14 @@ export function MasterPrintOrderView({
         dueDate: expectedDeliveryDate || undefined,
         salesRep,
         designerId,
+        // Sent as the two resolved EGP amounts, not as "type + value": the
+        // server stores an amount, and letting it re-derive a percentage would
+        // mean two implementations of the same rule that can drift. The KIND
+        // travels separately so the order records how the figure was reached.
         discountAmount: calculatedDiscount,
+        discountKind: discountType,
         taxAmount: calculatedTax,
+        taxKind: taxType,
         paidAmount,
         items: jobs,
       });
@@ -799,10 +825,10 @@ export function MasterPrintOrderView({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Controls: Discount, Tax, Paid */}
           <div className="space-y-4 rounded-2xl border border-border/70 bg-background/50 p-5">
-            {/* Subtotal preview */}
+            {/* Production subtotal */}
             <div className="flex items-center justify-between border-b border-border/40 pb-3">
               <span className="text-xs font-bold text-muted-foreground">
-                الإجمالي قبل الخصم (Subtotal)
+                إجمالي الإنتاج قبل الخصم (Subtotal)
               </span>
               <span className="text-base font-black text-foreground font-mono">
                 {subtotal.toFixed(2)} ج.م
@@ -859,7 +885,7 @@ export function MasterPrintOrderView({
                 <select
                   id={`tax-type-${generatedId}`}
                   value={taxType}
-                  onChange={(e) => setTaxType(e.target.value as "FIXED" | "PERCENT")}
+                  onChange={(e) => setTaxType(e.target.value as "PERCENT" | "FIXED")}
                   className="w-full rounded-xl border border-border/80 bg-card px-2.5 py-2 text-xs font-bold text-foreground focus:outline-none"
                 >
                   <option value="PERCENT">نسبة (%)</option>
@@ -891,6 +917,11 @@ export function MasterPrintOrderView({
               </div>
             </div>
 
+            <p className="text-3xs leading-relaxed text-muted-foreground">
+              الخصم والضريبة يُحفظان على الأمر. الضريبة تُحسب على المبلغ بعد
+              الخصم، والإجمالي = الإجمالي قبل الخصم − الخصم + الضريبة.
+            </p>
+
             {/* Paid Amount */}
             <div className="pt-2 border-t border-border/40">
               <label htmlFor={`paid-amount-${generatedId}`} className="block text-xs font-bold text-foreground mb-1.5">
@@ -905,6 +936,9 @@ export function MasterPrintOrderView({
                 placeholder="5000"
                 className="w-full rounded-xl border border-border/80 bg-card px-3.5 py-2 text-sm font-mono font-bold text-foreground focus:border-primary focus:outline-none"
               />
+              <p className="mt-1 text-3xs text-muted-foreground">
+                يُسجَّل كدفعة فعلية على الأمر عند الحفظ.
+              </p>
             </div>
           </div>
 
@@ -940,6 +974,10 @@ export function MasterPrintOrderView({
                   {grandTotal.toFixed(2)} ج.م
                 </span>
               </div>
+              <p className="text-3xs text-muted-foreground">
+                كل شغلانة تُثبَّت بمقاس الإنتاج والطباعة والتشطيب، ويعتمد المحاسب
+                الإجمالي قبل الإنتاج.
+              </p>
             </div>
 
             <div className="mt-6 rounded-xl bg-card border border-border/70 p-4 space-y-2">

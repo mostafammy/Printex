@@ -47,7 +47,7 @@ import { z } from "zod";
 import { db } from "~/server/db";
 import { audit, authorize, type Actor } from "~/server/auth";
 import { DomainProductionSpecError } from "./errors";
-import { loadProductionConstraints, type ProductionConstraints } from "./constraints";
+import { loadReceptionConstraints, type ProductionConstraints } from "./constraints";
 import { approvedWidthException } from "./exceptions";
 import { resolveFinishingRates } from "./finishings";
 import { deriveProductionSpec as deriveProductionSpecCore } from "~/lib/production/derive";
@@ -141,12 +141,17 @@ export async function getProductionSpec(
       finishingTotal: true,
       productionTotal: true,
       productionSpecAt: true,
+      productType: { select: { id: true, name: true } },
     },
   });
   if (!item?.productionSpecAt) return null;
 
   const [constraints, finishings, exception] = await Promise.all([
-    loadProductionConstraints(item.productTypeId),
+    // Same reader as the write path, so reading a frozen spec back can never
+    // disagree with the numbers it was frozen from.
+    item.productType
+      ? loadReceptionConstraints(item.productType.id, item.productType.name)
+      : Promise.resolve(null),
     latestFinishingRows(item.id),
     approvedWidthException(item.id),
   ]);
@@ -246,7 +251,12 @@ async function loadGovernance(
 ): Promise<{ readonly constraints: ProductionConstraints; readonly productTypeId: string }> {
   const item = await db.workItem.findUnique({
     where: { id: workItemId },
-    select: { id: true, productTypeId: true, state: true },
+    select: {
+      id: true,
+      productTypeId: true,
+      state: true,
+      productType: { select: { id: true, name: true } },
+    },
   });
   if (!item) {
     throw new DomainProductionSpecError("WORK_ITEM_NOT_APPLICABLE", "Work item was not found");
@@ -257,14 +267,20 @@ async function loadGovernance(
       `A production specification can only be set while the item is in reception (current state: ${item.state})`,
     );
   }
-  const constraints = await loadProductionConstraints(item.productTypeId);
+  // `loadReceptionConstraints`, NOT `loadProductionConstraints`: the page that
+  // rendered the live preview used the same reader, and a commit that resolved
+  // different configuration than the preview is exactly the "quoted 570, stored
+  // something else" bug this write path exists to prevent.
+  const constraints = item.productType
+    ? await loadReceptionConstraints(item.productType.id, item.productType.name)
+    : null;
   if (!constraints) {
     throw new DomainProductionSpecError(
       "NOT_PRODUCTION_SPEC_GOVERNED",
       "This product type has no production width configuration, so area pricing does not apply to it",
     );
   }
-  return { constraints, productTypeId: item.productTypeId! };
+  return { constraints, productTypeId: constraints.productTypeId };
 }
 
 // ── Public operations ─────────────────────────────────────────────────────

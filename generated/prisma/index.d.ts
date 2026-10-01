@@ -14314,10 +14314,14 @@ export namespace Prisma {
 
   export type OrderAvgAggregateOutputType = {
     number: number | null
+    discountAmount: Decimal | null
+    taxAmount: Decimal | null
   }
 
   export type OrderSumAggregateOutputType = {
     number: number | null
+    discountAmount: Decimal | null
+    taxAmount: Decimal | null
   }
 
   export type OrderMinAggregateOutputType = {
@@ -14328,6 +14332,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority | null
     mode: $Enums.OrderMode | null
     dueDate: Date | null
+    discountAmount: Decimal | null
+    taxAmount: Decimal | null
+    discountNote: string | null
+    taxNote: string | null
     createdById: string | null
     createdAt: Date | null
   }
@@ -14340,6 +14348,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority | null
     mode: $Enums.OrderMode | null
     dueDate: Date | null
+    discountAmount: Decimal | null
+    taxAmount: Decimal | null
+    discountNote: string | null
+    taxNote: string | null
     createdById: string | null
     createdAt: Date | null
   }
@@ -14352,6 +14364,10 @@ export namespace Prisma {
     priority: number
     mode: number
     dueDate: number
+    discountAmount: number
+    taxAmount: number
+    discountNote: number
+    taxNote: number
     createdById: number
     createdAt: number
     _all: number
@@ -14360,10 +14376,14 @@ export namespace Prisma {
 
   export type OrderAvgAggregateInputType = {
     number?: true
+    discountAmount?: true
+    taxAmount?: true
   }
 
   export type OrderSumAggregateInputType = {
     number?: true
+    discountAmount?: true
+    taxAmount?: true
   }
 
   export type OrderMinAggregateInputType = {
@@ -14374,6 +14394,10 @@ export namespace Prisma {
     priority?: true
     mode?: true
     dueDate?: true
+    discountAmount?: true
+    taxAmount?: true
+    discountNote?: true
+    taxNote?: true
     createdById?: true
     createdAt?: true
   }
@@ -14386,6 +14410,10 @@ export namespace Prisma {
     priority?: true
     mode?: true
     dueDate?: true
+    discountAmount?: true
+    taxAmount?: true
+    discountNote?: true
+    taxNote?: true
     createdById?: true
     createdAt?: true
   }
@@ -14398,6 +14426,10 @@ export namespace Prisma {
     priority?: true
     mode?: true
     dueDate?: true
+    discountAmount?: true
+    taxAmount?: true
+    discountNote?: true
+    taxNote?: true
     createdById?: true
     createdAt?: true
     _all?: true
@@ -14497,6 +14529,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate: Date | null
+    discountAmount: Decimal
+    taxAmount: Decimal
+    discountNote: string | null
+    taxNote: string | null
     createdById: string
     createdAt: Date
     _count: OrderCountAggregateOutputType | null
@@ -14528,6 +14564,10 @@ export namespace Prisma {
     priority?: boolean
     mode?: boolean
     dueDate?: boolean
+    discountAmount?: boolean
+    taxAmount?: boolean
+    discountNote?: boolean
+    taxNote?: boolean
     createdById?: boolean
     createdAt?: boolean
     customer?: boolean | CustomerDefaultArgs<ExtArgs>
@@ -14547,6 +14587,10 @@ export namespace Prisma {
     priority?: boolean
     mode?: boolean
     dueDate?: boolean
+    discountAmount?: boolean
+    taxAmount?: boolean
+    discountNote?: boolean
+    taxNote?: boolean
     createdById?: boolean
     createdAt?: boolean
     customer?: boolean | CustomerDefaultArgs<ExtArgs>
@@ -14561,6 +14605,10 @@ export namespace Prisma {
     priority?: boolean
     mode?: boolean
     dueDate?: boolean
+    discountAmount?: boolean
+    taxAmount?: boolean
+    discountNote?: boolean
+    taxNote?: boolean
     createdById?: boolean
     createdAt?: boolean
     customer?: boolean | CustomerDefaultArgs<ExtArgs>
@@ -14575,11 +14623,15 @@ export namespace Prisma {
     priority?: boolean
     mode?: boolean
     dueDate?: boolean
+    discountAmount?: boolean
+    taxAmount?: boolean
+    discountNote?: boolean
+    taxNote?: boolean
     createdById?: boolean
     createdAt?: boolean
   }
 
-  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "number" | "customerId" | "channel" | "priority" | "mode" | "dueDate" | "createdById" | "createdAt", ExtArgs["result"]["order"]>
+  export type OrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "number" | "customerId" | "channel" | "priority" | "mode" | "dueDate" | "discountAmount" | "taxAmount" | "discountNote" | "taxNote" | "createdById" | "createdAt", ExtArgs["result"]["order"]>
   export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     customer?: boolean | CustomerDefaultArgs<ExtArgs>
     createdBy?: boolean | UserDefaultArgs<ExtArgs>
@@ -14623,6 +14675,25 @@ export namespace Prisma {
        * due date of its own set (011 spec FR-003a).
        */
       dueDate: Date | null
+      /**
+       * Order-level discount in whole EGP, agreed by reception. Never negative and
+       * never larger than the order's own production subtotal — both are enforced
+       * in `createMasterOrderAction`, not by a CHECK constraint, so the refusal
+       * reaches the receptionist as a message instead of a 500.
+       */
+      discountAmount: Prisma.Decimal
+      /**
+       * Order-level tax in whole EGP, agreed by reception. Added AFTER the
+       * discount, matching the sequence the receptionist sees on screen.
+       */
+      taxAmount: Prisma.Decimal
+      /**
+       * The discount/tax DECISION as reception entered it, kept as a snapshot so a
+       * later change to the fields above cannot rewrite what was agreed with the
+       * customer. Amounts are decimals, never floats (constitution Money).
+       */
+      discountNote: string | null
+      taxNote: string | null
       createdById: string
       createdAt: Date
     }, ExtArgs["result"]["order"]>
@@ -15061,6 +15132,10 @@ export namespace Prisma {
     readonly priority: FieldRef<"Order", 'OrderPriority'>
     readonly mode: FieldRef<"Order", 'OrderMode'>
     readonly dueDate: FieldRef<"Order", 'DateTime'>
+    readonly discountAmount: FieldRef<"Order", 'Decimal'>
+    readonly taxAmount: FieldRef<"Order", 'Decimal'>
+    readonly discountNote: FieldRef<"Order", 'String'>
+    readonly taxNote: FieldRef<"Order", 'String'>
     readonly createdById: FieldRef<"Order", 'String'>
     readonly createdAt: FieldRef<"Order", 'DateTime'>
   }
@@ -78456,6 +78531,10 @@ export namespace Prisma {
     priority: 'priority',
     mode: 'mode',
     dueDate: 'dueDate',
+    discountAmount: 'discountAmount',
+    taxAmount: 'taxAmount',
+    discountNote: 'discountNote',
+    taxNote: 'taxNote',
     createdById: 'createdById',
     createdAt: 'createdAt'
   };
@@ -80313,6 +80392,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFilter<"Order"> | $Enums.OrderPriority
     mode?: EnumOrderModeFilter<"Order"> | $Enums.OrderMode
     dueDate?: DateTimeNullableFilter<"Order"> | Date | string | null
+    discountAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    discountNote?: StringNullableFilter<"Order"> | string | null
+    taxNote?: StringNullableFilter<"Order"> | string | null
     createdById?: StringFilter<"Order"> | string
     createdAt?: DateTimeFilter<"Order"> | Date | string
     customer?: XOR<CustomerScalarRelationFilter, CustomerWhereInput>
@@ -80331,6 +80414,10 @@ export namespace Prisma {
     priority?: SortOrder
     mode?: SortOrder
     dueDate?: SortOrderInput | SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
+    discountNote?: SortOrderInput | SortOrder
+    taxNote?: SortOrderInput | SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     customer?: CustomerOrderByWithRelationInput
@@ -80352,6 +80439,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFilter<"Order"> | $Enums.OrderPriority
     mode?: EnumOrderModeFilter<"Order"> | $Enums.OrderMode
     dueDate?: DateTimeNullableFilter<"Order"> | Date | string | null
+    discountAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    discountNote?: StringNullableFilter<"Order"> | string | null
+    taxNote?: StringNullableFilter<"Order"> | string | null
     createdById?: StringFilter<"Order"> | string
     createdAt?: DateTimeFilter<"Order"> | Date | string
     customer?: XOR<CustomerScalarRelationFilter, CustomerWhereInput>
@@ -80370,6 +80461,10 @@ export namespace Prisma {
     priority?: SortOrder
     mode?: SortOrder
     dueDate?: SortOrderInput | SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
+    discountNote?: SortOrderInput | SortOrder
+    taxNote?: SortOrderInput | SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     _count?: OrderCountOrderByAggregateInput
@@ -80390,6 +80485,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityWithAggregatesFilter<"Order"> | $Enums.OrderPriority
     mode?: EnumOrderModeWithAggregatesFilter<"Order"> | $Enums.OrderMode
     dueDate?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+    discountAmount?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalWithAggregatesFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    discountNote?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    taxNote?: StringNullableWithAggregatesFilter<"Order"> | string | null
     createdById?: StringWithAggregatesFilter<"Order"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Order"> | Date | string
   }
@@ -85198,6 +85297,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
@@ -85215,6 +85318,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
@@ -85229,6 +85336,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
@@ -85246,6 +85357,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -85262,6 +85377,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
   }
@@ -85272,6 +85391,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
@@ -85283,6 +85406,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -90624,12 +90751,18 @@ export namespace Prisma {
     priority?: SortOrder
     mode?: SortOrder
     dueDate?: SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
+    discountNote?: SortOrder
+    taxNote?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
 
   export type OrderAvgOrderByAggregateInput = {
     number?: SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
   }
 
   export type OrderMaxOrderByAggregateInput = {
@@ -90640,6 +90773,10 @@ export namespace Prisma {
     priority?: SortOrder
     mode?: SortOrder
     dueDate?: SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
+    discountNote?: SortOrder
+    taxNote?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
@@ -90652,12 +90789,18 @@ export namespace Prisma {
     priority?: SortOrder
     mode?: SortOrder
     dueDate?: SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
+    discountNote?: SortOrder
+    taxNote?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
   }
 
   export type OrderSumOrderByAggregateInput = {
     number?: SortOrder
+    discountAmount?: SortOrder
+    taxAmount?: SortOrder
   }
 
   export type EnumOrderChannelWithAggregatesFilter<$PrismaModel = never> = {
@@ -103386,6 +103529,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
     workItems?: WorkItemCreateNestedManyWithoutOrderInput
@@ -103401,6 +103548,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
@@ -103680,6 +103831,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFilter<"Order"> | $Enums.OrderPriority
     mode?: EnumOrderModeFilter<"Order"> | $Enums.OrderMode
     dueDate?: DateTimeNullableFilter<"Order"> | Date | string | null
+    discountAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFilter<"Order"> | Decimal | DecimalJsLike | number | string
+    discountNote?: StringNullableFilter<"Order"> | string | null
+    taxNote?: StringNullableFilter<"Order"> | string | null
     createdById?: StringFilter<"Order"> | string
     createdAt?: DateTimeFilter<"Order"> | Date | string
   }
@@ -104573,6 +104728,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
@@ -104589,6 +104748,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     payments?: PaymentUncheckedCreateNestedManyWithoutOrderInput
@@ -105430,6 +105593,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
@@ -105446,6 +105613,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     payments?: PaymentUncheckedUpdateManyWithoutOrderNestedInput
@@ -113594,6 +113765,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
@@ -113610,6 +113785,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
@@ -113807,6 +113986,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
@@ -113823,6 +114006,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -114269,6 +114456,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
@@ -114285,6 +114476,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
@@ -114559,6 +114754,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
@@ -114575,6 +114774,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -115172,6 +115375,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     createdBy: UserCreateNestedOneWithoutCreatedOrdersInput
@@ -115188,6 +115395,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
@@ -115447,6 +115658,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
@@ -115463,6 +115678,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -116515,6 +116734,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     customer: CustomerCreateNestedOneWithoutOrdersInput
     workItems?: WorkItemCreateNestedManyWithoutOrderInput
@@ -116531,6 +116754,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
     workItems?: WorkItemUncheckedCreateNestedManyWithoutOrderInput
     payments?: PaymentUncheckedCreateNestedManyWithoutOrderInput
@@ -125039,6 +125266,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdById: string
     createdAt?: Date | string
   }
@@ -125116,6 +125347,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     createdBy?: UserUpdateOneRequiredWithoutCreatedOrdersNestedInput
     workItems?: WorkItemUpdateManyWithoutOrderNestedInput
@@ -125131,6 +125366,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
@@ -125146,6 +125385,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdById?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -127174,6 +127417,10 @@ export namespace Prisma {
     priority: $Enums.OrderPriority
     mode: $Enums.OrderMode
     dueDate?: Date | string | null
+    discountAmount?: Decimal | DecimalJsLike | number | string
+    taxAmount?: Decimal | DecimalJsLike | number | string
+    discountNote?: string | null
+    taxNote?: string | null
     createdAt?: Date | string
   }
 
@@ -127833,6 +128080,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     customer?: CustomerUpdateOneRequiredWithoutOrdersNestedInput
     workItems?: WorkItemUpdateManyWithoutOrderNestedInput
@@ -127849,6 +128100,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     workItems?: WorkItemUncheckedUpdateManyWithoutOrderNestedInput
     payments?: PaymentUncheckedUpdateManyWithoutOrderNestedInput
@@ -127864,6 +128119,10 @@ export namespace Prisma {
     priority?: EnumOrderPriorityFieldUpdateOperationsInput | $Enums.OrderPriority
     mode?: EnumOrderModeFieldUpdateOperationsInput | $Enums.OrderMode
     dueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    discountAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    taxAmount?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    discountNote?: NullableStringFieldUpdateOperationsInput | string | null
+    taxNote?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 

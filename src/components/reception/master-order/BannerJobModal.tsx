@@ -31,7 +31,7 @@
 // receptionist is told to raise a width exception, because a clamp silently
 // bills and prints a smaller banner than the customer paid for.
 
-import React, { useEffect, useMemo, useState, useId } from "react";
+import React, { useMemo, useState, useEffect, useId } from "react";
 import {
   X,
   Plus,
@@ -220,21 +220,31 @@ export function BannerJobModal({
     }
   }, [rule]);
 
-  // Opens the rate field at the configured midpoint, once. A rate the
-  // receptionist typed is never overwritten — raising the price for one
-  // specific order is normal business, not a mistake to be corrected.
+  // Opens the rate field at the configured midpoint, once per product type.
   //
-  // MUST be a useEffect: calling setState directly in the render body causes
-  // React to immediately re-render, which runs the same check again →
-  // "Too many re-renders". useEffect fires after the paint, which is the
-  // correct place for a derived-state initialisation that depends on a prop.
-  const [rateSeededFor, setRateSeededFor] = useState<string>(initialSpec ? "initial" : "");
+  // This MUST be an EFFECT, not a render-phase `setState`: React re-runs the
+  // render body as soon as render-phase state changes, so the guard below is
+  // evaluated again immediately and a guard that cannot converge loops until
+  // React caps it at 25 and throws "Too many re-renders". That is exactly what
+  // happened here — with no rule loaded the previous version compared `""`
+  // against `undefined`, which is never equal, so every render re-armed the
+  // update. useEffect fires after the paint, which is the correct place for a
+  // derived-state initialisation that depends on a prop.
+  //
+  // The seed key is DERIVED rather than held in state: `seededProductTypeId`
+  // changes only when the product type does (or when an incoming spec arrives),
+  // so the effect cannot re-arm itself, and there is no separate `rateSeededFor`
+  // flag that has to be kept consistent with `rule` by hand.
+  //
+  // A rate the receptionist typed is never overwritten — raising the price for
+  // one specific order is normal business, not a mistake to be corrected. The
+  // `initialSpec` guard is what enforces that for a pre-filled order.
+  const seededProductTypeId = initialSpec ? "initial" : (rule?.productTypeId ?? "");
+  const suggestedRate = rule?.suggestedRatePerSqm;
   useEffect(() => {
-    if (rule && rateSeededFor !== rule.productTypeId) {
-      setRateSeededFor(rule.productTypeId);
-      if (!initialSpec) setBaseRatePerSqm(rule.suggestedRatePerSqm);
-    }
-  }, [rule, rateSeededFor, initialSpec]);
+    if (initialSpec || suggestedRate === undefined) return;
+    setBaseRatePerSqm(suggestedRate);
+  }, [seededProductTypeId, initialSpec, suggestedRate]);
 
   // The width hint stands alone so an over-maximum request is called out the
   // moment it is typed, without waiting for a height and a rate. It IS the
@@ -644,12 +654,6 @@ export function BannerJobModal({
                 </span>
                 الأبعاد وقرار الرول (Dimensions &amp; Production Roll)
               </span>
-              {rule ? (
-                <span className="inline-flex items-center gap-1.5 text-3xs font-mono text-muted-foreground">
-                  <Ruler className="h-3.5 w-3.5" />
-                  عروض الرول: {rule.ladderCm.join(" - ")} سم
-                </span>
-              ) : null}
             </div>
 
             {!rule ? (

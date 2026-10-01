@@ -15,6 +15,13 @@ import { toDecimalString } from "./money";
 export type OrderFinancePanelData = {
   readonly status: "AVAILABLE";
   readonly currency: "EGP";
+  /** Sum of the work-item prices, BEFORE the order-level discount and tax. */
+  readonly subtotal: string;
+  /** The order-level discount reception agreed, as stored on `Order`. */
+  readonly discount: string;
+  /** The order-level tax reception agreed, as stored on `Order`. */
+  readonly tax: string;
+  /** `subtotal - discount + tax`. This is the amount owed. */
   readonly total: string;
   readonly paid: string;
   readonly remaining: string; // may be <= 0 (overpayment surfaces as credit)
@@ -68,6 +75,8 @@ export async function computeOrderSummary(orderId: string): Promise<OrderFinance
     select: {
       id: true,
       customerId: true,
+      discountAmount: true,
+      taxAmount: true,
       customer: { select: { isCashCustomer: true, customerCredit: true } },
       workItems: { select: { id: true, state: true } },
     },
@@ -75,7 +84,7 @@ export async function computeOrderSummary(orderId: string): Promise<OrderFinance
   if (!order) return { status: "UNAVAILABLE", reason: "Order not found" };
 
   const billable = order.workItems.filter((item) => item.state !== "CANCELLED");
-  let total = new Prisma.Decimal(0);
+  let subtotal = new Prisma.Decimal(0);
   let pricingIncomplete = false;
   // 092 T043: one batched pointer-resolution read instead of W serial
   // status+history pairs — identical per-item semantics (FR-032, BC-003).
@@ -86,8 +95,31 @@ export async function computeOrderSummary(orderId: string): Promise<OrderFinance
       pricingIncomplete = true;
       continue;
     }
-    total = total.plus(new Prisma.Decimal(price.amount));
+    subtotal = subtotal.plus(new Prisma.Decimal(price.amount));
   }
+
+  // ── Order-level discount and tax ────────────────────────────────────────
+  //
+  // These two are STORED on `Order` (agreed at the desk by reception); the
+  // `subtotal` above is derived from the work items. The order TOTAL stays
+  // derived, as it always was — it is this computed combination of the two:
+  //
+  //     total = subtotal - discount + tax
+  //
+  // Sequence matters and matches the order the receptionist sees: the discount
+  // comes off first, and the tax is charged on the discounted amount. Taxing
+  // before discounting would charge tax on money that was then given away.
+  //
+  // `createMasterOrderAction` refuses a discount larger than the quoted
+  // subtotal, but that check runs against what the CLIENT quoted. The subtotal
+  // here is what the ACCOUNTANT actually priced, and those can legitimately
+  // differ (a rate outside the band, a changed finishing, a re-priced item). So
+  // the discount is clamped at the floor rather than trusted: an order can go to
+  // zero, but it can never go negative and hand the customer a credit that
+  // nobody authorised.
+  const discount = Prisma.Decimal.min(order.discountAmount, subtotal);
+  const discounted = subtotal.minus(discount);
+  const total = discounted.plus(order.taxAmount);
 
   const { paid, payments, voidedPayments } = await computePaid(orderId);
 
@@ -105,6 +137,9 @@ export async function computeOrderSummary(orderId: string): Promise<OrderFinance
   return {
     status: "AVAILABLE",
     currency: "EGP",
+    subtotal: toDecimalString(subtotal),
+    discount: toDecimalString(discount),
+    tax: toDecimalString(order.taxAmount),
     total: toDecimalString(total),
     paid: toDecimalString(paid),
     remaining: toDecimalString(remaining),
@@ -122,6 +157,9 @@ export async function orderSummary(orderId: string): Promise<OrderFinanceResult>
 export type CustomerBalanceOrderRow = {
   readonly orderId: string;
   readonly orderNumber: number;
+  readonly subtotal: string;
+  readonly discount: string;
+  readonly tax: string;
   readonly total: string;
   readonly paid: string;
   readonly remaining: string;
@@ -144,7 +182,15 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
       id: true,
       isCashCustomer: true,
       customerCredit: true,
-      orders: { select: { id: true, number: true }, orderBy: { number: "desc" } },
+      orders: {
+        select: {
+          id: true,
+          number: true,
+          discountAmount: true,
+          taxAmount: true,
+        },
+        orderBy: { number: "desc" },
+      },
     },
   });
   if (!customer) return null;
@@ -155,7 +201,8 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
   // batch across orders now batches to a CONSTANT number of reads; the
   // per-order math below reproduces computeOrderSummary's Remaining exactly
   // (billable = state !== CANCELLED, null price → pricingIncomplete,
-  // Total − Paid − CREDIT compensations, Decimal throughout).
+  // (Subtotal − clamped discount + tax) − Paid − CREDIT compensations,
+  // Decimal throughout).
   const orderIds = customer.orders.map((order) => order.id);
 
   const workItems =
@@ -214,7 +261,7 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
   const orders: CustomerBalanceOrderRow[] = [];
   let balance = new Prisma.Decimal(0);
   for (const [index, order] of customer.orders.entries()) {
-    let total = new Prisma.Decimal(0);
+    let subtotal = new Prisma.Decimal(0);
     let pricingIncomplete = false;
     for (const itemId of billableByOrder.get(order.id) ?? []) {
       const price = priceById.get(itemId) ?? null;
@@ -222,8 +269,14 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
         pricingIncomplete = true;
         continue;
       }
-      total = total.plus(new Prisma.Decimal(price.amount));
+      subtotal = subtotal.plus(new Prisma.Decimal(price.amount));
     }
+    // Same `subtotal - discount + tax` sequence as `computeOrderSummary`, and
+    // the same floor clamp. The comment there on why the clamp is not a trust
+    // boundary applies here: this path must never print a number the
+    // single-order path would disagree with.
+    const discount = Prisma.Decimal.min(order.discountAmount, subtotal);
+    const total = subtotal.minus(discount).plus(order.taxAmount);
     const paid = paidByOrder.get(order.id) ?? new Prisma.Decimal(0);
     let creditTotal = new Prisma.Decimal(0);
     for (const credit of creditRows[index] ?? []) {
@@ -233,6 +286,9 @@ export async function customerBalance(customerId: string): Promise<CustomerBalan
     orders.push({
       orderId: order.id,
       orderNumber: order.number,
+      subtotal: toDecimalString(subtotal),
+      discount: toDecimalString(discount),
+      tax: toDecimalString(order.taxAmount),
       total: toDecimalString(total),
       paid: toDecimalString(paid),
       remaining: toDecimalString(remaining),

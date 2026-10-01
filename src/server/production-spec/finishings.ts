@@ -19,6 +19,74 @@ import { audit, authorize, type Actor } from "~/server/auth";
 import { DomainProductionSpecError } from "./errors";
 import type { FinishingRate } from "./quote";
 
+// ── The roll finishing defaults ────────────────────────────────────────────
+//
+// Sulfan at 90 EGP/m² is a real, agreed price (093 FR-009), so it lives here as
+// DATA beside the reader rather than as an `if` inside the pricing maths. The
+// shop's catalogue is authoritative and always wins: these rows are inserted
+// only for codes that are entirely ABSENT, and never updated, so an operator
+// who raises Sulfan to 95 keeps 95 forever.
+//
+// They are inserted on demand rather than by a seed script because
+// `WorkItemFinishing.finishingServiceId` is a real foreign key. A default that
+// cannot be written cannot be quoted, so a catalogue with no rows would leave
+// the receptionist unable to sell the most common add-on in the shop.
+export const DEFAULT_ROLL_FINISHINGS: readonly {
+  readonly code: string;
+  readonly labelAr: string;
+  readonly ratePerSqm: string;
+}[] = [
+  { code: "SULFAN", labelAr: "سلوفان", ratePerSqm: "90" },
+  { code: "EYELET", labelAr: "حلقات تثبيت", ratePerSqm: "15" },
+  { code: "HEMMING", labelAr: "خياطة الأطراف", ratePerSqm: "25" },
+];
+
+/**
+ * Inserts any default finishing whose CODE is missing. Idempotent and
+ * non-destructive: existing rows are never touched, so this converges after the
+ * first call and cannot resurrect a rate an operator deliberately retired.
+ *
+ * `FinishingService.createdById` is required and there is no actor on a plain
+ * catalogue read, so the rows are attributed to the shop's first active
+ * `admin.config` holder — the same person who would have entered them by hand.
+ * If nobody holds that key the catalogue is simply left alone rather than
+ * attributed to a stranger.
+ */
+export async function ensureDefaultFinishingServices(): Promise<void> {
+  const existing = await db.finishingService.findMany({
+    where: { code: { in: DEFAULT_ROLL_FINISHINGS.map((f) => f.code) } },
+    select: { code: true },
+  });
+  const present = new Set(existing.map((row) => row.code));
+  const missing = DEFAULT_ROLL_FINISHINGS.filter((f) => !present.has(f.code));
+  if (missing.length === 0) return;
+
+  const admin = await db.user.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        { roles: { some: { role: { permissions: { some: { permission: "admin.config" } } } } } },
+        { extraPermissions: { some: { permission: "admin.config" } } },
+      ],
+    },
+    select: { id: true },
+    orderBy: { createdAt: "asc" },
+  });
+  if (!admin) return;
+
+  await db.finishingService.createMany({
+    data: missing.map((f) => ({
+      code: f.code,
+      labelAr: f.labelAr,
+      ratePerSqm: new Prisma.Decimal(f.ratePerSqm),
+      effectiveFrom: new Date(),
+      effectiveTo: null,
+      createdById: admin.id,
+    })),
+    skipDuplicates: true,
+  });
+}
+
 export type FinishingServiceSnapshot = {
   readonly id: string;
   readonly code: string;
@@ -59,6 +127,12 @@ function toSnapshot(row: {
 export async function listActiveFinishingServices(
   asOf: Date = new Date(),
 ): Promise<FinishingServiceSnapshot[]> {
+  // Idempotent: after the first call this is a single extra `SELECT`. The
+  // catalogue must never come back empty, because an empty catalogue means the
+  // receptionist cannot add the finishing the customer is standing there asking
+  // for — and the work item's finishing lines cannot be written without a row.
+  await ensureDefaultFinishingServices();
+
   const rows = await db.finishingService.findMany({
     where: {
       status: "ACTIVE",
@@ -163,6 +237,10 @@ export async function resolveFinishingRates(
 ): Promise<FinishingRate[]> {
   const wanted = [...new Set(codes.map((code) => code.trim().toUpperCase()))];
   if (wanted.length === 0) return [];
+
+  // Same catalogue the picker offered, resolved the same way. Doing the
+  // provisioning only in the reader would let the two disagree.
+  await ensureDefaultFinishingServices();
 
   const rows = await db.finishingService.findMany({
     where: {

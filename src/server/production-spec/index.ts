@@ -22,11 +22,19 @@ export type {
   RollQuoteLine,
 } from "./quote";
 
-// 093 FR-003/FR-004/FR-007: the configuration boundary.
+// 093 FR-003/FR-004/FR-007: the configuration boundary, and the roll defaults
+// reception falls back to when no `ProductionWidthRule` row exists yet.
 export {
   assertHeightWithinCap,
   assertRateWithinBand,
+  defaultRollConstraints,
+  isRollProductTypeName,
   loadProductionConstraints,
+  loadReceptionConstraints,
+  ROLL_MAX_HEIGHT_M,
+  ROLL_MAX_RATE_PER_SQM,
+  ROLL_MIN_RATE_PER_SQM,
+  ROLL_WIDTH_LADDER_CM,
   toConstraints,
 } from "./constraints";
 export type { ProductionConstraints } from "./constraints";
