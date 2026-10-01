@@ -164,7 +164,7 @@ export function BannerJobModal({
   const [baseRatePerSqm, setBaseRatePerSqm] = useState(
     initialSpec ? String(initialSpec.baseRatePerSqm) : "",
   );
-  const [finishingCodes] = useState<string[]>(
+  const [finishingCodes, setFinishingCodes] = useState<string[]>(
     initialSpec ? [...initialSpec.finishingCodes] : [],
   );
 
@@ -807,6 +807,69 @@ export function BannerJobModal({
                 </p>
               </div>
             </div>
+
+            {/* ── Finishing services — each one is a clickable toggle ── */}
+            {finishingServices.length > 0 && (
+              <div>
+                <p className="text-xs font-bold text-foreground mb-2">
+                  إضافات التشطيب (Finishing Add-ons)
+                  <span className="ms-2 text-2xs font-normal text-muted-foreground">
+                    اختر الخدمات المطلوبة — يُضاف سعرها لكل م² تلقائياً
+                  </span>
+                </p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {finishingServices.map((service) => {
+                    const isSelected = finishingCodes.includes(service.code);
+                    return (
+                      <button
+                        key={service.code}
+                        type="button"
+                        onClick={() =>
+                          setFinishingCodes((prev) =>
+                            isSelected
+                              ? prev.filter((c) => c !== service.code)
+                              : [...prev, service.code],
+                          )
+                        }
+                        className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-start transition-all ${
+                          isSelected
+                            ? "border-blue-500/60 bg-blue-500/10 shadow-xs"
+                            : "border-border/70 bg-card hover:bg-muted hover:border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-md border text-[10px] ${
+                              isSelected
+                                ? "border-blue-500 bg-blue-500 text-white"
+                                : "border-muted-foreground/40 bg-background"
+                            }`}
+                          >
+                            {isSelected ? <Check className="h-3 w-3 stroke-[3]" /> : null}
+                          </span>
+                          <span
+                            className={`truncate text-xs font-semibold ${
+                              isSelected ? "text-blue-700 dark:text-blue-300" : "text-foreground"
+                            }`}
+                          >
+                            {service.labelAr}
+                          </span>
+                        </div>
+                        <span
+                          className={`shrink-0 rounded-lg px-2 py-0.5 text-3xs font-mono font-bold ${
+                            isSelected
+                              ? "bg-blue-500/20 text-blue-700 dark:text-blue-300"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          +{service.ratePerSqm} ج.م/م²
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <PricePanel live={live} rule={effectiveRule} />
           </div>
