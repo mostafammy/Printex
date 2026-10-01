@@ -30,6 +30,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import ar from "~/messages/ar.json";
+import { formatDimensions } from "~/lib/orders/workflowStation";
 
 const S = ar.ui;
 
@@ -86,40 +87,6 @@ async function markDesignCompleteAction(formData: FormData) {
   revalidatePath(`/design/${workItemId}`);
 }
 
-function toDimString(v: unknown): string {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  if (typeof v === "number") return v.toString();
-  if (typeof v === "object" && "toString" in v && typeof (v as { toString(): string }).toString === "function") {
-    return (v as { toString(): string }).toString();
-  }
-  return "";
-}
-
-function formatDimensions(
-  widthValue: unknown,
-  heightValue: unknown,
-  dimensionUnit: string | null,
-): string {
-  const w = toDimString(widthValue);
-  const h = toDimString(heightValue);
-  if (!w && !h) return "—";
-  const unitAr =
-    dimensionUnit === "CM"
-      ? "سم"
-      : dimensionUnit === "M"
-      ? "م"
-      : dimensionUnit === "MM"
-      ? "مم"
-      : dimensionUnit === "IN"
-      ? "بوصة"
-      : dimensionUnit ?? "سم";
-
-  if (w && h) return `${w} × ${h} ${unitAr}`;
-  if (w) return `${w} ${unitAr}`;
-  if (h) return `${h} ${unitAr}`;
-  return "—";
-}
 
 /** The page's phase-1 read — also the child section's prop type source (T051). */
 const loadWorkItem = (workItemId: string) =>
