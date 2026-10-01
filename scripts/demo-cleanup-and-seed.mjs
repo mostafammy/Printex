@@ -651,6 +651,42 @@ async function main() {
         totalCollected += payAmount;
       }
     }
+
+    // Realign the identity sequences with the rows just written.
+    //
+    // The INSERTs above supply `number` and `receiptNumber` EXPLICITLY
+    // (1001..., 5001...), and an explicit value never touches an identity
+    // sequence. Step 3 restarted both sequences to their first demo value, so
+    // without this they are left parked at the bottom of the demo range while
+    // the tables hold rows at the top of it. The first real deposit then calls
+    // nextval -> 5004, hits UNIQUE, and from then on EVERY payment fails with
+    // "Unique constraint failed on the fields: (receiptNumber)".
+    //
+    // That is a live outage, not a demo-data cosmetic: it takes the reception
+    // deposit path down in the real shop, which is exactly how it was found.
+    // Hence the resync here and not only in the one-time migration.
+    //
+    // Derived from MAX(), so it is idempotent and can never set the sequence
+    // below a value already in use. The `is_called` flag is `COUNT(*) > 0`
+    // because with no rows the sequence must hand out value ITSELF on the next
+    // nextval rather than value + 1.
+    await client.query(`
+      SELECT setval(
+               pg_get_serial_sequence('"Payment"', 'receiptNumber'),
+               GREATEST(COALESCE(MAX("receiptNumber"), 0), 1),
+               COUNT(*) > 0
+             )
+        FROM "Payment";
+    `);
+    await client.query(`
+      SELECT setval(
+               pg_get_serial_sequence('"Order"', 'number'),
+               GREATEST(COALESCE(MAX(number), 0), 1),
+               COUNT(*) > 0
+             )
+        FROM "Order";
+    `);
+
     console.log(`✓ 48 Curated jobs seeded. Total revenue collected: ${totalCollected.toLocaleString()} EGP.`);
 
     // 12. Seed Realistic Factory Expenses
