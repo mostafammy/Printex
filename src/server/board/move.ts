@@ -70,15 +70,23 @@ function checkStaticEligibility(handler: EdgeHandler, card: BoardCard): MoveResu
   return null;
 }
 
-function checkPermissions(handler: EdgeHandler, actor: Actor, card: BoardCard): MoveResult | null {
-  const hasAdminOverride =
-    actor.permissions.has("admin.override") ||
-    actor.roles.includes("ADMIN_OWNER");
+function hasAdminOverride(actor: Actor): boolean {
+  return actor.permissions.has("admin.override") || actor.roles.includes("ADMIN_OWNER");
+}
 
-  if (handler.permission && !actor.permissions.has(handler.permission) && !hasAdminOverride) {
-    return { ok: false, code: "FORBIDDEN", messageAr: getRefusalMessageAr("FORBIDDEN"), card };
-  }
-  if (handler.departmentScoped && card.departmentId && !actor.departmentIds.includes(card.departmentId) && !hasAdminOverride) {
+function lacksRequiredPermission(handler: EdgeHandler, actor: Actor): boolean {
+  if (!handler.permission) return false;
+  return !actor.permissions.has(handler.permission);
+}
+
+function outsideCardDepartment(handler: EdgeHandler, actor: Actor, card: BoardCard): boolean {
+  if (!handler.departmentScoped || !card.departmentId) return false;
+  return !actor.departmentIds.includes(card.departmentId);
+}
+
+function checkPermissions(handler: EdgeHandler, actor: Actor, card: BoardCard): MoveResult | null {
+  const override = hasAdminOverride(actor);
+  if (!override && (lacksRequiredPermission(handler, actor) || outsideCardDepartment(handler, actor, card))) {
     return { ok: false, code: "FORBIDDEN", messageAr: getRefusalMessageAr("FORBIDDEN"), card };
   }
   return null;
