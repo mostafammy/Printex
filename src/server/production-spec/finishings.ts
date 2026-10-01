@@ -35,11 +35,7 @@ export const DEFAULT_ROLL_FINISHINGS: readonly {
   readonly code: string;
   readonly labelAr: string;
   readonly ratePerSqm: string;
-}[] = [
-  { code: "SULFAN", labelAr: "سلوفان", ratePerSqm: "90" },
-  { code: "EYELET", labelAr: "حلقات تثبيت", ratePerSqm: "15" },
-  { code: "HEMMING", labelAr: "خياطة الأطراف", ratePerSqm: "25" },
-];
+}[] = [];
 
 /**
  * Inserts any default finishing whose CODE is missing. Idempotent and
