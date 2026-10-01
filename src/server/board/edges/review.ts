@@ -32,13 +32,15 @@ export const waitingReviewToApproved: EdgeHandler = {
   groupable: false,
   labelAr: "اعتماد التصميم",
   precheck(actor, card) {
-    if (card.assignee?.id === actor.userId) {
+    const isAdmin = actor.permissions.has("admin.override") || actor.roles.includes("ADMIN_OWNER");
+    if (!isAdmin && card.assignee?.id === actor.userId) {
       return { ok: false, hintAr: "لا يمكنك مراجعة تصميمك بنفسك" };
     }
     return { ok: true };
   },
   async execute(actor, card) {
-    if (card.assignee?.id === actor.userId) {
+    const isAdmin = actor.permissions.has("admin.override") || actor.roles.includes("ADMIN_OWNER");
+    if (!isAdmin && card.assignee?.id === actor.userId) {
       throw new SelfReviewForbiddenError();
     }
     await approveDesign(actor, card.id);
