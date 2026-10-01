@@ -16,7 +16,7 @@ import React from "react";
 import Link from "next/link";
 import { SLICES, type SliceId } from "~/lib/board/slices";
 import type { BoardFilters, BoardPagination } from "~/lib/board/types";
-import { AlertCircle, Archive, ChevronDown, Flame } from "lucide-react";
+import { AlertCircle, Archive, ChevronDown, Flame, Plus } from "lucide-react";
 
 export interface BoardHeaderProps {
   readonly activeSlice: SliceId;
@@ -195,6 +195,15 @@ export function BoardHeader(props: BoardHeaderProps) {
             مسح التصفية
           </button>
         )}
+        <Link
+          href="/reception/new"
+          data-testid="board-add-order-btn"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--board-radius)] bg-primary px-3 text-[13px] font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          title="إضافة طلب أو صنف جديد (الانتقال إلى شاشة الاستقبال)"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          <span>إضافة طلب / صنف</span>
+        </Link>
       </div>
     </div>
   );
