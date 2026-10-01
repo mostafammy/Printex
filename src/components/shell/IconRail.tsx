@@ -48,6 +48,7 @@ const RAIL_ITEMS: readonly RailItem[] = [
     labelAr: "صالة الإنتاج والطباعة",
     icon: <Printer className="h-5 w-5" />,
     inkToken: "var(--ink-cyan)",
+    roles: ["PRODUCTION_OPERATOR", "ADMIN_OWNER"],
   },
   {
     id: "pricing",

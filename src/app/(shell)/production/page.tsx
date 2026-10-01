@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Printer, Kanban } from "lucide-react";
 import { getActor } from "~/server/auth";
 import { getPrinterProductionQueue } from "~/server/production";
@@ -7,6 +8,9 @@ import { Button } from "~/components/ui/button";
 
 export default async function ProductionQueuePage() {
   const actor = await getActor();
+  if (!actor.roles.includes("PRODUCTION_OPERATOR") && !actor.roles.includes("ADMIN_OWNER")) {
+    redirect("/board");
+  }
   const result = await getPrinterProductionQueue(actor);
 
   return (
