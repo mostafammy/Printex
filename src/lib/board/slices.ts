@@ -52,7 +52,10 @@ export const SLICES: readonly SliceDefinition[] = [
   {
     id: "production",
     labelAr: "صالة الإنتاج والطباعة",
-    stations: ["production", "collection"],
+    // `delivered` is here because the printer owns the hand-off in this shop:
+    // without it they could move a job to تم التسليم but the lane that records
+    // it was off their slice, so the move would appear to do nothing.
+    stations: ["production", "collection", "delivered"],
   },
   {
     id: "delivery",

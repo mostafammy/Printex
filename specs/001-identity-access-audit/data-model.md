@@ -127,7 +127,8 @@ the seed matrix; runtime role checks always go through `authorize()`'s permissio
 
 ## Seeded role × permission matrix (authoritative — the snapshot test in SC-001 asserts this exactly)
 
-Derived directly from PRD §48's Can/Cannot lists per role, mapped onto the 22 fixed permission keys.
+Derived directly from PRD §48's Can/Cannot lists per role, mapped onto the 25 fixed permission keys
+(`ALL_PERMISSIONS` in `src/server/auth/permissions.ts` is the source of truth for the key list).
 Where PRD §48 explicitly says a role "Cannot" do something, the corresponding permission is
 deliberately omitted. `ADMIN_OWNER` receives every key ("view all operations... manage system
 settings"). Per PRD §26 / spec FR-014, `pricing.set_variable`/`pricing.override` are **not** seeded
@@ -141,11 +142,14 @@ explicitly configures a specific accounting user as a pricing user.
 | `order.cancel` | ✔ | | | | | | ✔ |
 | `customer.manage` | ✔ | | | | | | ✔ |
 | `workitem.assign_designer` | ✔ | | | | | | ✔ |
+| `workitem.send_to_production` | ✔ | | | | | | ✔ |
+| `workitem.approve_production` | | | | | | ✔ | ✔ |
+| `change.approve` | | | ✔ | | | | ✔ |
 | `design.work` | | ✔ | | | | | ✔ |
 | `design.review` | | | ✔ | | | | ✔ |
 | `production.operate` | | | | ✔ | | | ✔ |
-| `collection.receive` | | | | | ✔ | | ✔ |
-| `delivery.record` | | | | | ✔ | | ✔ |
+| `collection.receive` | ✔ | | | ✔ | ✔ | | ✔ |
+| `delivery.record` | ✔ | | | ✔ | ✔ | | ✔ |
 | `pricing.use_fixed` | ✔ | | | | | | ✔ |
 | `pricing.set_variable` | | | | | | | ✔ |
 | `pricing.override` | | | | | | | ✔ |
@@ -160,9 +164,19 @@ explicitly configures a specific accounting user as a pricing user.
 | `admin.override` | | | | | | | ✔ |
 
 Notes on borderline mappings, so a reviewer can check them against PRD §48 directly:
-- Reception's `finance.view` reflects "View relevant payment/order information"; it is view-only —
-  Reception has no `payment.record`/`expense.record` (PRD: "Cannot modify production financial
-  records freely").
+- Production Operator's `collection.receive`/`delivery.record` are a **shop decision**, not a PRD §48
+  mapping (migration `20261001140000`). Every edge out of `PRODUCTION_COMPLETED` is gated on one of
+  these two permissions, so without them the printer sees `مكتمل الإنتاج` with zero available moves
+  and cannot record a hand-off. In this shop the printer prints, checks, packs and delivers, so they
+  own the hand-off alongside Reception. This also widens their board from department-scoped to
+  floor-wide, because both permissions are in `FLOOR_WIDE_PERMISSIONS` — the same pre-existing
+  behaviour RECEPTION and PRINT_RECEPTION_DELIVERY already have.
+- Reception's `collection.receive`/`delivery.record` come from the same shop decision: reception takes
+  the job and hands it back, so they cover the collection and delivery hand-off too.
+- Reception's `finance.view` reflects "View relevant payment/order information". Reception now *also*
+  holds `payment.record` (migration `20261001120000`) — the order form always had a paid/deposit
+  field, and `finance.view` is read-only, so without it recording a deposit failed after the order was
+  already committed. Reception still has no `expense.record`.
 - Reception's `order.cancel` is inferred from "Manage Orders" (full order lifecycle); nothing in
   PRD §48's Reception "Cannot" list forbids it.
 - Head Designer gets `design.review` only, not `design.work` — PRD §48 lists Head Designer's

@@ -94,7 +94,18 @@ const ROLE_SEED_DATA = [
     id: "seed_role_production_operator",
     key: "PRODUCTION_OPERATOR",
     name: "Production Operator",
-    permissions: ["production.operate", "files.download_production"],
+    // collection.receive + delivery.record: every edge out of
+    // PRODUCTION_COMPLETED is gated on one of these, so without them the
+    // printer sees مكتمل الإنتاج with zero available moves and cannot record a
+    // hand-off. In this shop the printer also packs and delivers, alongside
+    // reception. Granted by migration 20261001140000 as well, so a shop
+    // provisioned by either route lands on the same matrix.
+    permissions: [
+      "production.operate",
+      "files.download_production",
+      "collection.receive",
+      "delivery.record",
+    ],
   },
   {
     id: "seed_role_print_reception_delivery",

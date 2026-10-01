@@ -7,6 +7,13 @@
 // specs/001-identity-access-audit/data-model.md §"Seeded role × permission matrix".
 //
 // This test MUST NOT create, upsert, or modify any Role or RolePermission rows.
+//
+// NOTE: this file drifted behind seed.ts during 093 — RECEPTION was missing
+// collection.receive/delivery.record/payment.record and ACCOUNTING was missing
+// workitem.approve_production/pricing.*. The expectations below are now
+// transcribed from the matrix as it actually stands (seed.ts + the one-time
+// grant migrations), so the test once again means "the DB matches the matrix"
+// rather than "the DB matches a matrix nobody updated".
 
 import { afterAll, describe, expect, it } from "vitest";
 import { testDb } from "../helpers/testDb";
@@ -17,27 +24,48 @@ afterAll(async () => {
 });
 
 // ---------------------------------------------------------------------------
-// Authoritative matrix — transcribed directly from data-model.md lines 137-160.
+// Authoritative matrix — transcribed from the data-model.md table, which is
+// itself kept in step with seed.ts and the grant migrations.
 // Sorted arrays match the sort applied to the DB query result below.
 // ---------------------------------------------------------------------------
 
 // Expected permissions per role key (sorted, for deterministic comparison).
 const EXPECTED_MATRIX: Record<string, string[]> = {
   RECEPTION: [
+    "collection.receive",
     "customer.manage",
+    "delivery.record",
     "finance.view",
     "order.cancel",
     "order.create",
     "order.edit",
+    "payment.record",
     "pricing.use_fixed",
     "workitem.assign_designer",
     "workitem.send_to_production",
   ],
   DESIGNER: ["design.work"],
   HEAD_DESIGNER: ["change.approve", "design.review"],
-  PRODUCTION_OPERATOR: ["files.download_production", "production.operate"],
+  // collection.receive + delivery.record granted by 20261001140000: every edge
+  // out of PRODUCTION_COMPLETED is gated on one of them, so without them the
+  // printer sees مكتمل الإنتاج with no moves available.
+  PRODUCTION_OPERATOR: [
+    "collection.receive",
+    "delivery.record",
+    "files.download_production",
+    "production.operate",
+  ],
   PRINT_RECEPTION_DELIVERY: ["collection.receive", "delivery.record"],
-  ACCOUNTING: ["expense.record", "finance.view", "payment.record", "payment.void"],
+  ACCOUNTING: [
+    "expense.record",
+    "finance.view",
+    "payment.record",
+    "payment.void",
+    "pricing.override",
+    "pricing.set_variable",
+    "pricing.use_fixed",
+    "workitem.approve_production",
+  ],
   // ADMIN_OWNER is asserted separately against ALL_PERMISSIONS below.
   ADMIN_OWNER: [...ALL_PERMISSIONS].sort(),
 };
@@ -77,7 +105,7 @@ describe("role × permission matrix (contract)", () => {
     }
   });
 
-  it("ADMIN_OWNER has exactly 23 permissions matching ALL_PERMISSIONS", async () => {
+  it("ADMIN_OWNER has exactly 25 permissions matching ALL_PERMISSIONS", async () => {
     const adminOwnerRole = await testDb.role.findUnique({
       where: { key: "ADMIN_OWNER" },
       include: { permissions: true },
@@ -91,7 +119,7 @@ describe("role × permission matrix (contract)", () => {
     const actualPerms = adminOwnerRole!.permissions.map((p) => p.permission).sort();
     const allPermsSorted = [...ALL_PERMISSIONS].sort();
 
-    expect(actualPerms).toHaveLength(23);
+    expect(actualPerms).toHaveLength(25);
     expect(actualPerms).toEqual(allPermsSorted);
   });
 
