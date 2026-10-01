@@ -91,6 +91,10 @@ export async function getActorForSession(
     permissions.add("pricing.override");
     permissions.add("workitem.approve_production");
   }
+  if (roles.includes("PRODUCTION_OPERATOR")) {
+    permissions.add("production.operate");
+    permissions.add("files.download_production");
+  }
 
   const departmentIds = user.departments.map((ud) => ud.departmentId);
 

@@ -16,3 +16,10 @@ export type { SendBackToDesignInput } from "./sendBack";
 export { recordSentToVendor, recordReceivedFromVendor } from "./vendor";
 export { getDepartmentWorkload } from "./workload";
 export type { DepartmentWorkload } from "./workload";
+export { getPrinterProductionQueue, categorizePrinterType } from "./printerQueue";
+export type {
+  PrinterCategory,
+  PrinterQueueItem,
+  PrinterQueueResult,
+  PrinterQueueStats,
+} from "./printerQueue";

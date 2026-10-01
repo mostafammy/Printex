@@ -51,8 +51,8 @@ export const SLICES: readonly SliceDefinition[] = [
   },
   {
     id: "production",
-    labelAr: "الإنتاج",
-    stations: ["production"],
+    labelAr: "صالة الإنتاج والطباعة",
+    stations: ["production", "collection"],
   },
   {
     id: "delivery",

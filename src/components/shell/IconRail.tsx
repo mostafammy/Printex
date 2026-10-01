@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Clock,
   Kanban,
+  Printer,
   ReceiptText,
   Search,
   Users,
@@ -38,6 +39,13 @@ const RAIL_ITEMS: readonly RailItem[] = [
     href: "/board",
     labelAr: "لوحة أرضية المطبعة",
     icon: <Kanban className="h-5 w-5" />,
+    inkToken: "var(--ink-cyan)",
+  },
+  {
+    id: "production",
+    href: "/production",
+    labelAr: "صالة الإنتاج والطباعة",
+    icon: <Printer className="h-5 w-5" />,
     inkToken: "var(--ink-cyan)",
   },
   {
