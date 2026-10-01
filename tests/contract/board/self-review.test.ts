@@ -92,4 +92,39 @@ describe("No self-review contract (T056, spec.md US2-5, constitution II)", { tim
       expect(res.code).toBe("GUARD_FAILED");
     }
   });
+
+  it("offers 'Approved' for an admin user even when assigned to the card", async () => {
+    const adminId = await seedUser();
+    const adminActor: Actor = {
+      id: adminId,
+      userId: adminId,
+      roles: ["ADMIN_OWNER"],
+      permissions: new Set(["admin.override", "design.work", "design.review"]),
+      departmentIds: [],
+    };
+    const card = {
+      id: workItemId,
+      orderId: "ord-test",
+      orderNumber: 100,
+      orderTagHue: 100,
+      customerName: "عميل",
+      title: "عمل",
+      quantity: 10,
+      state: "WAITING_REVIEW" as const,
+      priority: "NORMAL" as const,
+      pricing: "NOT_REQUIRED" as const,
+      enteredStationAt: new Date().toISOString(),
+      targetMinutes: 60,
+      dueAt: null,
+      reworkCount: 0,
+      assignee: { id: adminActor.userId, name: "المدير" },
+      departmentId: null,
+      moves: [],
+      lastTransitionId: null,
+      lastTransitionAt: new Date().toISOString(),
+    };
+
+    const adminMoves = edgeCatalog.offer(adminActor, card);
+    expect(adminMoves.map((m) => m.edgeId)).toContain("WAITING_REVIEW->APPROVED");
+  });
 });
