@@ -511,7 +511,7 @@ export function WorkItemRow({
         ) : (
           <div className="flex flex-col gap-1.5 sm:col-span-2">
             <label className="text-xs font-semibold text-foreground">{S.finishNotesLabel}</label>
-            <input name={p("finishNotes")} type="text" placeholder="سلوفان، ريجة، تكسير، بصمة..." className={inputCls} />
+            <input name={p("finishNotes")} type="text" placeholder="ريجة، تكسير، بصمة..." className={inputCls} />
           </div>
         )}
 
