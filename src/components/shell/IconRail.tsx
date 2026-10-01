@@ -12,6 +12,7 @@ import {
   Calculator,
   CheckCircle2,
   Clock,
+  Inbox,
   Kanban,
   Printer,
   ReceiptText,
@@ -35,6 +36,14 @@ interface RailItem {
 }
 
 const RAIL_ITEMS: readonly RailItem[] = [
+  {
+    id: "reception",
+    href: "/reception",
+    labelAr: "الاستقبال والطلبات",
+    icon: <Inbox className="h-5 w-5" />,
+    inkToken: "var(--ink-cyan)",
+    roles: ["RECEPTION", "ADMIN_OWNER"],
+  },
   {
     id: "board",
     href: "/board",
