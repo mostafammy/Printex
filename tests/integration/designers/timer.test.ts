@@ -174,13 +174,18 @@ describe("startTimer/pauseTimer/phaseDurations (integration)", () => {
     expect(workItem.state).toBe("IN_DESIGN");
   });
 
-  it("admin override refuses to start when no design file exists yet (NO_DESIGN_FILE)", async () => {
+  it("admin override starts work with no design file attached", async () => {
+    // Starting work must NOT require a finished design file: a designer opens
+    // the item to BEGIN the design, so demanding the output up front blocks the
+    // first step of the pipeline. The file requirement belongs to the transition
+    // INTO DESIGN_COMPLETED (guards.ts, DESIGN_FILE_REQUIRED), which is what
+    // refuses "تعذّر النقل: يجب رفع ملف التصميم قبل إنهاء مرحلة التصميم".
     const workItemId = await seedAssignedWorkItem();
 
-    await expect(startTimer(admin, workItemId)).rejects.toMatchObject({ code: "NO_DESIGN_FILE" });
+    await startTimer(admin, workItemId);
 
     const workItem = await testDb.workItem.findUniqueOrThrow({ where: { id: workItemId } });
-    expect(workItem.state).toBe("ASSIGNED");
+    expect(workItem.state).toBe("IN_DESIGN");
   });
 
   it("admin override pauses anyone's open timer", async () => {

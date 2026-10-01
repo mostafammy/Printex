@@ -54,19 +54,21 @@ export async function startTimer(actor: Actor, workItemId: string): Promise<void
     if (workItem.assigneeId !== actor.userId && !actor.roles.includes("ADMIN_OWNER")) {
       throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may start this timer.");
     }
-    if (workItem.assigneeId !== actor.userId) {
-      // Admin override path (reached only by ADMIN_OWNER, everyone else
-      // threw above): an admin may start anyone's timer, but only when
-      // design source files already exist — otherwise there is nothing
-      // to work on, and starting would strand the item in IN_DESIGN.
-      const versionCount = await tx.designVersion.count({ where: { workItemId } });
-      if (versionCount === 0) {
-        throw new DomainDesignerError(
-          "NO_DESIGN_FILE",
-          "Cannot start work: no design file has been attached to this item yet.",
-        );
-      }
-    }
+    // NO check for an attached design file here, on purpose.
+    //
+    // Starting work and finishing it are different moments. A designer opens an
+    // item to BEGIN the design, so requiring a finished file to start is
+    // backwards: it demands the output before the work that produces it can
+    // begin, and it blocked the first step of the pipeline outright ("تعذّر
+    // النقل: Cannot start work: no design file has been attached to this item
+    // yet.") for anyone moving ASSIGNED → IN_DESIGN.
+    //
+    // The requirement lives where it belongs, on the transition INTO
+    // DESIGN_COMPLETED: `registerGuard({ to: "DESIGN_COMPLETED" })` in
+    // server/pipeline/guards.ts refuses with DESIGN_FILE_REQUIRED unless a
+    // DesignVersion with a non-empty storage key exists. That guard fires for
+    // EVERY actor, not just admins, and it is the one the shop actually means by
+    // "a file must be attached".
     if (!TIMEABLE_STATES.includes(workItem.state)) {
       throw new DomainDesignerError(
         "NOT_TIMEABLE",
