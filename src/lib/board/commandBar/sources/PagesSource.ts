@@ -16,6 +16,7 @@ export class PagesSource implements CommandSource {
 
     const pages = [
       { id: "board", label: "لوحة أرضية المطبعة", href: "/board" },
+      { id: "reception-new", label: "طلب جديد (إضافة طلب / صنف)", href: "/reception/new" },
       ...navItems.map((n) => ({ id: n.id, label: n.label, href: n.href })),
     ];
 
