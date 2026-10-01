@@ -125,6 +125,19 @@ export class BoardLiveHub {
     }
   }
 
+  /**
+   * Tell every connected subscriber to refetch from scratch.
+   *
+   * Exists for out-of-band database changes that no single work-item transition
+   * can describe — notably the admin demo tools (purge / reseed), which rewrite
+   * the entire board at once. Without this, open operator screens keep rendering
+   * cards for work items that no longer exist, because NOTIFY only fires per
+   * transition and a bulk TRUNCATE emits none.
+   */
+  requestResync(): void {
+    this.#emitResync();
+  }
+
   dispose(): void {
     this.#disposed = true;
     if (this.#reconnectTimer) {
