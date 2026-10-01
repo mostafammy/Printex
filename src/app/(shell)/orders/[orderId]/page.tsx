@@ -136,6 +136,32 @@ function missingFields(wi: {
   return missing;
 }
 
+function formatDimensions(
+  widthValue: unknown,
+  heightValue: unknown,
+  dimensionUnit: string | null,
+): string {
+  if (widthValue == null && heightValue == null) return "—";
+  const unitAr =
+    dimensionUnit === "CM"
+      ? "سم"
+      : dimensionUnit === "M"
+      ? "م"
+      : dimensionUnit === "MM"
+      ? "مم"
+      : dimensionUnit === "IN"
+      ? "بوصة"
+      : dimensionUnit ?? "سم";
+
+  const w = widthValue != null ? String(widthValue) : "";
+  const h = heightValue != null ? String(heightValue) : "";
+
+  if (w && h) return `${w} × ${h} ${unitAr}`;
+  if (w) return `${w} ${unitAr}`;
+  if (h) return `${h} ${unitAr}`;
+  return "—";
+}
+
 const WORKFLOW_STATIONS = [
   { key: "RECEPTION", label: "الاستقبال", desc: "تأكيد الطلب" },
   { key: "DESIGN", label: "التصميم", desc: "إعداد الملفات" },
@@ -145,32 +171,51 @@ const WORKFLOW_STATIONS = [
 ];
 
 function getActiveStepIndex(orderStatus: string, workItems: readonly { state: string }[]): number {
-  if (orderStatus === "COMPLETED" || orderStatus === "DELIVERED") return 4;
-  if (orderStatus === "PARTIALLY_READY") return 3;
-  if (orderStatus === "CANCELLED") return -1;
+  if (workItems.length === 0) {
+    if (orderStatus === "CANCELLED") return -1;
+    if (orderStatus === "COMPLETED" || orderStatus === "DELIVERED") return 4;
+    return 0;
+  }
 
-  const hasPrinting = workItems.some(
+  const nonCancelled = workItems.filter((wi) => wi.state !== "CANCELLED");
+  if (nonCancelled.length === 0) return -1;
+
+  // 1. If every non-cancelled item is completed or delivered -> Station 4 (التسليم)
+  if (nonCancelled.every((wi) => wi.state === "COMPLETED" || wi.state === "DELIVERED")) {
+    return 4;
+  }
+
+  // 2. If any item is in printing/production or finished production -> Station 3 (الطباعة)
+  const hasPrinting = nonCancelled.some(
     (wi) =>
       wi.state === "IN_PRODUCTION" ||
       wi.state === "READY_FOR_PRODUCTION" ||
-      wi.state === "PRODUCTION_COMPLETED",
+      wi.state === "PRODUCTION_COMPLETED" ||
+      wi.state === "READY_FOR_COLLECTION",
   );
   if (hasPrinting) return 3;
 
-  const hasReview = workItems.some(
-    (wi) => wi.state === "WAITING_REVIEW" || wi.state === "APPROVED",
+  // 3. If any item is in review -> Station 2 (المراجعة)
+  const hasReview = nonCancelled.some(
+    (wi) =>
+      wi.state === "WAITING_REVIEW" ||
+      wi.state === "APPROVED" ||
+      wi.state === "WAITING_PRICING",
   );
   if (hasReview) return 2;
 
-  const hasDesign = workItems.some(
+  // 4. If any item is in design -> Station 1 (التصميم)
+  const hasDesign = nonCancelled.some(
     (wi) =>
       wi.state === "IN_DESIGN" ||
       wi.state === "ASSIGNED" ||
+      wi.state === "DESIGN_COMPLETED" ||
       wi.state === "REWORK_REQUIRED",
   );
   if (hasDesign) return 1;
 
-  return 0; // Reception
+  // 5. Default to Reception -> Station 0 (الاستقبال)
+  return 0;
 }
 
 // ── Server Actions ──────────────────────────────────────────────────────────
@@ -575,6 +620,47 @@ export default async function OrderDetailPage({
   ]);
 
   const activeStepIdx = getActiveStepIndex(detail.order.status, detail.workItems);
+
+  const hasReadyItems = detail.workItems.some(
+    (wi) =>
+      wi.state === "READY_FOR_COLLECTION" ||
+      wi.state === "DELIVERED" ||
+      wi.state === "COMPLETED",
+  );
+
+  let displayStatusLabel = STATUS_LABELS[detail.order.status] ?? detail.order.status;
+  let displayStatusColor =
+    detail.order.status === "COMPLETED"
+      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+      : detail.order.status === "IN_PRODUCTION"
+      ? "bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400"
+      : detail.order.status === "CANCELLED"
+      ? "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400"
+      : "bg-muted text-muted-foreground";
+
+  if (detail.order.status === "PARTIALLY_READY") {
+    if (hasReadyItems) {
+      displayStatusLabel = S.orderStatusPartiallyReady;
+      displayStatusColor =
+        "bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400";
+    } else if (activeStepIdx === 2) {
+      displayStatusLabel = "قيد المراجعة";
+      displayStatusColor =
+        "bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400";
+    } else if (activeStepIdx === 1) {
+      displayStatusLabel = "قيد التصميم";
+      displayStatusColor =
+        "bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400";
+    } else if (activeStepIdx === 3) {
+      displayStatusLabel = S.orderStatusInProduction;
+      displayStatusColor =
+        "bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400";
+    } else {
+      displayStatusLabel = S.orderStatusNotStarted;
+      displayStatusColor = "bg-muted text-muted-foreground";
+    }
+  }
+
   const customerInitials = (detail.order.customerName || "ع")
     .split(" ")
     .filter(Boolean)
@@ -655,20 +741,10 @@ export default async function OrderDetailPage({
                 )}
 
                 <span
-                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${
-                    detail.order.status === "COMPLETED"
-                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                      : detail.order.status === "IN_PRODUCTION"
-                      ? "bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400"
-                      : detail.order.status === "PARTIALLY_READY"
-                      ? "bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400"
-                      : detail.order.status === "CANCELLED"
-                      ? "bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+                  className={`inline-flex items-center gap-1 rounded-full px-3 py-1 font-semibold ${displayStatusColor}`}
                 >
                   <Sparkles className="h-3 w-3" />
-                  <span>{STATUS_LABELS[detail.order.status] ?? detail.order.status}</span>
+                  <span>{displayStatusLabel}</span>
                 </span>
               </div>
             </div>
@@ -873,9 +949,7 @@ export default async function OrderDetailPage({
                       الأبعاد والمقاس
                     </span>
                     <span className="text-sm font-bold text-foreground">
-                      {typeof wi.widthValue === "number" || typeof wi.widthValue === "string"
-                        ? `${wi.widthValue} × ${typeof wi.heightValue === "number" || typeof wi.heightValue === "string" ? wi.heightValue : ""} ${wi.dimensionUnit ?? ""}`
-                        : "—"}
+                      {formatDimensions(wi.widthValue, wi.heightValue, wi.dimensionUnit)}
                     </span>
                   </div>
 
