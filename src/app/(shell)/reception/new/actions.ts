@@ -145,6 +145,16 @@ export async function createMasterOrderAction(
     if (isBanner && banner?.fieldInstallation) {
       finishNotesParts.push("مطلوب خدمة تركيب ميداني");
     }
+    if (isBanner) {
+      if (banner?.requiresDesign === false) {
+        finishNotesParts.push("التصميم جاهز للطباعة (لا يتطلب عمل مصمم)");
+      } else {
+        finishNotesParts.push("المصمم سيعمل على التصميم");
+      }
+      if (banner?.attachedFiles && banner.attachedFiles.length > 0) {
+        finishNotesParts.push(`ملفات التصميم: ${banner.attachedFiles.join("، ")}`);
+      }
+    }
     if (item.finishing) {
       finishNotesParts.push(item.finishing);
     }
@@ -167,7 +177,7 @@ export async function createMasterOrderAction(
       dimensionUnit,
       material: materialDesc || undefined,
       finishNotes: finishNotesParts.length > 0 ? finishNotesParts.join(" | ") : undefined,
-      requiresDesign: true,
+      requiresDesign: item.requiresDesign ?? item.bannerSpec?.requiresDesign ?? true,
       // ALWAYS true, with no product-type branch.
       //
       // `requiresReview` decides where a finished design lands
