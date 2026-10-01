@@ -67,9 +67,24 @@ export const reworkRequiredToAssigned: EdgeHandler = {
   },
 };
 
+export const reworkRequiredToDesignCompleted: EdgeHandler = {
+  edgeId: "REWORK_REQUIRED->DESIGN_COMPLETED",
+  kind: "DIRECT",
+  permission: "design.work",
+  backward: false,
+  destructive: false,
+  groupable: false,
+  labelAr: "إتمام التعديل",
+  async execute(actor, card) {
+    await markDesignComplete(actor, card.id);
+  },
+};
+
 export const designEdges: readonly EdgeHandler[] = [
   assignedToInDesign,
   inDesignToDesignCompleted,
   reworkRequiredToInDesign,
   reworkRequiredToAssigned,
+  reworkRequiredToDesignCompleted,
 ];
+

@@ -37,7 +37,7 @@ export const SLICES: readonly SliceDefinition[] = [
   {
     id: "reception",
     labelAr: "الاستقبال والتسليم",
-    stations: ["reception", "collection"],
+    stations: ["reception", "collection", "delivered"],
   },
   {
     id: "designer",

@@ -119,12 +119,19 @@ export function useEscapeKey(
   }, [isOpen, onClose]);
 }
 
+const STATION_HREF_BUILDERS: Partial<Record<string, (cardId: string) => string>> = {
+  design: (id) => `/design/${id}`,
+  review: (id) => `/review/${id}`,
+  production: (id) => `/production/${id}`,
+  pricing: () => "/pricing",
+  reception: () => "/reception",
+  collection: () => "/reception",
+  delivered: () => "/reception",
+};
+
 export function getStationHref(cardId: string, state: string): string | null {
   const placement = STATE_PLACEMENT[state as keyof typeof STATE_PLACEMENT];
-  const stationKey =
-    placement === "OFF_BOARD" ? "reception" : placement?.station;
-  if (stationKey === "design") return `/design/${cardId}`;
-  if (stationKey === "review") return `/review/${cardId}`;
-  if (stationKey === "production") return `/production/${cardId}`;
-  return null;
+  const stationKey = placement === "OFF_BOARD" ? "reception" : placement?.station;
+  const buildHref = stationKey ? STATION_HREF_BUILDERS[stationKey] : undefined;
+  return buildHref ? buildHref(cardId) : null;
 }

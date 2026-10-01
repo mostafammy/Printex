@@ -11,12 +11,13 @@
 
 import { Prisma } from "../../../generated/prisma";
 import { db } from "~/server/db";
-import type { Actor } from "~/server/auth";
-import { deriveOrderStatus } from "~/server/core";
-import type { OrderStatusBucket, WorkItemState } from "~/server/core";
+import { authorize, type Actor } from "~/server/auth";
+import { deriveOrderStatus, asUserId, asWorkItemId, transitionWorkItem } from "~/server/core";
+import type { OrderStatusBucket, WorkItemState, Actor as CoreActor } from "~/server/core";
 import { paginateQuery } from "~/server/pagination";
 import type { PageInput, PageResult } from "~/server/pagination";
 import { isOrderComplete } from "./completeness";
+import { WorkItemTransitionError } from "./cancelOrder";
 
 export interface OrderSearchResult {
   orderId: string;
@@ -350,3 +351,94 @@ export async function getOrderDetail(
     isComplete: isOrderComplete({ workItems: order.workItems }),
   };
 }
+
+// ── Reception Ready for Pickup & Delivery (Phase 6) ─────────────────────────
+
+export interface ReadyForPickupItem {
+  id: string;
+  orderId: string;
+  orderNumber: number;
+  customerName: string;
+  customerPhone: string | null;
+  productTypeName: string | null;
+  description: string | null;
+  quantity: number | null;
+  widthValue: string | null;
+  heightValue: string | null;
+  dimensionUnit: string | null;
+  updatedAt: Date;
+}
+
+export async function listReadyForPickupOrders(_actor: Actor): Promise<ReadyForPickupItem[]> {
+  const items = await db.workItem.findMany({
+    where: { state: "READY_FOR_COLLECTION" },
+    include: {
+      order: {
+        include: {
+          customer: {
+            select: {
+              name: true,
+              phones: { select: { phoneE164: true }, take: 1 },
+            },
+          },
+        },
+      },
+      productType: { select: { name: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    orderId: item.order.id,
+    orderNumber: item.order.number,
+    customerName: item.order.customer.name,
+    customerPhone: item.order.customer.phones[0]?.phoneE164 ?? null,
+    productTypeName: item.productType?.name ?? null,
+    description: item.description,
+    quantity: item.quantity,
+    widthValue: item.widthValue?.toString() ?? null,
+    heightValue: item.heightValue?.toString() ?? null,
+    dimensionUnit: item.dimensionUnit,
+    updatedAt: item.updatedAt,
+  }));
+}
+
+export async function deliverWorkItem(actor: Actor, workItemId: string): Promise<void> {
+  if (
+    !actor.permissions.has("delivery.record") &&
+    !actor.roles.includes("RECEPTION") &&
+    !actor.roles.includes("ADMIN_OWNER") &&
+    !actor.permissions.has("admin.override")
+  ) {
+    authorize(actor, "delivery.record");
+  }
+
+  const coreActor: CoreActor = {
+    userId: asUserId(actor.userId),
+    roles: actor.roles,
+    departmentIds: actor.departmentIds,
+  };
+
+  await db.$transaction(async (tx) => {
+    const result = await transitionWorkItem(tx, {
+      workItemId: asWorkItemId(workItemId),
+      to: "DELIVERED",
+      actor: coreActor,
+    });
+    if (!result.ok) {
+      throw new WorkItemTransitionError(result.error);
+    }
+  });
+}
+
+export async function deliverOrder(actor: Actor, orderId: string): Promise<void> {
+  const readyItems = await db.workItem.findMany({
+    where: { orderId, state: "READY_FOR_COLLECTION" },
+    select: { id: true },
+  });
+  for (const item of readyItems) {
+    await deliverWorkItem(actor, item.id);
+  }
+}
+

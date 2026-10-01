@@ -7,7 +7,8 @@ export const LIFECYCLE_STATIONS = [
   { key: "reception", label: "الاستقبال", states: ["NEW"] },
   { key: "design", label: "التصميم", states: ["ASSIGNED", "IN_DESIGN", "REWORK_REQUIRED", "DESIGN_COMPLETED"] },
   { key: "review", label: "المراجعة", states: ["WAITING_REVIEW", "APPROVED"] },
-  { key: "production", label: "الإنتاج", states: ["WAITING_PRICING", "READY_FOR_PRODUCTION", "IN_PRODUCTION", "PRODUCTION_COMPLETED"] },
+  { key: "pricing", label: "المحاسبة", states: ["WAITING_PRICING"] },
+  { key: "production", label: "الإنتاج", states: ["READY_FOR_PRODUCTION", "IN_PRODUCTION", "PRODUCTION_COMPLETED"] },
   { key: "collection", label: "التسليم", states: ["READY_FOR_COLLECTION", "DELIVERED", "COMPLETED"] },
 ];
 

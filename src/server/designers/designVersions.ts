@@ -187,8 +187,11 @@ export async function markDesignComplete(actor: Actor, workItemId: string): Prom
     if (!isAuthorizedAssignee) {
       throw new DomainDesignerError("NOT_ASSIGNEE", "Only the assigned designer may mark design complete.");
     }
-    if (workItem.state !== "IN_DESIGN") {
-      throw new DomainDesignerError("NOT_IN_DESIGN", "The Work Item must be in IN_DESIGN to mark design complete.");
+    if (workItem.state !== "IN_DESIGN" && workItem.state !== "REWORK_REQUIRED") {
+      throw new DomainDesignerError(
+        "NOT_IN_DESIGN",
+        "The Work Item must be in IN_DESIGN or REWORK_REQUIRED to mark design complete.",
+      );
     }
 
     const designVersionCount = await tx.designVersion.count({ where: { workItemId } });

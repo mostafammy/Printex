@@ -30,8 +30,11 @@ export {
   getReceptionQueueStats,
   getOrderDetail,
   searchOrders,
+  listReadyForPickupOrders,
+  deliverWorkItem,
+  deliverOrder,
 } from "./search";
-export type { OrderSearchResult, OrderQueueRow, TimelineEntry } from "./search";
+export type { OrderSearchResult, OrderQueueRow, TimelineEntry, ReadyForPickupItem } from "./search";
 
 // US3 (priority) / US6 (cancel)
 export { changeOrderPriority, cancelWorkItem, cancelOrder, WorkItemTransitionError } from "./cancelOrder";

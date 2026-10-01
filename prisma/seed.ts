@@ -63,6 +63,8 @@ const ROLE_SEED_DATA = [
       "customer.manage",
       "workitem.assign_designer",
       "workitem.send_to_production",
+      "collection.receive",
+      "delivery.record",
       "pricing.use_fixed",
       "finance.view",
     ],
